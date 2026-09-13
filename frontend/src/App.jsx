@@ -26,6 +26,8 @@ import ActiveDeliveryMobile from './pages/delivery & driver logistics/active_del
 import DeliveryHistoryMobile from './pages/delivery & driver logistics/delivery_history_mobile';
 import DriverEarningsMobile from './pages/delivery & driver logistics/driver_earnings_mobile';
 import RiderExpressDashboard from './pages/delivery & driver logistics/rider_express_dashboard';
+import MeeshoVelocity from './pages/delivery & driver logistics/meesho_velocity';
+import SwiftRoute from './pages/delivery & driver logistics/swiftroute';
 
 // Supplier Hub Screens
 import SupplierDashboard2 from './supplier/supplier_dashboard2';
@@ -65,9 +67,40 @@ export default function App() {
   const [selectedGroup, setSelectedGroup] = useState('All');
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
-  const navigateTo = (screenId) => {
-    setScreenHistory((prev) => [...prev, screenId]);
-    setActiveScreen(screenId);
+  // Alias lookup to handle inter-component screen references gracefully
+  const aliasMap = {
+    // Customer
+    home: 'reseller',
+    cart: 'cart',
+    wishlist: 'wishlist',
+    checkout: 'address',
+    // Supplier
+    inventory: 'inventory',
+    orders: 'orders',
+    shop: 'inventory',
+    sellers: 'profile',
+    suppliers: 'profile',
+    account: 'profile',
+    // Admin
+    dashboard: 'adminPanel',
+    products: 'adminCatalog',
+    catalog: 'adminCatalog',
+    campaigns: 'campaignFlow',
+    analytics: 'adminAnalytics',
+    resellers: 'user_dashboard',
+    users: 'user_dashboard',
+    // Community & Support
+    support: 'supportCenter',
+    chat: 'chatScreen',
+    community: 'communityHub',
+    explore: 'explorer',
+    notifications: 'notifications',
+  };
+
+  const navigateTo = (rawScreenId) => {
+    const target = aliasMap[rawScreenId] || rawScreenId;
+    setScreenHistory((prev) => [...prev, target]);
+    setActiveScreen(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -88,7 +121,7 @@ export default function App() {
   };
 
   const screens = [
-    // Customer & Shopping
+    // 1. Customer & Shopping Flow
     { id: 'reseller', name: 'Reseller Home', icon: '🛍️', group: 'Shopping' },
     { id: 'user_dashboard', name: 'Curator Web Dashboard', icon: '📊', group: 'Shopping' },
     { id: 'luxe', name: 'Flutter Luxe', icon: '✨', group: 'Shopping' },
@@ -106,7 +139,7 @@ export default function App() {
     { id: 'address', name: 'Checkout Address', icon: '📍', group: 'Shopping' },
     { id: 'payment', name: 'Checkout Payment', icon: '💳', group: 'Shopping' },
 
-    // Logistics & Driver
+    // 2. Logistics & Driver Fleet
     { id: 'driver_dashboard', name: 'Driver Dashboard', icon: '🛵', group: 'Logistics' },
     { id: 'available_tasks', name: 'Available Tasks', icon: '📦', group: 'Logistics' },
     { id: 'order_driver', name: 'Order Details Driver', icon: '📋', group: 'Logistics' },
@@ -114,8 +147,10 @@ export default function App() {
     { id: 'delivery_history', name: 'Delivery History', icon: '📜', group: 'Logistics' },
     { id: 'driver_earnings', name: 'Driver Earnings', icon: '💰', group: 'Logistics' },
     { id: 'rider_express', name: 'Rider Express', icon: '⚡', group: 'Logistics' },
+    { id: 'meesho_velocity', name: 'Meesho Velocity Grid', icon: '🚀', group: 'Logistics' },
+    { id: 'swiftroute', name: 'SwiftRoute AI', icon: '🧭', group: 'Logistics' },
 
-    // Supplier Hub
+    // 3. Supplier Hub
     { id: 'structureFlow', name: 'Structure Flow (Hub)', icon: '🏬', group: 'Supplier' },
     { id: 'dashboard2', name: 'Supplier Dashboard 2', icon: '📈', group: 'Supplier' },
     { id: 'dashboard1', name: 'Supplier Dashboard 1', icon: '📉', group: 'Supplier' },
@@ -126,13 +161,13 @@ export default function App() {
     { id: 'profile', name: 'Supplier Profile', icon: '👤', group: 'Supplier' },
     { id: 'webDashboard', name: 'Seller Web Dashboard', icon: '💻', group: 'Supplier' },
 
-    // Admin Panel
+    // 4. Admin Panel
     { id: 'adminPanel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
     { id: 'adminCatalog', name: 'Admin Catalog', icon: '📁', group: 'Admin' },
     { id: 'campaignFlow', name: 'Campaign Creation', icon: '📢', group: 'Admin' },
     { id: 'adminAnalytics', name: 'Performance Analytics', icon: '📊', group: 'Admin' },
 
-    // Community & Support
+    // 5. Community & Customer Support
     { id: 'communityHub', name: 'Community Hub', icon: '👥', group: 'Community' },
     { id: 'messenger', name: 'Messenger Chat Hub', icon: '💬', group: 'Community' },
     { id: 'chatScreen', name: 'Conversation Screen', icon: '🗨️', group: 'Community' },
@@ -140,7 +175,7 @@ export default function App() {
     { id: 'raiseTicket', name: 'Raise A Ticket', icon: '🎫', group: 'Community' },
     { id: 'notifications', name: 'Notification Center', icon: '🔔', group: 'Community' },
 
-    // Design Themes & Ecosystem
+    // 6. Themes & Design Variations
     { id: 'digitalCurator', name: 'Digital Curator', icon: '🎨', group: 'Themes' },
     { id: 'petalCollective', name: 'Petal Collective', icon: '🌸', group: 'Themes' },
     { id: 'gildedPulse', name: 'Gilded Pulse', icon: '👑', group: 'Themes' },
@@ -177,7 +212,7 @@ export default function App() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+            <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
               {groups.map((group) => {
                 const count = group === 'All' ? screens.length : screens.filter((s) => s.group === group).length;
                 return (
@@ -258,16 +293,13 @@ export default function App() {
       {activeScreen === 'delivery_history' && <DeliveryHistoryMobile onNavigate={navigateTo} onBack={goBack} />}
       {activeScreen === 'driver_earnings' && <DriverEarningsMobile onNavigate={navigateTo} onBack={goBack} />}
       {activeScreen === 'rider_express' && <RiderExpressDashboard onNavigate={navigateTo} onBack={goBack} />}
+      {activeScreen === 'meesho_velocity' && <MeeshoVelocity onNavigate={navigateTo} onBack={goBack} />}
+      {activeScreen === 'swiftroute' && <SwiftRoute onNavigate={navigateTo} onBack={goBack} />}
 
       {/* 3. Supplier Hub */}
       {activeScreen === 'structureFlow' && (
         <StructureFlow
-          onNavigate={(tab) => {
-            if (tab === 'dashboard') navigateTo('structureFlow');
-            if (tab === 'inventory') navigateTo('inventory');
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
           onAddNewProduct={() => navigateTo('addProduct')}
           onViewInventory={() => navigateTo('inventory')}
           onViewOrders={() => navigateTo('orders')}
@@ -278,73 +310,51 @@ export default function App() {
           onAddNewProduct={() => navigateTo('addProduct')}
           onViewInventory={() => navigateTo('inventory')}
           onViewAllOrders={() => navigateTo('orders')}
-          onNavChange={(tabId) => {
-            if (tabId === 'inventory') navigateTo('inventory');
-            if (tabId === 'orders') navigateTo('orders');
-            if (tabId === 'profile') navigateTo('profile');
-          }}
+          onNavChange={(tabId) => navigateTo(tabId)}
         />
       )}
       {activeScreen === 'dashboard1' && (
         <SupplierDashboard1
-          onNavigate={(tab) => {
-            if (tab === 'Inventory') navigateTo('inventory');
-            if (tab === 'Orders') navigateTo('orders');
-            if (tab === 'Profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
+          onShipNow={() => navigateTo('orders')}
+          onClaimCredit={() => navigateTo('adminAnalytics')}
         />
       )}
       {activeScreen === 'inventory' && (
         <SupplierInventoryManagement
-          onNavigate={(tab) => {
-            if (tab === 'Home') navigateTo('dashboard2');
-            if (tab === 'Orders') navigateTo('orders');
-            if (tab === 'Profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
           onAddProduct={() => navigateTo('addProduct')}
         />
       )}
       {activeScreen === 'orders' && (
         <SupplierOrdersList
-          onBack={() => navigateTo('dashboard2')}
-          onNavigate={(id) => {
-            if (id === 'dashboard') navigateTo('dashboard2');
-            if (id === 'inventory') navigateTo('inventory');
-            if (id === 'account') navigateTo('profile');
-          }}
+          onBack={goBack}
+          onNavigate={(id) => navigateTo(id)}
         />
       )}
       {activeScreen === 'addProduct' && (
         <AddNewProductSupplier
-          onBack={() => navigateTo('dashboard2')}
+          onBack={goBack}
           onPublish={() => navigateTo('inventory')}
           onSaveDraft={() => navigateTo('inventory')}
         />
       )}
       {activeScreen === 'addCategory' && (
         <AddCategorySupplier
-          onBack={() => navigateTo('dashboard2')}
+          onBack={goBack}
           onSaveCategory={() => navigateTo('inventory')}
         />
       )}
       {activeScreen === 'profile' && (
         <SupplierProfile
-          onBack={() => navigateTo('dashboard2')}
-          onNavigate={(id) => {
-            if (id === 'dashboard') navigateTo('dashboard2');
-            if (id === 'orders') navigateTo('orders');
-            if (id === 'inventory') navigateTo('inventory');
-          }}
-          onLogout={() => navigateTo('dashboard2')}
+          onBack={goBack}
+          onNavigate={(id) => navigateTo(id)}
+          onLogout={() => navigateTo('reseller')}
         />
       )}
       {activeScreen === 'webDashboard' && (
         <SellerWebDashboard
-          onNavigate={(tab) => {
-            if (tab === 'inventory') navigateTo('inventory');
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
           onViewProducts={() => navigateTo('inventory')}
           onViewOrders={() => navigateTo('orders')}
         />
@@ -353,157 +363,89 @@ export default function App() {
       {/* 4. Admin Panel */}
       {activeScreen === 'adminPanel' && (
         <AdminWebPanel
-          onNavigate={(id) => {
-            if (id === 'products') navigateTo('adminCatalog');
-            if (id === 'orders') navigateTo('orders');
-            if (id === 'sellers') navigateTo('profile');
-          }}
+          onNavigate={(id) => navigateTo(id)}
           onSwitchView={() => navigateTo('webDashboard')}
         />
       )}
       {activeScreen === 'adminCatalog' && (
         <AdminProductCatalog
-          onNavigate={(id) => {
-            if (id === 'dashboard') navigateTo('adminPanel');
-            if (id === 'orders') navigateTo('orders');
-            if (id === 'suppliers') navigateTo('profile');
-          }}
+          onNavigate={(id) => navigateTo(id)}
           onAddNewProduct={() => navigateTo('addProduct')}
         />
       )}
       {activeScreen === 'campaignFlow' && (
         <CampaignCreationFlowAdmin
-          onNavigate={(id) => {
-            if (id === 'dashboard') navigateTo('adminPanel');
-            if (id === 'catalog') navigateTo('adminCatalog');
-            if (id === 'orders') navigateTo('orders');
-          }}
+          onNavigate={(id) => navigateTo(id)}
           onCancel={() => navigateTo('adminPanel')}
         />
       )}
       {activeScreen === 'adminAnalytics' && (
         <PerformanceAnalyticsDashboardAdmin
-          onNavigate={(id) => {
-            if (id === 'dashboard') navigateTo('adminPanel');
-            if (id === 'orders') navigateTo('orders');
-            if (id === 'catalog') navigateTo('adminCatalog');
-            if (id === 'resellers') navigateTo('profile');
-            if (id === 'campaigns') navigateTo('campaignFlow');
-          }}
+          onNavigate={(id) => navigateTo(id)}
         />
       )}
 
       {/* 5. Community & Support */}
       {activeScreen === 'communityHub' && (
         <CommunityHub
-          onNavigate={(tab) => {
-            if (tab === 'home') navigateTo('dashboard2');
-            if (tab === 'shop') navigateTo('inventory');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-            if (tab === 'profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'messenger' && (
         <MeeshoMessengerChatHub
-          onNavigate={(tab) => {
-            if (tab === 'community') navigateTo('communityHub');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'chatScreen' && (
         <ConversationScreen
-          onBack={() => navigateTo('messenger')}
-          onNavigate={(tab) => {
-            if (tab === 'messenger') navigateTo('messenger');
-            if (tab === 'community') navigateTo('communityHub');
-          }}
+          onBack={goBack}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'supportCenter' && (
         <SupportCenter
-          onNavigate={(tab) => {
-            if (tab === 'home') navigateTo('webDashboard');
-            if (tab === 'shop') navigateTo('inventory');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-            if (tab === 'orders') navigateTo('orders');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
           onOpenChat={() => navigateTo('chatScreen')}
         />
       )}
       {activeScreen === 'raiseTicket' && (
         <RaiseATicket
-          onBack={() => navigateTo('supportCenter')}
-          onNavigate={(tab) => {
-            if (tab === 'support') navigateTo('supportCenter');
-            if (tab === 'home') navigateTo('webDashboard');
-            if (tab === 'shop') navigateTo('inventory');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-            if (tab === 'orders') navigateTo('orders');
-          }}
+          onBack={goBack}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'notifications' && (
         <NotificationCenter
-          onBack={() => navigateTo('supportCenter')}
-          onNavigate={(tab) => {
-            if (tab === 'home') navigateTo('webDashboard');
-            if (tab === 'explore') navigateTo('communityHub');
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-          }}
+          onBack={goBack}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
 
       {/* 6. Themes & Design Ecosystem */}
       {activeScreen === 'digitalCurator' && (
         <TheDigitalCuratorEcosystem
-          onNavigate={(tab) => {
-            if (tab === 'home') navigateTo('digitalCurator');
-            if (tab === 'categories') navigateTo('adminCatalog');
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-            if (tab === 'profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'petalCollective' && (
         <PetalCollective
-          onNavigate={(view) => {
-            if (view === 'digitalCurator') navigateTo('digitalCurator');
-            if (view === 'home') navigateTo('digitalCurator');
-          }}
+          onNavigate={(view) => navigateTo(view)}
           onLoginSuccess={() => navigateTo('digitalCurator')}
         />
       )}
       {activeScreen === 'gildedPulse' && (
         <GildedPulse
-          onNavigate={(tab) => {
-            if (tab === 'insight') navigateTo('gildedPulse');
-            if (tab === 'assets') navigateTo('adminAnalytics');
-            if (tab === 'network') navigateTo('profile');
-            if (tab === 'rewards') navigateTo('digitalCurator');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'socialCommerceLuxe' && (
         <SocialCommerceLuxe
-          onNavigate={(tab) => {
-            if (tab === 'home') navigateTo('socialCommerceLuxe');
-            if (tab === 'categories') navigateTo('adminCatalog');
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'community') navigateTo('communityHub');
-            if (tab === 'account') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
       {activeScreen === 'signalCore' && (
         <SignalCore
-          onNavigate={(tab) => {
-            if (tab === 'orders') navigateTo('orders');
-            if (tab === 'earnings') navigateTo('adminAnalytics');
-            if (tab === 'profile') navigateTo('profile');
-          }}
+          onNavigate={(tab) => navigateTo(tab)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function MeeshoVelocity() {
+export default function MeeshoVelocity({ onNavigate = () => {}, onBack }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [isHyperSpeedActive, setIsHyperSpeedActive] = useState(true);
   const [toastMessage, setToastMessage] = useState('');
@@ -53,6 +53,13 @@ export default function MeeshoVelocity() {
       <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="flex justify-between items-center px-4 md:px-8 h-16 max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => (onBack ? onBack() : onNavigate('driver_dashboard'))}
+              className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+              title="Back to Dashboard"
+            >
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+            </button>
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#2f06be] to-[#4834d4] text-white flex items-center justify-center shadow-md shadow-indigo-500/25">
               <span className="material-symbols-outlined text-2xl">bolt</span>
             </div>
@@ -67,6 +74,13 @@ export default function MeeshoVelocity() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigate('swiftroute')}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-pink-50 text-[#b90041] hover:bg-pink-100 transition-colors cursor-pointer hidden sm:flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">route</span>
+              <span>SwiftRoute</span>
+            </button>
             <button
               onClick={() => {
                 setIsHyperSpeedActive(!isHyperSpeedActive);
@@ -139,7 +153,7 @@ export default function MeeshoVelocity() {
             {dispatchQueue.map((item) => (
               <div
                 key={item.id}
-                onClick={() => triggerToast(`Tracking telemetry for ${item.id} (${item.rider})`)}
+                onClick={() => onNavigate('active_delivery')}
                 className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3"
               >
                 <div className="flex justify-between items-start">

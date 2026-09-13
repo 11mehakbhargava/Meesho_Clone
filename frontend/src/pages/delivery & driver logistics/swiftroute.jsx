@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function SwiftRoute() {
+export default function SwiftRoute({ onNavigate = () => {}, onBack }) {
   const [stops, setStops] = useState([
     {
       id: 1,
@@ -91,6 +91,13 @@ export default function SwiftRoute() {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="flex justify-between items-center px-4 md:px-8 h-16 max-w-2xl mx-auto w-full">
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => (onBack ? onBack() : onNavigate('driver_dashboard'))}
+              className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+              title="Back to Dashboard"
+            >
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+            </button>
             <div className="w-10 h-10 rounded-2xl bg-[#b90041] text-white flex items-center justify-center shadow-md shadow-pink-500/20">
               <span className="material-symbols-outlined text-2xl">route</span>
             </div>
@@ -143,103 +150,93 @@ export default function SwiftRoute() {
             </div>
           </div>
 
-          {/* Progress bar */}
+          {/* Mini Linear Progress */}
           <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#b90041] to-[#008644] h-full rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[#b90041] to-[#df2457] transition-all duration-300"
               style={{ width: `${(completedCount / stops.length) * 100}%` }}
             />
           </div>
-
-          <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
-            <div className="bg-[#fcf9f8] p-2 rounded-xl border border-slate-100">
-              <p className="text-[9px] text-slate-400 font-bold uppercase">Remaining</p>
-              <p className="font-black text-[#1c1b1b]">{stops.length - completedCount} Drops</p>
-            </div>
-            <div className="bg-[#fcf9f8] p-2 rounded-xl border border-slate-100">
-              <p className="text-[9px] text-slate-400 font-bold uppercase">Est. Distance</p>
-              <p className="font-black text-[#1c1b1b]">8.4 km</p>
-            </div>
-            <div className="bg-[#fcf9f8] p-2 rounded-xl border border-slate-100">
-              <p className="text-[9px] text-slate-400 font-bold uppercase">Total Payout</p>
-              <p className="font-black text-[#008644]">₹320.00</p>
-            </div>
-          </div>
         </section>
 
-        {/* Multi-Stop Sequence Reel */}
+        {/* Multi-Stop Sequence List */}
         <section className="space-y-3">
           <div className="flex justify-between items-center px-1">
-            <h3 className="font-black text-sm text-[#1c1b1b] uppercase tracking-wider">
-              Delivery Itinerary
+            <h3 className="text-sm font-extrabold text-[#1c1b1b] uppercase tracking-wider">
+              Sequence List ({stops.length})
             </h3>
-            <span className="text-xs text-slate-400 font-medium">Tap checkmark when delivered</span>
+            <span className="text-xs font-bold text-slate-400">Live Geo-Sequenced</span>
           </div>
 
           <div className="space-y-3">
-            {stops.map((stop, index) => (
+            {stops.map((stop, idx) => (
               <div
                 key={stop.id}
-                className={`p-4 md:p-5 rounded-3xl transition-all border ${
+                className={`bg-white rounded-3xl p-5 border transition-all ${
                   stop.isCompleted
-                    ? 'bg-slate-50 border-slate-200 opacity-75'
-                    : index === completedCount
-                    ? 'bg-white border-[#b90041] ring-2 ring-pink-500/20 shadow-md'
-                    : 'bg-white border-slate-100 shadow-sm'
+                    ? 'border-emerald-100 bg-emerald-50/20 opacity-80'
+                    : 'border-slate-100 shadow-sm hover:shadow-md'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <button
-                      onClick={() => handleToggleStop(stop.id)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer flex-shrink-0 mt-0.5 ${
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0 ${
                         stop.isCompleted
-                          ? 'bg-[#008644] text-white'
-                          : 'border-2 border-slate-300 hover:border-[#b90041]'
+                          ? 'bg-emerald-500 text-white'
+                          : stop.type === 'pickup'
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-pink-100 text-[#b90041]'
                       }`}
                     >
-                      {stop.isCompleted && (
-                        <span className="material-symbols-outlined text-sm font-bold">check</span>
+                      {stop.isCompleted ? (
+                        <span className="material-symbols-outlined text-lg">check</span>
+                      ) : (
+                        idx + 1
                       )}
-                    </button>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span
-                          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                            stop.type === 'pickup'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-pink-50 text-[#b90041]'
-                          }`}
-                        >
-                          Stop #{index + 1} • {stop.type}
-                        </span>
-                        <span className="text-xs font-bold text-slate-400">ETA {stop.eta}</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-sm text-[#1c1b1b]">{stop.name}</h4>
                         {stop.cod && (
-                          <span className="text-[9px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded">
-                            COD: ₹{stop.codAmount}
+                          <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                            COD ₹{stop.codAmount}
                           </span>
                         )}
                       </div>
-
-                      <h4 className="font-extrabold text-sm text-[#1c1b1b] leading-snug">
-                        {stop.name}
-                      </h4>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{stop.address}</p>
+                      <div className="flex items-center gap-3 mt-2 text-[11px] font-bold text-slate-400">
+                        <span>📦 {stop.packages} Pkgs</span>
+                        <span>•</span>
+                        <span className="text-[#b90041]">{stop.eta}</span>
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => handleToggleStop(stop.id)}
+                    className={`p-2 rounded-2xl text-xs font-bold flex items-center transition-all cursor-pointer ${
+                      stop.isCompleted
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {stop.isCompleted ? 'check_circle' : 'radio_button_unchecked'}
+                    </span>
+                  </button>
                 </div>
 
                 {!stop.isCompleted && (
-                  <div className="flex gap-2 pt-3 mt-3 border-t border-slate-100">
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
                     <button
-                      onClick={() => triggerToast(`Starting turn-by-turn navigation to Stop #${index + 1}`)}
-                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      onClick={() => onNavigate('active_delivery')}
+                      className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-sm text-[#b90041]">
+                      <span className="material-symbols-outlined text-sm text-emerald-400">
                         near_me
                       </span>
-                      <span>Navigate</span>
+                      <span>Navigate Map</span>
                     </button>
                     {stop.contact && (
                       <button
@@ -266,10 +263,10 @@ export default function SwiftRoute() {
             <p className="font-black text-lg text-[#1c1b1b]">1h 45m (8.4 km)</p>
           </div>
           <button
-            onClick={() => triggerToast('Next delivery waypoint activated on your GPS navigator!')}
+            onClick={() => onNavigate('active_delivery')}
             className="flex-1 max-w-xs h-13 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white rounded-2xl font-black text-sm shadow-lg shadow-pink-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
           >
-            <span>Navigate Next Stop</span>
+            <span>Navigate Active Map</span>
             <span className="material-symbols-outlined text-lg">arrow_forward</span>
           </button>
         </div>
