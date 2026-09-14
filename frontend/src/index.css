@@ -1,57 +1,63 @@
 @import "tailwindcss";
 
 @theme {
+  --color-primary: #b90041;
+  --color-primary-fixed: #ffd9dc;
+  --color-primary-fixed-dim: #ffb2ba;
+  --color-primary-container: #df2457;
   --color-on-primary: #ffffff;
-  --color-surface-container-high: #e2e9ec;
-  --color-surface-container-low: #eef5f7;
-  --color-secondary-fixed-dim: #abc9f3;
-  --color-tertiary: #934700;
-  --color-primary: #005ea5;
-  --color-on-secondary-fixed: #001c38;
-  --color-outline: #707784;
-  --color-on-tertiary-fixed-variant: #733600;
-  --color-surface-variant: #dde4e6;
-  --color-on-primary-fixed-variant: #004881;
-  --color-on-primary-container: #fdfcff;
+  --color-on-primary-fixed: #400011;
+  --color-on-primary-fixed-variant: #910031;
+  --color-on-primary-container: #fffbff;
+  --color-inverse-primary: #ffb2ba;
+
+  --color-secondary: #4d41df;
+  --color-secondary-fixed: #e3dfff;
+  --color-secondary-fixed-dim: #c4c0ff;
+  --color-secondary-container: #675df9;
   --color-on-secondary: #ffffff;
-  --color-secondary-fixed: #d3e4ff;
-  --color-on-tertiary-container: #fffbff;
-  --color-inverse-primary: #a2c9ff;
-  --color-on-secondary-container: #3e5b80;
-  --color-on-secondary-fixed-variant: #2a486c;
-  --color-secondary-container: #b6d4fe;
-  --color-on-background: #161d1f;
-  --color-secondary: #436085;
-  --color-surface: #f4fafd;
-  --color-primary-fixed-dim: #a2c9ff;
-  --color-primary-fixed: #d3e4ff;
-  --color-error-container: #ffdad6;
-  --color-surface-dim: #d4dbdd;
-  --color-surface-container-highest: #dde4e6;
-  --color-on-surface-variant: #404752;
-  --color-inverse-surface: #2b3234;
-  --color-on-tertiary-fixed: #311300;
-  --color-primary-container: #0077ce;
-  --color-surface-bright: #f4fafd;
-  --color-on-tertiary: #ffffff;
-  --color-on-primary-fixed: #001c38;
-  --color-background: #f4fafd;
-  --color-surface-container: #e8eff1;
-  --color-inverse-on-surface: #ebf2f4;
-  --color-on-surface: #161d1f;
-  --color-tertiary-fixed: #ffdbc7;
-  --color-error: #ba1a1a;
-  --color-surface-tint: #0060a9;
-  --color-on-error: #ffffff;
-  --color-outline-variant: #c0c7d4;
-  --color-on-error-container: #93000a;
-  --color-tertiary-fixed-dim: #ffb687;
-  --color-tertiary-container: #b85a00;
+  --color-on-secondary-fixed: #100069;
+  --color-on-secondary-fixed-variant: #3622ca;
+  --color-on-secondary-container: #fffbff;
+
+  --color-background: #f8f9fb;
+  --color-on-background: #191c1e;
+
+  --color-surface: #f8f9fb;
+  --color-surface-dim: #d9dadc;
+  --color-surface-bright: #f8f9fb;
+  --color-surface-variant: #e1e2e4;
   --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #edeef0;
+  --color-surface-container-high: #e7e8ea;
+  --color-surface-container-highest: #e1e2e4;
+  --color-surface-tint: #bd0043;
+  --color-inverse-surface: #2e3132;
+  --color-inverse-on-surface: #f0f1f3;
+
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #5b4042;
+  --color-outline: #8f6f72;
+  --color-outline-variant: #e3bdc0;
+
+  --color-tertiary: #006a34;
+  --color-tertiary-fixed: #7dfca2;
+  --color-tertiary-fixed-dim: #5fde88;
+  --color-tertiary-container: #008644;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-fixed: #00210c;
+  --color-on-tertiary-fixed-variant: #005227;
+  --color-on-tertiary-container: #f6fff3;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
 
   --font-headline: "Plus Jakarta Sans", sans-serif;
-  --font-body: "Plus Jakarta Sans", sans-serif;
-  --font-label: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", "Plus Jakarta Sans", sans-serif;
+  --font-label: "Inter", "Plus Jakarta Sans", sans-serif;
 }
 
 body {
@@ -60,11 +66,38 @@ body {
 
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
 }
+
+/* Allow material-symbols-outlined to scale with text size classes */
+.material-symbols-outlined.text-\[16px\] { font-size: 16px !important; }
+.material-symbols-outlined.text-\[18px\] { font-size: 18px !important; }
+.material-symbols-outlined.text-\[20px\] { font-size: 20px !important; }
+.material-symbols-outlined.text-\[120px\] { font-size: 120px !important; }
+.material-symbols-outlined.text-\[140px\] { font-size: 140px !important; }
+.material-symbols-outlined.text-\[200px\] { font-size: 200px !important; }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(192, 199, 212, 0.2);
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
