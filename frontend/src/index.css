@@ -1,1 +1,93 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #b90041;
+  --color-primary-fixed: #ffd9dc;
+  --color-primary-fixed-dim: #ffb2ba;
+  --color-primary-container: #df2457;
+  --color-on-primary: #ffffff;
+  --color-on-primary-fixed: #400011;
+  --color-on-primary-fixed-variant: #910031;
+  --color-on-primary-container: #fffbff;
+  --color-inverse-primary: #ffb2ba;
+
+  --color-secondary: #4d41df;
+  --color-secondary-fixed: #e3dfff;
+  --color-secondary-fixed-dim: #c4c0ff;
+  --color-secondary-container: #675df9;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-fixed: #100069;
+  --color-on-secondary-fixed-variant: #3622ca;
+  --color-on-secondary-container: #fffbff;
+
+  --color-background: #f8f9fb;
+  --color-on-background: #191c1e;
+
+  --color-surface: #f8f9fb;
+  --color-surface-dim: #d9dadc;
+  --color-surface-bright: #f8f9fb;
+  --color-surface-variant: #e1e2e4;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #edeef0;
+  --color-surface-container-high: #e7e8ea;
+  --color-surface-container-highest: #e1e2e4;
+  --color-surface-tint: #bd0043;
+  --color-inverse-surface: #2e3132;
+  --color-inverse-on-surface: #f0f1f3;
+
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #5b4042;
+  --color-outline: #8f6f72;
+  --color-outline-variant: #e3bdc0;
+
+  --color-tertiary: #006a34;
+  --color-tertiary-fixed: #7dfca2;
+  --color-tertiary-fixed-dim: #5fde88;
+  --color-tertiary-container: #008644;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-fixed: #00210c;
+  --color-on-tertiary-fixed-variant: #005227;
+  --color-on-tertiary-container: #f6fff3;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  --font-headline: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+}
+
+/* Allow material-symbols-outlined to scale with text size classes */
+.material-symbols-outlined.text-\[16px\] { font-size: 16px !important; }
+.material-symbols-outlined.text-\[18px\] { font-size: 18px !important; }
+.material-symbols-outlined.text-\[20px\] { font-size: 20px !important; }
+.material-symbols-outlined.text-\[120px\] { font-size: 120px !important; }
+.material-symbols-outlined.text-\[140px\] { font-size: 140px !important; }
+.material-symbols-outlined.text-\[200px\] { font-size: 200px !important; }
+
+
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
