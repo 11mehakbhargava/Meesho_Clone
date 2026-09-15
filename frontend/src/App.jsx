@@ -177,11 +177,11 @@ function FloatingNavigator() {
     <>
       {/* Slide-over Modal / Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-[999998] flex items-center justify-end p-3 sm:pr-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-gray-950/95 backdrop-blur-xl text-white p-4 sm:p-5 rounded-3xl shadow-2xl border-2 border-[#b90041] max-w-[95vw] sm:max-w-lg w-full max-h-[85vh] flex flex-col animate-in zoom-in-95 slide-in-from-right-4 duration-200"
           >
@@ -212,11 +212,10 @@ function FloatingNavigator() {
                   <button
                     key={group}
                     onClick={() => setSelectedGroup(group)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      selectedGroup === group
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${selectedGroup === group
                         ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/30'
                         : 'bg-gray-900 text-gray-400 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {group} ({count})
                   </button>
@@ -235,11 +234,10 @@ function FloatingNavigator() {
                       navigate(screen.path);
                       setIsOpen(false);
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
-                      isActive
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${isActive
                         ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 scale-[1.02]'
                         : 'bg-gray-900/90 text-gray-300 hover:bg-gray-800 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <span className="text-sm">{screen.icon}</span>
                     <span className="truncate">{screen.name}</span>
@@ -375,6 +373,8 @@ function AppRoutes() {
         <Route path="/conversation" element={<ConversationScreen />} />
         <Route path="/notifications" element={<NotificationCenter />} />
         <Route path="/" element={<LoginSignup />} />
+        <Route path="/login" element={<LoginSignup />} />
+
 
         {/* Customer Shopping Routes */}
         <Route path="/product" element={<ProductDetail onNavigate={handleNav} onBack={handleBack} />} />
