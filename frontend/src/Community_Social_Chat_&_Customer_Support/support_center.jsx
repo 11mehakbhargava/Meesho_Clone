@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const CATEGORIES = [
   { id: 'orders', name: 'Orders', desc: 'Tracking & Updates', icon: 'inventory_2' },
@@ -344,52 +345,8 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 backdrop-blur-xl shadow-lg border-t border-slate-100 rounded-t-3xl">
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('home')}
-          className="flex flex-col items-center justify-center text-slate-400 px-4 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">home</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Home</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('shop')}
-          className="flex flex-col items-center justify-center text-slate-400 px-4 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">storefront</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Shop</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('earnings')}
-          className="flex flex-col items-center justify-center text-slate-400 px-4 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">payments</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Earnings</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('orders')}
-          className="flex flex-col items-center justify-center text-slate-400 px-4 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">inventory_2</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Orders</span>
-        </button>
-
-        <button
-          type="button"
-          className="flex flex-col items-center justify-center bg-gradient-to-br from-[#FF3F6C] to-[#DF2457] text-white rounded-2xl px-5 py-1.5 shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">support_agent</span>
-          <span className="text-[10px] font-black uppercase tracking-wider">Support</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
 
       {/* Order Help Modal Dialog */}
       {isOrderHelpOpen && (

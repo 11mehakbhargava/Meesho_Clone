@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function PayoutConfirmation() {
   const navigate = useNavigate();
@@ -125,25 +126,8 @@ export default function PayoutConfirmation() {
         </div>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-white/70 backdrop-blur-xl border-t border-[#191C1E]/5 shadow-[0_-4px_20px_rgba(25,28,30,0.04)] rounded-t-2xl">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1 hover:bg-slate-100 transition-all rounded-xl cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Inter'] text-[10px] font-medium tracking-tight">Home</span>
-        </button>
-        <button onClick={() => navigate('/reseller-wallet')} className="flex flex-col items-center justify-center text-[#FF3F6C] font-bold bg-[#FF3F6C]/10 rounded-xl px-3 py-1 active:scale-90 transition-all cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-          <span className="font-['Inter'] text-[10px] font-medium tracking-tight">Earnings</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1 hover:bg-slate-100 transition-all rounded-xl cursor-pointer">
-          <span className="material-symbols-outlined">local_shipping</span>
-          <span className="font-['Inter'] text-[10px] font-medium tracking-tight">Orders</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1 hover:bg-slate-100 transition-all rounded-xl cursor-pointer">
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-['Inter'] text-[10px] font-medium tracking-tight">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
     </div>
   );
 }

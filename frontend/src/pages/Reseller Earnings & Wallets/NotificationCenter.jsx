@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function NotificationCenter() {
   const navigate = useNavigate();
@@ -234,31 +235,8 @@ export default function NotificationCenter() {
         )}
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 w-full z-40 bg-white/80 backdrop-blur-md rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
-        <div className="flex justify-around items-center w-full px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-3">
-          <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer">
-            <span className="material-symbols-outlined">home</span>
-            <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Home</span>
-          </button>
-          <button onClick={() => navigate('/sarees-category-listing')} className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer">
-            <span className="material-symbols-outlined">search</span>
-            <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Explore</span>
-          </button>
-          <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer">
-            <span className="material-symbols-outlined">shopping_bag</span>
-            <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Orders</span>
-          </button>
-          <button onClick={() => navigate('/reseller-wallet')} className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer">
-            <span className="material-symbols-outlined">payments</span>
-            <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Earn</span>
-          </button>
-          <button onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer">
-            <span className="material-symbols-outlined">person</span>
-            <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
-          </button>
-        </div>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

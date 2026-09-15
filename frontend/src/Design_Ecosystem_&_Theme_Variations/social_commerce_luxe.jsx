@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: 'auto_awesome' },
@@ -429,68 +430,8 @@ export default function SocialCommerceLuxe({ onNavigate }) {
         </section>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 backdrop-blur-2xl rounded-t-3xl border-t border-slate-100 shadow-[0_-8px_32px_rgba(255,63,108,0.08)]">
-        <button
-          type="button"
-          onClick={() => handleTabClick('home')}
-          className={`flex flex-col items-center justify-center rounded-xl px-3 py-1.5 active:scale-90 transition-all ${
-            activeTab === 'home' ? 'text-pink-600 bg-pink-50 font-bold' : 'text-slate-400 hover:text-pink-500'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: activeTab === 'home' ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            home
-          </span>
-          <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">Home</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('categories')}
-          className={`flex flex-col items-center justify-center rounded-xl px-3 py-1.5 active:scale-90 transition-all ${
-            activeTab === 'categories' ? 'text-pink-600 bg-pink-50 font-bold' : 'text-slate-400 hover:text-pink-500'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">grid_view</span>
-          <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">Categories</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('orders')}
-          className={`flex flex-col items-center justify-center rounded-xl px-3 py-1.5 active:scale-90 transition-all ${
-            activeTab === 'orders' ? 'text-pink-600 bg-pink-50 font-bold' : 'text-slate-400 hover:text-pink-500'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">shopping_bag</span>
-          <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">Orders</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('community')}
-          className={`flex flex-col items-center justify-center rounded-xl px-3 py-1.5 active:scale-90 transition-all ${
-            activeTab === 'community' ? 'text-pink-600 bg-pink-50 font-bold' : 'text-slate-400 hover:text-pink-500'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">group</span>
-          <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">Community</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('account')}
-          className={`flex flex-col items-center justify-center rounded-xl px-3 py-1.5 active:scale-90 transition-all ${
-            activeTab === 'account' ? 'text-pink-600 bg-pink-50 font-bold' : 'text-slate-400 hover:text-pink-500'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">person</span>
-          <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">Account</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav={activeTab === 'categories' ? 'categories' : activeTab === 'orders' ? 'orders' : activeTab === 'account' ? 'profile' : 'home'} onNavigate={onNavigate} />
     </div>
   );
 }

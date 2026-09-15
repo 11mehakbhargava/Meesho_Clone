@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function ResellerWallet() {
   const navigate = useNavigate();
@@ -291,46 +292,8 @@ export default function ResellerWallet() {
         </section>
       </main>
 
-      {/* BottomNavBar - Kept at bottom with even distribution across full width */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-t-3xl shadow-[0_-12px_32px_rgba(25,28,30,0.06)] border-t border-slate-100 dark:border-slate-800">
-        <button
-          onClick={() => navigate('/reseller-home')}
-          className="flex flex-col items-center justify-center text-slate-400 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined mb-1">home</span>
-          <span className="font-sans text-[10px] font-semibold">Home</span>
-        </button>
-        <button
-          onClick={() => navigate('/community-hub')}
-          className="flex flex-col items-center justify-center text-slate-400 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined mb-1">grid_view</span>
-          <span className="font-sans text-[10px] font-semibold">Community</span>
-        </button>
-        <button
-          onClick={() => navigate('/earnings-dashboard-1')}
-          className="flex flex-col items-center justify-center text-slate-400 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined mb-1">shopping_bag</span>
-          <span className="font-sans text-[10px] font-semibold">Orders</span>
-        </button>
-        <button
-          onClick={() => navigate('/earnings-dashboard-2')}
-          className="flex flex-col items-center justify-center text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl px-4 py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-            account_balance_wallet
-          </span>
-          <span className="font-sans text-[10px] font-semibold">Earnings</span>
-        </button>
-        <button
-          onClick={() => navigate('/refer-earn')}
-          className="flex flex-col items-center justify-center text-slate-400 hover:text-[#FF3F6C] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined mb-1">person</span>
-          <span className="font-sans text-[10px] font-semibold">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function DriverDashboardMobile({ onNavigate = () => {}, onBack }) {
   const [isOnline, setIsOnline] = useState(true);
@@ -346,57 +347,7 @@ export default function DriverDashboardMobile({ onNavigate = () => {}, onBack })
       </div>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-40 flex justify-around items-center px-4 py-2 bg-white/90 backdrop-blur-xl border-t border-slate-100 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
-        <button
-          onClick={() => onNavigate('driver_dashboard')}
-          className="flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-[#b90041] font-bold cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-            dashboard
-          </span>
-          <span className="text-[10px] mt-0.5">Home</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('available_tasks')}
-          className="flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">
-            inventory_2
-          </span>
-          <span className="text-[10px] mt-0.5">Tasks</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('active_delivery')}
-          className="flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">
-            explore
-          </span>
-          <span className="text-[10px] mt-0.5">Live Map</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('delivery_history')}
-          className="flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">
-            history
-          </span>
-          <span className="text-[10px] mt-0.5">History</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('driver_earnings')}
-          className="flex flex-col items-center justify-center px-3 py-1.5 rounded-2xl text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">
-            payments
-          </span>
-          <span className="text-[10px] mt-0.5">Earnings</span>
-        </button>
-      </nav>
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

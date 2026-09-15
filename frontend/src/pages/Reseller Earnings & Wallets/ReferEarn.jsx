@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import NavDrawer from "../components/NavDrawer";
+import NavDrawer from "../../components/NavDrawer";
+import AppBottomNav from "../../components/AppBottomNav";
 
 export default function ReferEarn({ onBack }) {
   const navigate = useNavigate();
@@ -313,146 +314,8 @@ export default function ReferEarn({ onBack }) {
         </section>
 
       </main>
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 bg-white/90 backdrop-blur-md z-50 border-t border-[#191C1E]/10 shadow-[0_-12px_32px_rgba(25,28,30,0.06)] rounded-t-3xl">
-
-        {/* HOME */}
-        <button
-          onClick={() => { setActiveNav("home"); navigate("/reseller-home"); }}
-          className={`flex flex-col items-center justify-center px-3 py-1.5 transition-colors active:scale-90 duration-200 cursor-pointer ${
-            activeNav === "home"
-              ? "text-[#FF3F6C]"
-              : "text-[#191C1E]/60"
-          }`}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-            />
-          </svg>
-
-          <span className="text-[10px] font-medium uppercase tracking-wider mt-1">
-            Home
-          </span>
-        </button>
-
-        {/* CATEGORIES */}
-        <button
-          onClick={() => { setActiveNav("categories"); navigate("/reseller-home"); }}
-          className={`flex flex-col items-center justify-center px-3 py-1.5 transition-colors active:scale-90 duration-200 cursor-pointer ${
-            activeNav === "categories"
-              ? "text-[#FF3F6C]"
-              : "text-[#191C1E]/60"
-          }`}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
-            />
-          </svg>
-
-          <span className="text-[10px] font-medium uppercase tracking-wider mt-1">
-            Categories
-          </span>
-        </button>
-
-        {/* ORDERS */}
-        <button
-          onClick={() => { setActiveNav("orders"); navigate("/notifications"); }}
-          className={`flex flex-col items-center justify-center px-3 py-1.5 transition-colors active:scale-90 duration-200 cursor-pointer ${
-            activeNav === "orders"
-              ? "text-[#FF3F6C]"
-              : "text-[#191C1E]/60"
-          }`}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
-
-          <span className="text-[10px] font-medium uppercase tracking-wider mt-1">
-            My Orders
-          </span>
-        </button>
-
-        {/* COMMUNITY */}
-        <button
-          onClick={() => { setActiveNav("community"); navigate("/community-hub"); }}
-          className={`flex flex-col items-center justify-center px-3 py-1.5 transition-colors active:scale-90 duration-200 cursor-pointer ${
-            activeNav === "community"
-              ? "text-[#FF3F6C]"
-              : "text-[#191C1E]/60"
-          }`}
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-            />
-          </svg>
-
-          <span className="text-[10px] font-medium uppercase tracking-wider mt-1">
-            Community
-          </span>
-        </button>
-
-        {/* ACCOUNT */}
-        <button
-          onClick={() => setActiveNav("account")}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 py-1.5 active:scale-90 transition-transform duration-200 cursor-pointer ${
-            activeNav === "account"
-              ? "text-[#FF3F6C] bg-[#FF3F6C]/10 font-semibold"
-              : "text-[#191C1E]/60"
-          }`}
-        >
-          <svg
-            className="w-6 h-6 fill-current"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fillRule="evenodd"
-              d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-              clipRule="evenodd"
-            />
-          </svg>
-
-          <span className="text-[10px] font-medium uppercase tracking-wider mt-1">
-            Account
-          </span>
-        </button>
-
-      </nav>
+      {/* Universal Bottom Navigation Bar */}
+      <AppBottomNav activeNav="profile" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

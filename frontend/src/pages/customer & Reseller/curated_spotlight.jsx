@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function CuratedSpotlight({ onNavigate = () => {}, onBack }) {
   const [activeTab, setActiveTab] = useState('Trends');
@@ -292,37 +293,8 @@ export default function CuratedSpotlight({ onNavigate = () => {}, onBack }) {
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-50 rounded-t-3xl bg-white/90 backdrop-blur-xl shadow-lg border-t border-gray-100 flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
-        {[
-          { name: 'Home', icon: 'home', target: 'reseller' },
-          { name: 'Categories', icon: 'grid_view', target: 'explorer' },
-          { name: 'Spotlight', icon: 'auto_awesome', target: 'spotlight' },
-          { name: 'Wishlist', icon: 'favorite', target: 'wishlist' },
-          { name: 'Cart', icon: 'shopping_bag', target: 'cart' },
-        ].map((tab) => {
-          const isActive = tab.name === 'Spotlight';
-          return (
-            <button
-              key={tab.name}
-              onClick={() => onNavigate(tab.target)}
-              className={`flex flex-col items-center justify-center px-3 py-1 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                isActive
-                  ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-                  : 'text-gray-500 hover:text-[#FF3F6C]'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                {tab.icon}
-              </span>
-              <span>{tab.name}</span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

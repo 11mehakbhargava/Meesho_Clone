@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -286,42 +287,8 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
         </div>
       </main>
 
-      {/* Sticky Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
-        <button
-          onClick={() => onNavigate('reseller')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">home</span>
-          <span className="text-[10px] font-medium mt-0.5">Home</span>
-        </button>
-        <button
-          onClick={() => onNavigate('explorer')}
-          className="flex flex-col items-center justify-center bg-rose-50 text-[#FF3F6C] rounded-xl px-4 py-1.5 cursor-pointer"
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            category
-          </span>
-          <span className="text-[10px] font-bold mt-0.5">Categories</span>
-        </button>
-        <button
-          onClick={() => onNavigate('wishlist')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">favorite</span>
-          <span className="text-[10px] font-medium mt-0.5">Wishlist</span>
-        </button>
-        <button
-          onClick={() => onNavigate('cart')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">shopping_bag</span>
-          <span className="text-[10px] font-medium mt-0.5">Cart</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="categories" onNavigate={onNavigate} />
     </div>
   );
 }

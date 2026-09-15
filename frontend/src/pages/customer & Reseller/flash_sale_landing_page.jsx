@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) {
   const [activeFilter, setActiveFilter] = useState('All Deals');
@@ -226,39 +227,8 @@ export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) 
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md flex justify-around items-center px-4 pb-4 pt-2 rounded-t-2xl z-40 border-t border-gray-100 shadow-lg md:hidden">
-        <button
-          onClick={() => onNavigate('reseller')}
-          className="flex flex-col items-center justify-center text-slate-500 px-3 py-1.5 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">home</span>
-          <span className="text-[10px] font-medium mt-0.5">Home</span>
-        </button>
-        <button
-          onClick={() => onNavigate('flash')}
-          className="flex flex-col items-center justify-center text-[#FF3F6C] px-3 py-1.5 bg-pink-50 rounded-xl transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            bolt
-          </span>
-          <span className="text-[10px] font-bold mt-0.5">Flash Sale</span>
-        </button>
-        <button
-          onClick={() => onNavigate('wishlist')}
-          className="flex flex-col items-center justify-center text-slate-500 px-3 py-1.5 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">favorite</span>
-          <span className="text-[10px] font-medium mt-0.5">Wishlist</span>
-        </button>
-        <button
-          onClick={() => onNavigate('cart')}
-          className="flex flex-col items-center justify-center text-slate-500 px-3 py-1.5 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="text-[10px] font-medium mt-0.5">Cart</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

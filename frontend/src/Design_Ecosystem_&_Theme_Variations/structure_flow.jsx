@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const RECENT_ORDERS = [
   {
@@ -384,65 +385,8 @@ export default function StructureFlow({
         </section>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2.5 bg-white/95 backdrop-blur-xl border-t border-[#e2e9ec] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] rounded-t-[20px]">
-        <button
-          type="button"
-          onClick={() => handleTabClick('dashboard')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-5 py-1.5 transition-all active:scale-90 ${
-            activeTab === 'dashboard'
-              ? 'bg-blue-50 text-[#005ea5] font-bold'
-              : 'text-slate-500 hover:text-blue-600'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: activeTab === 'dashboard' ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            dashboard
-          </span>
-          <span className="text-[11px] font-semibold mt-0.5">Dashboard</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('inventory')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-5 py-1.5 transition-all active:scale-90 ${
-            activeTab === 'inventory'
-              ? 'bg-blue-50 text-[#005ea5] font-bold'
-              : 'text-slate-500 hover:text-blue-600'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">inventory_2</span>
-          <span className="text-[11px] font-semibold mt-0.5">Inventory</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('orders')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-5 py-1.5 transition-all active:scale-90 ${
-            activeTab === 'orders'
-              ? 'bg-blue-50 text-[#005ea5] font-bold'
-              : 'text-slate-500 hover:text-blue-600'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">receipt_long</span>
-          <span className="text-[11px] font-semibold mt-0.5">Orders</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('profile')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-5 py-1.5 transition-all active:scale-90 ${
-            activeTab === 'profile'
-              ? 'bg-blue-50 text-[#005ea5] font-bold'
-              : 'text-slate-500 hover:text-blue-600'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">person</span>
-          <span className="text-[11px] font-semibold mt-0.5">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="orders" onNavigate={onNavigate} />
     </div>
   );
 }

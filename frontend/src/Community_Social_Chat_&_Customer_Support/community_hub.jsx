@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const INITIAL_GROUPS = [
   {
@@ -523,57 +524,8 @@ export function CommunityHub({ onNavigate }) {
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-5 pt-3 bg-white/90 backdrop-blur-md shadow-lg border-t border-slate-100 z-40 rounded-t-3xl font-['Inter']">
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('home')}
-          className="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">home</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Home</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('shop')}
-          className="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">shopping_bag</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Shop</span>
-        </button>
-
-        <button
-          type="button"
-          className="flex flex-col items-center justify-center bg-rose-50 text-[#FF3F6C] rounded-2xl px-4 py-1 active:scale-95 shadow-xs cursor-pointer"
-        >
-          <span
-            className="material-symbols-outlined text-xl mb-0.5"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            group
-          </span>
-          <span className="text-[10px] font-black uppercase tracking-wider">Community</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('earnings')}
-          className="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">payments</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Earnings</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('profile')}
-          className="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#FF3F6C] transition-all cursor-pointer active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">person</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
 
       {/* Create Story Modal */}
       {isCreatePostOpen && (

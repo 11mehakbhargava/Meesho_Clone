@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const INITIAL_UPCOMING = [
   {
@@ -362,55 +363,8 @@ export default function SignalCore({ onNavigate }) {
         </section>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2.5 bg-[#fff4ef]/90 backdrop-blur-xl rounded-t-[24px] border-t border-[#ffdcc2] shadow-[0_-10px_30px_rgba(73,38,4,0.06)] max-w-lg left-1/2 -translate-x-1/2">
-        {/* Orders Active */}
-        <button
-          type="button"
-          onClick={() => handleTabClick('orders')}
-          className={`flex flex-col items-center justify-center rounded-[20px] px-6 py-2 transition-all active:scale-90 ${
-            activeTab === 'orders'
-              ? 'bg-gradient-to-br from-[#964300] to-[#fe8534] text-white shadow-md shadow-[#fe8534]/30'
-              : 'text-[#492604] hover:bg-[#ffede2]'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: activeTab === 'orders' ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            local_shipping
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5">Orders</span>
-        </button>
-
-        {/* Earnings */}
-        <button
-          type="button"
-          onClick={() => handleTabClick('earnings')}
-          className={`flex flex-col items-center justify-center rounded-[20px] px-6 py-2 transition-all active:scale-90 ${
-            activeTab === 'earnings'
-              ? 'bg-gradient-to-br from-[#964300] to-[#fe8534] text-white shadow-md shadow-[#fe8534]/30'
-              : 'text-[#492604] hover:bg-[#ffede2]'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">payments</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5">Earnings</span>
-        </button>
-
-        {/* Profile */}
-        <button
-          type="button"
-          onClick={() => handleTabClick('profile')}
-          className={`flex flex-col items-center justify-center rounded-[20px] px-6 py-2 transition-all active:scale-90 ${
-            activeTab === 'profile'
-              ? 'bg-gradient-to-br from-[#964300] to-[#fe8534] text-white shadow-md shadow-[#fe8534]/30'
-              : 'text-[#492604] hover:bg-[#ffede2]'
-          }`}
-        >
-          <span className="material-symbols-outlined text-2xl">account_circle</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="orders" onNavigate={onNavigate} />
     </div>
   );
 }

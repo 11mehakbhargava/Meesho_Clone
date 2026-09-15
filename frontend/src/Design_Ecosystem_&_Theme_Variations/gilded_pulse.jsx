@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const MARKETING_BANNERS = [
   {
@@ -415,67 +416,8 @@ export default function GildedPulse({ onNavigate }) {
         </button>
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full bg-[#15121b]/95 backdrop-blur-2xl rounded-t-[28px] z-50 border-t border-[#282430] shadow-[0_-20px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(142,68,173,0.15)]">
-        <div className="flex justify-around items-center w-full h-20 px-3 sm:px-6 max-w-md mx-auto">
-          <button
-            type="button"
-            onClick={() => handleTabClick('insight')}
-            className={`flex flex-col items-center justify-center rounded-2xl px-4 py-1.5 transition-all active:scale-95 ${
-              activeTab === 'insight'
-                ? 'text-[#f6b630] bg-[#f6b630]/10 font-bold'
-                : 'text-[#afa9b4] hover:text-white'
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-2xl"
-              style={{ fontVariationSettings: activeTab === 'insight' ? "'FILL' 1" : "'FILL' 0" }}
-            >
-              analytics
-            </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5">Insight</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabClick('assets')}
-            className={`flex flex-col items-center justify-center rounded-2xl px-4 py-1.5 transition-all active:scale-95 ${
-              activeTab === 'assets'
-                ? 'text-[#f6b630] bg-[#f6b630]/10 font-bold'
-                : 'text-[#afa9b4] hover:text-white'
-            }`}
-          >
-            <span className="material-symbols-outlined text-2xl">payments</span>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5">Assets</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabClick('network')}
-            className={`flex flex-col items-center justify-center rounded-2xl px-4 py-1.5 transition-all active:scale-95 ${
-              activeTab === 'network'
-                ? 'text-[#f6b630] bg-[#f6b630]/10 font-bold'
-                : 'text-[#afa9b4] hover:text-white'
-            }`}
-          >
-            <span className="material-symbols-outlined text-2xl">group</span>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5">Network</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabClick('rewards')}
-            className={`flex flex-col items-center justify-center rounded-2xl px-4 py-1.5 transition-all active:scale-95 ${
-              activeTab === 'rewards'
-                ? 'text-[#f6b630] bg-[#f6b630]/10 font-bold'
-                : 'text-[#afa9b4] hover:text-white'
-            }`}
-          >
-            <span className="material-symbols-outlined text-2xl">workspace_premium</span>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5">Rewards</span>
-          </button>
-        </div>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" onNavigate={onNavigate} />
     </div>
   );
 }

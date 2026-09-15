@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 const initialGroups = [
   {
@@ -236,29 +237,8 @@ export default function CommunityHub() {
         </section>
       </main>
 
-      {/* Bottom Navigation - Full Width on all screens without md:hidden */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-3 bg-white/90 backdrop-blur-md shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-40 rounded-t-3xl border-t border-gray-100">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 hover:text-rose-500 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined mb-1">home</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Home</span>
-        </button>
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 hover:text-rose-500 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined mb-1">shopping_bag</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Shop</span>
-        </button>
-        <button onClick={() => navigate('/community-hub')} className="flex flex-col items-center justify-center bg-rose-50 text-rose-600 rounded-2xl px-4 py-1.5 active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
-          <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-wider">Community</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 hover:text-rose-500 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined mb-1">payments</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Earnings</span>
-        </button>
-        <button onClick={() => navigate('/refer-earn')} className="flex flex-col items-center justify-center text-slate-400 px-3 py-1.5 hover:text-rose-500 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined mb-1">person</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

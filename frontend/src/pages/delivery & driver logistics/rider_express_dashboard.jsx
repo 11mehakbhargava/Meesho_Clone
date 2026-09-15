@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function RiderExpressDashboard({ onNavigate = () => {}, onBack }) {
   const [isPickupConfirmed, setIsPickupConfirmed] = useState(false);
@@ -220,39 +221,7 @@ export default function RiderExpressDashboard({ onNavigate = () => {}, onBack })
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-40 flex justify-around items-center px-4 py-2 bg-white/95 backdrop-blur-xl border-t border-orange-100 shadow-[0_-4px_20px_rgba(73,38,4,0.06)]">
-        <button
-          onClick={() => onNavigate('driver_dashboard')}
-          className="flex flex-col items-center justify-center px-4 py-1 text-[#492604] hover:text-[#964300] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">dashboard</span>
-          <span className="text-[10px] font-bold mt-0.5">Home</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('available_tasks')}
-          className="flex flex-col items-center justify-center px-4 py-1 text-[#492604] hover:text-[#964300] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">inventory_2</span>
-          <span className="text-[10px] font-bold mt-0.5">Tasks</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('active_delivery')}
-          className="flex flex-col items-center justify-center px-4 py-1 text-[#492604] hover:text-[#964300] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">explore</span>
-          <span className="text-[10px] font-bold mt-0.5">Live Map</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('driver_earnings')}
-          className="flex flex-col items-center justify-center px-4 py-1 text-[#492604] hover:text-[#964300] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">payments</span>
-          <span className="text-[10px] font-bold mt-0.5">Earnings</span>
-        </button>
-      </nav>
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

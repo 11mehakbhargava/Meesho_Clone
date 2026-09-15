@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function AvailableTasks({ onNavigate = () => {}, onBack }) {
   const [isOnline, setIsOnline] = useState(true);
@@ -287,49 +288,7 @@ export default function AvailableTasks({ onNavigate = () => {}, onBack }) {
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-40 bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex justify-around items-center px-4 py-2">
-        <button
-          onClick={() => onNavigate('driver_dashboard')}
-          className="flex flex-col items-center justify-center px-3 py-1 text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">dashboard</span>
-          <span className="text-[10px] font-bold mt-0.5">Home</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('available_tasks')}
-          className="flex flex-col items-center justify-center px-4 py-1 rounded-2xl bg-[#b90041] text-white shadow-md shadow-pink-500/25 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-            inventory_2
-          </span>
-          <span className="text-[10px] font-bold mt-0.5">Tasks</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('active_delivery')}
-          className="flex flex-col items-center justify-center px-3 py-1 text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">explore</span>
-          <span className="text-[10px] font-bold mt-0.5">Map</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('delivery_history')}
-          className="flex flex-col items-center justify-center px-3 py-1 text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">history</span>
-          <span className="text-[10px] font-bold mt-0.5">History</span>
-        </button>
-
-        <button
-          onClick={() => onNavigate('driver_earnings')}
-          className="flex flex-col items-center justify-center px-3 py-1 text-slate-500 hover:text-[#b90041] cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">payments</span>
-          <span className="text-[10px] font-bold mt-0.5">Earnings</span>
-        </button>
-      </nav>
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

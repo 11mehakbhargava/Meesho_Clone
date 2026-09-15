@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function HomeUserReseller({ onNavigate = () => {} }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,6 +40,7 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
     { id: 'explorer', name: 'All Categories', icon: 'grid_view', target: 'explorer' },
     { id: 'kids', name: 'Kids', icon: 'child_care', target: 'explorer' },
     { id: 'jewelry', name: 'Jewelry', icon: 'diamond', target: 'explorer' },
+    { id: 'brands', name: 'Brands', icon: 'verified', target: 'explorer' },
   ];
 
   const products = [
@@ -398,39 +400,8 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
         <span className="material-symbols-outlined">share</span>
       </button>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-white/90 backdrop-blur-xl rounded-t-[2rem] shadow-lg border-t border-gray-100 md:hidden">
-        <button
-          onClick={() => onNavigate('reseller')}
-          className="flex flex-col items-center justify-center text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl px-4 py-2 transition-transform active:scale-90 cursor-pointer"
-        >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            home
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Home</span>
-        </button>
-        <button
-          onClick={() => onNavigate('explorer')}
-          className="flex flex-col items-center justify-center text-[#191C1E] opacity-60 px-4 py-2 hover:bg-gray-100 rounded-xl transition-transform active:scale-90 cursor-pointer"
-        >
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Categories</span>
-        </button>
-        <button
-          onClick={() => onNavigate('cart')}
-          className="flex flex-col items-center justify-center text-[#191C1E] opacity-60 px-4 py-2 hover:bg-gray-100 rounded-xl transition-transform active:scale-90 cursor-pointer"
-        >
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Cart</span>
-        </button>
-        <button
-          onClick={() => onNavigate('wishlist')}
-          className="flex flex-col items-center justify-center text-[#191C1E] opacity-60 px-4 py-2 hover:bg-gray-100 rounded-xl transition-transform active:scale-90 cursor-pointer"
-        >
-          <span className="material-symbols-outlined">favorite</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Wishlist</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

@@ -2,24 +2,24 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 // Reseller & Fintech Pages (Shruti Branch)
-import HomeUserReseller from './pages/HomeUserReseller';
-import ShareEarnConfig from './pages/ShareEarnConfig';
-import AffiliateProgram from './pages/AffiliateProgram';
-import AffiliateProgramPanel from './pages/AffiliateProgramPanel';
-import MyWalletFintechStyle from './pages/MyWalletFintechStyle';
-import CommunityHub from './pages/CommunityHub';
-import PayoutSettings from './pages/PayoutSettings';
-import PayoutConfirmation from './pages/PayoutConfirmation';
-import NotificationCenter from './pages/NotificationCenter';
-import ConversationScreen from './pages/ConversationScreen';
-import MeeshoMessengerChatHub from './pages/MeeshoMessengerChatHub';
-import LoginSignup from './pages/LoginSignup';
-import ReferEarn from './pages/ReferEarn';
-import ResellEarn from './pages/ResellEarn';
-import EarningsDashboard1 from './pages/EarningsDashboard1';
-import EarningsDashboard2 from './pages/EarningsDashboard2';
-import ResellerWallet from './pages/ResellerWallet';
-import WithdrawEarnings from './pages/WithdrawEarnings';
+import HomeUserReseller from './pages/Reseller Earnings & Wallets/HomeUserReseller';
+import ShareEarnConfig from './pages/Reseller Earnings & Wallets/ShareEarnConfig';
+import AffiliateProgram from './pages/Reseller Earnings & Wallets/AffiliateProgram';
+import AffiliateProgramPanel from './pages/Reseller Earnings & Wallets/AffiliateProgramPanel';
+import MyWalletFintechStyle from './pages/Reseller Earnings & Wallets/MyWalletFintechStyle';
+import CommunityHub from './pages/Reseller Earnings & Wallets/CommunityHub';
+import PayoutSettings from './pages/Reseller Earnings & Wallets/PayoutSettings';
+import PayoutConfirmation from './pages/Reseller Earnings & Wallets/PayoutConfirmation';
+import NotificationCenter from './pages/Reseller Earnings & Wallets/NotificationCenter';
+import ConversationScreen from './pages/Reseller Earnings & Wallets/ConversationScreen';
+import MeeshoMessengerChatHub from './pages/Reseller Earnings & Wallets/MeeshoMessengerChatHub';
+import LoginSignup from './pages/Reseller Earnings & Wallets/LoginSignup';
+import ReferEarn from './pages/Reseller Earnings & Wallets/ReferEarn';
+import ResellEarn from './pages/Reseller Earnings & Wallets/ResellEarn';
+import EarningsDashboard1 from './pages/Reseller Earnings & Wallets/EarningsDashboard1';
+import EarningsDashboard2 from './pages/Reseller Earnings & Wallets/EarningsDashboard2';
+import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
+import WithdrawEarnings from './pages/Reseller Earnings & Wallets/WithdrawEarnings';
 
 // Customer & Reseller Shopping Pages
 import HomeScreenFlutterLuxe from './pages/customer & Reseller/home_screen_flutter_luxe';
@@ -159,91 +159,98 @@ function FloatingNavigator() {
   const [selectedGroup, setSelectedGroup] = useState('All');
   const navigate = useNavigate();
   const location = useLocation();
-
   const groups = ['All', 'Reseller & Shop', 'Shopping', 'Logistics', 'Supplier', 'Admin', 'Themes'];
-
   const filteredScreens = screenCatalog.filter((s) => {
     if (selectedGroup === 'All') return true;
     return s.group === selectedGroup;
   });
 
+  React.useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-screen-navigator', handleOpen);
+    return () => window.removeEventListener('open-screen-navigator', handleOpen);
+  }, []);
+
+  const isHome = location.pathname === '/' || location.pathname === '/reseller-home';
+
   return (
-    <div className="fixed bottom-5 right-5 z-[999999] flex flex-col items-end gap-2">
+    <>
+      {/* Slide-over Modal / Overlay */}
       {isOpen && (
-        <div className="bg-gray-950/95 backdrop-blur-xl text-white p-4 rounded-3xl shadow-2xl border-2 border-[#b90041] max-w-[95vw] sm:max-w-lg w-full animate-in fade-in slide-in-from-bottom duration-200">
-          <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-gray-800">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#b90041] animate-ping"></span>
-              <span className="text-xs font-black uppercase tracking-wider text-rose-400">
-                Meesho App Navigator ({screenCatalog.length} Screens)
-              </span>
+        <div 
+          className="fixed inset-0 z-[999998] flex items-center justify-end p-3 sm:pr-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsOpen(false)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-gray-950/95 backdrop-blur-xl text-white p-4 sm:p-5 rounded-3xl shadow-2xl border-2 border-[#b90041] max-w-[95vw] sm:max-w-lg w-full max-h-[85vh] flex flex-col animate-in zoom-in-95 slide-in-from-right-4 duration-200"
+          >
+            <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-gray-800">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#b90041] animate-ping"></span>
+                <span className="text-xs font-black uppercase tracking-wider text-rose-400">
+                  Screens Catalog ({screenCatalog.length} Pages)
+                </span>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-7 h-7 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                aria-label="Close Navigator"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-white text-xs px-2 py-0.5 rounded-lg hover:bg-gray-800 cursor-pointer font-bold"
-            >
-              ✕
-            </button>
-          </div>
 
-          {/* Filter Tabs */}
-          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
-            {groups.map((group) => {
-              const count =
-                group === 'All'
-                  ? screenCatalog.length
-                  : screenCatalog.filter((s) => s.group === group).length;
-              return (
-                <button
-                  key={group}
-                  onClick={() => setSelectedGroup(group)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    selectedGroup === group
-                      ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/30'
-                      : 'bg-gray-900 text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {group} ({count})
-                </button>
-              );
-            })}
-          </div>
+            {/* Filter Tabs */}
+            <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
+              {groups.map((group) => {
+                const count =
+                  group === 'All'
+                    ? screenCatalog.length
+                    : screenCatalog.filter((s) => s.group === group).length;
+                return (
+                  <button
+                    key={group}
+                    onClick={() => setSelectedGroup(group)}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      selectedGroup === group
+                        ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/30'
+                        : 'bg-gray-900 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {group} ({count})
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Screen List Grid */}
-          <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto pr-1">
-            {filteredScreens.map((screen) => {
-              const isActive = location.pathname === screen.path;
-              return (
-                <button
-                  key={screen.path}
-                  onClick={() => {
-                    navigate(screen.path);
-                    setIsOpen(false);
-                  }}
-                  className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 scale-[1.02]'
-                      : 'bg-gray-900/90 text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }`}
-                >
-                  <span className="text-sm">{screen.icon}</span>
-                  <span className="truncate">{screen.name}</span>
-                </button>
-              );
-            })}
+            {/* Screen List Grid */}
+            <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto pr-1">
+              {filteredScreens.map((screen) => {
+                const isActive = location.pathname === screen.path;
+                return (
+                  <button
+                    key={screen.path}
+                    onClick={() => {
+                      navigate(screen.path);
+                      setIsOpen(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 scale-[1.02]'
+                        : 'bg-gray-900/90 text-gray-300 hover:bg-gray-800 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-sm">{screen.icon}</span>
+                    <span className="truncate">{screen.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
-
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="bg-gradient-to-r from-[#FF3F6C] to-[#b90041] text-white px-4 py-2.5 rounded-full font-black text-xs shadow-xl shadow-pink-500/40 flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform cursor-pointer border border-white/20"
-      >
-        <span>📱</span>
-        <span>{isOpen ? 'Hide Navigator' : `Switch Screens (${screenCatalog.length})`}</span>
-      </button>
-    </div>
+    </>
   );
 }
 
@@ -266,6 +273,7 @@ function AppRoutes() {
       reviews: '/reviews',
       write_review: '/write-review',
       explorer: '/explorer',
+      categories: '/explorer',
       search: '/search',
       sarees: '/sarees',
       western: '/western',
@@ -376,6 +384,7 @@ function AppRoutes() {
         <Route path="/payment" element={<CheckoutPayment onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/wishlist" element={<UserWishlist onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/explorer" element={<SearchCategoriesExplorer onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/categories" element={<SearchCategoriesExplorer onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/search" element={<SearchResults onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/sarees" element={<SareesCategoryListing onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/western" element={<WomenWesternCategory onNavigate={handleNav} onBack={handleBack} />} />
@@ -486,9 +495,7 @@ function AppRoutes() {
 
         {/* Theme Variations Routes */}
         <Route path="/digital-curator" element={<TheDigitalCuratorEcosystem onNavigate={handleNav} />} />
-        <Route
-          path="/petal-collective"
-          element={<PetalCollective onNavigate={handleNav} onLoginSuccess={() => handleNav('/digital-curator')} />}
+        <Route path="/petal-collective" element={<PetalCollective onNavigate={handleNav} onLoginSuccess={() => handleNav('/digital-curator')} />}
         />
         <Route path="/gilded-pulse" element={<GildedPulse onNavigate={handleNav} />} />
         <Route path="/social-commerce-luxe" element={<SocialCommerceLuxe onNavigate={handleNav} />} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack }) {
   const [activeCategory, setActiveCategory] = useState('ethnic');
@@ -37,6 +38,7 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
     { id: 'beauty', name: 'Beauty & Health', icon: 'face' },
     { id: 'jewellery', name: 'Jewellery & Acc', icon: 'diamond' },
     { id: 'footwear', name: 'Footwear', icon: 'steps' },
+    { id: 'brands', name: 'Top Brands', icon: 'verified' },
   ];
 
   const categoryData = {
@@ -448,6 +450,45 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
         },
       ],
     },
+    brands: {
+      title: 'Top Verified Brands',
+      subtitle: 'Shop authentic products directly from verified national & premium brands',
+      bannerTitle: 'Up to 70% Off on Top Brands',
+      bannerTag: 'Brand Mall',
+      featured: {
+        title: 'boAt Audio & Wearables',
+        subtitle: 'Headphones, Earbuds & Smartwatches',
+        image:
+          'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=700&auto=format&fit=crop&q=80',
+        badge: 'Verified Brand',
+      },
+      subcategories: [
+        {
+          name: 'Puma Sports & Shoes',
+          items: '520+ styles',
+          image:
+            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&auto=format&fit=crop&q=80',
+        },
+        {
+          name: 'boAt Audio & Gear',
+          items: '380+ items',
+          image:
+            'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&auto=format&fit=crop&q=80',
+        },
+        {
+          name: 'Libas Ethnic Kurti',
+          items: '450+ styles',
+          image:
+            'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&auto=format&fit=crop&q=80',
+        },
+        {
+          name: 'Roadster Denims & Jackets',
+          items: '610+ styles',
+          image:
+            'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&auto=format&fit=crop&q=80',
+        },
+      ],
+    },
   };
 
   const currentData = categoryData[activeCategory] || categoryData.ethnic;
@@ -615,42 +656,8 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
         </section>
       </main>
 
-      {/* Bottom Sticky Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
-        <button
-          onClick={() => onNavigate('reseller')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">home</span>
-          <span className="text-[10px] font-medium mt-0.5">Home</span>
-        </button>
-        <button
-          onClick={() => onNavigate('explorer')}
-          className="flex flex-col items-center justify-center bg-gradient-to-br from-[#FF3F6C] to-[#DF2457] text-white rounded-xl px-4 py-1.5 shadow-md shadow-pink-500/30 cursor-pointer"
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            grid_view
-          </span>
-          <span className="text-[10px] font-bold mt-0.5">Categories</span>
-        </button>
-        <button
-          onClick={() => onNavigate('wishlist')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">favorite</span>
-          <span className="text-[10px] font-medium mt-0.5">Wishlist</span>
-        </button>
-        <button
-          onClick={() => onNavigate('cart')}
-          className="flex flex-col items-center justify-center text-slate-500 hover:text-[#FF3F6C] py-1 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">shopping_bag</span>
-          <span className="text-[10px] font-medium mt-0.5">Cart</span>
-        </button>
-      </nav>
+      {/* Universal Bottom Navigation Bar */}
+      <AppBottomNav activeNav="categories" />
     </div>
   );
 }

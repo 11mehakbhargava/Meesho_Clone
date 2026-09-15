@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function ResellAndEarn({ onBack }) {
   const navigate = useNavigate();
@@ -256,90 +257,8 @@ export default function ResellAndEarn({ onBack }) {
         </section>
       </main>
 
-      {/* 3. BOTTOM NAVIGATION BAR - Full Width across Desktop & Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full z-50 flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_-12px_32px_rgba(25,28,30,0.06)] rounded-t-[2rem] border-t border-gray-100 dark:border-slate-800">
-        {/* Home */}
-        <button
-          type="button"
-          onClick={() => { setActiveNav('home'); navigate('/reseller-home'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-all cursor-pointer ${
-            activeNav === 'home' ? 'text-[#FF3F6C] font-semibold' : 'text-[#191C1E] opacity-60 hover:opacity-100'
-          }`}
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-          </svg>
-          <span className="font-['Inter',sans-serif] text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Home
-          </span>
-        </button>
-
-        {/* Categories */}
-        <button
-          type="button"
-          onClick={() => { setActiveNav('categories'); navigate('/reseller-home'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-all cursor-pointer ${
-            activeNav === 'categories' ? 'text-[#FF3F6C] font-semibold' : 'text-[#191C1E] opacity-60 hover:opacity-100'
-          }`}
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-          </svg>
-          <span className="font-['Inter',sans-serif] text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Categories
-          </span>
-        </button>
-
-        {/* Orders (Active Pink Pill) */}
-        <button
-          type="button"
-          onClick={() => { setActiveNav('orders'); navigate('/notifications'); }}
-          className={`flex flex-col items-center justify-center rounded-2xl px-6 py-2 transition-all cursor-pointer ${
-            activeNav === 'orders'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold scale-105'
-              : 'text-[#191C1E] opacity-60 hover:opacity-100'
-          }`}
-        >
-          <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12zm-7-8c-1.66 0-3-1.34-3-3H7c0 2.76 2.24 5 5 5s5-2.24 5-5h-2c0 1.66-1.34 3-3 3z" />
-          </svg>
-          <span className="font-['Inter',sans-serif] text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Orders
-          </span>
-        </button>
-
-        {/* Earnings */}
-        <button
-          type="button"
-          onClick={() => { setActiveNav('earnings'); navigate('/earnings-dashboard-1'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-all cursor-pointer ${
-            activeNav === 'earnings' ? 'text-[#FF3F6C] font-semibold' : 'text-[#191C1E] opacity-60 hover:opacity-100'
-          }`}
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6H2.25m0 0h19.5m-19.5 0V4.5A2.25 2.25 0 014.5 2.25h15A2.25 2.25 0 0121.75 4.5V6m0 0v12.75A2.25 2.25 0 0119.5 21H4.5A2.25 2.25 0 012.25 18.75V6" />
-          </svg>
-          <span className="font-['Inter',sans-serif] text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Earnings
-          </span>
-        </button>
-
-        {/* Profile */}
-        <button
-          type="button"
-          onClick={() => { setActiveNav('profile'); navigate('/refer-earn'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-all cursor-pointer ${
-            activeNav === 'profile' ? 'text-[#FF3F6C] font-semibold' : 'text-[#191C1E] opacity-60 hover:opacity-100'
-          }`}
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-          </svg>
-          <span className="font-['Inter',sans-serif] text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Profile
-          </span>
-        </button>
-      </nav>
+      {/* Universal Bottom Navigation Bar */}
+      <AppBottomNav activeNav="orders" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

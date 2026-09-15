@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 // Default mock data that matches the design specification
 const DEFAULT_STATS = {
@@ -329,36 +330,7 @@ export function SupplierDashboard2({
       </main>
 
       {/* ===================== BottomNavBar ===================== */}
-      <nav
-        aria-label="Bottom Navigation"
-        className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white dark:bg-slate-900 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] rounded-t-[16px] border-t border-slate-100 dark:border-slate-800"
-      >
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleNavClick(item.id)}
-              className={`flex flex-col items-center justify-center px-5 py-2 font-['Plus_Jakarta_Sans'] text-[11px] font-medium transition-all active:scale-90 duration-200 cursor-pointer ${
-                isActive
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-800 dark:text-blue-100 rounded-2xl shadow-sm'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-blue-600'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontVariationSettings: isActive || item.filled ? "'FILL' 1" : "'FILL' 0",
-                }}
-              >
-                {item.icon}
-              </span>
-              <span className="mt-0.5">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <AppBottomNav activeNav="home" onNavigate={onNavChange} />
     </div>
   );
 }

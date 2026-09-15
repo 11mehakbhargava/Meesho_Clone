@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 const affiliateProducts = [
   {
@@ -267,29 +268,8 @@ export default function AffiliateProgram() {
         </section>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 bg-white/90 backdrop-blur-md z-40 border-t border-[#191C1E]/10 shadow-[0_-12px_32px_rgba(25,28,30,0.06)] rounded-t-3xl">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1.5 hover:text-[#FF3F6C] transition-colors active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wider mt-1">Home</span>
-        </button>
-        <button onClick={() => navigate('/sarees-category-listing')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1.5 hover:text-[#FF3F6C] transition-colors active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wider mt-1">Categories</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1.5 hover:text-[#FF3F6C] transition-colors active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wider mt-1">My Orders</span>
-        </button>
-        <button onClick={() => navigate('/community-hub')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-3 py-1.5 hover:text-[#FF3F6C] transition-colors active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">groups</span>
-          <span className="font-['Inter'] text-[10px] font-medium uppercase tracking-wider mt-1">Community</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl px-3 py-1.5 active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-          <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-wider mt-1">Account</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

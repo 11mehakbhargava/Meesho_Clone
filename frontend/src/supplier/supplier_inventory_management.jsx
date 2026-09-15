@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 // Default initial products data matching design specs
 const INITIAL_PRODUCTS = [
@@ -486,32 +487,7 @@ export function SupplierInventoryManagement({ onNavigate, onAddProduct }) {
       </button>
 
       {/* ===================== BottomNavBar ===================== */}
-      <nav
-        aria-label="Bottom Navigation"
-        className="fixed bottom-0 w-full z-50 rounded-t-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] flex justify-around items-center h-20 pb-4 px-2"
-      >
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setActiveTab(item.id);
-                if (onNavigate) onNavigate(item.id);
-              }}
-              className={`flex flex-col items-center justify-center transition-all active:scale-90 duration-200 cursor-pointer ${
-                isActive
-                  ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-xl px-3 py-1'
-                  : 'text-slate-400 hover:text-[#FF3F6C]'
-              }`}
-            >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-['Inter'] text-[10px] font-medium mt-0.5">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
 
       {/* ===================== Modals for Price / Stock Edit ===================== */}
       {activeModal === 'editPrice' && selectedProduct && (

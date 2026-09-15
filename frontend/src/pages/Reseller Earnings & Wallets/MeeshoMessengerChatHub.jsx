@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 const initialConversations = [
   {
@@ -198,25 +199,8 @@ export default function MeeshoMessengerChatHub() {
         <span className="material-symbols-outlined text-2xl">chat</span>
       </button>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 sm:px-16 md:px-32 lg:px-64 pb-6 pt-3 bg-white/80 backdrop-blur-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.04)] rounded-t-3xl border-t border-gray-100">
-        <button className="flex flex-col items-center justify-center bg-gradient-to-br from-[#2f06be] to-[#4834D4] text-white rounded-full px-5 py-2 scale-105 shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-transform duration-300 cursor-pointer">
-          <span className="material-symbols-outlined mb-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-[0.05em] uppercase">Chats</span>
-        </button>
-        <button onClick={() => navigate('/community-hub')} className="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-[0.98] cursor-pointer">
-          <span className="material-symbols-outlined mb-0.5">groups</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-[0.05em] uppercase">Groups</span>
-        </button>
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-[0.98] cursor-pointer">
-          <span className="material-symbols-outlined mb-0.5">inventory_2</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-[0.05em] uppercase">Suppliers</span>
-        </button>
-        <button onClick={() => navigate('/payout-settings')} className="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-[0.98] cursor-pointer">
-          <span className="material-symbols-outlined mb-0.5">settings</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-[0.05em] uppercase">Settings</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

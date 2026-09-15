@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack }) {
   const [selectedFilter, setSelectedFilter] = useState('Last 7 Days');
@@ -265,34 +266,7 @@ export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack })
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-40 bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] flex justify-around items-center px-4 py-2">
-        {[
-          { label: 'Home', icon: 'dashboard', route: 'driver_dashboard' },
-          { label: 'Tasks', icon: 'map', route: 'available_tasks' },
-          { label: 'Live GPS', icon: 'navigation', route: 'active_delivery' },
-          { label: 'History', icon: 'history', route: 'delivery_history' },
-          { label: 'Earnings', icon: 'payments', route: 'driver_earnings' },
-        ].map((tab) => {
-          const isActive = tab.label === 'History';
-          return (
-            <button
-              key={tab.label}
-              onClick={() => onNavigate(tab.route)}
-              className={`flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all cursor-pointer ${
-                isActive ? 'bg-pink-50 text-[#b90041] font-bold' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined text-2xl"
-                style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
-              >
-                {tab.icon}
-              </span>
-              <span className="text-[10px] mt-0.5">{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <AppBottomNav activeNav="orders" onNavigate={onNavigate} />
     </div>
   );
 }

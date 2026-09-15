@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function ShareEarnConfig() {
   const navigate = useNavigate();
@@ -233,29 +234,8 @@ export default function ShareEarnConfig() {
         </div>
       </main>
 
-      {/* Semantic Navigation Shell - Full Width */}
-      <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 shadow-[0_-12px_40px_rgba(74,33,53,0.06)] rounded-t-[3rem] border-t border-gray-100">
-        <button type="button" onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#4a2135] p-2 hover:opacity-80 transition-opacity cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Home</span>
-        </button>
-        <button type="button" onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#4a2135] p-2 hover:opacity-80 transition-opacity cursor-pointer">
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Categories</span>
-        </button>
-        <button type="button" onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center bg-gradient-to-br from-[#b7004d] to-[#ff7293] text-white rounded-full p-3 shadow-lg active:duration-200 scale-110 cursor-pointer">
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="hidden">Orders</span>
-        </button>
-        <button type="button" onClick={() => navigate('/community-hub')} className="flex flex-col items-center justify-center text-[#4a2135] p-2 hover:opacity-80 transition-opacity cursor-pointer">
-          <span className="material-symbols-outlined">group</span>
-          <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Community</span>
-        </button>
-        <button type="button" onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center text-[#4a2135] p-2 hover:opacity-80 transition-opacity cursor-pointer">
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-['Plus_Jakarta_Sans'] font-semibold text-[10px] uppercase tracking-widest mt-1">Account</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

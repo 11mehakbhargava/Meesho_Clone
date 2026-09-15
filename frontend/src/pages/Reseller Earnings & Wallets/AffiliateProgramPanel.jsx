@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function AffiliateProgramPanel() {
   const navigate = useNavigate();
@@ -257,27 +258,8 @@ export default function AffiliateProgramPanel() {
         </section>
       </main>
 
-      {/* Dark Theme Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 w-full bg-[#15121b]/95 backdrop-blur-xl rounded-t-[24px] z-40 shadow-[0_-20px_40px_rgba(0,0,0,0.4),0_0_20px_rgba(142,68,173,0.1)] border-t border-white/5">
-        <div className="flex justify-around items-center w-full h-20 px-4 sm:px-16 md:px-32 lg:px-64 pb-safe">
-          <button className="flex flex-col items-center justify-center text-[#f6b630] bg-[#f6b630]/10 rounded-[20px] px-6 py-2 transition-all cursor-pointer">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>analytics</span>
-            <span className="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest font-medium mt-1">Insight</span>
-          </button>
-          <button onClick={() => navigate('/reseller-wallet')} className="flex flex-col items-center justify-center text-[#afa9b4] px-6 py-2 hover:text-white transition-all cursor-pointer">
-            <span className="material-symbols-outlined">payments</span>
-            <span className="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest font-medium mt-1">Assets</span>
-          </button>
-          <button onClick={() => navigate('/refer-earn')} className="flex flex-col items-center justify-center text-[#afa9b4] px-6 py-2 hover:text-white transition-all cursor-pointer">
-            <span className="material-symbols-outlined">group</span>
-            <span className="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest font-medium mt-1">Network</span>
-          </button>
-          <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-[#afa9b4] px-6 py-2 hover:text-white transition-all cursor-pointer">
-            <span className="material-symbols-outlined">workspace_premium</span>
-            <span className="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest font-medium mt-1">Rewards</span>
-          </button>
-        </div>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

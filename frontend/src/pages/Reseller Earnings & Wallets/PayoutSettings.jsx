@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function PayoutSettings() {
   const navigate = useNavigate();
@@ -224,25 +225,7 @@ export default function PayoutSettings() {
         </footer>
       </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 rounded-t-3xl bg-white/80 backdrop-blur-xl flex justify-around items-center px-4 pb-6 pt-2 shadow-[0_-12px_32px_rgba(25,28,30,0.06)] border-t border-gray-100">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-5 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Home</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-5 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">local_shipping</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Deliveries</span>
-        </button>
-        <button onClick={() => navigate('/reseller-wallet')} className="flex flex-col items-center justify-center bg-gradient-to-r from-[#B90041] to-[#DF2457] text-white rounded-2xl px-5 py-2 active:scale-90 transition-all duration-200 cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Earnings</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-5 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">account_circle</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Profile</span>
-        </button>
-      </nav>
+
 
       {/* Add Bank Account Modal */}
       {showAddBankModal && (
@@ -382,25 +365,8 @@ export default function PayoutSettings() {
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 rounded-t-3xl bg-white/90 backdrop-blur-xl flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 shadow-[0_-12px_32px_rgba(25,28,30,0.06)] border-t border-gray-100">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-4 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Home</span>
-        </button>
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-4 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">local_shipping</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Deliveries</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center bg-gradient-to-r from-[#B90041] to-[#DF2457] text-white rounded-2xl px-5 py-2 active:scale-90 transition-all duration-200 cursor-pointer shadow-md">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Earnings</span>
-        </button>
-        <button onClick={() => navigate('/refer-earn')} className="flex flex-col items-center justify-center text-[#191C1E]/60 px-4 py-2 hover:text-[#FF3F6C] transition-all active:scale-90 duration-200 cursor-pointer">
-          <span className="material-symbols-outlined">account_circle</span>
-          <span className="font-['Inter'] text-[10px] font-semibold mt-1">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 // Default mock supplier data matching design specifications
 const DEFAULT_SUPPLIER = {
@@ -532,36 +533,7 @@ export function SupplierProfile({ onBack, onNavigate, onLogout, supplier = DEFAU
       )}
 
       {/* ===================== BottomNavBar Navigation Shell ===================== */}
-      <nav
-        aria-label="Bottom Navigation"
-        className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-t-2xl shadow-[0_-12px_32px_rgba(25,28,30,0.06)] border-t border-slate-200/50"
-      >
-        {BOTTOM_NAV_ITEMS.map((item) => {
-          const isActive = item.active;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate && onNavigate(item.id)}
-              className={`flex flex-col items-center justify-center px-3 py-1 transition-transform active:scale-90 cursor-pointer ${
-                isActive
-                  ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-xl font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{
-                  fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
-                }}
-              >
-                {item.icon}
-              </span>
-              <span className="font-['Inter'] text-[10px] font-medium mt-1">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <AppBottomNav activeNav="profile" onNavigate={onNavigate} />
     </div>
   );
 }

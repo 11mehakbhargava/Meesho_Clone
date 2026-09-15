@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const INITIAL_NOTIFICATIONS = [
   {
@@ -390,56 +391,8 @@ export function NotificationCenter({ onNavigate, onBack }) {
         )}
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 w-full z-40 bg-white/90 backdrop-blur-md rounded-t-3xl shadow-lg border-t border-slate-100">
-        <div className="flex justify-around items-center w-full px-4 pb-6 pt-3">
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('home')}
-            className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl">home</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Home</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('explore')}
-            className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl">search</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Explore</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('orders')}
-            className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl">shopping_bag</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Orders</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate && onNavigate('earnings')}
-            className="flex flex-col items-center justify-center text-slate-400 active:scale-90 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl">payments</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5">Earn</span>
-          </button>
-
-          <button
-            type="button"
-            className="flex flex-col items-center justify-center text-[#b90041] active:scale-90 transition-transform cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-              notifications
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">Alerts</span>
-          </button>
-        </div>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
 
       {/* Wallet Balance Modal */}
       {activeModal === 'balance' && (

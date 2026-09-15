@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from "../components/NavDrawer";
+import NavDrawer from "../../components/NavDrawer";
+import AppBottomNav from "../../components/AppBottomNav";
 
 const initialProducts = [
   {
     id: 1,
     title: "Premium Floral Embroidered Kurti",
     category: "Women",
+    brand: "Libas",
     price: 459,
     originalPrice: 1299,
     discount: "64% OFF",
@@ -18,6 +20,7 @@ const initialProducts = [
     id: 2,
     title: "Men's Vintage Denim Jacket",
     category: "Men",
+    brand: "Roadster",
     price: 899,
     originalPrice: 2499,
     discount: "64% OFF",
@@ -29,6 +32,7 @@ const initialProducts = [
     id: 3,
     title: "Retro Square Polarized Sunglasses",
     category: "Gadgets",
+    brand: "Vincent Chase",
     price: 249,
     originalPrice: 999,
     discount: "75% OFF",
@@ -40,12 +44,37 @@ const initialProducts = [
     id: 4,
     title: "Air Cushion Lightweight Sneakers",
     category: "Men",
+    brand: "Puma",
     price: 1249,
     originalPrice: 3499,
     discount: "64% OFF",
     margin: 180,
     tag: "TRENDING",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAnLVYeQpmW-W1dgZwHUgCQvF69izifWPEnVWhThVqzW-CIir5KRuUKR24bNfPIWDaQDUHLUUES63-xwoI5c5J6s9tRYCALvPPQFLXnY4vrcRNjR_rmp-ahMXmBFoMRAAHYmDnK_G91roDCgOjgFgmQuoYXoEbt-P6qlh70aroZJkRr6MSNVJgIcN5lweJDacGDeM9VzRY7bb6c6lFGvb2j12eevSjL676RRot4COi_sM79j9zSxTuFr0F6aZx2vsyTnOPggmoL9m4"
+  },
+  {
+    id: 5,
+    title: "boAt Rockerz 450 Bluetooth Headphones",
+    category: "Brands",
+    brand: "boAt",
+    price: 1499,
+    originalPrice: 3990,
+    discount: "62% OFF",
+    margin: 220,
+    tag: "VERIFIED BRAND",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 6,
+    title: "Puma Smashic Unisex Leather Sneakers",
+    category: "Brands",
+    brand: "Puma",
+    price: 1899,
+    originalPrice: 4499,
+    discount: "58% OFF",
+    margin: 280,
+    tag: "TOP BRAND",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80"
   }
 ];
 
@@ -57,7 +86,8 @@ const categories = [
   { name: "Home", icon: "home_iot_device" },
   { name: "Gadgets", icon: "earbuds" },
   { name: "Beauty", icon: "shopping_basket" },
-  { name: "Jewelry", icon: "diamond" }
+  { name: "Jewelry", icon: "diamond" },
+  { name: "Brands", icon: "verified" }
 ];
 
 export default function HomeUserReseller() {
@@ -96,8 +126,12 @@ export default function HomeUserReseller() {
   };
 
   const filteredProducts = initialProducts.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === "All" || p.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCat = selectedCategory === "All" || 
+      (selectedCategory.toLowerCase() === "brands" || selectedCategory.toLowerCase() === "brand"
+        ? (p.category.toLowerCase() === "brands" || p.category.toLowerCase() === "brand" || !!p.brand)
+        : p.category.toLowerCase() === selectedCategory.toLowerCase());
     return matchesSearch && matchesCat;
   });
 
@@ -262,7 +296,7 @@ export default function HomeUserReseller() {
         <section className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-headline font-bold text-lg text-on-surface">Categories</h3>
-            <button onClick={() => navigate('/resell-earn')} className="text-primary text-xs font-bold font-label uppercase tracking-wider cursor-pointer">See All</button>
+            <button onClick={() => navigate('/explorer')} className="text-primary text-xs font-bold font-label uppercase tracking-wider cursor-pointer">See All</button>
           </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
             {categories.map((cat, idx) => (
@@ -295,56 +329,73 @@ export default function HomeUserReseller() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {filteredProducts.map((p) => {
-              const isFav = favorites.includes(p.id);
-              return (
-                <div 
-                  key={p.id} 
-                  className="bg-surface-container-lowest rounded-2xl p-3 border border-outline-variant/10 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+            {filteredProducts.length === 0 ? (
+              <div className="col-span-full py-12 text-center flex flex-col items-center justify-center bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-8">
+                <span className="material-symbols-outlined text-5xl text-on-surface-variant/40 mb-2">inventory_2</span>
+                <p className="text-sm font-semibold text-on-surface">No products found in {selectedCategory}</p>
+                <p className="text-xs text-on-surface-variant mt-1">Explore other categories or check back soon for new arrivals.</p>
+                <button 
+                  onClick={() => setSelectedCategory("All")} 
+                  className="mt-4 px-4 py-2 text-xs font-bold text-primary bg-primary/10 rounded-xl hover:bg-primary/20 transition-colors cursor-pointer"
                 >
-                  <div onClick={() => navigate('/resell-earn')} className="cursor-pointer">
-                    <div className="aspect-[3/4] rounded-xl overflow-hidden relative mb-3 bg-surface-container-high">
-                      <img 
-                        src={p.image} 
-                        alt={p.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      />
-                      <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider text-on-surface">
-                        {p.tag}
-                      </span>
-                      <button 
-                        onClick={(e) => toggleFavorite(p.id, e)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
-                      >
-                        <span 
-                          className={`material-symbols-outlined text-sm ${isFav ? 'text-primary' : 'text-on-surface-variant'}`}
-                          style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
-                        >
-                          favorite
+                  View All Products
+                </button>
+              </div>
+            ) : (
+              filteredProducts.map((p) => {
+                const isFav = favorites.includes(p.id);
+                return (
+                  <div 
+                    key={p.id} 
+                    className="bg-surface-container-lowest rounded-2xl p-3 border border-outline-variant/10 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                  >
+                    <div onClick={() => navigate('/resell-earn')} className="cursor-pointer">
+                      <div className="aspect-[3/4] rounded-xl overflow-hidden relative mb-3 bg-surface-container-high">
+                        <img 
+                          src={p.image} 
+                          alt={p.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+                        <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider text-on-surface">
+                          {p.tag}
                         </span>
-                      </button>
-                    </div>
+                        <button 
+                          onClick={(e) => toggleFavorite(p.id, e)}
+                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                        >
+                          <span 
+                            className={`material-symbols-outlined text-sm ${isFav ? 'text-primary' : 'text-on-surface-variant'}`}
+                            style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
+                          >
+                            favorite
+                          </span>
+                        </button>
+                      </div>
 
-                    <div className="px-1">
-                      <h4 className="text-sm font-semibold text-on-surface line-clamp-1 mb-1 font-body">{p.title}</h4>
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-base font-black text-on-surface">₹{p.price}</span>
-                        <span className="text-xs text-on-surface-variant line-through">₹{p.originalPrice}</span>
-                        <span className="text-xs font-bold text-[#FF3F6C]">{p.discount}</span>
+                      <div className="px-1">
+                        {p.brand && (
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider block mb-0.5">{p.brand}</span>
+                        )}
+                        <h4 className="text-sm font-semibold text-on-surface line-clamp-1 mb-1 font-body">{p.title}</h4>
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-base font-black text-on-surface">₹{p.price}</span>
+                          <span className="text-xs text-on-surface-variant line-through">₹{p.originalPrice}</span>
+                          <span className="text-xs font-bold text-[#FF3F6C]">{p.discount}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div 
-                    onClick={() => navigate('/share-earn-config')}
-                    className="bg-tertiary-container/10 border border-tertiary/10 rounded-xl px-3 py-1.5 flex items-center justify-between cursor-pointer"
-                  >
-                    <span className="text-[10px] font-bold text-tertiary font-label uppercase tracking-wider">Earn ₹{p.margin}</span>
-                    <span className="material-symbols-outlined text-[16px] text-tertiary">share</span>
+                    <div 
+                      onClick={() => navigate('/share-earn-config')}
+                      className="bg-tertiary-container/10 border border-tertiary/10 rounded-xl px-3 py-1.5 flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="text-[10px] font-bold text-tertiary font-label uppercase tracking-wider">Earn ₹{p.margin}</span>
+                      <span className="material-symbols-outlined text-[16px] text-tertiary">share</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </section>
 
@@ -407,58 +458,8 @@ export default function HomeUserReseller() {
         <span className="material-symbols-outlined">share</span>
       </button>
 
-      {/* BottomNavBar - Kept at bottom for both mobile and desktop with even distribution */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-t-[2rem] shadow-[0_-12px_32px_rgba(25,28,30,0.06)] border-t border-gray-100 dark:border-slate-800">
-        <button 
-          onClick={() => setActiveNav("home")}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-transform active:scale-90 cursor-pointer ${
-            activeNav === "home" ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl' : 'text-[#191C1E] opacity-60 hover:bg-gray-100 rounded-xl'
-          }`}
-        >
-          <span className="material-symbols-outlined" style={activeNav === "home" ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Home</span>
-        </button>
-
-        <button 
-          onClick={() => { setActiveNav("categories"); navigate('/resell-earn'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-transform active:scale-90 cursor-pointer ${
-            activeNav === "categories" ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl' : 'text-[#191C1E] opacity-60 hover:bg-gray-100 rounded-xl'
-          }`}
-        >
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Categories</span>
-        </button>
-
-        <button 
-          onClick={() => { setActiveNav("orders"); navigate('/notifications'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-transform active:scale-90 cursor-pointer ${
-            activeNav === "orders" ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl' : 'text-[#191C1E] opacity-60 hover:bg-gray-100 rounded-xl'
-          }`}
-        >
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Orders</span>
-        </button>
-
-        <button 
-          onClick={() => { setActiveNav("earnings"); navigate('/earnings-dashboard-1'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-transform active:scale-90 cursor-pointer ${
-            activeNav === "earnings" ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl' : 'text-[#191C1E] opacity-60 hover:bg-gray-100 rounded-xl'
-          }`}
-        >
-          <span className="material-symbols-outlined">payments</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Earnings</span>
-        </button>
-
-        <button 
-          onClick={() => { setActiveNav("profile"); navigate('/refer-earn'); }}
-          className={`flex flex-col items-center justify-center px-4 py-2 transition-transform active:scale-90 cursor-pointer ${
-            activeNav === "profile" ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl' : 'text-[#191C1E] opacity-60 hover:bg-gray-100 rounded-xl'
-          }`}
-        >
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-['Inter'] text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
-        </button>
-      </nav>
+      {/* Responsive Universal Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

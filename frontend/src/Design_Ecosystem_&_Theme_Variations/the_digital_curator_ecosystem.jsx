@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: 'apps' },
@@ -9,6 +10,7 @@ const CATEGORIES = [
   { id: 'gadgets', name: 'Gadgets', icon: 'earbuds' },
   { id: 'beauty', name: 'Beauty', icon: 'shopping_basket' },
   { id: 'jewelry', name: 'Jewelry', icon: 'diamond' },
+  { id: 'brands', name: 'Brands', icon: 'verified' },
 ];
 
 const PRODUCTS = [
@@ -96,6 +98,36 @@ const PRODUCTS = [
     imageUrl:
       'https://lh3.googleusercontent.com/aida-public/AB6AXuD0zqmw7ba_XFDIMO6oyX-ILUKOJgIMuPHjQHmER1KSXi4yclRGSPaFRWJJc7uqCXrLyuOZB5pF6W9WnzFkT4T60VwY7uLrFzTvD9dwE04M23l7pGMu2N9_mNh3dIciAjlMaq4CCNHCtjsjPsAXVnUWIzuy88jS-AXIyF662WcDdlDcTQBqikiQkpbng2C7siDr0Cfpn4tI2OPGK5ut0GiQ2urqGnEEsMeCKdoSG60Mzopnd90gu9Axj_jDhaDAqbSN79R6G9BIo88',
   },
+  {
+    id: 'prod-7',
+    title: 'boAt Rockerz 450 Bluetooth Headphones',
+    category: 'brands',
+    brand: 'boAt',
+    price: 1499,
+    originalPrice: 3990,
+    discount: '62% OFF',
+    earnAmount: 220,
+    tag: 'VERIFIED BRAND',
+    rating: 4.6,
+    reviews: 4210,
+    imageUrl:
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'prod-8',
+    title: 'Puma Smashic Unisex Leather Sneakers',
+    category: 'brands',
+    brand: 'Puma',
+    price: 1899,
+    originalPrice: 4499,
+    discount: '58% OFF',
+    earnAmount: 280,
+    tag: 'TOP BRAND',
+    rating: 4.8,
+    reviews: 2150,
+    imageUrl:
+      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
+  },
 ];
 
 export default function TheDigitalCuratorEcosystem({ onNavigate }) {
@@ -141,11 +173,15 @@ export default function TheDigitalCuratorEcosystem({ onNavigate }) {
   };
 
   const filteredProducts = PRODUCTS.filter((p) => {
-    const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+    const matchesCategory =
+      activeCategory === 'all' ||
+      p.category === activeCategory ||
+      (activeCategory === 'brands' && (p.category === 'brands' || p.brand));
     const matchesSearch =
       searchQuery.trim() === '' ||
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
@@ -618,73 +654,8 @@ export default function TheDigitalCuratorEcosystem({ onNavigate }) {
         <span className="material-symbols-outlined text-2xl">share</span>
       </button>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-3 sm:px-6 pb-5 pt-2.5 bg-white/85 backdrop-blur-xl rounded-t-[2rem] border-t border-slate-100 shadow-[0_-12px_32px_rgba(25,28,30,0.08)]">
-        <button
-          type="button"
-          onClick={() => handleTabClick('home')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 sm:px-4 py-1.5 transition-all active:scale-95 ${activeTab === 'home'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-              : 'text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: activeTab === 'home' ? "'FILL' 1" : "'FILL' 0" }}
-          >
-            home
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">Home</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('categories')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 sm:px-4 py-1.5 transition-all active:scale-95 ${activeTab === 'categories'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-              : 'text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <span className="material-symbols-outlined text-2xl">grid_view</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">Categories</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('orders')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 sm:px-4 py-1.5 transition-all active:scale-95 ${activeTab === 'orders'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-              : 'text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <span className="material-symbols-outlined text-2xl">shopping_bag</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">Orders</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('earnings')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 sm:px-4 py-1.5 transition-all active:scale-95 ${activeTab === 'earnings'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-              : 'text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <span className="material-symbols-outlined text-2xl">payments</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">Earnings</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabClick('profile')}
-          className={`flex flex-col items-center justify-center rounded-2xl px-3 sm:px-4 py-1.5 transition-all active:scale-95 ${activeTab === 'profile'
-              ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 font-bold'
-              : 'text-slate-500 hover:text-slate-800'
-            }`}
-        >
-          <span className="material-symbols-outlined text-2xl">person</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">Profile</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar with Screens Navigator */}
+      <AppBottomNav activeNav={activeTab} onNavigate={onNavigate} />
     </div>
   );
 }

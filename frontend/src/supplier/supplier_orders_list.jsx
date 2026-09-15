@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 // Default initial orders matching design specs
 const INITIAL_ORDERS = [
@@ -402,38 +403,7 @@ export function SupplierOrdersList({ onBack, onNavigate }) {
       )}
 
       {/* ===================== BottomNavBar ===================== */}
-      <nav
-        aria-label="Bottom Navigation"
-        className="fixed bottom-0 w-full z-40 flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-t-3xl shadow-2xl border-t border-slate-200/50"
-      >
-        {BOTTOM_NAV_ITEMS.map((item) => {
-          const isActive = item.active;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate && onNavigate(item.id)}
-              className={`flex flex-col items-center justify-center transition-all active:scale-90 duration-200 cursor-pointer ${
-                isActive
-                  ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-xl px-4 py-2 font-bold'
-                  : 'text-slate-500 opacity-80 hover:opacity-100'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined mb-1"
-                style={{
-                  fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
-                }}
-              >
-                {item.icon}
-              </span>
-              <span className="font-['Inter',sans-serif] text-[10px] font-medium uppercase tracking-wider">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      <AppBottomNav activeNav="orders" onNavigate={onNavigate} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from '../components/NavDrawer';
+import NavDrawer from '../../components/NavDrawer';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function MyWalletFintechStyle() {
   const navigate = useNavigate();
@@ -228,25 +229,8 @@ export default function MyWalletFintechStyle() {
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-50 rounded-t-[2rem] border-t border-[#c8c4d8]/20 shadow-[0_-32px_64px_-4px_rgba(26,28,29,0.06)]">
-        <button onClick={() => navigate('/reseller-home')} className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-90 duration-300 cursor-pointer">
-          <span className="material-symbols-outlined">home</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Home</span>
-        </button>
-        <button onClick={() => navigate('/community-hub')} className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-90 duration-300 cursor-pointer">
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Categories</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-1')} className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:text-[#4834D4] transition-all active:scale-90 duration-300 cursor-pointer">
-          <span className="material-symbols-outlined">shopping_bag</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Orders</span>
-        </button>
-        <button onClick={() => navigate('/earnings-dashboard-2')} className="flex flex-col items-center justify-center bg-[#4834D4]/10 text-[#4834D4] rounded-2xl px-4 py-2 active:scale-90 duration-300 cursor-pointer">
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-medium uppercase tracking-widest mt-1">Account</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

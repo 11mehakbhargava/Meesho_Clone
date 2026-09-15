@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../../components/AppBottomNav';
 
 export default function HomeScreenFlutterLuxe({ onNavigate = () => {} }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,42 +275,8 @@ export default function HomeScreenFlutterLuxe({ onNavigate = () => {} }) {
         </section>
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 backdrop-blur-2xl rounded-t-3xl shadow-[0_-8px_32px_rgba(255,63,108,0.08)] border-t border-gray-100">
-        {[
-          { name: 'Home', icon: 'home', target: 'reseller' },
-          { name: 'Categories', icon: 'grid_view', target: 'explorer' },
-          { name: 'Spotlight', icon: 'auto_awesome', target: 'spotlight' },
-          { name: 'Wishlist', icon: 'favorite', target: 'wishlist' },
-          { name: 'Cart', icon: 'shopping_bag', target: 'cart' },
-        ].map((tab) => {
-          const isActive = tab.name === 'Home';
-          return (
-            <button
-              key={tab.name}
-              onClick={() => {
-                setActiveTab(tab.name);
-                onNavigate(tab.target);
-              }}
-              className={`flex flex-col items-center justify-center px-3 py-1.5 rounded-xl transition-all duration-300 cursor-pointer ${
-                isActive
-                  ? 'text-pink-600 bg-pink-50 scale-105 font-bold'
-                  : 'text-slate-400 hover:text-pink-500'
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                {tab.icon}
-              </span>
-              <span className="text-[10px] font-semibold tracking-wide uppercase mt-0.5">
-                {tab.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

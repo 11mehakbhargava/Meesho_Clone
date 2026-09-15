@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const INITIAL_ORDERS = [
   {
@@ -662,57 +663,8 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
         </main>
       </div>
 
-      {/* ===================== Mobile BottomNavBar ===================== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-slate-200/60 flex justify-around items-center px-4 py-3 z-40">
-        <button
-          type="button"
-          onClick={() => handleNav('dashboard')}
-          className={`flex flex-col items-center cursor-pointer ${
-            activeTab === 'dashboard' ? 'text-[#FF3F6C]' : 'text-slate-400'
-          }`}
-        >
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-bold mt-0.5">Dash</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleNav('inventory')}
-          className={`flex flex-col items-center cursor-pointer ${
-            activeTab === 'inventory' ? 'text-[#FF3F6C]' : 'text-slate-400'
-          }`}
-        >
-          <span className="material-symbols-outlined">inventory_2</span>
-          <span className="text-[10px] font-bold mt-0.5">Items</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleNav('orders')}
-          className={`flex flex-col items-center cursor-pointer ${
-            activeTab === 'orders' ? 'text-[#FF3F6C]' : 'text-slate-400'
-          }`}
-        >
-          <span className="material-symbols-outlined">shopping_cart</span>
-          <span className="text-[10px] font-bold mt-0.5">Orders</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleNav('profile')}
-          className={`flex flex-col items-center cursor-pointer ${
-            activeTab === 'profile' ? 'text-[#FF3F6C]' : 'text-slate-400'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            account_circle
-          </span>
-          <span className="text-[10px] font-bold mt-0.5">Profile</span>
-        </button>
-      </nav>
+      {/* ===================== BottomNavBar ===================== */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

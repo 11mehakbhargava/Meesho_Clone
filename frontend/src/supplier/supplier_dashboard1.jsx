@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 // Data models for easy extensibility & dynamic API binding
 const INITIAL_METRICS = [
@@ -365,34 +366,8 @@ export default function SupplierDashboard({ onNavigate, onShipNow, onClaimCredit
         </section>
       </main>
 
-      {/* ===================== BottomNavBar (Mobile Only) ===================== */}
-      <nav
-        aria-label="Mobile Bottom Navigation"
-        className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl md:hidden shadow-[0_-12px_32px_rgba(25,28,30,0.06)] rounded-t-[2rem] border-t border-surface-container-high/40"
-      >
-        {MOBILE_BOTTOM_NAV.map((item) => {
-          const isActive = activeBottomNav === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleBottomNavClick(item.id)}
-              className={`flex flex-col items-center justify-center transition-all active:scale-90 cursor-pointer ${
-                isActive
-                  ? 'text-[#FF3F6C] bg-[#FF3F6C]/10 rounded-2xl px-4 py-2'
-                  : 'text-[#191C1E] dark:text-slate-400 opacity-60 px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl'
-              }`}
-            >
-              <span className="material-symbols-outlined" data-icon={item.icon}>
-                {item.icon}
-              </span>
-              <span className="font-label text-[10px] font-semibold uppercase tracking-wider mt-1">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
     </div>
   );
 }

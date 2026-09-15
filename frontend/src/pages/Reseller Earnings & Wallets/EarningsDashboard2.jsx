@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import NavDrawer from "../components/NavDrawer";
+import NavDrawer from "../../components/NavDrawer";
+import AppBottomNav from "../../components/AppBottomNav";
 
 const EarningsDashboard2 = () => {
   const navigate = useNavigate();
@@ -233,57 +234,8 @@ const EarningsDashboard2 = () => {
         </section>
       </main>
 
-      {/* BottomNavBar - Full Width with Icons distributed properly */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 sm:px-12 md:px-24 lg:px-48 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 border-t border-slate-100 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => navigate("/reseller-home")}
-          className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-300 active:scale-90 transition-all duration-200 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">storefront</span>
-          <span className="font-sans text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1">
-            Shop
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate("/earnings-dashboard-2")}
-          className="flex flex-col items-center justify-center text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 rounded-2xl px-5 py-1.5 active:scale-90 transition-all duration-200 cursor-pointer"
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            payments
-          </span>
-          <span className="font-sans text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1">
-            Earnings
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate("/earnings-dashboard-1")}
-          className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-300 active:scale-90 transition-all duration-200 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">package_2</span>
-          <span className="font-sans text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1">
-            Orders
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => navigate("/refer-earn")}
-          className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-300 active:scale-90 transition-all duration-200 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-2xl">person</span>
-          <span className="font-sans text-[10px] sm:text-xs font-semibold uppercase tracking-wider mt-1">
-            Profile
-          </span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="earnings" />
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

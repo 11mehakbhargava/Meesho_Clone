@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppBottomNav from '../components/AppBottomNav';
 
 const INITIAL_STORIES = [
   {
@@ -393,56 +394,8 @@ export function MeeshoMessengerChatHub({ onNavigate }) {
         <span className="material-symbols-outlined text-2xl">edit_square</span>
       </button>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 backdrop-blur-3xl shadow-lg border-t border-slate-100 rounded-t-3xl">
-        <button
-          type="button"
-          onClick={() => setActiveTab('chats')}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-2xl cursor-pointer transition-all ${
-            activeTab === 'chats'
-              ? 'bg-gradient-to-br from-[#2f06be] to-[#4834D4] text-white shadow-md shadow-indigo-500/20'
-              : 'text-slate-400 hover:text-[#4834D4]'
-          }`}
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">chat</span>
-          <span className="text-[10px] font-bold tracking-wider uppercase">Chats</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('groups')}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-2xl cursor-pointer transition-all ${
-            activeTab === 'groups'
-              ? 'bg-gradient-to-br from-[#2f06be] to-[#4834D4] text-white shadow-md shadow-indigo-500/20'
-              : 'text-slate-400 hover:text-[#4834D4]'
-          }`}
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">groups</span>
-          <span className="text-[10px] font-bold tracking-wider uppercase">Groups</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('suppliers')}
-          className={`flex flex-col items-center justify-center px-4 py-1 rounded-2xl cursor-pointer transition-all ${
-            activeTab === 'suppliers'
-              ? 'bg-gradient-to-br from-[#2f06be] to-[#4834D4] text-white shadow-md shadow-indigo-500/20'
-              : 'text-slate-400 hover:text-[#4834D4]'
-          }`}
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">inventory_2</span>
-          <span className="text-[10px] font-bold tracking-wider uppercase">Suppliers</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate && onNavigate('community')}
-          className="flex flex-col items-center justify-center text-slate-400 px-4 py-1 hover:text-[#4834D4] transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-xl mb-0.5">forum</span>
-          <span className="text-[10px] font-bold tracking-wider uppercase">Community</span>
-        </button>
-      </nav>
+      {/* Universal Responsive Bottom Navigation Bar */}
+      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
 
       {/* Active Conversation Drawer/Modal */}
       {selectedChat && (
