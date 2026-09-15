@@ -300,7 +300,7 @@ export default function HomeUserReseller() {
           </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
             {categories.map((cat, idx) => (
-              <div 
+              <div
                 key={idx} 
                 onClick={() => setSelectedCategory(cat.name)}
                 className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"

@@ -357,7 +357,6 @@ function AppRoutes() {
 
       <Routes>
         {/* Reseller & Fintech Routes (Shruti Flow) */}
-        <Route path="/" element={<HomeUserReseller />} />
         <Route path="/reseller-home" element={<HomeUserReseller />} />
         <Route path="/share-earn-config" element={<ShareEarnConfig />} />
         <Route path="/resell-earn" element={<ResellEarn />} />
@@ -375,7 +374,7 @@ function AppRoutes() {
         <Route path="/messenger" element={<MeeshoMessengerChatHub />} />
         <Route path="/conversation" element={<ConversationScreen />} />
         <Route path="/notifications" element={<NotificationCenter />} />
-        <Route path="/login" element={<LoginSignup />} />
+        <Route path="/" element={<LoginSignup />} />
 
         {/* Customer Shopping Routes */}
         <Route path="/product" element={<ProductDetail onNavigate={handleNav} onBack={handleBack} />} />
