@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meesho SuperApp - Complete Navigation Flow & Route Guide (PDF Printable)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #9f0038;
+      --primary-gradient: linear-gradient(135deg, #9f0038 0%, #e11d48 100%);
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --code-bg: #f1f5f9;
+      --code-text: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+    }
+
+    .page-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 1.25rem;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.08);
+      padding: 3rem;
+      border: 1px solid var(--card-border);
+    }
+
+    /* Floating / Top Print Trigger Bar */
+    .print-bar {
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1rem 1.75rem;
+      border-radius: 1rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4);
+    }
+
+    .btn-save-pdf {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .btn-save-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.6);
+    }
+
+    /* Header */
+    .doc-header {
+      text-align: center;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      background: #ffe4e6;
+      color: #9f0038;
+      border-radius: 9999px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    .doc-subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .stat-box {
+      background: #f8fafc;
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 1.25rem 1rem;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: #9f0038;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    /* Universal Switcher Notice */
+    .callout-box {
+      background: #fff1f2;
+      border: 1.5px solid #fecdd3;
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .callout-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    /* Module Section */
+    .module-section {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      page-break-inside: avoid;
+    }
+
+    .module-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid #f1f5f9;
+      padding-bottom: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .module-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .screen-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.35rem;
+      font-weight: 700;
+    }
+
+    /* Visual Workflow Steps */
+    .flow-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 0.6rem;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .flow-pill {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .flow-arrow {
+      color: #e11d48;
+      font-weight: 900;
+      font-size: 0.9rem;
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #0f172a;
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    .code-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 0.15rem 0.45rem;
+      border-radius: 0.3rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .action-badge {
+      display: inline-block;
+      background: #fff1f2;
+      color: #e11d48;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.3rem;
+      font-size: 0.78rem;
+    }
+
+    /* Print Styles for Perfect PDF Export */
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        color: #000000 !important;
+      }
+
+      .page-container {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+
+      .print-bar {
+        display: none !important;
+      }
+
+      .module-section {
+        page-break-inside: avoid !important;
+        border: 1px solid #e2e8f0 !important;
+        margin-bottom: 1.5rem !important;
+        padding: 1.25rem !important;
+      }
+
+      h1 {
+        font-size: 2rem !important;
+      }
+
+      table {
+        font-size: 8pt !important;
+      }
+
+      th, td {
+        padding: 4pt 6pt !important;
+      }
+
+      .flow-chain {
+        padding: 6pt !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-container">
+    
+    <!-- Top Action Bar for PDF Generation -->
+    <div class="print-bar">
+      <div>
+        <strong style="font-size:1.1rem; display:block;">📄 Meesho SuperApp - Flow &amp; Navigation Blueprint</strong>
+        <span style="font-size:0.85rem; color:#94a3b8;">Click the button on the right to export this complete document as a PDF.</span>
+      </div>
+      <button class="btn-save-pdf" onclick="window.print()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+        </svg>
+        Save / Print as PDF
+      </button>
+    </div>
+
+    <!-- Header -->
+    <header class="doc-header">
+      <div class="badge">Architecture &amp; User Journey Blueprint</div>
+      <h1>Meesho Clone Navigation Flow</h1>
+      <p class="doc-subtitle">
+        Comprehensive page-to-page navigation map, route endpoints, button triggers, and user workflows across all 55+ screens.
+      </p>
+    </header>
+
+    <!-- Key Metrics -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val">55+</div>
+        <div class="stat-label">Total Screens</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">6</div>
+        <div class="stat-label">Product Modules</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">100%</div>
+        <div class="stat-label">Route Linked</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">Instant</div>
+        <div class="stat-label">Screen Switcher</div>
+      </div>
+    </div>
+
+    <!-- Universal Switcher Notice -->
+    <div class="callout-box">
+      <div class="callout-icon">⚡</div>
+      <div>
+        <strong style="color:#9f0038; font-size:0.95rem;">Universal Floating Screen Navigator:</strong>
+        <p style="font-size:0.85rem; color:#475569; margin-top:0.25rem;">
+          In the live web app, click the <strong>"Screens (62)"</strong> icon on the bottom navigation bar to open the slide-out catalog and jump directly to any screen in 1 click.
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 1. RESELLER & FINTECH FLOW -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #9f0038;">
+          <span>🛍️ 1. Reseller &amp; Fintech Ecosystem (Shruti Flow)</span>
+        </div>
+        <span class="screen-count">18 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        Complete reseller lifecycle: registration, margin configuration, social catalog sharing, weekly commissions, fintech wallet, bank withdrawals, and community forum.
+      </p>
+
+      <div class="flow-chain">
+        <div class="flow-pill">🔐 Login <span class="code-badge">/</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🛍️ Reseller Home <span class="code-badge">/reseller-home</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🔗 Margin Config <span class="code-badge">/share-earn-config</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">💰 Resell &amp; Earn <span class="code-badge">/resell-earn</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📈 Earnings <span class="code-badge">/earnings-dashboard-1</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">👛 Wallet <span class="code-badge">/my-wallet</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🏦 Withdraw <span class="code-badge">/withdraw-earnings</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>From Screen</th>
+            <th>Trigger / Button</th>
+            <th>Target Route</th>
+            <th>Destination Screen</th>
+            <th>Description &amp; Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Login / Sign Up</strong></td>
+            <td><span class="action-badge">"Continue" / "Enter Catalog"</span></td>
+            <td><span class="code-badge">/reseller-home</span></td>
+            <td>Reseller Home Catalog</td>
+            <td>Submits 10-digit mobile number or Google sign-in</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">"Share &amp; Earn" / Share Icon</span></td>
+            <td><span class="code-badge">/share-earn-config</span></td>
+            <td>Share &amp; Earn Config</td>
+            <td>Configure custom resale margin before sharing to WhatsApp</td>
+          </tr>
+          <tr>
+            <td><strong>Share &amp; Earn Config</strong></td>
+            <td><span class="action-badge">"Generate Link" / "Share"</span></td>
+            <td><span class="code-badge">/resell-earn</span></td>
+            <td>Resell &amp; Earn Feed</td>
+            <td>Live shared product tracker and margin calculations</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">Bottom Nav: "Earnings"</span></td>
+            <td><span class="code-badge">/earnings-dashboard-1</span></td>
+            <td>Earnings Dashboard 1</td>
+            <td>Weekly earned margins, pending payouts, order stats</td>
+          </tr>
+          <tr>
+            <td><strong>Earnings Dashboard 1</strong></td>
+            <td><span class="action-badge">"Detailed Analytics"</span></td>
+            <td><span class="code-badge">/earnings-dashboard-2</span></td>
+            <td>Earnings Analytics 2</td>
+            <td>Conversion metrics, customer retention graphs</td>
+          </tr>
+          <tr>
+            <td><strong>Earnings Dashboard 1</strong></td>
+            <td><span class="action-badge">"Open Wallet" / "Balance"</span></td>
+            <td><span class="code-badge">/my-wallet</span></td>
+            <td>Fintech Wallet</td>
+            <td>Available cash balance, cashback rewards, coins</td>
+          </tr>
+          <tr>
+            <td><strong>My Wallet</strong></td>
+            <td><span class="action-badge">"Withdraw Funds"</span></td>
+            <td><span class="code-badge">/withdraw-earnings</span></td>
+            <td>Withdraw Earnings</td>
+            <td>Choose bank account or UPI ID to initiate transfer</td>
+          </tr>
+          <tr>
+            <td><strong>Withdraw Earnings</strong></td>
+            <td><span class="action-badge">"Confirm Transfer"</span></td>
+            <td><span class="code-badge">/payout-confirmation</span></td>
+            <td>Payout Confirmation</td>
+            <td>Transaction success receipt with reference ID</td>
+          </tr>
+          <tr>
+            <td><strong>My Wallet</strong></td>
+            <td><span class="action-badge">"Payout Settings"</span></td>
+            <td><span class="code-badge">/payout-settings</span></td>
+            <td>Payout Settings</td>
+            <td>Manage bank accounts and UPI VPA IDs</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">Bottom Nav: "Profile"</span></td>
+            <td><span class="code-badge">/refer-earn</span></td>
+            <td>Refer &amp; Earn</td>
+            <td>Earn ₹250 per successful friend referral</td>
+          </tr>
+          <tr>
+            <td><strong>Refer &amp; Earn</strong></td>
+            <td><span class="action-badge">"Affiliate Program"</span></td>
+            <td><span class="code-badge">/affiliate-program</span></td>
+            <td>Affiliate Program Info</td>
+            <td>Tiered commission structures and creator bonuses</td>
+          </tr>
+          <tr>
+            <td><strong>Affiliate Program</strong></td>
+            <td><span class="action-badge">"Open Affiliate Panel"</span></td>
+            <td><span class="code-badge">/affiliate-panel</span></td>
+            <td>Affiliate Panel</td>
+            <td>Custom affiliate link generator and royalty tracking</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">"Community" Tab</span></td>
+            <td><span class="code-badge">/community-hub</span></td>
+            <td>Community Hub</td>
+            <td>Top reseller forums, discussions &amp; live masterclasses</td>
+          </tr>
+          <tr>
+            <td><strong>Community Hub</strong></td>
+            <td><span class="action-badge">"Chat with Reseller"</span></td>
+            <td><span class="code-badge">/conversation</span></td>
+            <td>Conversation Screen</td>
+            <td>1-on-1 direct chat with top community sellers</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">Chat Icon (Top Right)</span></td>
+            <td><span class="code-badge">/messenger</span></td>
+            <td>Meesho Messenger Hub</td>
+            <td>All customer messaging threads and inquiry logs</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">Bell Icon (Top Right)</span></td>
+            <td><span class="code-badge">/notifications</span></td>
+            <td>Notification Center</td>
+            <td>Order updates, flash deal alerts, commission credited</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 2. CUSTOMER SHOPPING & CHECKOUT FLOW -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #2563eb;">
+          <span>🛒 2. Customer Shopping &amp; Checkout Flow</span>
+        </div>
+        <span class="screen-count">15 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        End-to-end shopping workflow: browse categories, filter products, view high-res galleries, check COD eligibility, read photo reviews, bag management, address selection, and payment checkout.
+      </p>
+
+      <div class="flow-chain">
+        <div class="flow-pill">🗂️ Categories <span class="code-badge">/explorer</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🥻 Sarees Listing <span class="code-badge">/sarees</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🏷️ Product Detail <span class="code-badge">/product</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🛒 Cart <span class="code-badge">/cart</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📍 Address <span class="code-badge">/address</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">💳 Payment <span class="code-badge">/payment</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>From Screen</th>
+            <th>Trigger / Button</th>
+            <th>Target Route</th>
+            <th>Destination Screen</th>
+            <th>Description &amp; Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Any Shopping Page</strong></td>
+            <td><span class="action-badge">Search Bar Query</span></td>
+            <td><span class="code-badge">/search</span></td>
+            <td>Search Results</td>
+            <td>Live search with price, rating, fabric &amp; discount filters</td>
+          </tr>
+          <tr>
+            <td><strong>Bottom Nav</strong></td>
+            <td><span class="action-badge">"Categories" Tab</span></td>
+            <td><span class="code-badge">/explorer</span></td>
+            <td>Categories Explorer</td>
+            <td>Multi-tier category browser (Ethnic, Western, Kids, Home)</td>
+          </tr>
+          <tr>
+            <td><strong>Categories Explorer</strong></td>
+            <td><span class="action-badge">"Sarees &amp; Ethnic" Card</span></td>
+            <td><span class="code-badge">/sarees</span></td>
+            <td>Sarees Category Listing</td>
+            <td>Banarasi, Kanjivaram, Cotton, Chiffon collection</td>
+          </tr>
+          <tr>
+            <td><strong>Categories Explorer</strong></td>
+            <td><span class="action-badge">"Western Wear" Card</span></td>
+            <td><span class="code-badge">/western</span></td>
+            <td>Women Western Category</td>
+            <td>Dresses, tops, jumpsuits, denim collection</td>
+          </tr>
+          <tr>
+            <td><strong>Category Listings</strong></td>
+            <td><span class="action-badge">Click Any Product Card</span></td>
+            <td><span class="code-badge">/product</span></td>
+            <td>Product Detail Page</td>
+            <td>Photo gallery, size selection, delivery estimate, COD check</td>
+          </tr>
+          <tr>
+            <td><strong>Product Detail</strong></td>
+            <td><span class="action-badge">"Add to Cart" / "Buy Now"</span></td>
+            <td><span class="code-badge">/cart</span></td>
+            <td>Shopping Cart</td>
+            <td>Quantity selector, promo coupons, pricing breakdown</td>
+          </tr>
+          <tr>
+            <td><strong>Product Detail</strong></td>
+            <td><span class="action-badge">Wishlist Heart Icon</span></td>
+            <td><span class="code-badge">/wishlist</span></td>
+            <td>User Wishlist</td>
+            <td>Saved items grid with 1-click move to cart</td>
+          </tr>
+          <tr>
+            <td><strong>Product Detail</strong></td>
+            <td><span class="action-badge">"View Ratings &amp; Reviews"</span></td>
+            <td><span class="code-badge">/reviews</span></td>
+            <td>Ratings &amp; Reviews</td>
+            <td>Verified customer photo reviews and ratings breakdown</td>
+          </tr>
+          <tr>
+            <td><strong>Ratings &amp; Reviews</strong></td>
+            <td><span class="action-badge">"Write a Review"</span></td>
+            <td><span class="code-badge">/write-review</span></td>
+            <td>Write a Review</td>
+            <td>5-star rating selector, photo upload, review submission</td>
+          </tr>
+          <tr>
+            <td><strong>Shopping Cart</strong></td>
+            <td><span class="action-badge">"Proceed to Checkout"</span></td>
+            <td><span class="code-badge">/address</span></td>
+            <td>Address Selection</td>
+            <td>Add new address or choose saved delivery location</td>
+          </tr>
+          <tr>
+            <td><strong>Address Selection</strong></td>
+            <td><span class="action-badge">"Proceed to Payment"</span></td>
+            <td><span class="code-badge">/payment</span></td>
+            <td>Checkout Payment</td>
+            <td>UPI (GPay/PhonePe), Credit/Debit Cards, NetBanking, COD</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">"Flash Sale" Banner</span></td>
+            <td><span class="code-badge">/flash</span></td>
+            <td>Flash Sale Landing</td>
+            <td>Limited time countdown flash deals up to 80% off</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">"Curated Spotlight"</span></td>
+            <td><span class="code-badge">/spotlight</span></td>
+            <td>Curated Spotlight</td>
+            <td>Influencer lookbooks and handpicked weekly bestsellers</td>
+          </tr>
+          <tr>
+            <td><strong>Reseller Home</strong></td>
+            <td><span class="action-badge">"Luxe Theme"</span></td>
+            <td><span class="code-badge">/luxe</span></td>
+            <td>Flutter Luxe Theme</td>
+            <td>Luxury boutique edition of the home experience</td>
+          </tr>
+          <tr>
+            <td><strong>Header Profile</strong></td>
+            <td><span class="action-badge">"My Dashboard"</span></td>
+            <td><span class="code-badge">/user-dashboard</span></td>
+            <td>Curator Web Dashboard</td>
+            <td>Desktop-optimized multi-pane consumer overview</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 3. LOGISTICS & DRIVER FLEET FLOW -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #d97706;">
+          <span>🛵 3. Logistics, Fleet &amp; Driver Operations</span>
+        </div>
+        <span class="screen-count">9 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        Delivery rider lifecycle: available pickup tasks, customer order packet inspection, live GPS turn-by-turn routing, delivery OTP verification, and daily driver earnings.
+      </p>
+
+      <div class="flow-chain">
+        <div class="flow-pill">🛵 Driver Home <span class="code-badge">/driver-dashboard</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📦 Available Tasks <span class="code-badge">/available-tasks</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📋 Order Details <span class="code-badge">/order-driver</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">🗺️ Live Delivery Map <span class="code-badge">/active-delivery</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">💰 Driver Earnings <span class="code-badge">/driver-earnings</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>From Screen</th>
+            <th>Trigger / Button</th>
+            <th>Target Route</th>
+            <th>Destination Screen</th>
+            <th>Description &amp; Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Driver Dashboard</strong></td>
+            <td><span class="action-badge">"Find Pickups" / "New Tasks"</span></td>
+            <td><span class="code-badge">/available-tasks</span></td>
+            <td>Available Tasks Feed</td>
+            <td>List of nearby pending warehouse packages &amp; customer drops</td>
+          </tr>
+          <tr>
+            <td><strong>Available Tasks</strong></td>
+            <td><span class="action-badge">"Accept Task" / Click Order</span></td>
+            <td><span class="code-badge">/order-driver</span></td>
+            <td>Order Details Driver</td>
+            <td>Customer contact, packet barcode, COD amount to collect</td>
+          </tr>
+          <tr>
+            <td><strong>Order Details Driver</strong></td>
+            <td><span class="action-badge">"Start Ride" / "Navigate"</span></td>
+            <td><span class="code-badge">/active-delivery</span></td>
+            <td>Active Delivery Map</td>
+            <td>Turn-by-turn navigation map with customer OTP verification</td>
+          </tr>
+          <tr>
+            <td><strong>Driver Dashboard</strong></td>
+            <td><span class="action-badge">"Completed Trips"</span></td>
+            <td><span class="code-badge">/delivery-history</span></td>
+            <td>Delivery History</td>
+            <td>Log of delivered orders with timestamps and signatures</td>
+          </tr>
+          <tr>
+            <td><strong>Driver Dashboard</strong></td>
+            <td><span class="action-badge">"My Earnings" / "Payouts"</span></td>
+            <td><span class="code-badge">/driver-earnings</span></td>
+            <td>Driver Earnings Mobile</td>
+            <td>Daily incentives, distance bonus, weekly payout summary</td>
+          </tr>
+          <tr>
+            <td><strong>Logistics Switcher</strong></td>
+            <td><span class="action-badge">"Rider Express Mode"</span></td>
+            <td><span class="code-badge">/rider-express</span></td>
+            <td>Rider Express Dashboard</td>
+            <td>Ultra-fast 10-minute instant delivery logistics dashboard</td>
+          </tr>
+          <tr>
+            <td><strong>Logistics Switcher</strong></td>
+            <td><span class="action-badge">"Velocity Dispatch"</span></td>
+            <td><span class="code-badge">/meesho-velocity</span></td>
+            <td>Meesho Velocity</td>
+            <td>AI-driven automated order batching &amp; hub sorting engine</td>
+          </tr>
+          <tr>
+            <td><strong>Logistics Switcher</strong></td>
+            <td><span class="action-badge">"AI Smart Route"</span></td>
+            <td><span class="code-badge">/swiftroute</span></td>
+            <td>SwiftRoute AI</td>
+            <td>Multi-drop route optimizer saving fuel and travel time</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 4. SUPPLIER & SELLER HUB FLOW -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #059669;">
+          <span>🏬 4. Supplier Hub &amp; Merchant Operations</span>
+        </div>
+        <span class="screen-count">9 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        Merchant operations: stock inventory tracking, bulk SKU uploads, order manifest generation, shipping label printing, and merchant store profile.
+      </p>
+
+      <div class="flow-chain">
+        <div class="flow-pill">📉 Supplier Home <span class="code-badge">/supplier-dashboard-1</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📦 Inventory <span class="code-badge">/supplier-inventory</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">➕ Add Product <span class="code-badge">/add-product</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">📑 Orders List <span class="code-badge">/supplier-orders</span></div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-pill">💻 Web Portal <span class="code-badge">/seller-dashboard</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>From Screen</th>
+            <th>Trigger / Button</th>
+            <th>Target Route</th>
+            <th>Destination Screen</th>
+            <th>Description &amp; Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Supplier Dashboard 1</strong></td>
+            <td><span class="action-badge">"Advanced Analytics"</span></td>
+            <td><span class="code-badge">/supplier-dashboard-2</span></td>
+            <td>Supplier Dashboard 2</td>
+            <td>Sales velocity, return percentages, and stock aging metrics</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Dashboard</strong></td>
+            <td><span class="action-badge">"Manage Inventory"</span></td>
+            <td><span class="code-badge">/supplier-inventory</span></td>
+            <td>Supplier Inventory</td>
+            <td>SKU stock level adjustments and in-stock / out-of-stock toggles</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Inventory</strong></td>
+            <td><span class="action-badge">"Add New Product"</span></td>
+            <td><span class="code-badge">/add-product</span></td>
+            <td>Add New Product</td>
+            <td>Image upload, price, GST tax slab, SKU variants, descriptions</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Inventory</strong></td>
+            <td><span class="action-badge">"Add Category"</span></td>
+            <td><span class="code-badge">/add-category</span></td>
+            <td>Add Category</td>
+            <td>Create new custom taxonomy hierarchy for products</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Dashboard</strong></td>
+            <td><span class="action-badge">"Ship Now" / "Orders"</span></td>
+            <td><span class="code-badge">/supplier-orders</span></td>
+            <td>Supplier Orders List</td>
+            <td>Generate courier manifest and print shipping labels</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Dashboard</strong></td>
+            <td><span class="action-badge">"My Seller Profile"</span></td>
+            <td><span class="code-badge">/supplier-profile</span></td>
+            <td>Supplier Profile</td>
+            <td>GSTIN, business registration, bank account &amp; pickup address</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Hub</strong></td>
+            <td><span class="action-badge">"Switch to Web Portal"</span></td>
+            <td><span class="code-badge">/seller-dashboard</span></td>
+            <td>Seller Web Dashboard</td>
+            <td>Full-featured desktop portal for high-volume merchants</td>
+          </tr>
+          <tr>
+            <td><strong>Supplier Hub</strong></td>
+            <td><span class="action-badge">"Structure Flow Hub"</span></td>
+            <td><span class="code-badge">/structure-flow</span></td>
+            <td>Structure Flow Hub</td>
+            <td>Modular ERP interface for supplier supply chain management</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 5. ADMIN & SUPPORT FLOW -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #7c3aed;">
+          <span>🛡️ 5. Admin Panel &amp; Customer Support</span>
+        </div>
+        <span class="screen-count">6 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        Master control panel: catalog approvals, flash campaign launches, platform analytics, ticket resolution, and live customer chat.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>From Screen</th>
+            <th>Trigger / Button</th>
+            <th>Target Route</th>
+            <th>Destination Screen</th>
+            <th>Description &amp; Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Admin Web Panel</strong></td>
+            <td><span class="action-badge">Sidebar: "Product Catalog"</span></td>
+            <td><span class="code-badge">/admin-catalog</span></td>
+            <td>Admin Product Catalog</td>
+            <td>Approve/reject merchant listings and manage product tags</td>
+          </tr>
+          <tr>
+            <td><strong>Admin Web Panel</strong></td>
+            <td><span class="action-badge">"Create Campaign"</span></td>
+            <td><span class="code-badge">/campaign-flow</span></td>
+            <td>Campaign Creation Flow</td>
+            <td>Launch banner campaigns, push notifications, and promo codes</td>
+          </tr>
+          <tr>
+            <td><strong>Admin Web Panel</strong></td>
+            <td><span class="action-badge">Sidebar: "Analytics"</span></td>
+            <td><span class="code-badge">/admin-analytics</span></td>
+            <td>Performance Analytics Admin</td>
+            <td>Total GMV, active resellers count, platform conversion rate</td>
+          </tr>
+          <tr>
+            <td><strong>Support Center</strong></td>
+            <td><span class="action-badge">"Raise a Ticket"</span></td>
+            <td><span class="code-badge">/raise-ticket</span></td>
+            <td>Raise A Ticket</td>
+            <td>File issues regarding refunds, missing shipments, or payouts</td>
+          </tr>
+          <tr>
+            <td><strong>Support Center</strong></td>
+            <td><span class="action-badge">"Live Agent Chat"</span></td>
+            <td><span class="code-badge">/conversation</span></td>
+            <td>Live Conversation Chat</td>
+            <td>Direct chat with support reps and AI dispute resolution bot</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 6. THEME VARIATIONS -->
+    <!-- ========================================================================= -->
+    <section class="module-section">
+      <div class="module-header">
+        <div class="module-title" style="color: #ec4899;">
+          <span>🎨 6. Design Ecosystem &amp; Theme Variations</span>
+        </div>
+        <span class="screen-count">6 Screens</span>
+      </div>
+
+      <p style="color:#64748b; font-size:0.85rem; margin-bottom: 1rem;">
+        Experimental UX variations showcasing different aesthetic designs and interaction models for specialized verticals.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Route</th>
+            <th>Theme Name</th>
+            <th>Aesthetic Paradigm</th>
+            <th>Vertical / Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="code-badge">/digital-curator</span></td>
+            <td>The Digital Curator</td>
+            <td>Editorial fashion magazine layout with bold typography</td>
+            <td>Gen-Z fashion discovery &amp; boutique collections</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge">/petal-collective</span></td>
+            <td>Petal Collective</td>
+            <td>Soft pastel feminine aesthetic with delicate micro-interactions</td>
+            <td>Ethnic wear, beauty &amp; wellness catalogs</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge">/gilded-pulse</span></td>
+            <td>Gilded Pulse</td>
+            <td>Dark mode with royal gold gradients &amp; glowing luxury accents</td>
+            <td>Fine jewelry, premium watches, and festive luxury</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge">/social-commerce-luxe</span></td>
+            <td>Social Commerce Luxe</td>
+            <td>Live video commerce, influencer reels, and instant shop tags</td>
+            <td>TikTok/Instagram-style interactive shopping</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge">/signal-core</span></td>
+            <td>Signal Core</td>
+            <td>High-density data matrix with cybernetic dark accents</td>
+            <td>Power resellers, algorithmic traders &amp; high-volume brokers</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge">/structure-flow</span></td>
+            <td>Structure Flow</td>
+            <td>Clean Scandinavian minimalism with precise grid structures</td>
+            <td>Electronics, home decor &amp; organized utility shopping</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Footer -->
+    <div style="text-align: center; border-top: 2px solid #f1f5f9; padding-top: 2rem; margin-top: 2.5rem;">
+      <p style="color: #94a3b8; font-size: 0.85rem; font-weight: 500;">
+        Meesho SuperApp Architecture &copy; 2026. Ready for PDF Export &amp; Team Distribution.
+      </p>
+    </div>
+
+  </div>
+
+</body>
+</html>

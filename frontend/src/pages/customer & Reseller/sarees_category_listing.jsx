@@ -37,7 +37,15 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
 
   const shareSaree = (e, saree) => {
     e.stopPropagation();
-    triggerToast(`Catalog link for ${saree.title} ready to share!`);
+    const msg = encodeURIComponent(
+      `🛍️ *${saree.title}*\n\n` +
+      `✨ *Special Price:* ₹${saree.price} (${saree.discount})\n` +
+      `⭐ *Rating:* ${saree.rating} (${saree.reviews} reviews)\n` +
+      `🚚 Free Delivery & Cash on Delivery Available!\n\n` +
+      `👉 *View & Order Here:* ${window.location.origin}/product`
+    );
+    triggerToast(`Opening WhatsApp to share ${saree.title}... 🚀`);
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
   };
 
   const subcategories = ['All', 'Silk', 'Cotton', 'Party Wear', 'Designer', 'Daily Wear'];
@@ -160,42 +168,56 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
       )}
 
       {/* Top Header Bar */}
-      <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="flex justify-between items-center px-4 h-16 max-w-6xl mx-auto">
+      <header className="fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('explorer'))}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#FF3F6C]"
+              title="Go Back"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
             <div>
-              <h1 className="font-extrabold text-lg tracking-tight text-[#191c1e]">
-                Sarees Collection
-              </h1>
+              <div className="flex items-center gap-2">
+                <span
+                  onClick={() => onNavigate('reseller')}
+                  className="font-black text-lg text-[#FF3F6C] cursor-pointer hidden sm:inline"
+                >
+                  Meesho
+                </span>
+                <span className="text-slate-300 hidden sm:inline">/</span>
+                <h1 className="font-extrabold text-base sm:text-lg tracking-tight text-[#191c1e]">
+                  Sarees Collection
+                </h1>
+              </div>
               <p className="text-[11px] text-slate-400 font-medium">12,400+ Trending Sarees</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => onNavigate('search')}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191C1E]"
+              title="Search"
             >
               <span className="material-symbols-outlined text-2xl">search</span>
             </button>
             <button
               onClick={() => onNavigate('wishlist')}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191C1E]"
+              title="Wishlist"
             >
               <span className="material-symbols-outlined text-2xl">favorite</span>
             </button>
             <button
               onClick={() => onNavigate('cart')}
-              className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191C1E] relative"
+              className="p-2 hover:bg-pink-50 text-[#FF3F6C] transition-colors active:scale-95 duration-200 rounded-full cursor-pointer relative"
+              title="Shopping Bag"
             >
               <span className="material-symbols-outlined text-2xl">shopping_bag</span>
               {cartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[#FF3F6C] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute top-1 right-1 bg-[#FF3F6C] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                   {cartCount}
                 </span>
               )}
@@ -205,9 +227,9 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
       </header>
 
       {/* Main Content Area */}
-      <main className="pt-20 pb-28 max-w-6xl mx-auto">
+      <main className="pt-20 pb-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Sub-category Filter Chips */}
-        <section className="py-2 overflow-x-auto no-scrollbar flex gap-2.5 px-4 mb-3">
+        <section className="py-2 overflow-x-auto no-scrollbar flex gap-2.5 mb-6">
           {subcategories.map((subcat) => {
             const isActive = selectedSubcat === subcat;
             return (
@@ -226,26 +248,26 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
           })}
         </section>
 
-        {/* Products Grid */}
-        <section className="px-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Products Grid: 2 cols on mobile, 3 on md, 4 on lg, 5 on xl */}
+        <section className="mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
             {filteredSarees.map((saree) => {
               const isFav = wishlist.has(saree.id);
               return (
                 <div
                   key={saree.id}
                   onClick={() => onNavigate('product')}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-slate-100 group transition-all duration-300 flex flex-col cursor-pointer"
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 hover:border-pink-200 group transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1"
                 >
                   <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
                     <img
                       src={saree.image}
                       alt={saree.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                     <button
                       onClick={(e) => toggleWishlist(e, saree.id)}
-                      className="absolute top-2 right-2 p-1.5 bg-white/85 backdrop-blur-md rounded-full shadow-sm cursor-pointer active:scale-90 hover:scale-105 transition-all"
+                      className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-md rounded-full shadow-md cursor-pointer active:scale-90 hover:scale-110 transition-all"
                     >
                       <span
                         className={`material-symbols-outlined text-lg ${
@@ -258,7 +280,7 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
                     </button>
                   </div>
 
-                  <div className="p-3 flex flex-col flex-1 justify-between">
+                  <div className="p-3.5 flex flex-col flex-1 justify-between">
                     <div>
                       <h3 className="text-xs md:text-sm font-bold text-[#191C1E] line-clamp-1 mb-1 group-hover:text-[#FF3F6C] transition-colors">
                         {saree.title}
@@ -277,7 +299,7 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
                         <span className="text-[10px] text-slate-400">({saree.reviews})</span>
                       </div>
 
-                      <div className="flex items-baseline gap-1.5 mb-2">
+                      <div className="flex items-baseline gap-1.5 mb-2.5">
                         <span className="text-sm md:text-base font-extrabold text-[#191C1E]">
                           ₹{saree.price}
                         </span>
@@ -290,24 +312,26 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
                       </div>
                     </div>
 
-                    <div>
-                      {/* Margin badge */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      {/* Margin WhatsApp button */}
                       <div
                         onClick={(e) => shareSaree(e, saree)}
-                        className="bg-indigo-50 hover:bg-indigo-100 px-2 py-1.5 rounded-xl flex items-center justify-between cursor-pointer transition-colors mb-2"
+                        title="Share catalog on WhatsApp"
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-2.5 py-1.5 rounded-xl flex items-center justify-between cursor-pointer transition-colors border border-emerald-100"
                       >
-                        <span className="text-[9px] font-bold text-indigo-700 uppercase tracking-wider">
+                        <span className="text-[9.5px] font-extrabold uppercase tracking-wider">
                           Earn ₹{saree.earn}
                         </span>
-                        <span className="material-symbols-outlined text-indigo-700 text-xs">
+                        <span className="material-symbols-outlined text-emerald-700 text-sm">
                           share
                         </span>
                       </div>
 
                       <button
                         onClick={(e) => addToCart(e, saree)}
-                        className="w-full bg-[#FF3F6C] hover:bg-[#e02659] text-white py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm cursor-pointer"
+                        className="w-full bg-[#FF3F6C] hover:bg-[#e02659] text-white py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-md shadow-pink-500/20 cursor-pointer flex items-center justify-center gap-1"
                       >
+                        <span className="material-symbols-outlined text-sm">shopping_bag</span>
                         Add to Bag
                       </button>
                     </div>
@@ -319,40 +343,40 @@ export default function SareesCategoryListing({ onNavigate = () => {}, onBack })
         </section>
 
         {/* Curated Collections Section */}
-        <section className="mt-8 px-4">
-          <div className="bg-slate-100 rounded-3xl p-5 border border-slate-200/60">
-            <div className="flex justify-between items-center mb-4">
+        <section className="mt-8">
+          <div className="bg-slate-100/80 rounded-3xl p-6 md:p-8 border border-slate-200/60 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
               <div>
-                <h4 className="font-extrabold text-base text-[#191c1e]">
+                <h4 className="font-black text-lg md:text-xl text-[#191c1e]">
                   Curated Saree Lookbooks
                 </h4>
-                <p className="text-xs text-slate-500">Handpicked sets for festive occasions</p>
+                <p className="text-xs md:text-sm text-slate-500">Handpicked sets for festive occasions</p>
               </div>
               <button
                 onClick={() => onNavigate('spotlight')}
-                className="text-[#FF3F6C] font-bold text-xs hover:underline cursor-pointer"
+                className="text-[#FF3F6C] font-bold text-xs md:text-sm hover:underline cursor-pointer"
               >
-                See all ➔
+                See all Lookbooks ➔
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
               {collections.map((item, idx) => (
                 <div
                   key={idx}
                   onClick={() => onNavigate('product')}
-                  className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  className="flex flex-col items-center gap-2 group cursor-pointer"
                 >
-                  <div className="w-full aspect-square rounded-2xl bg-white shadow-sm overflow-hidden p-1.5 border border-slate-100 group-hover:border-pink-300 transition-all">
+                  <div className="w-full aspect-[4/3] rounded-2xl bg-white shadow-sm overflow-hidden p-2 border border-slate-100 group-hover:border-pink-300 group-hover:shadow-md transition-all">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
-                  <span className="text-[11px] font-bold text-[#191c1e] text-center line-clamp-1">
+                  <span className="text-xs sm:text-sm font-bold text-[#191c1e] text-center line-clamp-1 group-hover:text-[#FF3F6C] transition-colors">
                     {item.name}
                   </span>
-                  <span className="text-[9px] text-slate-400 uppercase font-semibold">
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold">
                     {item.tag}
                   </span>
                 </div>

@@ -40,7 +40,17 @@ export default function ProductDetail({ onNavigate = () => {}, onBack }) {
   };
 
   const handleResell = () => {
-    triggerToast(`Reseller link generated with ₹${profit} profit! Ready to share.`);
+    const productTitle = 'Royal Orchid Embroidered Banarasi Silk Kurta Set';
+    const message = encodeURIComponent(
+      `🛍️ *${productTitle}*\n\n` +
+      `✨ *Special Offer Price:* ₹${sellingPrice}\n` +
+      `📏 *Size Available:* ${selectedSize}\n` +
+      `🚚 *Cash on Delivery (COD) & Free Shipping Available!*\n` +
+      `🔄 7 Days Easy Returns & Exchanges\n\n` +
+      `👉 *Order Link:* ${window.location.origin}/product`
+    );
+    triggerToast(`Opening WhatsApp to share with ₹${profit} profit! 🚀`);
+    window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
   };
 
   const handleBuyNow = () => {
@@ -126,7 +136,7 @@ export default function ProductDetail({ onNavigate = () => {}, onBack }) {
 
             {/* Share Floating Action */}
             <button
-              onClick={() => triggerToast('Product link copied! Share on WhatsApp')}
+              onClick={handleResell}
               className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-[#FF3F6C]"
             >
               <span className="material-symbols-outlined text-2xl">share</span>

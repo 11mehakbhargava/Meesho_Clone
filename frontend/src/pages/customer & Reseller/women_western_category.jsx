@@ -37,7 +37,15 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
 
   const shareMargin = (e, product) => {
     e.stopPropagation();
-    triggerToast(`Catalog link for ${product.title} copied to clipboard!`);
+    const msg = encodeURIComponent(
+      `🛍️ *${product.title}*\n\n` +
+      `✨ *Special Price:* ₹${product.price} (${product.discount})\n` +
+      `⭐ *Rating:* ${product.rating} (${product.reviews} reviews)\n` +
+      `🚚 Free Shipping & Cash on Delivery Available!\n\n` +
+      `👉 *View & Order Here:* ${window.location.origin}/product`
+    );
+    triggerToast(`Opening WhatsApp to share "${product.title}"... 🚀`);
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
   };
 
   const subCategories = ['All', 'Dresses', 'Tops & Tees', 'Jeans', 'Skirts', 'Jumpsuits', 'Jackets'];
@@ -121,6 +129,32 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
       image:
         'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&auto=format&fit=crop&q=80',
     },
+    {
+      id: 7,
+      title: 'Boho Tiered Smocked Maxi Dress',
+      category: 'Dresses',
+      price: 899,
+      originalPrice: 2199,
+      discount: '59% OFF',
+      rating: 4.6,
+      reviews: '1.1k',
+      earn: 120,
+      image:
+        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=600&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 8,
+      title: 'Oversized Boyfriend Denim Jacket',
+      category: 'Jackets',
+      price: 1049,
+      originalPrice: 2899,
+      discount: '64% OFF',
+      rating: 4.8,
+      reviews: '980',
+      earn: 140,
+      image:
+        'https://images.unsplash.com/photo-1544441893-675973e31985?w=600&auto=format&fit=crop&q=80',
+    },
   ];
 
   const filteredProducts = products.filter((p) => {
@@ -139,39 +173,53 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
       )}
 
       {/* Top Header Bar */}
-      <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 flex justify-between items-center px-4 h-16">
-        <div className="flex items-center gap-3 max-w-6xl mx-auto w-full justify-between">
+      <header className="fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('explorer'))}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#FF3F6C]"
+              title="Go Back"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
-            <h1 className="font-extrabold text-lg tracking-tight text-[#191c1e]">
-              Women Western
-            </h1>
+            <div className="flex items-center gap-2">
+              <span
+                onClick={() => onNavigate('reseller')}
+                className="font-black text-lg text-[#FF3F6C] cursor-pointer hidden sm:inline"
+              >
+                Meesho
+              </span>
+              <span className="text-slate-300 hidden sm:inline">/</span>
+              <h1 className="font-extrabold text-base sm:text-lg tracking-tight text-[#191c1e]">
+                Women Western
+              </h1>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => onNavigate('search')}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191c1e]"
+              title="Search"
             >
               <span className="material-symbols-outlined text-2xl">search</span>
             </button>
             <button
               onClick={() => onNavigate('wishlist')}
               className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191c1e]"
+              title="Wishlist"
             >
               <span className="material-symbols-outlined text-2xl">favorite</span>
             </button>
             <button
               onClick={() => onNavigate('cart')}
-              className="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full cursor-pointer text-[#191c1e] relative"
+              className="p-2 hover:bg-pink-50 text-[#FF3F6C] transition-colors active:scale-95 duration-200 rounded-full cursor-pointer relative"
+              title="Shopping Bag"
             >
               <span className="material-symbols-outlined text-2xl">shopping_bag</span>
               {cartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[#FF3F6C] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute top-1 right-1 bg-[#FF3F6C] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                   {cartCount}
                 </span>
               )}
@@ -181,9 +229,9 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
       </header>
 
       {/* Main Container */}
-      <main className="pt-20 pb-28 max-w-6xl mx-auto px-4">
+      <main className="pt-20 pb-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Category Filter Chips */}
-        <section className="py-2 overflow-x-auto no-scrollbar flex gap-2.5 mb-4">
+        <section className="py-2 overflow-x-auto no-scrollbar flex gap-2.5 mb-6">
           {subCategories.map((cat) => {
             const isSelected = activeCategory === cat;
             return (
@@ -202,26 +250,26 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
           })}
         </section>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Products Grid: 2 cols on mobile, 3 on md, 4 on lg, 5 on xl */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
           {filteredProducts.map((product) => {
             const isFav = wishlist.has(product.id);
             return (
               <div
                 key={product.id}
                 onClick={() => onNavigate('product')}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-slate-100 group transition-all duration-300 flex flex-col cursor-pointer"
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 hover:border-pink-200 group transition-all duration-300 flex flex-col cursor-pointer transform hover:-translate-y-1"
               >
                 {/* Image */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
                   <img
                     src={product.image}
                     alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
                   <button
                     onClick={(e) => toggleWishlist(e, product.id)}
-                    className="absolute top-2 right-2 p-1.5 bg-white/85 backdrop-blur-md rounded-full shadow-sm cursor-pointer active:scale-90 hover:scale-105 transition-all"
+                    className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-md rounded-full shadow-md cursor-pointer active:scale-90 hover:scale-110 transition-all"
                   >
                     <span
                       className={`material-symbols-outlined text-lg ${
@@ -235,12 +283,12 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
                 </div>
 
                 {/* Details */}
-                <div className="p-3 flex flex-col flex-1 justify-between">
+                <div className="p-3.5 flex flex-col flex-1 justify-between">
                   <div>
                     <h3 className="text-xs md:text-sm font-bold text-[#191c1e] line-clamp-1 mb-1 group-hover:text-[#FF3F6C] transition-colors">
                       {product.title}
                     </h3>
-                    <div className="flex items-baseline gap-1.5 mb-2">
+                    <div className="flex items-baseline gap-1.5 mb-2.5">
                       <span className="text-sm md:text-base font-extrabold text-[#191c1e]">
                         ₹{product.price}
                       </span>
@@ -253,21 +301,22 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
                     </div>
                   </div>
 
-                  <div>
-                    {/* Resell Margin Box */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    {/* Resell Margin WhatsApp Box */}
                     <div
                       onClick={(e) => shareMargin(e, product)}
-                      className="bg-pink-50 hover:bg-pink-100 rounded-xl p-2 flex items-center justify-between gap-1 transition-colors cursor-pointer mb-2"
+                      title="Share product with margin on WhatsApp"
+                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1 transition-colors cursor-pointer border border-emerald-100"
                     >
                       <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[#FF3F6C] text-xs">
+                        <span className="material-symbols-outlined text-emerald-700 text-sm">
                           payments
                         </span>
-                        <span className="text-[9px] font-bold text-[#FF3F6C] tracking-tight">
+                        <span className="text-[9.5px] font-extrabold tracking-tight uppercase">
                           Resell & Earn ₹{product.earn}
                         </span>
                       </div>
-                      <span className="material-symbols-outlined text-[#FF3F6C] text-xs">
+                      <span className="material-symbols-outlined text-emerald-700 text-sm">
                         share
                       </span>
                     </div>
@@ -275,8 +324,9 @@ export default function WomenWesternCategory({ onNavigate = () => {}, onBack }) 
                     {/* Add to Bag */}
                     <button
                       onClick={(e) => addToCart(e, product)}
-                      className="w-full bg-[#FF3F6C] hover:bg-[#e02659] text-white py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm cursor-pointer"
+                      className="w-full bg-[#FF3F6C] hover:bg-[#e02659] text-white py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 shadow-md shadow-pink-500/20 cursor-pointer flex items-center justify-center gap-1"
                     >
+                      <span className="material-symbols-outlined text-sm">shopping_bag</span>
                       Add to Bag
                     </button>
                   </div>

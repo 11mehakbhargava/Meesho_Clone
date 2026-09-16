@@ -1,30 +1,40 @@
 import React, { useState } from 'react';
 
-const INITIAL_COLORS = ['Red', 'Blue', 'Green', 'Black'];
-const ALL_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+const INITIAL_COLORS = ['Red', 'Navy Blue', 'Emerald Green', 'Black', 'Wine', 'Mustard Yellow'];
+const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
 
 export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
   // Form State
-  const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState('');
-  const [brand, setBrand] = useState('');
-  const [description, setDescription] = useState('');
-  const [mrp, setMrp] = useState('');
-  const [supplierPrice, setSupplierPrice] = useState('');
-  const [discount, setDiscount] = useState('');
-  const [stockQuantity, setStockQuantity] = useState('');
-  const [skuId, setSkuId] = useState('');
+  const [productName, setProductName] = useState('Royal Embroidered Banarasi Silk Saree');
+  const [category, setCategory] = useState('Ethnic Wear');
+  const [brand, setBrand] = useState('Aurelia Luxe');
+  const [description, setDescription] = useState(
+    'Premium quality woven zari work with rich pallu and matching unstitched blouse piece. Soft, breathable silk blend ideal for festive occasions and weddings.'
+  );
+  const [mrp, setMrp] = useState('1999');
+  const [supplierPrice, setSupplierPrice] = useState('499');
+  const [discount, setDiscount] = useState('75');
+  const [stockQuantity, setStockQuantity] = useState('120');
+  const [skuId, setSkuId] = useState('AUR-SILK-2024-01');
+  const [gstSlab, setGstSlab] = useState('5%');
 
   // Variants State
-  const [selectedColors, setSelectedColors] = useState(['Red']);
+  const [selectedColors, setSelectedColors] = useState(['Wine', 'Emerald Green']);
   const [availableColors, setAvailableColors] = useState(INITIAL_COLORS);
   const [newColorInput, setNewColorInput] = useState('');
   const [showAddColorInput, setShowAddColorInput] = useState(false);
-  const [selectedSizes, setSelectedSizes] = useState(['M']);
+  const [selectedSizes, setSelectedSizes] = useState(['Free Size']);
 
   // Media state
-  const [primaryImage, setPrimaryImage] = useState(null);
-  const [secondaryImages, setSecondaryImages] = useState([null, null, null, null]);
+  const [primaryImage, setPrimaryImage] = useState(
+    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'
+  );
+  const [secondaryImages, setSecondaryImages] = useState([
+    'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&auto=format&fit=crop&q=80',
+    null,
+    null,
+  ]);
 
   // Toast alert
   const [toastMessage, setToastMessage] = useState(null);
@@ -57,6 +67,12 @@ export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
     }
   };
 
+  const generateRandomSku = () => {
+    const randomCode = 'SKU-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    setSkuId(randomCode);
+    showToast(`Generated SKU: ${randomCode}`);
+  };
+
   // Color toggle
   const toggleColor = (color) => {
     if (selectedColors.includes(color)) {
@@ -73,6 +89,7 @@ export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
       setSelectedColors([...selectedColors, color]);
       setNewColorInput('');
       setShowAddColorInput(false);
+      showToast(`Added color "${color}"`);
     }
   };
 
@@ -92,13 +109,29 @@ export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
       const url = URL.createObjectURL(file);
       if (index === 'primary') {
         setPrimaryImage(url);
+        showToast('Primary photo updated! 📸');
       } else {
         const updated = [...secondaryImages];
         updated[index] = url;
         setSecondaryImages(updated);
+        showToast(`Secondary photo ${index + 1} uploaded!`);
       }
     }
   };
+
+  // Listing Quality Score Calculation
+  const calculateQualityScore = () => {
+    let score = 0;
+    if (productName.length > 5) score += 20;
+    if (primaryImage) score += 20;
+    if (secondaryImages.filter(Boolean).length >= 2) score += 15;
+    if (description.length > 20) score += 15;
+    if (supplierPrice && mrp) score += 15;
+    if (selectedColors.length > 0 && selectedSizes.length > 0) score += 15;
+    return score;
+  };
+
+  const qualityScore = calculateQualityScore();
 
   // Form Submission
   const handleSubmit = (e) => {
@@ -135,414 +168,526 @@ export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
   };
 
   return (
-    <div className="bg-[#F8F9FB] text-[#191C1E] min-h-screen pb-36 font-['Inter',sans-serif] antialiased">
+    <div className="bg-[#F8F9FB] text-[#191C1E] min-h-screen pb-36 font-sans antialiased selection:bg-pink-100 selection:text-pink-600">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#006a34] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-xl">check_circle</span>
-          <span className="text-sm font-semibold">{toastMessage}</span>
+        <div className="fixed top-20 right-6 z-50 bg-[#006a34] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
+          <span className="material-symbols-outlined text-lg">check_circle</span>
+          <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}
 
-      {/* ===================== TopAppBar ===================== */}
-      <header className="sticky top-0 w-full z-40 flex items-center px-4 h-16 bg-[#F8F9FB] dark:bg-slate-900 border-b border-slate-200/60">
-        <div className="flex items-center w-full max-w-3xl mx-auto">
-          <button
-            type="button"
-            onClick={onBack || (() => window.history.back())}
-            aria-label="Go Back"
-            className="p-2 mr-2 active:scale-95 duration-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-full cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[#191C1E] dark:text-slate-400">
-              arrow_back
-            </span>
-          </button>
-          <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-xl tracking-tight text-[#191C1E] dark:text-white">
-            Add New Product
-          </h1>
-        </div>
-      </header>
-
-      {/* ===================== Form Canvas ===================== */}
-      <form onSubmit={handleSubmit}>
-        <main className="pt-6 px-4 max-w-3xl mx-auto space-y-8">
-          {/* Section 1: Image Upload */}
-          <section className="space-y-4">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onBack || (() => window.history.back())}
+              aria-label="Go Back"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors active:scale-95 text-[#b90041] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
             <div>
-              <h2 className="text-[#191C1E] font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg">
-                Product Media
-              </h2>
-              <p className="text-slate-500 text-sm">Add up to 5 high-quality photos</p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Primary Large Photo */}
-              <label className="col-span-2 aspect-[4/5] bg-white rounded-3xl border-2 border-dashed border-slate-300 hover:border-[#b90041] flex flex-col items-center justify-center cursor-pointer transition-all group overflow-hidden relative shadow-xs">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'primary')}
-                />
-                {primaryImage ? (
-                  <>
-                    <img
-                      src={primaryImage}
-                      alt="Primary Product"
-                      className="w-full h-full object-cover rounded-3xl"
-                    />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
-                      <span className="material-symbols-outlined text-lg">edit</span> Change Photo
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="bg-[#b90041]/10 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-[#b90041] text-3xl">
-                        add_a_photo
-                      </span>
-                    </div>
-                    <span className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#b90041]">
-                      Add Primary Photo
-                    </span>
-                    <p className="text-xs text-slate-400 mt-1">Recommended: 1080 x 1350 px</p>
-                  </>
-                )}
-              </label>
-
-              {/* Secondary Placeholders */}
-              {[0, 1, 2, 3].map((idx) => (
-                <label
-                  key={idx}
-                  className="aspect-square bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#b90041] flex items-center justify-center cursor-pointer transition-all overflow-hidden relative shadow-xs"
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, idx)}
-                  />
-                  {secondaryImages[idx] ? (
-                    <img
-                      src={secondaryImages[idx]}
-                      alt={`Photo ${idx + 2}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="material-symbols-outlined text-slate-400 hover:text-[#b90041] transition-colors">
-                      add
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
-          </section>
-
-          {/* Section 2: Basic Info */}
-          <div className="bg-white p-6 rounded-3xl shadow-[0_12px_32px_rgba(25,28,30,0.04)] space-y-6 border border-slate-100">
-            <div className="flex items-center gap-3">
-              <span
-                className="material-symbols-outlined text-[#b90041]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                info
+              <h1 className="font-extrabold text-base sm:text-lg text-[#191C1E] tracking-tight leading-none">
+                Add New Product to Catalog
+              </h1>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Supplier Hub • Inventory Manager
               </span>
-              <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#191C1E]">
-                Basic Information
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Product Name *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  placeholder="e.g. Premium Silk Floral Saree"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all placeholder:text-slate-400 outline-none text-sm font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Category *
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all cursor-pointer outline-none text-sm font-medium"
-                >
-                  <option value="">Select Category</option>
-                  <option value="Ethnic Wear">Ethnic Wear</option>
-                  <option value="Western Wear">Western Wear</option>
-                  <option value="Jewellery">Jewellery</option>
-                  <option value="Home Decor">Home Decor</option>
-                  <option value="Footwear">Footwear</option>
-                  <option value="Electronics">Electronics</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Brand (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Enter brand name"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all placeholder:text-slate-400 outline-none text-sm font-medium"
-                />
-              </div>
             </div>
           </div>
 
-          {/* Section 3: Product Description */}
-          <div className="bg-white p-6 rounded-3xl shadow-[0_12px_32px_rgba(25,28,30,0.04)] space-y-4 border border-slate-100">
-            <div className="flex items-center gap-3">
-              <span
-                className="material-symbols-outlined text-[#b90041]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                description
-              </span>
-              <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#191C1E]">
-                Product Description
-              </h3>
-            </div>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell customers about the fabric, fit, style, and care instructions..."
-              className="w-full bg-[#f2f4f6] border border-transparent rounded-2xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all placeholder:text-slate-400 outline-none text-sm font-medium"
-            ></textarea>
-          </div>
-
-          {/* Section 4: Pricing & Inventory */}
-          <div className="bg-white p-6 rounded-3xl shadow-[0_12px_32px_rgba(25,28,30,0.04)] space-y-6 border border-slate-100">
-            <div className="flex items-center gap-3">
-              <span
-                className="material-symbols-outlined text-[#b90041]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                payments
-              </span>
-              <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#191C1E]">
-                Pricing &amp; Inventory
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  MRP (₹)
-                </label>
-                <input
-                  type="number"
-                  value={mrp}
-                  onChange={(e) => handlePriceChange(e.target.value, 'mrp')}
-                  placeholder="0.00"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all outline-none text-sm font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Supplier Price (₹) *
-                </label>
-                <input
-                  type="number"
-                  value={supplierPrice}
-                  onChange={(e) => handlePriceChange(e.target.value, 'supplierPrice')}
-                  placeholder="0.00"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all outline-none text-sm font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Discount (%)
-                </label>
-                <input
-                  type="number"
-                  value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all outline-none text-sm font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  Stock Quantity *
-                </label>
-                <input
-                  type="number"
-                  value={stockQuantity}
-                  onChange={(e) => setStockQuantity(e.target.value)}
-                  placeholder="e.g. 50"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all outline-none text-sm font-semibold"
-                />
-              </div>
-
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-medium text-slate-600 mb-2 ml-1">
-                  SKU ID
-                </label>
-                <input
-                  type="text"
-                  value={skuId}
-                  onChange={(e) => setSkuId(e.target.value)}
-                  placeholder="e.g. BLK-SILK-SR-01"
-                  className="w-full bg-[#f2f4f6] border border-transparent rounded-xl px-4 py-3 focus:bg-white focus:border-[#b90041]/40 focus:ring-2 focus:ring-[#b90041]/20 transition-all outline-none text-sm font-semibold font-mono"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 5: Variants */}
-          <div className="bg-white p-6 rounded-3xl shadow-[0_12px_32px_rgba(25,28,30,0.04)] space-y-6 border border-slate-100">
-            <div className="flex items-center gap-3">
-              <span
-                className="material-symbols-outlined text-[#b90041]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                palette
-              </span>
-              <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#191C1E]">
-                Variants
-              </h3>
-            </div>
-
-            <div className="space-y-6">
-              {/* Available Colors */}
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-3 ml-1">
-                  Available Colors
-                </label>
-                <div className="flex flex-wrap gap-3 items-center">
-                  {availableColors.map((color) => {
-                    const isSelected = selectedColors.includes(color);
-                    return (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => toggleColor(color)}
-                        className={`px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#b90041] text-white shadow-sm'
-                            : 'bg-[#f2f4f6] text-[#191C1E] hover:bg-[#e7e8ea]'
-                        }`}
-                      >
-                        {color}
-                        {isSelected && (
-                          <span className="material-symbols-outlined text-sm">close</span>
-                        )}
-                      </button>
-                    );
-                  })}
-
-                  {showAddColorInput ? (
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">
-                      <input
-                        type="text"
-                        value={newColorInput}
-                        onChange={(e) => setNewColorInput(e.target.value)}
-                        placeholder="Color name..."
-                        className="text-xs bg-transparent outline-none w-24"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomColor}
-                        className="text-xs font-bold text-[#b90041]"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddColorInput(true)}
-                      aria-label="Add Color"
-                      className="w-10 h-10 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-[#b90041] hover:bg-[#b90041]/5 transition-colors cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined">add</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Available Sizes */}
-              <div>
-                <label className="block text-sm font-medium text-slate-600 mb-3 ml-1">
-                  Available Sizes
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {ALL_SIZES.map((size) => {
-                    const isSelected = selectedSizes.includes(size);
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => toggleSize(size)}
-                        className={`w-12 h-12 rounded-xl font-bold text-sm flex items-center justify-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#b90041] text-white shadow-lg shadow-[#b90041]/20'
-                            : 'bg-[#f2f4f6] text-[#191C1E] hover:border-[#b90041] border-2 border-transparent'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 6: Helpful Tip Overlay */}
-          <div className="bg-[#675df9]/10 p-6 rounded-3xl flex gap-4 items-start border border-[#675df9]/20">
-            <div className="bg-[#4d41df] p-2 rounded-xl text-white flex-shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-lg">lightbulb</span>
-            </div>
-            <div>
-              <h4 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#4d41df]">
-                Supplier Tip
-              </h4>
-              <p className="text-slate-600 text-sm mt-1 leading-relaxed">
-                Products with at least 3 photos and detailed descriptions have a{' '}
-                <span className="font-bold text-[#191C1E]">45% higher conversion rate</span> on our
-                social feeds.
-              </p>
-            </div>
-          </div>
-        </main>
-
-        {/* ===================== Sticky Footer CTA ===================== */}
-        <footer className="fixed bottom-0 left-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 py-4 z-40 border-t border-slate-200/50 shadow-lg">
-          <div className="max-w-3xl mx-auto flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleDraft}
-              className="flex-1 bg-[#f2f4f6] hover:bg-[#e7e8ea] text-[#191C1E] font-['Plus_Jakarta_Sans',sans-serif] font-bold py-3.5 px-6 rounded-2xl active:scale-[0.98] transition-all cursor-pointer text-sm"
+              className="hidden sm:inline-flex px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
             >
               Save Draft
             </button>
             <button
-              type="submit"
-              className="flex-[2] bg-gradient-to-r from-[#B90041] to-[#DF2457] hover:from-[#a00037] hover:to-[#c71e4d] text-white font-['Plus_Jakarta_Sans',sans-serif] font-bold py-3.5 px-6 rounded-2xl shadow-xl shadow-[#b90041]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
+              type="button"
+              onClick={handleSubmit}
+              className="px-5 py-2 bg-gradient-to-r from-[#B90041] to-[#DF2457] text-white font-extrabold text-xs rounded-xl shadow-md shadow-pink-500/25 active:scale-95 transition-transform flex items-center gap-1.5 cursor-pointer"
             >
-              Save &amp; List Product
-              <span className="material-symbols-outlined text-lg">rocket_launch</span>
+              <span>Publish Product</span>
+              <span className="material-symbols-outlined text-sm">rocket_launch</span>
             </button>
           </div>
-        </footer>
+        </div>
+      </header>
+
+      {/* Main Responsive Container */}
+      <form onSubmit={handleSubmit}>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Form Fields & Media (8 cols on desktop) */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Section 1: Product Media Gallery */}
+              <section className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="font-extrabold text-base text-[#191C1E]">
+                      Product Photos &amp; Media
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      Add up to 5 high-resolution photos for maximum buyer appeal
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    HD Recommended
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {/* Primary Large Photo */}
+                  <label className="col-span-2 aspect-[4/5] bg-slate-50 rounded-3xl border-2 border-dashed border-pink-300 hover:border-[#b90041] flex flex-col items-center justify-center cursor-pointer transition-all group overflow-hidden relative shadow-xs">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, 'primary')}
+                    />
+                    {primaryImage ? (
+                      <>
+                        <img
+                          src={primaryImage}
+                          alt="Primary Product"
+                          className="w-full h-full object-cover rounded-3xl group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5">
+                          <span className="material-symbols-outlined text-lg">edit</span> Change
+                          Primary Photo
+                        </div>
+                        <div className="absolute top-3 left-3 bg-[#b90041] text-white text-[10px] font-black px-2.5 py-0.5 rounded-lg">
+                          Cover Photo
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-[#b90041]/10 p-4 rounded-full mb-2 group-hover:scale-110 transition-transform">
+                          <span className="material-symbols-outlined text-[#b90041] text-3xl">
+                            add_a_photo
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-sm text-[#b90041]">
+                          Add Primary Cover Photo
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Recommended: 1080 x 1350 px
+                        </p>
+                      </>
+                    )}
+                  </label>
+
+                  {/* Secondary Placeholders */}
+                  {[0, 1, 2, 3].map((idx) => (
+                    <label
+                      key={idx}
+                      className="aspect-square bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#b90041] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group"
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(e, idx)}
+                      />
+                      {secondaryImages[idx] ? (
+                        <>
+                          <img
+                            src={secondaryImages[idx]}
+                            alt={`Photo ${idx + 2}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                            <span className="material-symbols-outlined text-base">edit</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center p-2">
+                          <span className="material-symbols-outlined text-slate-400 group-hover:text-[#b90041] transition-colors text-2xl">
+                            add_photo_alternate
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-bold mt-1">
+                            Angle {idx + 2}
+                          </span>
+                        </div>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              {/* Section 2: Basic Info */}
+              <section className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-[#191C1E] border-b border-slate-100 pb-3">
+                  <span className="material-symbols-outlined text-[#b90041]">info</span>
+                  <h2 className="font-extrabold text-base">Basic Product Details</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">
+                      Product Name *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      placeholder="e.g. Royal Embroidered Banarasi Silk Saree"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">
+                      Primary Category *
+                    </label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400 cursor-pointer"
+                    >
+                      <option value="Ethnic Wear">Ethnic Wear (Sarees, Kurtis)</option>
+                      <option value="Western Wear">Western Wear (Dresses, Tops)</option>
+                      <option value="Footwear">Footwear (Sneakers, Heels)</option>
+                      <option value="Jewellery">Jewellery &amp; Accessories</option>
+                      <option value="Bags & Wallets">Bags &amp; Wallets</option>
+                      <option value="Home Decor">Home &amp; Kitchen</option>
+                      <option value="Beauty">Beauty &amp; Cosmetics</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 ml-1">
+                      Brand Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="e.g. Aurelia Luxe"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 3: Description & Material */}
+              <section className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-[#191C1E] border-b border-slate-100 pb-3">
+                  <span className="material-symbols-outlined text-[#b90041]">description</span>
+                  <h2 className="font-extrabold text-base">Product Description &amp; Fabric</h2>
+                </div>
+                <textarea
+                  rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Detail fabric composition, care instructions, stitching quality, sleeve style, and occasion..."
+                  className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none leading-relaxed"
+                />
+              </section>
+
+              {/* Section 4: Pricing & Inventory */}
+              <section className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-[#191C1E] border-b border-slate-100 pb-3">
+                  <span className="material-symbols-outlined text-[#b90041]">payments</span>
+                  <h2 className="font-extrabold text-base">Pricing, Inventory &amp; Taxes</h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 ml-1">
+                      MRP (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      value={mrp}
+                      onChange={(e) => handlePriceChange(e.target.value, 'mrp')}
+                      placeholder="1999"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 ml-1">
+                      Supplier Price (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      value={supplierPrice}
+                      onChange={(e) => handlePriceChange(e.target.value, 'supplierPrice')}
+                      placeholder="499"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-black text-[#b90041] focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 ml-1">
+                      Auto Discount (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={discount}
+                      onChange={(e) => setDiscount(e.target.value)}
+                      placeholder="75"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-black text-emerald-600 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 ml-1">
+                      Stock Units *
+                    </label>
+                    <input
+                      type="number"
+                      value={stockQuantity}
+                      onChange={(e) => setStockQuantity(e.target.value)}
+                      placeholder="120"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1 ml-1">
+                      GST Slab
+                    </label>
+                    <select
+                      value={gstSlab}
+                      onChange={(e) => setGstSlab(e.target.value)}
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    >
+                      <option value="5%">5% (Apparel &lt; ₹1,000)</option>
+                      <option value="12%">12% (Apparel &gt; ₹1,000)</option>
+                      <option value="18%">18% (Accessories &amp; Electronics)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-bold text-slate-600 ml-1">SKU ID</label>
+                      <button
+                        type="button"
+                        onClick={generateRandomSku}
+                        className="text-[10px] text-[#b90041] font-bold hover:underline cursor-pointer"
+                      >
+                        Generate
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={skuId}
+                      onChange={(e) => setSkuId(e.target.value)}
+                      placeholder="AUR-SILK-2024"
+                      className="w-full bg-[#f8f9fb] border border-slate-200 rounded-2xl p-3 text-xs sm:text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 5: Variants */}
+              <section className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-[#191C1E] border-b border-slate-100 pb-3">
+                  <span className="material-symbols-outlined text-[#b90041]">palette</span>
+                  <h2 className="font-extrabold text-base">Product Color &amp; Size Variants</h2>
+                </div>
+
+                {/* Colors */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 ml-1">
+                    Available Colors ({selectedColors.length} Selected)
+                  </label>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {availableColors.map((color) => {
+                      const isSelected = selectedColors.includes(color);
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => toggleColor(color)}
+                          className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/20'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          <span>{color}</span>
+                          {isSelected && <span className="text-xs">✓</span>}
+                        </button>
+                      );
+                    })}
+
+                    {showAddColorInput ? (
+                      <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1">
+                        <input
+                          type="text"
+                          value={newColorInput}
+                          onChange={(e) => setNewColorInput(e.target.value)}
+                          placeholder="Color name..."
+                          className="text-xs bg-transparent outline-none w-24"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomColor}
+                          className="text-xs font-bold text-[#b90041] cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowAddColorInput(true)}
+                        className="px-3 py-2 rounded-xl border-2 border-dashed border-slate-300 text-[#b90041] font-bold text-xs hover:bg-pink-50 transition-colors cursor-pointer"
+                      >
+                        + Add Color
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sizes */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-bold text-slate-600 ml-1">
+                    Available Sizes ({selectedSizes.length} Selected)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_SIZES.map((size) => {
+                      const isSelected = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => toggleSize(size)}
+                          className={`min-w-[48px] h-10 px-3 rounded-xl font-black text-xs flex items-center justify-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#4d41df] text-white shadow-md shadow-indigo-500/25'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Right Column: Live Buyer & Reseller Preview + Quality Score (4 cols, sticky) */}
+            <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
+              {/* Quality Score Meter */}
+              <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Listing Quality Score
+                  </h3>
+                  <span
+                    className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                      qualityScore >= 80
+                        ? 'bg-emerald-50 text-[#008644]'
+                        : qualityScore >= 50
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-red-50 text-red-700'
+                    }`}
+                  >
+                    {qualityScore}% Complete
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 rounded-full ${
+                      qualityScore >= 80
+                        ? 'bg-emerald-500'
+                        : qualityScore >= 50
+                        ? 'bg-amber-500'
+                        : 'bg-red-500'
+                    }`}
+                    style={{ width: `${qualityScore}%` }}
+                  />
+                </div>
+
+                <p className="text-[11px] text-slate-500 leading-snug">
+                  High quality listings with multiple photos and exact dimensions receive{' '}
+                  <strong className="text-slate-800">3x more reseller shares</strong> on WhatsApp.
+                </p>
+              </div>
+
+              {/* Live Meesho Product Card Preview */}
+              <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Live Feed Preview
+                  </span>
+                  <span className="text-[10px] font-black text-[#b90041] bg-pink-50 px-2 py-0.5 rounded">
+                    Buyer View
+                  </span>
+                </div>
+
+                {/* Preview Card */}
+                <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-xs bg-[#fafbfc]">
+                  <div className="aspect-[3/4] relative bg-slate-200">
+                    <img
+                      src={
+                        primaryImage ||
+                        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'
+                      }
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-[#b90041] text-white text-[9px] font-black px-2 py-0.5 rounded">
+                      {discount}% OFF
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    <p className="text-xs font-bold text-slate-900 line-clamp-1">
+                      {productName || 'Product Title'}
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm font-black text-slate-900">
+                        ₹{supplierPrice || '0'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 line-through">
+                        ₹{mrp || '0'}
+                      </span>
+                    </div>
+                    <div className="bg-[#4d41df]/10 p-1.5 rounded-lg flex items-center justify-between mt-1">
+                      <span className="text-[9px] font-bold text-[#4d41df] uppercase">
+                        Resell &amp; Earn
+                      </span>
+                      <span className="text-[10px] font-black text-[#4d41df]">
+                        +₹{Math.round(Number(supplierPrice || 0) * 0.3) || 120}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2.5">
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-gradient-to-r from-[#B90041] to-[#DF2457] hover:from-[#a00037] hover:to-[#c71e4d] text-white font-black text-sm rounded-2xl shadow-xl shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                >
+                  <span>Publish to Meesho Catalog</span>
+                  <span className="material-symbols-outlined text-lg">rocket_launch</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDraft}
+                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-colors cursor-pointer"
+                >
+                  Save as Draft
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
       </form>
     </div>
   );
