@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AppBottomNav from '../components/AppBottomNav';
+import AppBottomNav from '../../components/AppBottomNav';
 
 // Default initial products data matching design specs
 const INITIAL_PRODUCTS = [

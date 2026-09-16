@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AppBottomNav from '../components/AppBottomNav';
+import AppBottomNav from '../../components/AppBottomNav';
 
 const CATEGORIES = [
   { id: 'orders', name: 'Orders', desc: 'Tracking & Updates', icon: 'inventory_2' },

@@ -50,36 +50,36 @@ import MeeshoVelocity from './pages/delivery & driver logistics/meesho_velocity'
 import SwiftRoute from './pages/delivery & driver logistics/swiftroute';
 
 // Supplier Hub Pages
-import SupplierDashboard2 from './supplier/supplier_dashboard2';
-import SupplierDashboard1 from './supplier/supplier_dashboard1';
-import SupplierInventoryManagement from './supplier/supplier_inventory_management';
-import SupplierOrdersList from './supplier/supplier_orders_list';
-import SupplierProfile from './supplier/supplier_profile';
-import AddNewProductSupplier from './supplier/add_new_product_supplier';
-import AddCategorySupplier from './supplier/add_category_supplier';
-import SellerWebDashboard from './supplier/seller_web_dashboard';
+import SupplierDashboard2 from './pages/supplier/supplier_dashboard2';
+import SupplierDashboard1 from './pages/supplier/supplier_dashboard1';
+import SupplierInventoryManagement from './pages/supplier/supplier_inventory_management';
+import SupplierOrdersList from './pages/supplier/supplier_orders_list';
+import SupplierProfile from './pages/supplier/supplier_profile';
+import AddNewProductSupplier from './pages/supplier/add_new_product_supplier';
+import AddCategorySupplier from './pages/supplier/add_category_supplier';
+import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
 
 // Admin Panel Pages
-import AdminWebPanel from './admin_panel/admin_web_panel';
-import AdminProductCatalog from './admin_panel/admin_product_catalog';
-import CampaignCreationFlowAdmin from './admin_panel/campaign_creation_flow_admin';
-import PerformanceAnalyticsDashboardAdmin from './admin_panel/performance_analytics_dashboard_admin';
+import AdminWebPanel from './pages/admin_panel/admin_web_panel';
+import AdminProductCatalog from './pages/admin_panel/admin_product_catalog';
+import CampaignCreationFlowAdmin from './pages/admin_panel/campaign_creation_flow_admin';
+import PerformanceAnalyticsDashboardAdmin from './pages/admin_panel/performance_analytics_dashboard_admin';
 
 // Support & Ticketing Pages
-import SupportCenter from './Community_Social_Chat_&_Customer_Support/support_center';
-import RaiseATicket from './Community_Social_Chat_&_Customer_Support/raise_a_ticket';
+import SupportCenter from './pages/Community_Social_Chat_&_Customer_Support/support_center';
+import RaiseATicket from './pages/Community_Social_Chat_&_Customer_Support/raise_a_ticket';
 
 // Design Ecosystem & Theme Variations
-import TheDigitalCuratorEcosystem from './Design_Ecosystem_&_Theme_Variations/the_digital_curator_ecosystem';
-import PetalCollective from './Design_Ecosystem_&_Theme_Variations/petal_collective';
-import GildedPulse from './Design_Ecosystem_&_Theme_Variations/gilded_pulse';
-import SocialCommerceLuxe from './Design_Ecosystem_&_Theme_Variations/social_commerce_luxe';
-import SignalCore from './Design_Ecosystem_&_Theme_Variations/signal_core';
-import StructureFlow from './Design_Ecosystem_&_Theme_Variations/structure_flow';
+import TheDigitalCuratorEcosystem from './pages/Design_Ecosystem_&_Theme_Variations/the_digital_curator_ecosystem';
+import PetalCollective from './pages/Design_Ecosystem_&_Theme_Variations/petal_collective';
+import GildedPulse from './pages/Design_Ecosystem_&_Theme_Variations/gilded_pulse';
+import SocialCommerceLuxe from './pages/Design_Ecosystem_&_Theme_Variations/social_commerce_luxe';
+import SignalCore from './pages/Design_Ecosystem_&_Theme_Variations/signal_core';
+import StructureFlow from './pages/Design_Ecosystem_&_Theme_Variations/structure_flow';
 
 // Screen Catalog for Floating Navigator
 const screenCatalog = [
-  // 1. Reseller & Fintech (Shruti Flow)
+  // 1. Reseller & Fintech 
   { path: '/', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
   { path: '/resell-earn', name: 'Resell & Earn', icon: '💰', group: 'Reseller & Shop' },
   { path: '/share-earn-config', name: 'Share & Earn Config', icon: '🔗', group: 'Reseller & Shop' },

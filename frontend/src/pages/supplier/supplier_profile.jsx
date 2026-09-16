@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AppBottomNav from '../components/AppBottomNav';
+import AppBottomNav from '../../components/AppBottomNav';
 
 // Default mock supplier data matching design specifications
 const DEFAULT_SUPPLIER = {
