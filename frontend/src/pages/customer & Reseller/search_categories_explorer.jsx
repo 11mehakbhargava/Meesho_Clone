@@ -504,18 +504,27 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
       )}
 
       {/* Top Search Bar */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-3 w-full max-w-2xl mx-auto">
-          <button
-            onClick={() => (onBack ? onBack() : onNavigate('reseller'))}
-            className="p-1.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all text-[#FF3F6C] cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-2xl">arrow_back</span>
-          </button>
-          <div className="flex-1 relative">
+      <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3.5 gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => (onBack ? onBack() : onNavigate('reseller'))}
+              className="p-1.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all text-[#FF3F6C] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+            <span
+              onClick={() => onNavigate('reseller')}
+              className="font-black text-xl tracking-tight text-[#FF3F6C] cursor-pointer hidden sm:inline"
+            >
+              Meesho
+            </span>
+          </div>
+
+          <div className="flex-1 max-w-2xl relative">
             <div
               onClick={() => onNavigate('search')}
-              className="absolute inset-y-0 left-3 flex items-center cursor-pointer"
+              className="absolute inset-y-0 left-3.5 flex items-center cursor-pointer"
             >
               <span className="material-symbols-outlined text-slate-400 text-lg">search</span>
             </div>
@@ -524,23 +533,39 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchSubmit}
-              placeholder="Search in 500+ categories & subcategories... (Press Enter)"
-              className="w-full bg-[#f2f4f6] border-none rounded-xl py-2.5 pl-10 pr-4 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3F6C]/30 placeholder:text-slate-400"
+              placeholder="Search across 500+ categories & 50,000+ products... (Press Enter)"
+              className="w-full bg-[#f2f4f6] hover:bg-slate-200/60 focus:bg-white border border-transparent focus:border-pink-300 rounded-full py-2.5 pl-11 pr-4 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#FF3F6C]/20 placeholder:text-slate-400 transition-all shadow-inner"
             />
           </div>
-          <button
-            onClick={() => onNavigate('cart')}
-            className="p-1.5 rounded-full hover:bg-pink-50 text-[#FF3F6C] active:scale-95 transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-2xl">shopping_bag</span>
-          </button>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => onNavigate('wishlist')}
+              className="p-2 rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-all cursor-pointer hidden sm:flex"
+              title="Wishlist"
+            >
+              <span className="material-symbols-outlined text-2xl">favorite</span>
+            </button>
+            <button
+              onClick={() => onNavigate('cart')}
+              className="p-2 rounded-full hover:bg-pink-50 text-[#FF3F6C] active:scale-95 transition-all cursor-pointer relative"
+              title="Shopping Bag"
+            >
+              <span className="material-symbols-outlined text-2xl">shopping_bag</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Split Layout */}
-      <main className="flex flex-1 overflow-hidden h-[calc(100vh-130px)]">
+      <main className="max-w-7xl mx-auto flex flex-1 overflow-hidden h-[calc(100vh-130px)] px-0 sm:px-4 lg:px-8 py-0 sm:py-4">
         {/* Navigation Sidebar Drawer */}
-        <aside className="h-full w-24 md:w-32 flex flex-col bg-[#F2F4F6] border-r border-slate-200/60 overflow-y-auto shrink-0 select-none">
+        <aside className="h-full w-24 sm:w-48 md:w-56 lg:w-64 flex flex-col bg-[#F2F4F6] sm:rounded-2xl border-r sm:border border-slate-200/60 overflow-y-auto shrink-0 select-none shadow-sm">
+          <div className="p-3 hidden sm:block border-b border-slate-200/50">
+            <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">
+              Explore Categories
+            </span>
+          </div>
           <nav className="flex flex-col py-2 space-y-1">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
@@ -548,22 +573,24 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`py-3.5 px-2 flex flex-col items-center gap-1.5 transition-all cursor-pointer relative text-center ${
+                  className={`py-3 px-3 sm:px-4 flex sm:flex-row flex-col items-center sm:gap-3 gap-1 transition-all cursor-pointer relative text-left rounded-xl mx-1.5 ${
                     isActive
-                      ? 'bg-white text-[#FF3F6C] font-bold shadow-sm'
-                      : 'text-slate-600 opacity-75 hover:opacity-100 hover:bg-white/40'
+                      ? 'bg-white text-[#FF3F6C] font-extrabold shadow-sm'
+                      : 'text-slate-600 opacity-80 hover:opacity-100 hover:bg-white/50'
                   }`}
                 >
                   {isActive && (
-                    <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF3F6C] rounded-r-full" />
+                    <span className="absolute left-0 top-1 bottom-1 w-1.5 bg-[#FF3F6C] rounded-r-full sm:hidden" />
                   )}
                   <span
-                    className="material-symbols-outlined text-2xl"
+                    className="material-symbols-outlined text-2xl sm:text-xl shrink-0"
                     style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
                   >
                     {cat.icon}
                   </span>
-                  <span className="text-[11px] leading-tight font-medium">{cat.name}</span>
+                  <span className="text-[10.5px] sm:text-xs leading-tight font-bold truncate">
+                    {cat.name}
+                  </span>
                 </button>
               );
             })}
@@ -571,62 +598,66 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
         </aside>
 
         {/* Dynamic Category Content Canvas */}
-        <section className="flex-1 bg-white overflow-y-auto p-4 md:p-6">
-          <div className="mb-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#191c1e]">{currentData.title}</h2>
-              <button
-                onClick={() => handleSubcategoryClick(currentData.title)}
-                className="text-xs font-semibold text-[#FF3F6C] bg-pink-50 px-2.5 py-1 rounded-full hover:bg-pink-100 cursor-pointer"
-              >
-                Explore All ➔
-              </button>
+        <section className="flex-1 bg-white sm:rounded-2xl sm:border border-slate-200/60 sm:ml-4 overflow-y-auto p-4 sm:p-6 lg:p-8 shadow-sm">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#191c1e]">
+                {currentData.title}
+              </h2>
+              <p className="text-xs md:text-sm text-slate-500 font-medium mt-0.5">
+                {currentData.subtitle}
+              </p>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">{currentData.subtitle}</p>
+            <button
+              onClick={() => handleSubcategoryClick(currentData.title)}
+              className="text-xs font-bold text-[#FF3F6C] bg-pink-50 hover:bg-pink-100 px-4 py-2 rounded-full cursor-pointer transition-all self-start sm:self-auto shadow-sm"
+            >
+              Explore All Styles ➔
+            </button>
           </div>
 
           {/* Hero Feature Banner Card */}
           <div
             onClick={() => handleSubcategoryClick(currentData.featured.title)}
-            className="relative group cursor-pointer overflow-hidden rounded-2xl bg-slate-100 aspect-[16/8] md:aspect-[21/8] mb-6 shadow-sm border border-slate-100 active:scale-[0.99] transition-transform"
+            className="relative group cursor-pointer overflow-hidden rounded-3xl bg-slate-100 aspect-[16/8] sm:aspect-[21/8] lg:aspect-[24/8] mb-8 shadow-md border border-slate-100 active:scale-[0.99] transition-transform"
           >
             <img
               src={currentData.featured.image}
               alt={currentData.featured.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex flex-col justify-end p-4 md:p-6">
-              <span className="bg-[#FF3F6C] text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md w-max mb-1.5 shadow-sm">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-5 sm:p-8">
+              <span className="bg-[#FF3F6C] text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full w-max mb-2 shadow-sm">
                 {currentData.featured.badge}
               </span>
-              <span className="text-white font-extrabold text-base md:text-xl leading-tight">
+              <span className="text-white font-black text-lg sm:text-2xl md:text-3xl leading-tight">
                 {currentData.featured.title}
               </span>
-              <span className="text-white/80 text-xs mt-0.5">
+              <span className="text-white/90 text-xs sm:text-sm mt-1">
                 {currentData.featured.subtitle}
               </span>
             </div>
           </div>
 
-          {/* Subcategories Bento Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+          {/* Subcategories Bento Grid: 2 cols on mobile, 3 on sm, 4 on lg, 5 on xl */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
             {currentData.subcategories.map((sub, idx) => (
               <div
                 key={idx}
                 onClick={() => handleSubcategoryClick(sub.name)}
-                className="group cursor-pointer bg-[#f8f9fb] p-2.5 rounded-2xl border border-slate-100 hover:border-pink-200 hover:shadow-md transition-all active:scale-95 flex flex-col"
+                className="group cursor-pointer bg-[#f8f9fb] hover:bg-white p-3 rounded-2xl border border-slate-100 hover:border-pink-300 hover:shadow-xl transition-all duration-300 active:scale-95 flex flex-col transform hover:-translate-y-1"
               >
-                <div className="aspect-square rounded-xl bg-slate-200 overflow-hidden mb-2 relative">
+                <div className="aspect-square rounded-xl bg-slate-200 overflow-hidden mb-2.5 relative shadow-inner">
                   <img
                     src={sub.image}
                     alt={sub.name}
-                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-sm text-white text-[9px] px-1.5 py-0.5 rounded font-medium">
+                  <span className="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-sm text-white text-[9.5px] px-2 py-0.5 rounded-md font-bold">
                     {sub.items}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-center text-[#191c1e] line-clamp-1 group-hover:text-[#FF3F6C] transition-colors">
+                <span className="text-xs md:text-sm font-bold text-center text-[#191c1e] line-clamp-1 group-hover:text-[#FF3F6C] transition-colors">
                   {sub.name}
                 </span>
               </div>
@@ -634,30 +665,30 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
           </div>
 
           {/* Reseller Promotion Banner */}
-          <div className="mt-8 mb-6 p-5 rounded-2xl bg-gradient-to-br from-[#FF3F6C] via-[#e02659] to-[#910031] text-white flex items-center justify-between shadow-lg shadow-pink-500/20">
-            <div className="max-w-[70%]">
-              <p className="text-[10px] font-bold uppercase tracking-wider opacity-85">
+          <div className="mt-10 mb-6 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-[#FF3F6C] via-[#e02659] to-[#910031] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl shadow-pink-500/20">
+            <div className="max-w-xl">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-pink-200">
                 {currentData.bannerTag}
               </p>
-              <h3 className="text-lg md:text-xl font-extrabold leading-tight mt-1">
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight mt-1">
                 {currentData.bannerTitle}
               </h3>
               <button
                 onClick={() => onNavigate('flash')}
-                className="mt-3 bg-white text-[#FF3F6C] px-4 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-transform cursor-pointer shadow-md hover:bg-pink-50"
+                className="mt-4 bg-white text-[#FF3F6C] hover:bg-pink-50 px-6 py-2.5 rounded-full text-xs font-extrabold active:scale-95 transition-all cursor-pointer shadow-lg"
               >
-                Shop Sale Drops ⚡
+                Shop Flash Deals ⚡
               </button>
             </div>
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shadow-inner">
-              <span className="material-symbols-outlined text-3xl text-white">trending_up</span>
+            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shadow-inner shrink-0 self-end sm:self-center">
+              <span className="material-symbols-outlined text-4xl text-white">trending_up</span>
             </div>
           </div>
         </section>
       </main>
 
       {/* Universal Bottom Navigation Bar */}
-      <AppBottomNav activeNav="categories" />
+      <AppBottomNav activeNav="categories" onNavigate={onNavigate} />
     </div>
   );
 }
