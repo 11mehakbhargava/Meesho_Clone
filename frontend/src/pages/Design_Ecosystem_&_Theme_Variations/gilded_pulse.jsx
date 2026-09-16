@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import AppBottomNav from '../components/AppBottomNav';
+import AppBottomNav from '../../components/AppBottomNav';
 
 const MARKETING_BANNERS = [
   {

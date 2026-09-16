@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AppBottomNav from '../components/AppBottomNav';
+import AppBottomNav from '../../components/AppBottomNav';
 
 // Data models for easy extensibility & dynamic API binding
 const INITIAL_METRICS = [
