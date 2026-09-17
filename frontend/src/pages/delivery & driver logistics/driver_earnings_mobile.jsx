@@ -3,8 +3,6 @@ import AppBottomNav from '../../components/AppBottomNav';
 
 export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) {
   const [balance, setBalance] = useState(12450.5);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
 
@@ -12,24 +10,6 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
     setToastMessage(msg);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
-  };
-
-  const handleWithdraw = (e) => {
-    e.preventDefault();
-    const amount = Number(withdrawAmount);
-    if (!amount || amount <= 0) {
-      triggerToast('Please enter a valid amount');
-      return;
-    }
-    if (amount > balance) {
-      triggerToast('Amount exceeds available wallet balance');
-      return;
-    }
-
-    setBalance((b) => b - amount);
-    setShowWithdrawModal(false);
-    setWithdrawAmount('');
-    triggerToast(`Withdrawal of ₹${amount.toLocaleString()} initiated to Bank Account! 🏦`);
   };
 
   const weeklyData = [
@@ -116,7 +96,7 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
 
                 <div className="flex flex-wrap gap-2.5">
                   <button
-                    onClick={() => setShowWithdrawModal(true)}
+                    onClick={() => onNavigate('withdraw-earnings')}
                     className="bg-white text-[#b90041] hover:bg-pink-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-lg">account_balance</span>
@@ -294,7 +274,7 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
                 </div>
               </div>
               <button
-                onClick={() => setShowWithdrawModal(true)}
+                onClick={() => onNavigate('withdraw-earnings')}
                 className="w-full py-3 bg-[#b90041] hover:bg-[#a00037] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-pink-500/25 cursor-pointer transition-colors"
               >
                 Instant Transfer to Bank ➔
@@ -359,62 +339,6 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
           </div>
         </div>
       </main>
-
-      {/* Withdrawal Modal */}
-      {showWithdrawModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-extrabold text-base text-[#1c1b1b]">Instant Bank Transfer</h3>
-              <button
-                onClick={() => setShowWithdrawModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleWithdraw} className="space-y-4">
-              <div>
-                <p className="text-xs text-slate-500 mb-2">
-                  Linked Account: <span className="font-bold text-slate-800">HDFC •••• 8829</span>
-                </p>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Withdrawal Amount (₹)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-700 text-lg">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    max={balance}
-                    className="w-full bg-[#fcf9f8] border border-slate-200 rounded-2xl py-3 pl-8 pr-4 font-black text-base focus:outline-none focus:ring-2 focus:ring-pink-400"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowWithdrawModal(false)}
-                  className="flex-1 py-3 rounded-2xl border border-slate-200 font-bold text-xs text-slate-600 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-2xl bg-[#b90041] text-white font-bold text-xs shadow-md shadow-pink-500/25 cursor-pointer hover:bg-[#a00037]"
-                >
-                  Withdraw Now
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Bottom Navigation */}
       <AppBottomNav activeNav="earnings" onNavigate={onNavigate} />

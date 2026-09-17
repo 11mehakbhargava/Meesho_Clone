@@ -184,7 +184,7 @@ const EarningsDashboard1 = () => {
             <h3 className="font-headline font-bold text-lg">Transaction History</h3>
             <button
               type="button"
-              onClick={() => navigate("/reseller-wallet")}
+              onClick={() => navigate("/earnings-dashboard-2")}
               className="text-primary font-bold text-sm cursor-pointer hover:underline"
             >
               See All

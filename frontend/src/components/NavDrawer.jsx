@@ -5,7 +5,7 @@ const navSections = [
   {
     title: "Shop & Catalog",
     items: [
-      { name: "Home & Curated Catalog", path: "/", icon: "home" },
+      { name: "Home & Curated Catalog", path: "/reseller-home", icon: "home" },
       { name: "Resell & Earn Products", path: "/resell-earn", icon: "storefront", badge: "Popular" },
       { name: "Profit Margin & Sharing", path: "/share-earn-config", icon: "share" },
     ]

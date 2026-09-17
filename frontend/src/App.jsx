@@ -80,11 +80,11 @@ import StructureFlow from './pages/Design_Ecosystem_&_Theme_Variations/structure
 // Screen Catalog for Floating Navigator
 const screenCatalog = [
   // 1. Reseller & Fintech 
-  { path: '/', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
+  { path: '/reseller-home', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
   { path: '/resell-earn', name: 'Resell & Earn', icon: '💰', group: 'Reseller & Shop' },
   { path: '/share-earn-config', name: 'Share & Earn Config', icon: '🔗', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-1', name: 'Earnings Dashboard 1', icon: '📈', group: 'Reseller & Shop' },
-  { path: '/earnings-dashboard-2', name: 'Earnings Analytics 2', icon: '📊', group: 'Reseller & Shop' },
+  { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
   { path: '/my-wallet', name: 'Fintech Wallet', icon: '👛', group: 'Reseller & Shop' },
   { path: '/reseller-wallet', name: 'Reseller Wallet', icon: '💳', group: 'Reseller & Shop' },
   { path: '/withdraw-earnings', name: 'Withdraw Earnings', icon: '🏦', group: 'Reseller & Shop' },
@@ -288,6 +288,7 @@ function AppRoutes() {
       'my-wallet': '/my-wallet',
       'reseller-wallet': '/reseller-wallet',
       'withdraw-earnings': '/withdraw-earnings',
+      'withdraw_earnings': '/withdraw-earnings',
       'payout-settings': '/payout-settings',
       'payout-confirmation': '/payout-confirmation',
       'refer-earn': '/refer-earn',

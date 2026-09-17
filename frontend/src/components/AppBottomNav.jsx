@@ -19,11 +19,11 @@ export default function AppBottomNav({ activeNav = 'home', onNavigate }) {
   };
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: 'home', path: '/' },
+    { id: 'home', label: 'Home', icon: 'home', path: '/reseller-home' },
     { id: 'categories', label: 'Categories', icon: 'grid_view', path: '/explorer' },
-    { id: 'orders', label: 'Orders', icon: 'shopping_bag', path: '/resell-earn' },
+    { id: 'orders', label: 'Orders', icon: 'shopping_bag', path: '/delivery-history' },
     { id: 'earnings', label: 'Earnings', icon: 'payments', path: '/earnings-dashboard-1' },
-    { id: 'profile', label: 'Profile', icon: 'person', path: '/refer-earn' },
+    { id: 'profile', label: 'Profile', icon: 'person', path: '/user-dashboard' },
     { id: 'screens', label: 'Screens', icon: 'layers', badge: '62' },
   ];
 
