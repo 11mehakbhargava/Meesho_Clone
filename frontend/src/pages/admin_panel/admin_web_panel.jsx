@@ -32,6 +32,7 @@ const SIDEBAR_NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'products', label: 'Products', icon: 'inventory_2' },
   { id: 'orders', label: 'Orders', icon: 'shopping_cart' },
+  { id: 'returns', label: 'Returns & Refunds 🔄', icon: 'assignment_return' },
   { id: 'analytics', label: 'Analytics', icon: 'insights' },
   { id: 'wishlist', label: 'Wishlist', icon: 'favorite' },
   { id: 'earnings', label: 'Earnings', icon: 'payments' },
@@ -45,6 +46,7 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
   const [timeRange, setTimeRange] = useState('30days');
   const [verifications, setVerifications] = useState(INITIAL_VERIFICATIONS);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -71,6 +73,106 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
         </div>
       )}
 
+      {/* ===================== Mobile Top Bar ===================== */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-700 cursor-pointer"
+            aria-label="Open menu"
+          >
+            <span className="material-symbols-outlined text-2xl">menu</span>
+          </button>
+          <h1 className="text-sm font-black text-rose-600 font-['Plus_Jakarta_Sans',sans-serif]">
+            Admin Console
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate && onNavigate('/admin-returns')}
+          className="bg-rose-50 text-rose-700 px-2.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 border border-rose-200 cursor-pointer"
+        >
+          <span>Returns Hub</span>
+          <span className="material-symbols-outlined text-xs">arrow_forward</span>
+        </button>
+      </div>
+
+      {/* ===================== Mobile Navigation Drawer ===================== */}
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex animate-in fade-in duration-200"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-72 bg-slate-900 text-white h-full p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200"
+          >
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                <div>
+                  <h2 className="text-base font-black text-rose-500 font-['Plus_Jakarta_Sans',sans-serif]">
+                    Admin Console
+                  </h2>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                    Digital Curator Hub
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <nav className="space-y-1 overflow-y-auto max-h-[70vh]">
+                {SIDEBAR_NAV.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        if (item.id === 'returns') {
+                          if (onNavigate) onNavigate('/admin-returns');
+                          return;
+                        }
+                        setActiveTab(item.id);
+                        if (onNavigate) onNavigate(item.id);
+                      }}
+                      className={`w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-rose-600 text-white'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined mr-2.5 text-base">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (onNavigate) onNavigate('/admin-returns');
+                }}
+                className="w-full py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <span>Open Returns &amp; SPF Hub</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex min-h-screen flex-1">
         {/* ===================== Sidebar Navigation Shell ===================== */}
         <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-slate-50 dark:bg-slate-950 py-6 space-y-2 border-r border-slate-200/60 dark:border-slate-800">
@@ -91,6 +193,10 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
                   key={item.id}
                   type="button"
                   onClick={() => {
+                    if (item.id === 'returns') {
+                      if (onNavigate) onNavigate('/admin-returns');
+                      return;
+                    }
                     setActiveTab(item.id);
                     if (onNavigate) onNavigate(item.id);
                   }}
@@ -137,7 +243,7 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
         </aside>
 
         {/* ===================== Main Content Canvas ===================== */}
-        <main className="md:ml-64 flex-1 p-6 md:p-8 bg-[#f8f9fb] min-h-screen">
+        <main className="md:ml-64 flex-1 p-3.5 sm:p-6 md:p-8 bg-[#f8f9fb] min-h-screen">
           {/* Header Section */}
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pb-4 border-b border-slate-200/50">
             <div>
@@ -243,6 +349,39 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
               </div>
             </div>
           </div>
+
+          {/* Urgent Returns, Refunds & SPF Claims Alert Banner (Panel 4) */}
+          <section className="bg-gradient-to-r from-rose-50 via-white to-amber-50/50 p-5 rounded-2xl border border-rose-200/80 shadow-xs mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-rose-600 to-[#b90041] text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-500/20">
+                <span className="material-symbols-outlined text-2xl">assignment_return</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-extrabold text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+                    Return &amp; Refund Settlement Hub (Panel 4)
+                  </h3>
+                  <span className="bg-[#b90041] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                    Action Required
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  18 Customer Refunds Awaiting Disbursal (₹84,200) • 3 Supplier SPF Dispute Claims In-Review (₹28,500)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 self-end md:self-auto">
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('/admin-returns')}
+                className="bg-[#b90041] hover:bg-[#a00037] text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md shadow-rose-500/20 transition-all cursor-pointer hover:scale-[1.02]"
+              >
+                <span>Open Settlement &amp; SPF Hub</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </section>
 
           {/* Middle Section: Growth Chart & System Health */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">

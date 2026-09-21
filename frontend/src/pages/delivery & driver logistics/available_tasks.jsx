@@ -42,10 +42,27 @@ export default function AvailableTasks({ onNavigate = () => {}, onBack }) {
       payout: '95.00',
       pinPos: { top: '40%', left: '42%' },
     },
+    {
+      id: 'RET-8821',
+      merchant: 'Reverse Pickup: Priya Sharma',
+      address: 'Flat 402, Royal Palms, MG Road',
+      distance: '1.8 km',
+      units: '1 Return Item (QC Required)',
+      payout: '65.00',
+      pinPos: { top: '48%', left: '52%' },
+      isReturn: true,
+    },
   ];
 
   const handleAcceptTask = (id) => {
     setAcceptedTasks((prev) => new Set(prev).add(id));
+    if (id === 'RET-8821') {
+      triggerToast(`Accepted Return Task #${id}! Loading Customer Route... 🔄`);
+      setTimeout(() => {
+        onNavigate('driver_reverse_pickup');
+      }, 400);
+      return;
+    }
     triggerToast(`Order #${id} Accepted! Route GPS loaded. 🛵`);
     setTimeout(() => {
       onNavigate('active_delivery');

@@ -21,10 +21,10 @@ export default function AppBottomNav({ activeNav = 'home', onNavigate }) {
   const navItems = [
     { id: 'home', label: 'Home', icon: 'home', path: '/reseller-home' },
     { id: 'categories', label: 'Categories', icon: 'grid_view', path: '/explorer' },
-    { id: 'orders', label: 'Orders', icon: 'shopping_bag', path: '/delivery-history' },
+    { id: 'orders', label: 'Orders', icon: 'shopping_bag', path: '/orders' },
     { id: 'earnings', label: 'Earnings', icon: 'payments', path: '/earnings-dashboard-1' },
     { id: 'profile', label: 'Profile', icon: 'person', path: '/user-dashboard' },
-    { id: 'screens', label: 'Screens', icon: 'layers', badge: '62' },
+    { id: 'screens', label: 'Screens', icon: 'layers', badge: '65' },
   ];
 
   return (

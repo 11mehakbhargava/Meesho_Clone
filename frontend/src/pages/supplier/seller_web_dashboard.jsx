@@ -85,6 +85,7 @@ const SIDEBAR_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'inventory', label: 'Products', icon: 'inventory_2' },
   { id: 'orders', label: 'Orders', icon: 'shopping_cart' },
+  { id: 'returns', label: 'Returns & RTO', icon: 'assignment_return' },
   { id: 'analytics', label: 'Analytics', icon: 'insights' },
   { id: 'earnings', label: 'Earnings', icon: 'payments' },
   { id: 'profile', label: 'Sellers', icon: 'storefront' },
@@ -105,6 +106,10 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
 
   const handleNav = (id) => {
     setActiveTab(id);
+    if (id === 'returns') {
+      if (onNavigate) onNavigate('/supplier-returns');
+      return;
+    }
     if (onNavigate) onNavigate(id);
   };
 
@@ -355,6 +360,39 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
                     4.8 / 5
                   </h2>
                 </div>
+              </div>
+            </section>
+
+            {/* Inbound Returns & RTO Alert Banner */}
+            <section className="bg-gradient-to-r from-rose-50 via-white to-amber-50/40 p-5 rounded-2xl border border-rose-200/70 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-[#b90041] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-200">
+                  <span className="material-symbols-outlined text-2xl">assignment_return</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+                      Inbound Returns & Courier RTO Management
+                    </h3>
+                    <span className="bg-[#b90041] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      48 Action Items
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    18 Customer Returns • 30 Courier RTOs • 3 Active SPF Dispute Claims (₹12,850 Recovered)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 self-end md:self-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('returns')}
+                  className="bg-[#b90041] hover:bg-[#a00037] text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-rose-200 transition-all cursor-pointer"
+                >
+                  <span>Manage Returns & SPF Claims</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
               </div>
             </section>
 

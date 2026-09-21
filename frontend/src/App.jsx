@@ -20,6 +20,7 @@ import EarningsDashboard1 from './pages/Reseller Earnings & Wallets/EarningsDash
 import EarningsDashboard2 from './pages/Reseller Earnings & Wallets/EarningsDashboard2';
 import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
 import WithdrawEarnings from './pages/Reseller Earnings & Wallets/WithdrawEarnings';
+import ResellerReturnsLedger from './pages/Reseller Earnings & Wallets/ResellerReturnsLedger';
 
 // Customer & Reseller Shopping Pages
 import HomeScreenFlutterLuxe from './pages/customer & Reseller/home_screen_flutter_luxe';
@@ -37,6 +38,8 @@ import ShoppingCart from './pages/customer & Reseller/shopping_cart';
 import CheckoutAddressSelection from './pages/customer & Reseller/checkout_address_selection';
 import CheckoutPayment from './pages/customer & Reseller/checkout_payment';
 import UserWebDashboard from './pages/customer & Reseller/user_web_dashboard';
+import CustomerOrders from './pages/customer & Reseller/CustomerOrders';
+import ReturnRequest from './pages/customer & Reseller/ReturnRequest';
 
 // Delivery & Driver Logistics Pages
 import DriverDashboardMobile from './pages/delivery & driver logistics/driver_dashboard_mobile';
@@ -48,6 +51,7 @@ import DriverEarningsMobile from './pages/delivery & driver logistics/driver_ear
 import RiderExpressDashboard from './pages/delivery & driver logistics/rider_express_dashboard';
 import MeeshoVelocity from './pages/delivery & driver logistics/meesho_velocity';
 import SwiftRoute from './pages/delivery & driver logistics/swiftroute';
+import DriverReversePickup from './pages/delivery & driver logistics/driver_reverse_pickup';
 
 // Supplier Hub Pages
 import SupplierDashboard2 from './pages/supplier/supplier_dashboard2';
@@ -58,12 +62,14 @@ import SupplierProfile from './pages/supplier/supplier_profile';
 import AddNewProductSupplier from './pages/supplier/add_new_product_supplier';
 import AddCategorySupplier from './pages/supplier/add_category_supplier';
 import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
+import SupplierReturnsRTO from './pages/supplier/SupplierReturnsRTO';
 
 // Admin Panel Pages
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
 import AdminProductCatalog from './pages/admin_panel/admin_product_catalog';
 import CampaignCreationFlowAdmin from './pages/admin_panel/campaign_creation_flow_admin';
 import PerformanceAnalyticsDashboardAdmin from './pages/admin_panel/performance_analytics_dashboard_admin';
+import AdminReturnRefundHub from './pages/admin_panel/AdminReturnRefundHub';
 
 // Support & Ticketing Pages
 import SupportCenter from './pages/Community_Social_Chat_&_Customer_Support/support_center';
@@ -87,6 +93,7 @@ const screenCatalog = [
   { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
   { path: '/my-wallet', name: 'Fintech Wallet', icon: '👛', group: 'Reseller & Shop' },
   { path: '/reseller-wallet', name: 'Reseller Wallet', icon: '💳', group: 'Reseller & Shop' },
+  { path: '/reseller-returns', name: 'Returns & Margin Ledger', icon: '🔄', group: 'Reseller & Shop' },
   { path: '/withdraw-earnings', name: 'Withdraw Earnings', icon: '🏦', group: 'Reseller & Shop' },
   { path: '/payout-settings', name: 'Payout Settings', icon: '⚙️', group: 'Reseller & Shop' },
   { path: '/payout-confirmation', name: 'Payout Confirmation', icon: '✅', group: 'Reseller & Shop' },
@@ -115,6 +122,8 @@ const screenCatalog = [
   { path: '/reviews', name: 'Ratings & Reviews', icon: '⭐', group: 'Shopping' },
   { path: '/write-review', name: 'Write a Review', icon: '✍️', group: 'Shopping' },
   { path: '/user-dashboard', name: 'Curator Web Dashboard', icon: '📊', group: 'Shopping' },
+  { path: '/orders', name: 'Customer My Orders', icon: '📦', group: 'Shopping' },
+  { path: '/return-request', name: 'Return / Exchange Flow', icon: '🔄', group: 'Shopping' },
 
   // 3. Logistics & Driver Fleet
   { path: '/driver-dashboard', name: 'Driver Dashboard', icon: '🛵', group: 'Logistics' },
@@ -126,6 +135,7 @@ const screenCatalog = [
   { path: '/rider-express', name: 'Rider Express', icon: '⚡', group: 'Logistics' },
   { path: '/meesho-velocity', name: 'Meesho Velocity', icon: '🚀', group: 'Logistics' },
   { path: '/swiftroute', name: 'SwiftRoute AI', icon: '🧭', group: 'Logistics' },
+  { path: '/driver-reverse-pickup', name: 'Reverse Pickup QC', icon: '🔄', group: 'Logistics' },
 
   // 4. Supplier Hub
   { path: '/structure-flow', name: 'Structure Flow Hub', icon: '🏬', group: 'Supplier' },
@@ -137,9 +147,11 @@ const screenCatalog = [
   { path: '/add-category', name: 'Add Category', icon: '🏷️', group: 'Supplier' },
   { path: '/supplier-profile', name: 'Supplier Profile', icon: '👤', group: 'Supplier' },
   { path: '/seller-dashboard', name: 'Seller Web Dashboard', icon: '💻', group: 'Supplier' },
+  { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
 
   // 5. Admin Panel & Support
   { path: '/admin-panel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
+  { path: '/admin-returns', name: 'Returns & Refund Hub', icon: '⚖️', group: 'Admin' },
   { path: '/admin-catalog', name: 'Admin Catalog', icon: '📁', group: 'Admin' },
   { path: '/campaign-flow', name: 'Campaign Creation', icon: '📢', group: 'Admin' },
   { path: '/admin-analytics', name: 'Performance Analytics', icon: '📊', group: 'Admin' },
@@ -279,6 +291,11 @@ function AppRoutes() {
       flash: '/flash',
       luxe: '/luxe',
       user_dashboard: '/user-dashboard',
+      orders: '/orders',
+      'my-orders': '/orders',
+      return_request: '/return-request',
+      'return-request': '/return-request',
+      returns: '/orders',
 
       // Reseller & Fintech
       'resell-earn': '/resell-earn',
@@ -287,6 +304,9 @@ function AppRoutes() {
       'earnings-dashboard-2': '/earnings-dashboard-2',
       'my-wallet': '/my-wallet',
       'reseller-wallet': '/reseller-wallet',
+      'reseller-returns': '/reseller-returns',
+      reseller_returns: '/reseller-returns',
+      resellerReturns: '/reseller-returns',
       'withdraw-earnings': '/withdraw-earnings',
       'withdraw_earnings': '/withdraw-earnings',
       'payout-settings': '/payout-settings',
@@ -305,6 +325,8 @@ function AppRoutes() {
       rider_express: '/rider-express',
       meesho_velocity: '/meesho-velocity',
       swiftroute: '/swiftroute',
+      driver_reverse_pickup: '/driver-reverse-pickup',
+      'driver-reverse-pickup': '/driver-reverse-pickup',
 
       // Supplier
       structureFlow: '/structure-flow',
@@ -316,9 +338,16 @@ function AppRoutes() {
       addCategory: '/add-category',
       profile: '/supplier-profile',
       webDashboard: '/seller-dashboard',
+      supplier_returns: '/supplier-returns',
+      'supplier-returns': '/supplier-returns',
+      returns: '/supplier-returns',
 
       // Admin & Community
       adminPanel: '/admin-panel',
+      adminReturns: '/admin-returns',
+      'admin-returns': '/admin-returns',
+      admin_returns: '/admin-returns',
+      refunds: '/admin-returns',
       adminCatalog: '/admin-catalog',
       campaignFlow: '/campaign-flow',
       adminAnalytics: '/admin-analytics',
@@ -366,6 +395,7 @@ function AppRoutes() {
         <Route path="/affiliate-panel" element={<AffiliateProgramPanel />} />
         <Route path="/my-wallet" element={<MyWalletFintechStyle />} />
         <Route path="/reseller-wallet" element={<ResellerWallet />} />
+        <Route path="/reseller-returns" element={<ResellerReturnsLedger onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/withdraw-earnings" element={<WithdrawEarnings />} />
         <Route path="/payout-settings" element={<PayoutSettings />} />
         <Route path="/payout-confirmation" element={<PayoutConfirmation />} />
@@ -394,6 +424,8 @@ function AppRoutes() {
         <Route path="/reviews" element={<RatingsReviews onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/write-review" element={<WriteAReview onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/user-dashboard" element={<UserWebDashboard onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/orders" element={<CustomerOrders onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/return-request" element={<ReturnRequest onNavigate={handleNav} onBack={handleBack} />} />
 
         {/* Logistics & Driver Fleet Routes */}
         <Route path="/driver-dashboard" element={<DriverDashboardMobile onNavigate={handleNav} />} />
@@ -405,6 +437,7 @@ function AppRoutes() {
         <Route path="/rider-express" element={<RiderExpressDashboard onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/meesho-velocity" element={<MeeshoVelocity onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/swiftroute" element={<SwiftRoute onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/driver-reverse-pickup" element={<DriverReversePickup onNavigate={handleNav} onBack={handleBack} />} />
 
         {/* Supplier Hub Routes */}
         <Route
@@ -472,11 +505,19 @@ function AppRoutes() {
             />
           }
         />
+        <Route
+          path="/supplier-returns"
+          element={<SupplierReturnsRTO onNavigate={handleNav} onBack={handleBack} />}
+        />
 
         {/* Admin Panel & Support Routes */}
         <Route
           path="/admin-panel"
           element={<AdminWebPanel onNavigate={handleNav} onSwitchView={() => handleNav('/seller-dashboard')} />}
+        />
+        <Route
+          path="/admin-returns"
+          element={<AdminReturnRefundHub onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
           path="/admin-catalog"

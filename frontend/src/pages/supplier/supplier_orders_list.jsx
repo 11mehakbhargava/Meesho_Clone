@@ -61,6 +61,7 @@ const TABS = [
   { id: 'new', label: 'New', count: 12 },
   { id: 'pending', label: 'Pending', count: 4 },
   { id: 'completed', label: 'Completed', count: 112 },
+  { id: 'returns', label: 'Returns & RTO 🔄', count: 48 },
 ];
 
 const BOTTOM_NAV_ITEMS = [
@@ -196,7 +197,13 @@ export function SupplierOrdersList({ onBack, onNavigate }) {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.id === 'returns') {
+                    if (onNavigate) onNavigate('/supplier-returns');
+                    return;
+                  }
+                  setActiveTab(tab.id);
+                }}
                 className={`pb-3 whitespace-nowrap font-semibold text-sm transition-all cursor-pointer ${
                   isActive
                     ? 'text-[#FF3F6C] border-b-2 border-[#FF3F6C]'

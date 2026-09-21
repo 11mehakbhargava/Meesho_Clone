@@ -103,6 +103,39 @@ const EarningsDashboard1 = () => {
           </div>
         </section>
 
+        {/* Returns & Margin Reversals Impact Card (Panel 5 Ecosystem Entry) */}
+        <section 
+          onClick={() => navigate('/reseller-returns')}
+          className="bg-rose-50/70 border border-rose-200/70 hover:border-rose-300 rounded-3xl p-5 sm:p-6 transition-all hover:shadow-md cursor-pointer group"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-2xl">assignment_return</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-headline font-bold text-base sm:text-lg text-slate-900">
+                    Returns & Margin Deductions
+                  </h4>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-200/70 text-rose-800">
+                    5.1% Return Rate
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-600 font-medium mt-0.5">
+                  5 Customer returns • ₹1,450 margin reversed this month
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <span className="text-xs font-bold text-rose-700 bg-white px-3.5 py-2 rounded-xl border border-rose-100 shadow-xs group-hover:bg-rose-50 flex items-center gap-1.5">
+                View Ledger
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
         {/* Simple Monthly Chart Visualization */}
         <section className="bg-white rounded-3xl p-6 border border-white/20 shadow-sm">
           <div className="flex justify-between items-center mb-8">
