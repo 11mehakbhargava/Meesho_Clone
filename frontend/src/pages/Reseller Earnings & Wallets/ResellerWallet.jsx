@@ -26,6 +26,16 @@ export default function ResellerWallet() {
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBzLz_6mINpsei7j9fUb1DtaZAT9Se1hHfHPyAUKv0oR9uShZYyjWaFbabmybIzXgY0cYLebI_rWWZTgEhTK_ZRkHRDUOSQznTYgNTIiX53bC3zZkpR208EOZ5GHHqLuDk0oe01Z3q_I_nVWJY9nT_fnDq-BG2gAvts-EEqra3iT6eoPdPvRigqcnEg4TLy3IVRhYLNv2npDgrVvKis2lfqtn2-oaAyTEcmNDScSwaJ0O-onoMgJSDJd1t4WEC0Ar-sLjWnH7rTAeQ',
     },
     {
+      id: 5,
+      orderId: 'ORD-88210',
+      customer: 'Priya Sharma',
+      amount: -300.00,
+      status: 'Reversed',
+      date: '25 Oct, 2024',
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
+      reason: 'Customer Return - Size Fitting Issue'
+    },
+    {
       id: 2,
       orderId: '#MEE-9845',
       customer: 'Rahul Verma',
@@ -33,6 +43,16 @@ export default function ResellerWallet() {
       status: 'Settled', // Paid
       date: '22 Oct, 2023',
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDiv03o9Kg49EypPJsnjdMAUtau3ughXptaldM-oDDzjYMZUu_tTnCzk0PyZPqdsR-13EzZllzITwNg6Gyo5KH2ylw4yKFK4D9g6xzQ9uJWuM2twcxdsDHZIxm52Mvn4P0zUqa5Q-m_o9pzW6ceGpNQpv3xppRDzJ-fwePSrcTu7pV6c918xxvynJZifoi7jRn8Hjl2YsgEb5Rwo_bNvL6FF8Oc3wzkElfU2KjBXqjBlHiAdd31mQzNVz-FfU5FsFz6d0us9cpOQyU',
+    },
+    {
+      id: 6,
+      orderId: 'ORD-88002',
+      customer: 'Ritu Verma',
+      amount: -150.00,
+      status: 'Reversed',
+      date: '24 Oct, 2024',
+      image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80',
+      reason: 'Customer Return - Color Variation'
     },
     {
       id: 3,
@@ -58,6 +78,7 @@ export default function ResellerWallet() {
   const filteredTransactions = transactions.filter((tx) => {
     if (activeTab === 'pending') return tx.status === 'Pending';
     if (activeTab === 'paid') return tx.status === 'Settled';
+    if (activeTab === 'reversals') return tx.status === 'Reversed';
     return true;
   });
 
@@ -135,6 +156,38 @@ export default function ResellerWallet() {
 
       {/* 2. Main Content - Full Width Desktop & Mobile Responsive (Strict Vertical Flow) */}
       <main className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 md:px-10 pt-6 pb-24 space-y-8">
+        {/* Return Margin Reversals Alert Banner */}
+        <div 
+          onClick={() => navigate('/reseller-returns')}
+          className="bg-amber-50/90 border border-amber-200/80 hover:border-amber-300 rounded-2xl p-4 sm:p-4.5 flex items-center justify-between gap-3 cursor-pointer shadow-xs transition-all hover:bg-amber-100/70 group"
+        >
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-xl">assignment_return</span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs sm:text-sm font-bold text-amber-950">
+                  5 Customer Returns Processed
+                </p>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                  -₹1,450 Reversed
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-800 font-medium hidden sm:block mt-0.5">
+                Customer returns reverse credited margins from upcoming payouts. View deduction audit trail & inquiry hub.
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); navigate('/reseller-returns'); }}
+            className="shrink-0 text-xs font-bold text-[#b90041] bg-white px-3 py-1.5 rounded-xl border border-rose-100 shadow-xs group-hover:bg-rose-50 flex items-center gap-1 cursor-pointer"
+          >
+            Ledger
+            <span className="material-symbols-outlined text-xs">arrow_forward</span>
+          </button>
+        </div>
+
         {/* Total Earnings Card */}
         <section className="relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-xl bg-gradient-to-br from-[#b90041] to-[#df2457]">
           <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -181,20 +234,20 @@ export default function ResellerWallet() {
 
         {/* Tabs Section */}
         <section>
-          <div className="flex gap-2 p-1.5 bg-slate-100/80 rounded-2xl">
+          <div className="flex gap-1.5 sm:gap-2 p-1.5 bg-slate-100/80 rounded-2xl overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('all')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'all'
                   ? 'bg-white text-[#b90041] shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Transactions
+              All
             </button>
             <button
               onClick={() => setActiveTab('pending')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'pending'
                   ? 'bg-white text-[#b90041] shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
@@ -204,13 +257,23 @@ export default function ResellerWallet() {
             </button>
             <button
               onClick={() => setActiveTab('paid')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex-1 min-w-[90px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'paid'
                   ? 'bg-white text-[#b90041] shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Paid
+              Settled
+            </button>
+            <button
+              onClick={() => setActiveTab('reversals')}
+              className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'reversals'
+                  ? 'bg-white text-rose-700 shadow-xs font-bold border border-rose-100'
+                  : 'text-rose-600 hover:text-rose-800'
+              }`}
+            >
+              Reversals 🔄
             </button>
           </div>
         </section>
@@ -231,7 +294,11 @@ export default function ResellerWallet() {
             {filteredTransactions.map((tx) => (
               <div
                 key={tx.id}
-                className="bg-white p-4 sm:p-5 rounded-2xl flex items-center gap-4 transition-all hover:shadow-md border border-slate-100"
+                className={`p-4 sm:p-5 rounded-2xl flex items-center gap-4 transition-all hover:shadow-md border ${
+                  tx.status === 'Reversed'
+                    ? 'bg-rose-50/40 border-rose-100'
+                    : 'bg-white border-slate-100'
+                }`}
               >
                 <div className="relative w-14 h-14 shrink-0 rounded-xl overflow-hidden">
                   <img
@@ -248,16 +315,27 @@ export default function ResellerWallet() {
                     </p>
                     <span
                       className={`font-bold text-sm sm:text-base tracking-tight ${
-                        tx.status === 'Settled' ? 'text-emerald-700' : 'text-[#4d41df]'
+                        tx.status === 'Reversed'
+                          ? 'text-rose-600 font-extrabold'
+                          : tx.status === 'Settled'
+                          ? 'text-emerald-700'
+                          : 'text-[#4d41df]'
                       }`}
                     >
-                      +₹{tx.amount.toFixed(2)}
+                      {tx.amount < 0 ? `-₹${Math.abs(tx.amount).toFixed(2)}` : `+₹${tx.amount.toFixed(2)}`}
                     </span>
                   </div>
+                  {tx.reason && (
+                    <p className="text-xs text-rose-600 font-medium truncate mb-1">
+                      {tx.reason}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                        tx.status === 'Settled'
+                        tx.status === 'Reversed'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : tx.status === 'Settled'
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-indigo-50 text-[#4d41df]'
                       }`}

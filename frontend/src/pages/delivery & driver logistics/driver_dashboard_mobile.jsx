@@ -56,10 +56,28 @@ export default function DriverDashboardMobile({ onNavigate = () => {}, onBack })
       type: 'Express',
       timeEst: '20 mins',
     },
+    {
+      id: 'RET-8821',
+      itemsCount: '1 Return Item (Saree)',
+      distance: '1.8 km away',
+      payout: 65,
+      pickup: 'Customer: Priya Sharma, MG Road',
+      drop: 'Central Hub Return Depot',
+      type: 'Return Pickups 🔄',
+      timeEst: '10 mins',
+      isReturn: true,
+    },
   ];
 
   const handleAcceptTask = (id) => {
     setAcceptedTasks((prev) => new Set(prev).add(id));
+    if (id === 'RET-8821') {
+      triggerToast(`Accepted Return Task #${id}! Navigating to Customer... 🔄`);
+      setTimeout(() => {
+        onNavigate('driver_reverse_pickup');
+      }, 400);
+      return;
+    }
     triggerToast(`Accepted Order #${id}! Loading Live Route... 🛵`);
     setTimeout(() => {
       onNavigate('active_delivery');
@@ -292,6 +310,40 @@ export default function DriverDashboardMobile({ onNavigate = () => {}, onBack })
           </div>
         </section>
 
+        {/* Urgent Reverse Pickup Alert Banner */}
+        <section
+          onClick={() => onNavigate('driver_reverse_pickup')}
+          className="bg-gradient-to-r from-rose-600 via-rose-500 to-[#b90041] text-white p-4 sm:p-5 rounded-3xl shadow-lg shadow-pink-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer hover:scale-[1.01] transition-transform"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl shrink-0 backdrop-blur-md">
+              🔄
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider bg-white/25 px-2.5 py-0.5 rounded-full text-white">
+                  Reverse Return Pickup Assigned
+                </span>
+                <span className="text-xs text-pink-100 font-semibold">• Slot: 4:00 - 7:00 PM</span>
+              </div>
+              <h3 className="font-extrabold text-sm sm:text-base text-white mt-0.5">
+                Priya Sharma (1.8 km) • Kanjivaram Silk Saree
+              </h3>
+              <p className="text-xs text-pink-100 font-medium">Doorstep QC &amp; Return Handover • Rider Incentive: ₹65.00</p>
+            </div>
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('driver_reverse_pickup');
+            }}
+            className="px-4 py-2.5 bg-white text-[#b90041] font-black text-xs rounded-xl shadow-sm self-stretch sm:self-auto hover:bg-pink-50 transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Start Reverse Pickup ➔
+          </button>
+        </section>
+
         {/* 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Tasks Queue (7 cols) */}
@@ -308,7 +360,7 @@ export default function DriverDashboardMobile({ onNavigate = () => {}, onBack })
 
               {/* Filter Pills */}
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
-                {['All', 'Express', 'High Value', 'Standard'].map((f) => (
+                {['All', 'Return Pickups 🔄', 'Express', 'High Value', 'Standard'].map((f) => (
                   <button
                     key={f}
                     onClick={() => setActiveFilter(f)}

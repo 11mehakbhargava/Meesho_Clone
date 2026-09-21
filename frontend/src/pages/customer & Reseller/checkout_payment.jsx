@@ -393,15 +393,26 @@ export default function CheckoutPayment({ onNavigate = () => {}, onBack }) {
                 Reseller Margin of ₹{marginAmount} will be transferred to your account!
               </div>
             )}
-            <button
-              onClick={() => {
-                setIsOrderConfirmed(false);
-                onNavigate('reseller');
-              }}
-              className="w-full bg-[#FF3F6C] text-white py-3.5 rounded-2xl font-black text-xs shadow-lg shadow-pink-500/30 cursor-pointer"
-            >
-              Back to Home
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  setIsOrderConfirmed(false);
+                  onNavigate('/orders');
+                }}
+                className="w-full bg-[#FF3F6C] hover:bg-[#e02d58] text-white py-3.5 rounded-2xl font-black text-xs shadow-lg shadow-pink-500/30 cursor-pointer transition-all uppercase tracking-wider"
+              >
+                Track in My Orders 📦
+              </button>
+              <button
+                onClick={() => {
+                  setIsOrderConfirmed(false);
+                  onNavigate('reseller');
+                }}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-xs cursor-pointer transition-all"
+              >
+                Back to Home
+              </button>
+            </div>
           </div>
         </div>
       )}
