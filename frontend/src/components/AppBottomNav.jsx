@@ -24,7 +24,7 @@ export default function AppBottomNav({ activeNav = 'home', onNavigate }) {
     { id: 'orders', label: 'Orders', icon: 'shopping_bag', path: '/orders' },
     { id: 'earnings', label: 'Earnings', icon: 'payments', path: '/earnings-dashboard-1' },
     { id: 'profile', label: 'Profile', icon: 'person', path: '/user-dashboard' },
-    { id: 'screens', label: 'Screens', icon: 'layers', badge: '65' },
+    { id: 'screens', label: 'Screens', icon: 'layers', badge: '68' },
   ];
 
   return (
