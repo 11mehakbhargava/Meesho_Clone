@@ -81,7 +81,7 @@ export default function WithdrawEarnings() {
       </header>
 
       {/* Main Content - Strictly Vertical Stream */}
-      <main className="max-w-xl md:max-w-2xl mx-auto px-4 pb-44 pt-6 space-y-8">
+      <main className="max-w-xl md:max-w-2xl mx-auto px-4 pb-12 pt-6 space-y-8">
         {/* Balance Header */}
         <section className="text-center relative overflow-hidden p-8 rounded-3xl bg-[#f6f3f2] dark:bg-slate-800/60">
           <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#b90041]/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -232,24 +232,22 @@ export default function WithdrawEarnings() {
             </span>
           </div>
         </section>
-      </main>
 
-      {/* Sticky Bottom Action */}
-      <div className="fixed bottom-0 left-0 w-full p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 z-50">
-        <div className="max-w-xl md:max-w-2xl mx-auto">
+        {/* Primary Withdraw Earnings Action Button */}
+        <div className="pt-2 pb-6 space-y-3">
           <button
             type="button"
             onClick={handleProceedWithdraw}
-            className="w-full h-14 sm:h-16 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white font-extrabold text-base sm:text-lg rounded-2xl active:scale-95 shadow-[0_8px_32px_rgba(185,0,65,0.25)] flex items-center justify-center gap-3 transition-transform cursor-pointer"
+            className="w-full h-14 sm:h-16 bg-gradient-to-r from-[#b90041] to-[#df2457] hover:from-[#a00037] hover:to-[#c71e4c] text-white font-extrabold text-base sm:text-lg rounded-2xl active:scale-95 shadow-[0_8px_32px_rgba(185,0,65,0.25)] hover:shadow-xl hover:shadow-pink-500/30 flex items-center justify-center gap-3 transition-all cursor-pointer"
           >
-            Withdraw to {payoutMethod === 'bank' ? 'Bank Account' : 'UPI ID'}
+            <span>Withdraw Earnings ({payoutMethod === 'bank' ? 'Bank Account' : 'UPI ID'})</span>
             <span className="material-symbols-outlined text-xl">trending_flat</span>
           </button>
-          <p className="text-center text-[10px] text-slate-400 font-medium mt-3 uppercase tracking-widest px-4">
+          <p className="text-center text-[10px] text-slate-400 font-medium uppercase tracking-widest px-4">
             By proceeding, you agree to our partner payout terms and conditions.
           </p>
         </div>
-      </div>
+      </main>
 
       {/* Navigation Drawer */}
       <NavDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />

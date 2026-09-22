@@ -31,7 +31,7 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
   ];
 
   return (
-    <div className="bg-[#fcf9f8] text-[#1c1b1b] min-h-screen font-sans antialiased selection:bg-pink-100 selection:text-pink-600 pb-32">
+    <div className="bg-[#fcf9f8] text-[#1c1b1b] min-h-screen w-full max-w-full overflow-x-hidden font-sans antialiased selection:bg-pink-100 selection:text-pink-600 pb-32">
       {/* Toast Alert */}
       {showToast && (
         <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
@@ -41,33 +41,39 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
       )}
 
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs w-full max-w-full overflow-hidden">
+        <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16 max-w-7xl mx-auto w-full gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('driver_dashboard'))}
-              className="p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#b90041] cursor-pointer transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#b90041] cursor-pointer transition-colors shrink-0"
               title="Back"
             >
-              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">arrow_back</span>
             </button>
-            <div>
-              <h1 className="font-extrabold text-base sm:text-lg text-[#1c1b1b] leading-none">
-                Order Details #MS-99210-A
-              </h1>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap sm:flex-nowrap">
+                <h1 className="font-extrabold text-sm sm:text-lg text-[#1c1b1b] leading-tight whitespace-nowrap">
+                  Order Details
+                </h1>
+                <span className="text-[10px] sm:text-xs font-bold text-[#b90041] bg-pink-50 px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0">
+                  #MS-99210-A
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate block">
                 Electronic City ➔ Koramangala
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('active_delivery')}
-              className="px-4 py-2 rounded-2xl bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
+              title="Live GPS Map"
             >
-              <span className="material-symbols-outlined text-base">explore</span>
-              <span>Live GPS Map</span>
+              <span className="material-symbols-outlined text-base sm:text-lg">explore</span>
+              <span>GPS Map</span>
             </button>
             <button
               onClick={() => onNavigate('swiftroute')}

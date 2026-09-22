@@ -65,7 +65,7 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
     },
     {
       id: 3,
-      title: 'Retro Square Polarized Sunglasses',
+      title: 'Retro Square Sunglasses',
       price: 249,
       originalPrice: 999,
       discount: '75% OFF',
@@ -75,7 +75,7 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
     },
     {
       id: 4,
-      title: 'Air Cushion Lightweight Sneakers',
+      title: 'Air Cushion Sneakers',
       price: 1249,
       originalPrice: 3499,
       discount: '64% OFF',
@@ -95,11 +95,11 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
       )}
 
       {/* TopAppBar */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-2xs">
-        <div className="flex items-center gap-4">
+      <header className="relative flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 w-full bg-white border-b border-gray-100 shadow-2xs gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
             onClick={() => onNavigate('reseller')}
-            className="text-2xl font-black text-[#FF3F6C] tracking-tight cursor-pointer"
+            className="text-base sm:text-xl md:text-2xl font-black text-[#FF3F6C] tracking-tight cursor-pointer whitespace-nowrap"
           >
             The Digital Curator
           </button>
@@ -290,8 +290,8 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
                     />
 
                     {product.tag && (
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#191c1e] shadow-sm">
+                      <div className="absolute top-3 left-3 max-w-[calc(100%-44px)]">
+                        <span className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#191c1e] shadow-sm truncate whitespace-nowrap block">
                           {product.tag}
                         </span>
                       </div>
@@ -299,29 +299,29 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
 
                     <button
                       onClick={(e) => toggleWishlist(e, product.id)}
-                      className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white"
-                      title="Add to Wishlist"
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
                     >
                       <span
-                        className={`material-symbols-outlined ${
-                          isFav ? 'text-[#b90041]' : 'text-gray-500'
-                        }`}
-                        style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
+                        className={`material-symbols-outlined text-sm ${isFav ? 'text-[#FF3F6C]' : 'text-gray-600'}`}
+                        style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
                       >
                         favorite
                       </span>
                     </button>
                   </div>
 
-                  <div className="px-1 space-y-1">
-                    <h4 className="text-sm font-semibold text-[#191c1e] line-clamp-1 hover:text-[#FF3F6C] transition">
+                  <div className="px-1 space-y-1 min-w-0">
+                    <h4 
+                      className="text-xs sm:text-sm font-semibold text-[#191c1e] line-clamp-2 mb-1 leading-snug min-h-[2.25rem] sm:min-h-[2.5rem] break-words hover:text-[#FF3F6C] transition"
+                      title={product.title}
+                    >
                       {product.title}
                     </h4>
 
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-lg font-black text-[#191c1e]">₹{product.price}</span>
-                      <span className="text-xs text-gray-400 line-through">₹{product.originalPrice}</span>
-                      <span className="text-xs font-bold text-[#FF3F6C]">{product.discount}</span>
+                    <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
+                      <span className="text-sm sm:text-base font-black text-[#191c1e]">₹{product.price}</span>
+                      <span className="text-[11px] sm:text-xs text-gray-400 line-through">₹{product.originalPrice}</span>
+                      <span className="text-[11px] sm:text-xs font-bold text-[#FF3F6C] whitespace-nowrap">{product.discount}</span>
                     </div>
 
                     <div className="bg-emerald-50 border border-emerald-200/60 rounded-xl px-3 py-1.5 flex items-center justify-between mt-2">

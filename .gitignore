@@ -28,3 +28,6 @@ pnpm-debug.log*
 
 # Design references
 stitch_meesho_clone_design_prd/
+
+# Generated PDF flows
+pdf_navigation_flows/

@@ -113,7 +113,7 @@ export default function ResellerWallet() {
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] antialiased min-h-screen pb-32 font-sans relative selection:bg-[#FF3F6C]/20">
       {/* 1. TopAppBar - Full Width */}
-      <header className="bg-white/80 dark:bg-[#191C1E] backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 dark:border-slate-800">
+      <header className="bg-white dark:bg-[#191C1E] relative border-b border-gray-100 dark:border-slate-800">
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3 sm:gap-4">
             <button

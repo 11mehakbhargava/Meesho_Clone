@@ -70,6 +70,8 @@ import AdminProductCatalog from './pages/admin_panel/admin_product_catalog';
 import CampaignCreationFlowAdmin from './pages/admin_panel/campaign_creation_flow_admin';
 import PerformanceAnalyticsDashboardAdmin from './pages/admin_panel/performance_analytics_dashboard_admin';
 import AdminReturnRefundHub from './pages/admin_panel/AdminReturnRefundHub';
+import AdminDropshipperKyc from './pages/admin_panel/AdminDropshipperKyc';
+import AdminAffiliateKycApproval from './pages/admin_panel/AdminAffiliateKycApproval';
 
 // Support & Ticketing Pages
 import SupportCenter from './pages/Community_Social_Chat_&_Customer_Support/support_center';
@@ -151,6 +153,8 @@ const screenCatalog = [
 
   // 5. Admin Panel & Support
   { path: '/admin-panel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
+  { path: '/admin-dropshipper-kyc', name: 'Dropshipper KYC', icon: '📦', group: 'Admin' },
+  { path: '/admin-affiliate-kyc', name: 'Affiliate KYC & Access', icon: '🤝', group: 'Admin' },
   { path: '/admin-returns', name: 'Returns & Refund Hub', icon: '⚖️', group: 'Admin' },
   { path: '/admin-catalog', name: 'Admin Catalog', icon: '📁', group: 'Admin' },
   { path: '/campaign-flow', name: 'Campaign Creation', icon: '📢', group: 'Admin' },
@@ -692,6 +696,18 @@ function AppRoutes() {
         <Route
           path="/admin-panel"
           element={<AdminWebPanel onNavigate={handleNav} onSwitchView={() => handleNav('/seller-dashboard')} />}
+        />
+        <Route
+          path="/admin-dropshipper-kyc"
+          element={<AdminDropshipperKyc onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/admin-kyc"
+          element={<AdminDropshipperKyc onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/admin-affiliate-kyc"
+          element={<AdminAffiliateKycApproval onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
           path="/admin-returns"

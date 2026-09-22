@@ -66,9 +66,9 @@ export default function PayoutSettings() {
   };
 
   return (
-    <div className="bg-surface font-body text-on-surface min-h-screen pb-32 selection:bg-primary/20">
+    <div className="bg-surface font-body text-on-surface min-h-screen selection:bg-primary/20">
       {/* TopAppBar - Full Width */}
-      <header className="w-full sticky top-0 z-50 bg-[#F8F9FB] border-b border-gray-100">
+      <header className="w-full relative bg-[#F8F9FB] border-b border-gray-100">
         <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <button 
@@ -92,7 +92,7 @@ export default function PayoutSettings() {
         </div>
       </header>
 
-      <main className="w-full max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-40 space-y-8">
+      <main className="w-full max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-24 space-y-8">
         {toastMsg && (
           <div className="bg-emerald-600 text-white text-xs font-bold py-3 px-4 rounded-2xl text-center shadow-lg animate-fade-in">
             {toastMsg}
@@ -182,7 +182,7 @@ export default function PayoutSettings() {
         </section>
 
         {/* Add Bank Account CTA */}
-        <section className="mb-10 flex flex-col gap-3">
+        <section className="flex flex-col gap-3">
           <button
             onClick={() => setShowAddBankModal(true)}
             className="w-full bg-gradient-to-r from-primary to-primary-container text-white rounded-2xl py-4 font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all cursor-pointer text-sm"
@@ -193,7 +193,7 @@ export default function PayoutSettings() {
         </section>
 
         {/* Withdrawal Schedule Info */}
-        <section className="mb-10">
+        <section>
           <div className="bg-secondary-fixed p-6 rounded-3xl flex items-center gap-6">
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-secondary text-4xl">calendar_month</span>
@@ -210,7 +210,7 @@ export default function PayoutSettings() {
         </section>
 
         {/* Security Note */}
-        <footer className="text-center px-10 pb-10">
+        <footer className="text-center px-6 sm:px-10 pb-4">
           <div className="inline-flex items-center gap-2 text-on-surface-variant/60 mb-2">
             <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
               lock
@@ -229,15 +229,17 @@ export default function PayoutSettings() {
 
       {/* Add Bank Account Modal */}
       {showAddBankModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h3 className="font-headline font-bold text-lg">Add Bank Account</h3>
+              <h3 className="font-headline font-bold text-lg text-on-surface">Add Bank Account</h3>
               <button 
+                type="button"
                 onClick={() => setShowAddBankModal(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 cursor-pointer"
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 cursor-pointer transition-colors"
+                aria-label="Close"
               >
-                <span className="material-symbols-outlined text-sm">close</span>
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
             <form onSubmit={handleSaveBank} className="space-y-3">
@@ -249,7 +251,7 @@ export default function PayoutSettings() {
                   placeholder="e.g. State Bank of India"
                   value={newBank.bankName}
                   onChange={(e) => setNewBank(prev => ({ ...prev, bankName: e.target.value }))}
-                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary"
+                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
                 />
               </div>
               <div>
@@ -260,7 +262,7 @@ export default function PayoutSettings() {
                   placeholder="Enter full account number"
                   value={newBank.accountNumber}
                   onChange={(e) => setNewBank(prev => ({ ...prev, accountNumber: e.target.value }))}
-                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary"
+                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
                 />
               </div>
               <div>
@@ -271,7 +273,7 @@ export default function PayoutSettings() {
                   placeholder="As per bank passbook"
                   value={newBank.holderName}
                   onChange={(e) => setNewBank(prev => ({ ...prev, holderName: e.target.value }))}
-                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary"
+                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
                 />
               </div>
               <div>
@@ -282,22 +284,23 @@ export default function PayoutSettings() {
                   placeholder="e.g. SBIN0001234"
                   value={newBank.ifsc}
                   onChange={(e) => setNewBank(prev => ({ ...prev, ifsc: e.target.value.toUpperCase() }))}
-                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary uppercase"
+                  className="w-full mt-1 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary uppercase transition-colors"
                 />
               </div>
               <div className="pt-2 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddBankModal(false)}
-                  className="flex-1 py-3 bg-gray-100 font-bold text-gray-600 rounded-xl text-xs cursor-pointer"
+                  className="flex-1 py-2.5 px-3 bg-gray-100 font-bold text-gray-600 rounded-xl text-xs cursor-pointer hover:bg-gray-200 transition-colors flex items-center justify-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary text-white font-bold rounded-xl text-xs shadow-lg cursor-pointer hover:bg-primary/90"
+                  className="flex-1 py-2.5 px-3 bg-primary text-white font-bold rounded-xl text-xs shadow-lg shadow-primary/20 cursor-pointer hover:bg-primary/90 transition-all flex flex-col items-center justify-center leading-tight"
                 >
-                  Save & Verify (₹1 Test Deposit)
+                  <span>Save & Verify</span>
+                  <span className="text-[10px] font-medium opacity-90">(₹1 Test Deposit)</span>
                 </button>
               </div>
             </form>
@@ -307,15 +310,17 @@ export default function PayoutSettings() {
 
       {/* Add UPI Modal */}
       {showAddUpiModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h3 className="font-headline font-bold text-base">Link UPI ID</h3>
+              <h3 className="font-headline font-bold text-base text-on-surface">Link UPI ID</h3>
               <button 
+                type="button"
                 onClick={() => setShowAddUpiModal(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 cursor-pointer"
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 cursor-pointer transition-colors"
+                aria-label="Close"
               >
-                <span className="material-symbols-outlined text-sm">close</span>
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
             <form onSubmit={handleAddUpi} className="space-y-4">
@@ -327,7 +332,7 @@ export default function PayoutSettings() {
                   placeholder="mobile@okhdfcbank or name@paytm"
                   value={newUpi}
                   onChange={(e) => setNewUpi(e.target.value)}
-                  className="w-full mt-1.5 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary"
+                  className="w-full mt-1.5 p-3 bg-surface-container-low border border-gray-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
                 />
               </div>
               <div className="flex gap-2">
@@ -339,7 +344,7 @@ export default function PayoutSettings() {
                       const prefix = newUpi.split('@')[0];
                       setNewUpi(prefix ? `${prefix}${suffix}` : suffix);
                     }}
-                    className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded-lg cursor-pointer"
+                    className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors"
                   >
                     {suffix}
                   </button>
@@ -349,13 +354,13 @@ export default function PayoutSettings() {
                 <button
                   type="button"
                   onClick={() => setShowAddUpiModal(false)}
-                  className="flex-1 py-3 bg-gray-100 font-bold text-gray-600 rounded-xl text-xs cursor-pointer"
+                  className="flex-1 py-3 bg-gray-100 font-bold text-gray-600 rounded-xl text-xs cursor-pointer hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-primary text-white font-bold rounded-xl text-xs shadow-lg cursor-pointer hover:bg-primary/90"
+                  className="flex-1 py-3 bg-primary text-white font-bold rounded-xl text-xs shadow-lg shadow-primary/20 cursor-pointer hover:bg-primary/90 transition-all"
                 >
                   Verify & Link
                 </button>

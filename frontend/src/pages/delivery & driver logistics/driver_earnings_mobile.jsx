@@ -23,7 +23,7 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
   ];
 
   return (
-    <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
+    <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen w-full max-w-full overflow-x-hidden pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
       {/* Toast Alert */}
       {showToast && (
         <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
@@ -33,41 +33,42 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
       )}
 
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs w-full max-w-full overflow-hidden">
+        <div className="flex justify-between items-center px-3 sm:px-6 lg:px-8 h-14 sm:h-16 w-full max-w-7xl mx-auto gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('driver_dashboard'))}
-              className="p-2 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer transition-colors shrink-0"
               title="Back"
             >
-              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">arrow_back</span>
             </button>
             <div
               onClick={() => onNavigate('driver_dashboard')}
-              className="cursor-pointer"
+              className="cursor-pointer min-w-0 flex-1"
             >
-              <h1 className="font-extrabold tracking-tight text-base sm:text-lg text-[#b90041] leading-none">
+              <h1 className="font-extrabold tracking-tight text-sm sm:text-lg text-[#b90041] leading-tight whitespace-nowrap truncate">
                 Driver Earnings &amp; Wallet
               </h1>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap truncate block">
                 Partner ID: MP8829 • Payouts Hub
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('delivery_history')}
-              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-full cursor-pointer transition-colors"
+              className="text-[11px] sm:text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full cursor-pointer transition-colors whitespace-nowrap"
             >
-              Trip Logs 📋
+              <span className="hidden sm:inline">Trip </span>Logs 📋
             </button>
             <button
               onClick={() => triggerToast('Wallet synchronized with bank')}
-              className="p-2 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer shrink-0"
+              title="Notifications"
             >
-              <span className="material-symbols-outlined text-2xl">notifications</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
             </button>
           </div>
         </div>

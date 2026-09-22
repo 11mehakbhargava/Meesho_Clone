@@ -30,7 +30,7 @@ const initialProducts = [
   },
   {
     id: 3,
-    title: "Retro Square Polarized Sunglasses",
+    title: "Retro Square Sunglasses",
     category: "Gadgets",
     brand: "Vincent Chase",
     price: 249,
@@ -42,7 +42,7 @@ const initialProducts = [
   },
   {
     id: 4,
-    title: "Air Cushion Lightweight Sneakers",
+    title: "Air Cushion Sneakers",
     category: "Men",
     brand: "Puma",
     price: 1249,
@@ -54,7 +54,7 @@ const initialProducts = [
   },
   {
     id: 5,
-    title: "boAt Rockerz 450 Bluetooth Headphones",
+    title: "boAt Rockerz 450 Headphones",
     category: "Brands",
     brand: "boAt",
     price: 1499,
@@ -66,7 +66,7 @@ const initialProducts = [
   },
   {
     id: 6,
-    title: "Puma Smashic Unisex Leather Sneakers",
+    title: "Puma Leather Sneakers",
     category: "Brands",
     brand: "Puma",
     price: 1899,
@@ -138,20 +138,20 @@ export default function HomeUserReseller() {
   return (
     <div className="bg-surface font-body text-on-surface min-h-screen">
       {/* TopAppBar */}
-      <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-100 dark:border-slate-800">
-        <div className="w-full px-4 sm:px-6 md:px-10 lg:px-16 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-4">
+      <header className="relative w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
+        <div className="w-full px-3.5 sm:px-6 md:px-10 lg:px-16 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className="p-1.5 rounded-full text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-95 cursor-pointer"
+              className="p-1.5 rounded-full text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-95 cursor-pointer shrink-0"
               aria-label="Open menu"
             >
               <span className="material-symbols-outlined text-2xl">menu</span>
             </button>
             <span 
               onClick={() => navigate('/')}
-              className="text-xl sm:text-2xl font-black text-[#FF3F6C] font-headline tracking-tight cursor-pointer"
+              className="text-base sm:text-xl md:text-2xl font-black text-[#FF3F6C] font-headline tracking-tight cursor-pointer whitespace-nowrap"
             >
               The Digital Curator
             </span>
@@ -356,9 +356,11 @@ export default function HomeUserReseller() {
                           alt={p.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         />
-                        <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider text-on-surface">
-                          {p.tag}
-                        </span>
+                        {p.tag && (
+                          <span className="absolute top-2 left-2 max-w-[calc(100%-44px)] truncate whitespace-nowrap bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider text-on-surface">
+                            {p.tag}
+                          </span>
+                        )}
                         <button 
                           onClick={(e) => toggleFavorite(p.id, e)}
                           className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
@@ -372,15 +374,22 @@ export default function HomeUserReseller() {
                         </button>
                       </div>
 
-                      <div className="px-1">
+                      <div className="px-1 min-w-0">
                         {p.brand && (
-                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider block mb-0.5">{p.brand}</span>
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider block mb-0.5 truncate">
+                            {p.brand}
+                          </span>
                         )}
-                        <h4 className="text-sm font-semibold text-on-surface line-clamp-1 mb-1 font-body">{p.title}</h4>
-                        <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-base font-black text-on-surface">₹{p.price}</span>
-                          <span className="text-xs text-on-surface-variant line-through">₹{p.originalPrice}</span>
-                          <span className="text-xs font-bold text-[#FF3F6C]">{p.discount}</span>
+                        <h4 
+                          className="text-[11.5px] sm:text-xs md:text-sm font-semibold text-on-surface line-clamp-2 mb-1 font-body leading-snug min-h-[2.25rem] sm:min-h-[2.5rem] break-words"
+                          title={p.title}
+                        >
+                          {p.title}
+                        </h4>
+                        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-2">
+                          <span className="text-sm sm:text-base font-black text-on-surface">₹{p.price}</span>
+                          <span className="text-[11px] sm:text-xs text-on-surface-variant line-through">₹{p.originalPrice}</span>
+                          <span className="text-[11px] sm:text-xs font-bold text-[#FF3F6C] whitespace-nowrap">{p.discount}</span>
                         </div>
                       </div>
                     </div>
@@ -450,13 +459,6 @@ export default function HomeUserReseller() {
         </section>
       </main>
 
-      {/* FAB for Reselling */}
-      <button
-        onClick={() => navigate('/share-earn-config')}
-        className="fixed right-6 bottom-28 w-14 h-14 bg-gradient-to-tr from-primary to-primary-container text-white rounded-full flex items-center justify-center shadow-[0_12px_32px_rgba(185,0,65,0.3)] z-40 active:scale-90 transition-transform md:hidden cursor-pointer"
-      >
-        <span className="material-symbols-outlined">share</span>
-      </button>
 
       {/* Responsive Universal Bottom Navigation Bar */}
       <AppBottomNav activeNav="home" />

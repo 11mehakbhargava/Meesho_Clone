@@ -10,7 +10,7 @@ const EarningsDashboard2 = () => {
   return (
     <div className="bg-surface text-on-surface min-h-screen pb-32 font-sans selection:bg-primary/20">
       {/* TopAppBar - Full Width across Desktop and Mobile */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md fixed top-0 w-full z-50 shadow-sm dark:shadow-none border-b border-slate-100 dark:border-slate-800">
+      <header className="bg-white dark:bg-slate-900 relative w-full shadow-sm dark:shadow-none border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-10 lg:px-16 h-16 w-full">
           <div className="flex items-center gap-4">
             <button
@@ -37,7 +37,7 @@ const EarningsDashboard2 = () => {
       </header>
 
       {/* Main Content Canvas - Full Desktop Width & Mobile Responsive */}
-      <main className="pt-20 px-4 sm:px-6 md:px-10 lg:px-16 w-full max-w-7xl mx-auto space-y-8">
+      <main className="pt-6 sm:pt-8 px-4 sm:px-6 md:px-10 lg:px-16 w-full max-w-7xl mx-auto space-y-8">
         {/* Total Earnings Card (Editorial Hero) */}
         <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-container rounded-3xl p-6 sm:p-8 text-on-primary shadow-xl">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>

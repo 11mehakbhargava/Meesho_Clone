@@ -99,7 +99,7 @@ export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack })
   });
 
   return (
-    <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
+    <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen w-full max-w-full overflow-x-hidden pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
       {/* Toast Alert */}
       {showToast && (
         <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
@@ -109,24 +109,24 @@ export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack })
       )}
 
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto gap-4">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs w-full max-w-full overflow-hidden">
+        <div className="flex justify-between items-center px-3 sm:px-6 lg:px-8 h-14 sm:h-16 w-full max-w-7xl mx-auto gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('driver_dashboard'))}
-              className="p-2 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer transition-colors shrink-0"
               title="Back"
             >
-              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">arrow_back</span>
             </button>
             <div
               onClick={() => onNavigate('driver_dashboard')}
-              className="cursor-pointer"
+              className="cursor-pointer min-w-0"
             >
-              <h1 className="font-extrabold tracking-tight text-base sm:text-lg text-[#b90041] leading-none">
+              <h1 className="font-extrabold tracking-tight text-sm sm:text-lg text-[#b90041] leading-tight whitespace-nowrap">
                 Delivery Trip History
               </h1>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap block">
                 Partner ID: MP8829 • All Logs
               </span>
             </div>
@@ -148,19 +148,19 @@ export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack })
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('driver_earnings')}
-              className="text-xs font-bold text-[#b90041] bg-pink-50 hover:bg-pink-100 px-3.5 py-1.5 rounded-full cursor-pointer transition-colors"
+              className="text-[11px] sm:text-xs font-bold text-[#b90041] bg-pink-50 hover:bg-pink-100 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full cursor-pointer transition-colors whitespace-nowrap"
             >
-              Wallet ₹12.4k
+              <span className="hidden sm:inline">Wallet </span>₹12.4k
             </button>
             <button
               onClick={() => onNavigate('available_tasks')}
-              className="p-2 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer"
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer shrink-0"
               title="Available Tasks"
             >
-              <span className="material-symbols-outlined text-2xl">add_task</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">add_task</span>
             </button>
           </div>
         </div>
@@ -228,40 +228,40 @@ export default function DeliveryHistoryMobile({ onNavigate = () => {}, onBack })
                     onClick={() => onNavigate('order_driver')}
                     className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-3 group hover:shadow-md hover:border-pink-200 transition-all cursor-pointer"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-3 items-center">
-                        <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#b90041] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                          <span className="material-symbols-outlined text-2xl">{log.icon}</span>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex gap-2.5 sm:gap-3 items-center min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-pink-50 text-[#b90041] flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                          <span className="material-symbols-outlined text-xl sm:text-2xl">{log.icon}</span>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-extrabold text-sm text-[#1c1b1b]">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <p className="font-extrabold text-xs sm:text-sm text-[#1c1b1b] whitespace-nowrap">
                               Order #{log.id}
                             </p>
-                            <span className="text-[10px] text-[#b90041] font-bold group-hover:underline">
+                            <span className="text-[10px] text-[#b90041] font-bold group-hover:underline whitespace-nowrap">
                               Details ➔
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">
                             {log.date} • {log.time}
                           </p>
                         </div>
                       </div>
                       <span
-                        className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-xl border ${log.statusColor}`}
+                        className={`px-2.5 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl border shrink-0 whitespace-nowrap ${log.statusColor}`}
                       >
                         {log.status}
                       </span>
                     </div>
 
                     {/* Pickup & Drop Points */}
-                    <div className="bg-[#fcf9f8] p-3 rounded-2xl text-xs text-slate-600 flex items-center justify-between gap-2 border border-slate-100">
-                      <span className="truncate">
-                        <strong className="text-slate-800">From:</strong> {log.pickup}
+                    <div className="bg-[#fcf9f8] p-2.5 sm:p-3 rounded-2xl text-xs text-slate-600 flex items-center justify-between gap-2 border border-slate-100 min-w-0">
+                      <span className="truncate min-w-0 flex-1">
+                        <strong className="text-slate-800 font-bold">From:</strong> {log.pickup}
                       </span>
-                      <span className="text-slate-300">➔</span>
-                      <span className="truncate">
-                        <strong className="text-slate-800">To:</strong> {log.drop}
+                      <span className="text-slate-300 shrink-0">➔</span>
+                      <span className="truncate min-w-0 flex-1 text-right">
+                        <strong className="text-slate-800 font-bold">To:</strong> {log.drop}
                       </span>
                     </div>
 

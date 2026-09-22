@@ -30,6 +30,8 @@ const INITIAL_VERIFICATIONS = [
 
 const SIDEBAR_NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'dropshipper-kyc', label: 'Dropshipper KYC 📦', icon: 'verified_user' },
+  { id: 'affiliate-kyc', label: 'Affiliate KYC 🤝', icon: 'loyalty' },
   { id: 'products', label: 'Products', icon: 'inventory_2' },
   { id: 'orders', label: 'Orders', icon: 'shopping_cart' },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: 'assignment_return' },
@@ -139,6 +141,14 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
                           if (onNavigate) onNavigate('/admin-returns');
                           return;
                         }
+                        if (item.id === 'kyc' || item.id === 'dropshipper-kyc') {
+                          if (onNavigate) onNavigate('/admin-dropshipper-kyc');
+                          return;
+                        }
+                        if (item.id === 'affiliate-kyc') {
+                          if (onNavigate) onNavigate('/admin-affiliate-kyc');
+                          return;
+                        }
                         setActiveTab(item.id);
                         if (onNavigate) onNavigate(item.id);
                       }}
@@ -195,6 +205,14 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
                   onClick={() => {
                     if (item.id === 'returns') {
                       if (onNavigate) onNavigate('/admin-returns');
+                      return;
+                    }
+                    if (item.id === 'kyc' || item.id === 'dropshipper-kyc') {
+                      if (onNavigate) onNavigate('/admin-dropshipper-kyc');
+                      return;
+                    }
+                    if (item.id === 'affiliate-kyc') {
+                      if (onNavigate) onNavigate('/admin-affiliate-kyc');
                       return;
                     }
                     setActiveTab(item.id);
@@ -493,13 +511,27 @@ export function AdminWebPanel({ onNavigate, onSwitchView }) {
             {/* Pending Verifications List */}
             <div className="bg-[#f2f4f6] p-8 rounded-2xl flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h4 className="text-xl font-bold text-[#191c1e] font-['Plus_Jakarta_Sans',sans-serif]">
-                    Pending Verifications
-                  </h4>
-                  <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                    {verifications.length} Action Required
-                  </span>
+                <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+                  <div>
+                    <h4 className="text-xl font-bold text-[#191c1e] font-['Plus_Jakarta_Sans',sans-serif]">
+                      Pending Verifications
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Quick triage of identity & business requests</p>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                      {verifications.length} Action Required
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate && onNavigate('/admin-dropshipper-kyc')}
+                      className="px-3 py-1.5 bg-[#b90041] hover:bg-[#960034] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all hover:scale-105"
+                    >
+                      <span className="material-symbols-outlined text-sm">verified_user</span>
+                      <span>Dropshipper KYC</span>
+                      <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
