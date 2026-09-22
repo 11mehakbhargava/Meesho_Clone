@@ -217,27 +217,29 @@ export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) 
       )}
 
       {/* Top Header */}
-      <header className="bg-white/90 backdrop-blur-md sticky top-0 w-full z-50 border-b border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto gap-4">
-          <div className="flex items-center gap-3">
+      <header className="bg-white/95 backdrop-blur-md sticky top-0 w-full z-50 border-b border-gray-100 shadow-xs">
+        <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16 w-full max-w-7xl mx-auto gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <button
               onClick={() => (onBack ? onBack() : onNavigate('reseller'))}
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors active:scale-95 text-[#FF3F6C] cursor-pointer"
+              className="p-1.5 sm:p-2 -ml-1 hover:bg-slate-100 rounded-full transition-colors active:scale-95 text-[#FF3F6C] cursor-pointer shrink-0"
               title="Back"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
             <div
               onClick={() => onNavigate('reseller')}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group min-w-0"
             >
-              <span className="text-2xl animate-pulse">⚡</span>
-              <div>
-                <h1 className="font-extrabold text-base sm:text-lg text-[#FF3F6C] tracking-tight group-hover:opacity-90 leading-none">
-                  Meesho Flash Drops
+              <span className="text-xl sm:text-2xl animate-pulse shrink-0">⚡</span>
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-sm sm:text-base md:text-lg text-[#FF3F6C] tracking-tight group-hover:opacity-90 leading-tight whitespace-nowrap">
+                  <span className="sm:hidden">Flash Drops</span>
+                  <span className="hidden sm:inline">Meesho Flash Drops</span>
                 </h1>
-                <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase">
-                  Live Deals & High Margin
+                <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase block whitespace-nowrap leading-none mt-0.5">
+                  <span className="sm:hidden">Live Deals</span>
+                  <span className="hidden sm:inline">Live Deals &amp; High Margin</span>
                 </span>
               </div>
             </div>
@@ -268,10 +270,10 @@ export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) 
           </div>
 
           {/* Header Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('wishlist')}
-              className="relative p-2 text-slate-600 hover:text-[#FF3F6C] hover:bg-pink-50 rounded-full transition-colors cursor-pointer"
+              className="relative p-1.5 sm:p-2 text-slate-600 hover:text-[#FF3F6C] hover:bg-pink-50 rounded-full transition-colors cursor-pointer"
               title="Wishlist"
             >
               <span className="material-symbols-outlined text-2xl">favorite</span>
@@ -281,7 +283,7 @@ export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) 
             </button>
             <button
               onClick={() => onNavigate('cart')}
-              className="relative p-2 text-slate-600 hover:text-[#FF3F6C] hover:bg-pink-50 rounded-full transition-colors cursor-pointer"
+              className="relative p-1.5 sm:p-2 text-slate-600 hover:text-[#FF3F6C] hover:bg-pink-50 rounded-full transition-colors cursor-pointer"
               title="Shopping Cart"
             >
               <span className="material-symbols-outlined text-2xl">shopping_bag</span>
@@ -508,12 +510,15 @@ export default function FlashSaleLandingPage({ onNavigate = () => {}, onBack }) 
                       </div>
 
                       {/* Reseller Margin Hub Pill */}
-                      <div className="bg-[#4d41df]/10 p-2 rounded-xl flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold text-[#4d41df] uppercase tracking-wider flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">payments</span>
-                          Resell &amp; Earn
-                        </span>
-                        <span className="text-xs font-black text-[#4d41df]">
+                      <div className="bg-indigo-50/90 border border-indigo-100/70 py-1.5 px-2 sm:px-2.5 rounded-xl flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <span className="material-symbols-outlined text-[13px] text-[#4d41df] shrink-0">payments</span>
+                          <span className="text-[10px] sm:text-[11px] font-extrabold text-[#4d41df] whitespace-nowrap">
+                            <span className="sm:hidden">Resell Margin</span>
+                            <span className="hidden sm:inline">Resell &amp; Earn</span>
+                          </span>
+                        </div>
+                        <span className="text-[10.5px] sm:text-xs font-black text-[#4d41df] bg-white px-1.5 py-0.5 rounded-md border border-indigo-100 shadow-2xs whitespace-nowrap shrink-0">
                           +₹{product.margin}
                         </span>
                       </div>

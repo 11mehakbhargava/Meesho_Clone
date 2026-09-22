@@ -169,93 +169,271 @@ const screenCatalog = [
 function FloatingNavigator() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = React.useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const groups = ['All', 'Reseller & Shop', 'Shopping', 'Logistics', 'Supplier', 'Admin', 'Themes'];
-  const filteredScreens = screenCatalog.filter((s) => {
-    if (selectedGroup === 'All') return true;
-    return s.group === selectedGroup;
-  });
 
+  // Global keyboard shortcuts: Ctrl+K / Cmd+K to toggle, Esc to close
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsOpen((prev) => !prev);
+      }
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Open on custom event from bottom nav or buttons
   React.useEffect(() => {
     const handleOpen = () => setIsOpen(true);
     window.addEventListener('open-screen-navigator', handleOpen);
     return () => window.removeEventListener('open-screen-navigator', handleOpen);
   }, []);
 
-  const isHome = location.pathname === '/' || location.pathname === '/reseller-home';
+  // Auto-focus search input when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    } else {
+      setSearchQuery('');
+    }
+  }, [isOpen]);
+
+  const q = searchQuery.trim().toLowerCase();
+
+  // Filtered screens for current group and search query
+  const filteredScreens = screenCatalog.filter((s) => {
+    const matchesGroup = selectedGroup === 'All' || s.group === selectedGroup;
+    if (!q) return matchesGroup;
+
+    const matchesQuery =
+      s.name.toLowerCase().includes(q) ||
+      s.path.toLowerCase().includes(q) ||
+      s.group.toLowerCase().includes(q);
+
+    return matchesGroup && matchesQuery;
+  });
+
+  // Total matches across ALL groups when searching
+  const totalMatchesAllGroups = q
+    ? screenCatalog.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.path.toLowerCase().includes(q) ||
+          s.group.toLowerCase().includes(q)
+      ).length
+    : screenCatalog.length;
 
   return (
     <>
-      {/* Slide-over Modal / Overlay */}
+      {/* Modal / Overlay - Opened when clicking the 'Screens' icon in the bottom nav or pressing Ctrl+K */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[999998] flex items-center justify-end p-3 sm:pr-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[999998] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-gray-950/95 backdrop-blur-xl text-white p-4 sm:p-5 rounded-3xl shadow-2xl border-2 border-[#b90041] max-w-[95vw] sm:max-w-lg w-full max-h-[85vh] flex flex-col animate-in zoom-in-95 slide-in-from-right-4 duration-200"
+            className="bg-gray-950/95 backdrop-blur-xl text-white p-4 sm:p-6 rounded-t-[2rem] sm:rounded-3xl shadow-2xl border-t-2 sm:border-2 border-[#b90041] max-w-full sm:max-w-2xl w-full max-h-[88vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200"
           >
-            <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-gray-800">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#b90041] animate-ping"></span>
-                <span className="text-xs font-black uppercase tracking-wider text-rose-400">
-                  Screens Catalog ({screenCatalog.length} Pages)
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-800">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-3 w-3 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#b90041]"></span>
                 </span>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Screens Navigator</span>
+                    <span className="text-[11px] font-semibold bg-[#b90041]/30 text-rose-300 px-2 py-0.5 rounded-full border border-[#b90041]/40">
+                      {screenCatalog.length} Pages
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-gray-400">Click any screen to navigate instantly</p>
+                </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
-                aria-label="Close Navigator"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline-block text-[10px] bg-gray-900 text-gray-400 px-2 py-1 rounded font-mono border border-gray-800">
+                  Ctrl+K
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer transition-colors border border-gray-800"
+                  aria-label="Close Screens Navigator"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            {/* Filter Tabs */}
+            {/* Search Input Bar with Search Icon */}
+            <div className="relative mb-3">
+              <div className="relative flex items-center">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-pink-400">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search screens... (e.g. wallet, order, driver, admin)"
+                  className="w-full pl-10 pr-20 py-2.5 bg-gray-900/90 border border-gray-800 focus:border-[#b90041] focus:ring-2 focus:ring-[#b90041]/40 rounded-xl text-xs sm:text-sm text-white placeholder-gray-500 outline-none transition-all shadow-inner"
+                />
+                <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center gap-1.5">
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="text-gray-400 hover:text-white p-1 rounded-md text-xs cursor-pointer hover:bg-gray-800 transition-colors"
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-gray-800 text-rose-300 border border-gray-700">
+                    {filteredScreens.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Tabs with Live Match Counts */}
             <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
               {groups.map((group) => {
-                const count =
-                  group === 'All'
-                    ? screenCatalog.length
-                    : screenCatalog.filter((s) => s.group === group).length;
+                const count = q
+                  ? screenCatalog.filter((s) => {
+                      const inGroup = group === 'All' || s.group === group;
+                      const matches =
+                        s.name.toLowerCase().includes(q) ||
+                        s.path.toLowerCase().includes(q) ||
+                        s.group.toLowerCase().includes(q);
+                      return inGroup && matches;
+                    }).length
+                  : group === 'All'
+                  ? screenCatalog.length
+                  : screenCatalog.filter((s) => s.group === group).length;
+
+                const isSelected = selectedGroup === group;
+
                 return (
                   <button
                     key={group}
+                    type="button"
                     onClick={() => setSelectedGroup(group)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${selectedGroup === group
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      isSelected
                         ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/30'
-                        : 'bg-gray-900 text-gray-400 hover:text-white'
-                      }`}
+                        : 'bg-gray-900 text-gray-400 hover:text-white hover:bg-gray-850'
+                    }`}
                   >
-                    {group} ({count})
+                    <span>{group}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                        isSelected
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-800 text-gray-400'
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
             {/* Screen List Grid */}
-            <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto pr-1">
-              {filteredScreens.map((screen) => {
-                const isActive = location.pathname === screen.path;
-                return (
-                  <button
-                    key={screen.path}
-                    onClick={() => {
-                      navigate(screen.path);
-                      setIsOpen(false);
-                    }}
-                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${isActive
-                        ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 scale-[1.02]'
-                        : 'bg-gray-900/90 text-gray-300 hover:bg-gray-800 hover:text-white'
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-[55vh] overflow-y-auto pr-1">
+              {filteredScreens.length > 0 ? (
+                filteredScreens.map((screen) => {
+                  const isActive = location.pathname === screen.path;
+                  return (
+                    <button
+                      key={screen.path}
+                      type="button"
+                      onClick={() => {
+                        navigate(screen.path);
+                        setIsOpen(false);
+                      }}
+                      className={`flex flex-col gap-0.5 p-2.5 rounded-xl text-left transition-all cursor-pointer border ${
+                        isActive
+                          ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 border-rose-400 scale-[1.02]'
+                          : 'bg-gray-900/90 hover:bg-gray-850 text-gray-300 hover:text-white border-gray-800/80 hover:border-gray-700'
                       }`}
+                    >
+                      <div className="flex items-center gap-1.5 w-full">
+                        <span className="text-base shrink-0">{screen.icon}</span>
+                        <span className="truncate text-xs font-bold">{screen.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-gray-400 px-0.5 mt-1">
+                        <span className="truncate opacity-75">{screen.group}</span>
+                        <span className="font-mono text-[9px] opacity-60 truncate max-w-[80px]">
+                          {screen.path}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : selectedGroup !== 'All' && totalMatchesAllGroups > 0 ? (
+                <div className="col-span-full py-6 px-3 bg-rose-950/30 border border-rose-900/50 rounded-2xl text-center">
+                  <p className="text-xs font-semibold text-rose-200">
+                    No screens in "{selectedGroup}" matching "{searchQuery}".
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Found {totalMatchesAllGroups} matching screen{totalMatchesAllGroups > 1 ? 's' : ''} in other categories.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGroup('All')}
+                    className="mt-3 px-3.5 py-1.5 bg-[#b90041] hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
                   >
-                    <span className="text-sm">{screen.icon}</span>
-                    <span className="truncate">{screen.name}</span>
+                    View All {totalMatchesAllGroups} Results
                   </button>
-                );
-              })}
+                </div>
+              ) : (
+                <div className="col-span-full py-8 flex flex-col items-center justify-center text-center text-gray-400">
+                  <span className="text-3xl mb-2">🔍</span>
+                  <p className="text-xs font-bold text-gray-200">
+                    No screens found for "{searchQuery}"
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Try searching for "wallet", "orders", "driver", "admin", etc.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedGroup('All');
+                    }}
+                    className="mt-3 px-3.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-pink-400 border border-pink-500/30 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Clear Search & Filters
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
