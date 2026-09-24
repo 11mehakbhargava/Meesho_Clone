@@ -394,7 +394,7 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-[1500px] w-full mx-auto p-3 sm:p-6 md:p-8 space-y-3.5 sm:space-y-6 flex-1 pb-28 sm:pb-24">
+      <main className="max-w-[1500px] w-full mx-auto p-3 sm:p-6 md:p-8 space-y-3.5 sm:space-y-6 flex-1 pb-44 sm:pb-32">
         {/* KPI Summary Banner (Responsive Grid) */}
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
           {/* Card 1: Total Volume */}
@@ -692,12 +692,12 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
                       </div>
                     </div>
 
-                    {/* Action Buttons: Touch-optimized, responsive flex */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {/* Action Buttons: Touch-optimized, responsive grid on mobile, flex on desktop */}
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                       <button
                         type="button"
                         onClick={() => setTrackingModalItem(item)}
-                        className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                        className="col-span-1 sm:col-auto px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-base">route</span>
                         Track
@@ -708,7 +708,7 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
                           <button
                             type="button"
                             onClick={() => openSpfModal(item)}
-                            className="flex-1 sm:flex-initial px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                            className="col-span-1 sm:col-auto px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-base">shield</span>
                             Raise SPF
@@ -716,7 +716,7 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
                           <button
                             type="button"
                             onClick={() => handleRestock(item.id)}
-                            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
+                            className="col-span-2 sm:col-auto px-3.5 py-2.5 sm:py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-base">inventory</span>
                             Confirm &amp; Restock
@@ -728,7 +728,7 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
                         <button
                           type="button"
                           onClick={() => showToast(`Courier ${item.courier} pinged. Expected delivery in 24-48 hours.`)}
-                          className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer text-center"
+                          className="col-span-1 sm:col-auto px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer text-center"
                         >
                           Ping Courier
                         </button>
@@ -744,8 +744,8 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
 
       {/* ===================== MODAL 1: Reverse Tracking Stepper ===================== */}
       {trackingModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base sm:text-lg font-['Plus_Jakarta_Sans',sans-serif]">
@@ -810,8 +810,8 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
 
       {/* ===================== MODAL 2: Raise SPF Dispute Claim (With Real File Upload) ===================== */}
       {spfModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-4 my-auto max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 pb-20 sm:pb-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 space-y-3.5 sm:space-y-4 my-auto max-h-[82vh] sm:max-h-[88vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">

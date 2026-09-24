@@ -142,7 +142,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
   };
 
   return (
-    <div className="bg-[#fcf9f8] text-[#1c1b1b] font-sans antialiased min-h-screen pb-32 selection:bg-pink-100 selection:text-pink-600">
+    <div className="bg-[#fcf9f8] text-[#1c1b1b] font-sans antialiased min-h-screen pb-44 sm:pb-36 selection:bg-pink-100 selection:text-pink-600">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[99999] bg-[#0f172a] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-slate-700 animate-in fade-in slide-in-from-top-3 duration-200">
@@ -153,32 +153,35 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
       {/* Header Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => (onBack ? onBack() : onNavigate ? onNavigate('driver_dashboard') : window.history.back())}
-              className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 flex items-center justify-center cursor-pointer transition-colors shrink-0"
               aria-label="Back"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base text-[#b90041]">Reverse Pickup</span>
-                <span className="text-[10px] font-black bg-pink-100 text-[#b90041] px-2 py-0.5 rounded-full">
-                  #RET-TSK-8821
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+                <h1 className="font-black text-sm sm:text-base text-[#b90041] whitespace-nowrap">
+                  Reverse Pickup
+                </h1>
+                <span className="text-[9px] sm:text-[10px] font-black bg-pink-100 text-[#b90041] px-1.5 py-0.5 rounded-md sm:rounded-full shrink-0">
+                  <span className="sm:hidden">#8821</span>
+                  <span className="hidden sm:inline">#RET-TSK-8821</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">Doorstep QC &amp; Return Handover</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">Doorstep QC &amp; Return Handover</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full flex items-center gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] sm:text-xs font-black bg-emerald-100 text-emerald-800 px-2 sm:px-3 py-1 rounded-full flex items-center gap-1">
               <span>+₹65</span>
-              <span className="text-[10px] font-semibold">Incentive</span>
+              <span className="text-[9px] sm:text-[10px] font-semibold">Incentive</span>
             </span>
           </div>
         </div>
@@ -478,7 +481,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
       {/* Rejection Modal */}
       {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-black text-base text-rose-700">Reject Return Pickup</h3>
@@ -537,7 +540,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
       {/* Pickup Completed Success Modal */}
       {isPickupCompleted && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl animate-bounce">
               ✓

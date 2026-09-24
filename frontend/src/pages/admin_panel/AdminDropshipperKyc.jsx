@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import { getDropshipperApp, saveDropshipperApp } from '../../services/dropshipperSessionStore';
 
 // Comprehensive mock data for KYC verification requests
 const INITIAL_KYC_REQUESTS = [
@@ -365,7 +366,47 @@ const SIDEBAR_NAV = [
 ];
 
 export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }) {
-  const [requests, setRequests] = useState(INITIAL_KYC_REQUESTS);
+  const [requests, setRequests] = useState(() => {
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && activeApp.id) {
+        const exists = INITIAL_KYC_REQUESTS.some((r) => r.id === activeApp.id);
+        if (!exists) {
+          const mappedReq = {
+            id: activeApp.id,
+            applicantName: `${activeApp.proprietorName || 'Sarah James'} (${activeApp.brandName || 'Store'})`,
+            businessName: activeApp.brandName || 'Aura Trends Luxe',
+            storeUrl: activeApp.storeUrl || 'https://auratrends.shop',
+            storeType: (activeApp.platform || 'Shopify').toUpperCase() + ' STORE',
+            proprietor: activeApp.proprietorName || 'Sarah James',
+            role: 'Dropshipper',
+            phone: activeApp.phone || '+91 98765 43210',
+            email: activeApp.email || 'sarah.james@auratrends.shop',
+            location: 'Mumbai, Maharashtra',
+            submittedAt: 'Today, Just Now',
+            status: activeApp.status || 'Pending',
+            riskLevel: 'Low',
+            matchScore: 98,
+            panIdentifier: activeApp.panNumber || 'ABCDE1234F',
+            aadhaarNumber: activeApp.aadhaarNumber || '4829 1920 3810',
+            documents: {
+              ...INITIAL_KYC_REQUESTS[0].documents,
+              gst: {
+                number: activeApp.businessRegType === 'msme' ? (activeApp.msmeNumber || 'UDYAM-KR-03-0019482') : (activeApp.gstin || '29ABCDE1234F1Z5'),
+                legalName: `${(activeApp.brandName || 'Aura Trends Luxe').toUpperCase()} (${activeApp.businessRegType === 'msme' ? 'MSME / Udyam' : 'GST Registered'})`,
+                status: activeApp.businessRegType === 'msme' ? 'Active Udyam Registration' : 'Active on GSTN',
+                image: activeApp.businessRegFile?.previewUrl || INITIAL_KYC_REQUESTS[0].documents.gst.image,
+              },
+            },
+            notes: `Newly submitted dropshipper KYC from User Portal. Verified ${activeApp.businessRegType === 'msme' ? 'MSME / Udyam Certificate' : 'GST Certificate'}.`,
+            rejectionReason: activeApp.rejectionReason || null,
+          };
+          return [mappedReq, ...INITIAL_KYC_REQUESTS.filter((r) => r.id !== 'DSP-KYC-5089')];
+        }
+      }
+    } catch (e) {}
+    return INITIAL_KYC_REQUESTS;
+  });
   const [selectedRole, setSelectedRole] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -421,6 +462,12 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: 'Approved', rejectionReason: null } : r))
     );
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && (activeApp.id === id || activeApp.proprietorName === 'Sarah James' || id === 'DSP-KYC-5089')) {
+        saveDropshipperApp({ ...activeApp, status: 'Approved' });
+      }
+    } catch (e) {}
     showToast(`KYC Request #${id} Approved & Activated successfully! 🎉`);
     if (activeModalRequest?.id === id) {
       setActiveModalRequest(null);
@@ -461,6 +508,12 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
           : r
       )
     );
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && (activeApp.id === activeModalRequest.id || activeApp.proprietorName === 'Sarah James' || activeModalRequest.id === 'DSP-KYC-5089')) {
+        saveDropshipperApp({ ...activeApp, status: 'Rejected', rejectionReason: reason });
+      }
+    } catch (e) {}
     setShowRejectModal(false);
     showToast(`KYC Request #${activeModalRequest.id} marked as Rejected.`);
     setActiveModalRequest(null);

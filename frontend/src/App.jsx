@@ -21,6 +21,7 @@ import EarningsDashboard2 from './pages/Reseller Earnings & Wallets/EarningsDash
 import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
 import WithdrawEarnings from './pages/Reseller Earnings & Wallets/WithdrawEarnings';
 import ResellerReturnsLedger from './pages/Reseller Earnings & Wallets/ResellerReturnsLedger';
+import DropshipperKYCRegister from './pages/Reseller Earnings & Wallets/DropshipperKYCRegister';
 
 // Customer & Reseller Shopping Pages
 import HomeScreenFlutterLuxe from './pages/customer & Reseller/home_screen_flutter_luxe';
@@ -96,6 +97,7 @@ const screenCatalog = [
   { path: '/my-wallet', name: 'Fintech Wallet', icon: '👛', group: 'Reseller & Shop' },
   { path: '/reseller-wallet', name: 'Reseller Wallet', icon: '💳', group: 'Reseller & Shop' },
   { path: '/reseller-returns', name: 'Returns & Margin Ledger', icon: '🔄', group: 'Reseller & Shop' },
+  { path: '/dropshipper-register', name: 'Become Dropshipper (KYC)', icon: '🚀', group: 'Reseller & Shop' },
   { path: '/withdraw-earnings', name: 'Withdraw Earnings', icon: '🏦', group: 'Reseller & Shop' },
   { path: '/payout-settings', name: 'Payout Settings', icon: '⚙️', group: 'Reseller & Shop' },
   { path: '/payout-confirmation', name: 'Payout Confirmation', icon: '✅', group: 'Reseller & Shop' },
@@ -533,6 +535,11 @@ function AppRoutes() {
       adminCatalog: '/admin-catalog',
       campaignFlow: '/campaign-flow',
       adminAnalytics: '/admin-analytics',
+      'admin-dropshipper-kyc': '/admin-dropshipper-kyc',
+      adminDropshipperKyc: '/admin-dropshipper-kyc',
+      'dropshipper-register': '/dropshipper-register',
+      dropshipperRegister: '/dropshipper-register',
+      'dropshipper-kyc': '/dropshipper-register',
       communityHub: '/community-hub',
       messenger: '/messenger',
       chatScreen: '/conversation',
@@ -562,7 +569,7 @@ function AppRoutes() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#f8f9fb]">
+    <div className="relative min-h-screen bg-[#f8f9fb] w-full max-w-full overflow-x-hidden">
       <FloatingNavigator />
 
       <Routes>
@@ -578,6 +585,7 @@ function AppRoutes() {
         <Route path="/my-wallet" element={<MyWalletFintechStyle />} />
         <Route path="/reseller-wallet" element={<ResellerWallet />} />
         <Route path="/reseller-returns" element={<ResellerReturnsLedger onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/dropshipper-register" element={<DropshipperKYCRegister onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/withdraw-earnings" element={<WithdrawEarnings />} />
         <Route path="/payout-settings" element={<PayoutSettings />} />
         <Route path="/payout-confirmation" element={<PayoutConfirmation />} />

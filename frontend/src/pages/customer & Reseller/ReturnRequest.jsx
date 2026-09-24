@@ -68,10 +68,15 @@ export default function ReturnRequest({ onNavigate, onBack }) {
   // Exchange options
   const [selectedExchangeSize, setSelectedExchangeSize] = useState('S');
 
-  // Photo proof state (starts empty so user uploads from their own gallery)
-  const [proofs, setProofs] = useState([]);
+  // Photo proof state (initialized with 2 demo proofs for seamless testing, users can also upload their own)
+  const [proofs, setProofs] = useState(INITIAL_PROOFS);
   const fileInputRef = useRef(null);
   const [isChecklistAgreed, setIsChecklistAgreed] = useState(true);
+
+  const handleLoadSampleProofs = () => {
+    setProofs(INITIAL_PROOFS);
+    showToast('Loaded 2 sample verification photos 📸');
+  };
 
   // Refund state
   const [refundMethod, setRefundMethod] = useState('upi'); // 'upi' | 'bank' | 'wallet'
@@ -180,7 +185,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
   };
 
   return (
-    <div className="bg-[#f8f9fb] min-h-screen text-[#191c1e] font-['Inter',sans-serif] pb-28 antialiased">
+    <div className="bg-[#f8f9fb] min-h-screen text-[#191c1e] font-['Inter',sans-serif] pb-52 sm:pb-36 antialiased w-full max-w-full overflow-x-hidden">
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[99999] bg-[#0f172a] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-top-3 duration-200">
@@ -191,8 +196,8 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-2.5 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               onClick={() => {
                 if (currentStep > 1 && currentStep < 5) {
@@ -205,21 +210,21 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   window.history.back();
                 }
               }}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer transition-colors shrink-0"
               aria-label="Back"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div>
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-                <span>{actionType === 'return' ? 'Return & Refund' : 'Exchange Item'}</span>
-                <span className="text-xs font-bold bg-pink-100 text-[#9f0038] px-2 py-0.5 rounded-full">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-lg md:text-xl font-black text-slate-900 flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="truncate">{actionType === 'return' ? 'Return & Refund' : 'Exchange Item'}</span>
+                <span className="text-[10px] sm:text-xs font-bold bg-pink-100 text-[#9f0038] px-2 py-0.5 rounded-full shrink-0">
                   #{orderIdParam}
                 </span>
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
+              <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
                 Step {currentStep} of 4 • 100% Doorstep Moneyback Guarantee
               </p>
             </div>
@@ -227,7 +232,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
           <button
             onClick={() => onNavigate && onNavigate('supportCenter')}
-            className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full cursor-pointer transition-colors"
+            className="text-[11px] sm:text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full cursor-pointer transition-colors shrink-0"
           >
             Help?
           </button>
@@ -235,7 +240,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* Stepper Progress Bar (Only during steps 1-4) */}
         {currentStep < 5 && (
-          <div className="max-w-3xl mx-auto px-4 pb-3">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pb-2.5 sm:pb-3">
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center text-[9px] sm:text-[10px] font-extrabold text-slate-400">
               {[
                 { step: 1, label: '1. Action & Reason', short: 'Reason' },
@@ -270,22 +275,22 @@ export default function ReturnRequest({ onNavigate, onBack }) {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl w-full mx-auto px-3 sm:px-4 py-3.5 sm:py-6 space-y-3.5 sm:space-y-6 min-w-0">
         {/* Product Being Returned Header Card */}
         {currentStep < 5 && (
-          <section className="bg-white p-4 sm:p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <section className="bg-white p-3 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 flex items-center gap-3 sm:gap-4">
             <img
               src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80"
               alt="Item preview"
-              className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-2xl border border-slate-200 shrink-0"
+              className="w-14 h-18 sm:w-20 sm:h-24 object-cover rounded-xl sm:rounded-2xl border border-slate-200 shrink-0"
             />
-            <div className="flex-1 min-w-0 space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+            <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
                 Delivered on 17 Sep 2026
               </span>
               <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">{itemParam}</h2>
-              <p className="text-xs text-slate-500">
-                Size: <strong className="text-slate-800">Free Size</strong> • Qty: <strong>1</strong> • Refundable Amount:{' '}
+              <p className="text-[11px] sm:text-xs text-slate-500 leading-tight">
+                Size: <strong className="text-slate-800">Free Size</strong> • Qty: <strong>1</strong> • Refund:{' '}
                 <strong className="text-[#9f0038] font-black">₹849</strong>
               </p>
             </div>
@@ -294,30 +299,30 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* STEP 1: Action Type & Return Reason */}
         {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-3.5 sm:space-y-6 animate-in fade-in duration-200">
             {/* Action Toggle (Return vs Exchange) */}
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
-              <h3 className="font-black text-sm text-slate-900">What would you like to do?</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-2.5 sm:space-y-3">
+              <h3 className="font-black text-xs sm:text-sm text-slate-900">What would you like to do?</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setActionType('return')}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3 ${
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-2.5 sm:gap-3 ${
                     actionType === 'return'
-                      ? 'border-[#9f0038] bg-rose-50/50 shadow-md shadow-pink-500/10'
+                      ? 'border-[#9f0038] bg-rose-50/50 shadow-sm shadow-pink-500/10'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0 ${
                       actionType === 'return' ? 'bg-[#9f0038] text-white' : 'bg-slate-100 text-slate-600'
                     }`}
                   >
                     💰
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h4 className="font-black text-xs sm:text-sm text-slate-900">Return &amp; Get 100% Refund</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
                       Rider will pick up item from your doorstep &amp; ₹849 will be credited to UPI/Bank.
                     </p>
                   </div>
@@ -326,22 +331,22 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                 <button
                   type="button"
                   onClick={() => setActionType('exchange')}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-3 ${
+                  className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 text-left transition-all cursor-pointer flex items-start gap-2.5 sm:gap-3 ${
                     actionType === 'exchange'
-                      ? 'border-[#9f0038] bg-rose-50/50 shadow-md shadow-pink-500/10'
+                      ? 'border-[#9f0038] bg-rose-50/50 shadow-sm shadow-pink-500/10'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0 ${
                       actionType === 'exchange' ? 'bg-[#9f0038] text-white' : 'bg-slate-100 text-slate-600'
                     }`}
                   >
                     🔄
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h4 className="font-black text-xs sm:text-sm text-slate-900">Exchange for Different Size</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
                       Exchange for another size with Zero extra delivery charges.
                     </p>
                   </div>
@@ -351,12 +356,12 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
             {/* If Exchange: Select New Size */}
             {actionType === 'exchange' && (
-              <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
-                <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
+              <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-2.5 sm:space-y-3">
+                <h3 className="font-black text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 flex-wrap">
                   <span>Select New Size you want</span>
-                  <span className="text-xs text-slate-400 font-normal">(Current: Free Size)</span>
+                  <span className="text-[11px] text-slate-400 font-normal">(Current: Free Size)</span>
                 </h3>
-                <div className="flex flex-wrap gap-2.5">
+                <div className="flex flex-wrap gap-2">
                   {[
                     { size: 'XS', stock: 'In Stock' },
                     { size: 'S', stock: 'In Stock' },
@@ -369,13 +374,13 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                       key={item.size}
                       type="button"
                       onClick={() => setSelectedExchangeSize(item.size)}
-                      className={`px-4 py-2.5 rounded-2xl border-2 font-black text-xs text-center min-w-16 transition-all cursor-pointer ${
+                      className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 font-black text-xs text-center min-w-14 sm:min-w-16 transition-all cursor-pointer ${
                         selectedExchangeSize === item.size
-                          ? 'border-[#9f0038] bg-[#9f0038] text-white shadow-md shadow-pink-500/20'
+                          ? 'border-[#9f0038] bg-[#9f0038] text-white shadow-sm shadow-pink-500/20'
                           : 'border-slate-200 bg-slate-50 hover:bg-white text-slate-800'
                       }`}
                     >
-                      <p className="text-sm">{item.size}</p>
+                      <p className="text-xs sm:text-sm">{item.size}</p>
                       <p
                         className={`text-[9px] font-semibold ${
                           selectedExchangeSize === item.size ? 'text-pink-100' : 'text-slate-400'
@@ -390,10 +395,10 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             )}
 
             {/* Select Reason */}
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
-              <h3 className="font-black text-sm text-slate-900">Why are you returning/exchanging this item?</h3>
+            <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-2.5 sm:space-y-3">
+              <h3 className="font-black text-xs sm:text-sm text-slate-900">Why are you returning/exchanging this item?</h3>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {RETURN_REASONS.map((r) => {
                   const isSelected = selectedReasonId === r.id;
 
@@ -404,43 +409,43 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                         setSelectedReasonId(r.id);
                         setSelectedSubReason(r.subReasons[0]);
                       }}
-                      className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                      className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-[#9f0038] bg-pink-50/30 shadow-sm'
+                          ? 'border-[#9f0038] bg-pink-50/30 shadow-xs'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{r.icon}</span>
-                        <div className="flex-1">
-                          <h4 className="font-black text-xs sm:text-sm text-slate-900">{r.title}</h4>
-                          <p className="text-[11px] text-slate-500">{r.description}</p>
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        <span className="text-lg sm:text-xl shrink-0">{r.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900 leading-snug">{r.title}</h4>
+                          <p className="text-[11px] text-slate-500 leading-relaxed mt-0.5">{r.description}</p>
                         </div>
                         <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                             isSelected ? 'border-[#9f0038] bg-[#9f0038]' : 'border-slate-300'
                           }`}
                         >
-                          {isSelected && <span className="w-2 h-2 rounded-full bg-white"></span>}
+                          {isSelected && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>}
                         </div>
                       </div>
 
                       {/* Sub-reasons expansion */}
                       {isSelected && (
-                        <div className="mt-3 pt-3 border-t border-rose-100/70 space-y-2 animate-in fade-in">
+                        <div className="mt-2.5 pt-2.5 border-t border-rose-100/70 space-y-1.5 animate-in fade-in">
                           <p className="text-[11px] font-extrabold text-[#9f0038]">Select specific detail:</p>
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             {r.subReasons.map((sub) => (
                               <label
                                 key={sub}
-                                className="flex items-center gap-2 text-xs text-slate-700 font-semibold cursor-pointer hover:text-slate-900"
+                                className="flex items-start gap-2 py-1 text-xs text-slate-700 font-semibold cursor-pointer hover:text-slate-900 leading-snug"
                               >
                                 <input
                                   type="radio"
                                   name="subReason"
                                   checked={selectedSubReason === sub}
                                   onChange={() => setSelectedSubReason(sub)}
-                                  className="accent-[#9f0038]"
+                                  className="accent-[#9f0038] mt-0.5 shrink-0"
                                 />
                                 <span>{sub}</span>
                               </label>
@@ -454,8 +459,8 @@ export default function ReturnRequest({ onNavigate, onBack }) {
               </div>
 
               {/* Extra Comments */}
-              <div className="pt-2">
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+              <div className="pt-1.5">
+                <label className="text-[11px] sm:text-xs font-bold text-slate-700 block mb-1">
                   Additional Comments / Defect Description (Optional):
                 </label>
                 <textarea
@@ -463,7 +468,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   onChange={(e) => setComments(e.target.value)}
                   placeholder="e.g. Length is 4 inches longer than chart; cloth quality is transparent..."
                   rows={2}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium focus:outline-none focus:border-[#9f0038] focus:bg-white transition-all shadow-inner"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 text-xs font-medium focus:outline-none focus:border-[#9f0038] focus:bg-white transition-all shadow-inner"
                 ></textarea>
               </div>
             </section>
@@ -472,7 +477,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className="w-full py-4 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-sm rounded-2xl shadow-xl shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+              className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wide min-h-[46px]"
             >
               <span>Continue to Photo Proof</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -484,8 +489,8 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* STEP 2: Photo Proof & Doorstep Checklist */}
         {currentStep === 2 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+            <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-3 sm:space-y-4">
               {/* Hidden Native File Input */}
               <input
                 ref={fileInputRef}
@@ -497,58 +502,81 @@ export default function ReturnRequest({ onNavigate, onBack }) {
               />
 
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                    <span>Upload Product Photos from Device</span>
-                    <span className="text-[10px] font-bold bg-pink-100 text-[#9f0038] px-2 py-0.5 rounded-full">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-black text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span>Upload Product Photos</span>
+                    <span className="text-[10px] font-bold bg-pink-100 text-[#9f0038] px-2 py-0.5 rounded-full shrink-0">
                       Gallery / Camera
                     </span>
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
                     Upload at least 1 photo of the product &amp; 1 photo showing brand tag or defect.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleOpenFileDialog}
-                  className="text-xs font-bold text-white bg-[#9f0038] hover:bg-[#85002f] active:scale-95 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-sm shadow-pink-500/20"
-                >
-                  <span>📁</span>
-                  <span>Browse Gallery</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {proofs.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleProofs}
+                      className="text-xs font-bold text-[#9f0038] bg-rose-50 hover:bg-rose-100 active:scale-95 px-3 py-1.5 rounded-xl cursor-pointer transition-all flex items-center gap-1 border border-pink-200"
+                      title="Load demo photos"
+                    >
+                      <span>⚡</span>
+                      <span>Demo Photos</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenFileDialog}
+                    className="text-xs font-bold text-white bg-[#9f0038] hover:bg-[#85002f] active:scale-95 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-sm shadow-pink-500/20"
+                  >
+                    <span>📁</span>
+                    <span>Browse Gallery</span>
+                  </button>
+                </div>
               </div>
 
               {/* Photos Grid or Empty State */}
               {proofs.length === 0 ? (
-                <div
-                  onClick={handleOpenFileDialog}
-                  className="border-2 border-dashed border-pink-300 bg-rose-50/30 hover:bg-rose-50/70 rounded-3xl p-8 text-center transition-all cursor-pointer group space-y-2"
-                >
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-sm text-[#9f0038] group-hover:scale-110 transition-transform">
+                <div className="border-2 border-dashed border-pink-300 bg-rose-50/30 hover:bg-rose-50/70 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-center transition-all space-y-2.5">
+                  <div
+                    onClick={handleOpenFileDialog}
+                    className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-sm text-[#9f0038] cursor-pointer hover:scale-105 transition-transform"
+                  >
                     📷
                   </div>
-                  <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                  <h4 className="text-xs sm:text-sm font-black text-slate-900 leading-snug">
                     Tap to Choose Photos from your Gallery or Camera
                   </h4>
-                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed">
                     Select JPG, PNG, or WebP images from your phone or computer (Max 10MB each)
                   </p>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#9f0038] text-white text-xs font-extrabold shadow-md shadow-pink-500/20 mt-1"
-                  >
-                    <span>Choose from Device</span>
-                    <span>➔</span>
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleOpenFileDialog}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9f0038] hover:bg-[#85002f] text-white text-xs font-extrabold shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <span>Choose from Device</span>
+                      <span>➔</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleProofs}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-pink-200 text-[#9f0038] text-xs font-bold hover:bg-rose-50 active:scale-95 cursor-pointer"
+                    >
+                      <span>⚡ Use Sample Photos</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {proofs.map((p) => (
                     <div
                       key={p.id}
-                      className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 group shadow-sm flex flex-col justify-between"
+                      className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 group shadow-xs flex flex-col justify-between"
                     >
-                      <div className="w-full h-36 overflow-hidden bg-slate-100 relative">
+                      <div className="w-full h-32 sm:h-36 overflow-hidden bg-slate-100 relative">
                         <img src={p.url} alt={p.name} className="w-full h-full object-cover object-center" />
                         <button
                           type="button"
@@ -565,7 +593,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                         </p>
                         <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
                           <span className="text-[#9f0038] font-bold">{p.type}</span>
-                          <span>{p.size || 'Local File'}</span>
+                          <span>{p.size || 'Attached'}</span>
                         </div>
                       </div>
                     </div>
@@ -574,54 +602,54 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   {/* Add More Photos Card */}
                   <div
                     onClick={handleOpenFileDialog}
-                    className="border-2 border-dashed border-slate-300 hover:border-[#9f0038] hover:bg-pink-50/40 rounded-2xl h-44 flex flex-col items-center justify-center text-slate-500 hover:text-[#9f0038] transition-all cursor-pointer p-3 text-center space-y-1.5"
+                    className="border-2 border-dashed border-slate-300 hover:border-[#9f0038] hover:bg-pink-50/40 rounded-xl sm:rounded-2xl h-32 sm:h-36 flex flex-col items-center justify-center text-slate-500 hover:text-[#9f0038] transition-all cursor-pointer p-3 text-center space-y-1"
                   >
-                    <span className="text-2xl">➕</span>
+                    <span className="text-xl sm:text-2xl">➕</span>
                     <span className="text-xs font-black">Add More</span>
-                    <span className="text-[9px] text-slate-400">From your gallery</span>
+                    <span className="text-[9px] text-slate-400">From gallery</span>
                   </div>
                 </div>
               )}
 
               {/* Doorstep Handover Checklist */}
-              <div className="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl space-y-2 text-xs">
-                <p className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <div className="bg-slate-50 border border-slate-200/80 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl space-y-2 text-xs">
+                <p className="font-extrabold text-slate-900 uppercase tracking-wide text-[11px] flex items-center gap-1.5">
                   <span>📋</span>
                   <span>Doorstep Handover Verification</span>
                 </p>
                 <div className="space-y-1.5 text-slate-600">
-                  <p className="flex items-center gap-2">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Product brand tags and barcodes must remain attached.</span>
+                  <p className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                    <span className="leading-relaxed">Product brand tags and barcodes must remain attached.</span>
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Item should be unworn, unwashed and in original plastic pouch.</span>
+                  <p className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                    <span className="leading-relaxed">Item should be unworn, unwashed and in original plastic pouch.</span>
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="text-emerald-600 font-bold">✓</span>
-                    <span>Rider will inspect the parcel and ask for Return OTP.</span>
+                  <p className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                    <span className="leading-relaxed">Rider will inspect the parcel and ask for Return OTP.</span>
                   </p>
                 </div>
 
-                <label className="flex items-center gap-2.5 pt-2 border-t border-slate-200 cursor-pointer font-bold text-slate-800">
+                <label className="flex items-start gap-2.5 pt-2 border-t border-slate-200 cursor-pointer font-bold text-slate-800 text-xs">
                   <input
                     type="checkbox"
                     checked={isChecklistAgreed}
                     onChange={(e) => setIsChecklistAgreed(e.target.checked)}
-                    className="accent-[#9f0038] w-4 h-4 rounded"
+                    className="accent-[#9f0038] w-4 h-4 rounded mt-0.5 shrink-0"
                   />
-                  <span>I confirm the product meets all the above condition guidelines.</span>
+                  <span className="leading-relaxed">I confirm the product meets all the above condition guidelines.</span>
                 </label>
               </div>
             </section>
 
             {/* Nav Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2.5 sm:gap-3 mb-2">
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-2xl cursor-pointer transition-colors"
+                className="w-24 sm:w-28 shrink-0 py-3 sm:py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-black text-xs rounded-xl sm:rounded-2xl cursor-pointer transition-colors min-h-[46px]"
               >
                 Back
               </button>
@@ -638,10 +666,10 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   }
                   setCurrentStep(3);
                 }}
-                className="flex-1 py-3.5 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                className="flex-1 py-3 sm:py-3.5 px-3 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer uppercase tracking-wide min-h-[46px]"
               >
-                <span>Continue to {actionType === 'return' ? 'Refund Details' : 'Pickup Slot'}</span>
-                ➔
+                <span className="truncate">Continue to {actionType === 'return' ? 'Refund Details' : 'Pickup Slot'}</span>
+                <span className="shrink-0">➔</span>
               </button>
             </div>
           </div>
@@ -649,49 +677,49 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* STEP 3: Refund Method Selection (For Return) or Confirmation (For Exchange) */}
         {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
             {actionType === 'return' ? (
-              <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+              <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-3 sm:space-y-4">
                 <div>
-                  <h3 className="font-black text-sm text-slate-900">Where should we send your ₹849 refund?</h3>
-                  <p className="text-[11px] text-slate-500">
+                  <h3 className="font-black text-xs sm:text-sm text-slate-900">Where should we send your ₹849 refund?</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
                     Refund is initiated automatically the moment delivery rider picks up the product.
                   </p>
                 </div>
 
                 {/* Refund Method Options */}
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {/* Option 1: Instant UPI */}
                   <div
                     onClick={() => setRefundMethod('upi')}
-                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                      refundMethod === 'upi' ? 'border-[#9f0038] bg-rose-50/40 shadow-sm' : 'border-slate-200 bg-white'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                      refundMethod === 'upi' ? 'border-[#9f0038] bg-rose-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">⚡</span>
-                        <div>
-                          <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <span className="text-xl sm:text-2xl shrink-0">⚡</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             <h4 className="font-black text-xs sm:text-sm text-slate-900">Instant UPI Transfer</h4>
-                            <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.2 rounded-full">
+                            <span className="text-[9px] sm:text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full shrink-0">
                               Fastest (Within 2 Hours)
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500">Google Pay, PhonePe, Paytm, BHIM</p>
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">Google Pay, PhonePe, Paytm, BHIM</p>
                         </div>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           refundMethod === 'upi' ? 'border-[#9f0038] bg-[#9f0038]' : 'border-slate-300'
                         }`}
                       >
-                        {refundMethod === 'upi' && <span className="w-2 h-2 rounded-full bg-white"></span>}
+                        {refundMethod === 'upi' && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>}
                       </div>
                     </div>
 
                     {refundMethod === 'upi' && (
-                      <div className="mt-3 pt-3 border-t border-rose-100 space-y-2">
+                      <div className="mt-2.5 pt-2.5 border-t border-rose-100 space-y-2 animate-in fade-in">
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -701,18 +729,18 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                               setIsUpiVerified(false);
                             }}
                             placeholder="Enter UPI ID (e.g. mobile@upi)"
-                            className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#9f0038]"
+                            className="flex-1 min-w-0 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#9f0038]"
                           />
                           <button
                             type="button"
                             onClick={handleVerifyUpi}
-                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
+                            className="px-3.5 sm:px-4 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer shrink-0"
                           >
                             Verify
                           </button>
                         </div>
                         {isUpiVerified && (
-                          <p className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                          <p className="text-xs text-emerald-700 font-bold flex items-center gap-1.5 leading-snug">
                             <span>✓</span> Verified Name: <strong>PRIYA SHARMA</strong> (HDFC Bank)
                           </p>
                         )}
@@ -723,49 +751,49 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   {/* Option 2: Bank Account Transfer */}
                   <div
                     onClick={() => setRefundMethod('bank')}
-                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                      refundMethod === 'bank' ? 'border-[#9f0038] bg-rose-50/40 shadow-sm' : 'border-slate-200 bg-white'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                      refundMethod === 'bank' ? 'border-[#9f0038] bg-rose-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">🏦</span>
-                        <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <span className="text-xl sm:text-2xl shrink-0">🏦</span>
+                        <div className="min-w-0">
                           <h4 className="font-black text-xs sm:text-sm text-slate-900">Direct Bank Account Transfer</h4>
-                          <p className="text-[11px] text-slate-500">Credited within 24-48 business hours via NEFT</p>
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">Credited within 24-48 business hours via NEFT</p>
                         </div>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           refundMethod === 'bank' ? 'border-[#9f0038] bg-[#9f0038]' : 'border-slate-300'
                         }`}
                       >
-                        {refundMethod === 'bank' && <span className="w-2 h-2 rounded-full bg-white"></span>}
+                        {refundMethod === 'bank' && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>}
                       </div>
                     </div>
 
                     {refundMethod === 'bank' && (
-                      <div className="mt-3 pt-3 border-t border-rose-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="mt-2.5 pt-2.5 border-t border-rose-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in">
                         <input
                           type="text"
                           value={bankDetails.accountNumber}
                           onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
                           placeholder="Account Number"
-                          className="bg-white border border-slate-300 rounded-xl p-2 font-semibold"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 font-semibold text-xs"
                         />
                         <input
                           type="text"
                           value={bankDetails.ifsc}
                           onChange={(e) => setBankDetails({ ...bankDetails, ifsc: e.target.value })}
                           placeholder="IFSC Code"
-                          className="bg-white border border-slate-300 rounded-xl p-2 font-semibold uppercase"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 font-semibold text-xs uppercase"
                         />
                         <input
                           type="text"
                           value={bankDetails.holderName}
                           onChange={(e) => setBankDetails({ ...bankDetails, holderName: e.target.value })}
                           placeholder="Account Holder Name"
-                          className="bg-white border border-slate-300 rounded-xl p-2 font-semibold sm:col-span-2"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 font-semibold text-xs sm:col-span-2"
                         />
                       </div>
                     )}
@@ -774,31 +802,31 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   {/* Option 3: Meesho Wallet Credit */}
                   <div
                     onClick={() => setRefundMethod('wallet')}
-                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-                      refundMethod === 'wallet' ? 'border-[#9f0038] bg-rose-50/40 shadow-sm' : 'border-slate-200 bg-white'
+                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                      refundMethod === 'wallet' ? 'border-[#9f0038] bg-rose-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">👛</span>
-                        <div>
-                          <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <span className="text-xl sm:text-2xl shrink-0">👛</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             <h4 className="font-black text-xs sm:text-sm text-slate-900">Meesho Wallet Balance</h4>
-                            <span className="text-[10px] font-black bg-rose-100 text-[#9f0038] px-2 py-0.2 rounded-full">
+                            <span className="text-[9px] sm:text-[10px] font-black bg-rose-100 text-[#9f0038] px-2 py-0.5 rounded-full shrink-0">
                               +₹50 Extra Bonus
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
                             Instant ₹849 + ₹50 shopping bonus = ₹899 credit for next orders
                           </p>
                         </div>
                       </div>
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                           refundMethod === 'wallet' ? 'border-[#9f0038] bg-[#9f0038]' : 'border-slate-300'
                         }`}
                       >
-                        {refundMethod === 'wallet' && <span className="w-2 h-2 rounded-full bg-white"></span>}
+                        {refundMethod === 'wallet' && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>}
                       </div>
                     </div>
                   </div>
@@ -806,9 +834,9 @@ export default function ReturnRequest({ onNavigate, onBack }) {
               </section>
             ) : (
               /* Exchange Summary Card */
-              <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
-                <h3 className="font-black text-sm text-slate-900">Exchange Replacement Summary</h3>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 text-xs">
+              <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-3">
+                <h3 className="font-black text-xs sm:text-sm text-slate-900">Exchange Replacement Summary</h3>
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Current Item:</span>
                     <strong className="text-slate-800">Free Size (₹849)</strong>
@@ -817,7 +845,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     <span className="text-slate-500">Requested Replacement:</span>
                     <strong className="text-emerald-700">Size: {selectedExchangeSize} (₹849)</strong>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-200 text-sm">
+                  <div className="flex justify-between pt-2 border-t border-slate-200 text-xs sm:text-sm">
                     <span className="font-bold text-slate-700">Total Price Difference:</span>
                     <strong className="text-emerald-600">₹0 (Free Exchange)</strong>
                   </div>
@@ -826,21 +854,21 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             )}
 
             {/* Nav Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2.5 sm:gap-3 mb-2">
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
-                className="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-2xl cursor-pointer transition-colors"
+                className="w-24 sm:w-28 shrink-0 py-3 sm:py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-black text-xs rounded-xl sm:rounded-2xl cursor-pointer transition-colors min-h-[46px]"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={() => setCurrentStep(4)}
-                className="flex-1 py-3.5 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                className="flex-1 py-3 sm:py-3.5 px-3 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-pink-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer uppercase tracking-wide min-h-[46px]"
               >
-                <span>Continue to Pickup Slot</span>
-                ➔
+                <span className="truncate">Continue to Pickup Slot</span>
+                <span className="shrink-0">➔</span>
               </button>
             </div>
           </div>
@@ -848,11 +876,11 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* STEP 4: Doorstep Reverse Pickup Slot & Final Submit */}
         {currentStep === 4 && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
             {/* Pickup Address */}
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+            <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-2.5 sm:space-y-3">
               <div className="flex justify-between items-center">
-                <h3 className="font-black text-sm text-slate-900">Doorstep Pickup Address</h3>
+                <h3 className="font-black text-xs sm:text-sm text-slate-900">Doorstep Pickup Address</h3>
                 <button
                   type="button"
                   onClick={() => showToast('Address editor opened')}
@@ -861,16 +889,16 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   Edit Address
                 </button>
               </div>
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed font-semibold">
+              <div className="bg-slate-50 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed font-semibold">
                 📍 {pickupAddress}
               </div>
             </section>
 
             {/* Pickup Slot Selection */}
-            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
-              <h3 className="font-black text-sm text-slate-900">Select Preferred Pickup Slot</h3>
+            <section className="bg-white p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 space-y-2.5 sm:space-y-3">
+              <h3 className="font-black text-xs sm:text-sm text-slate-900">Select Preferred Pickup Slot</h3>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2 sm:space-y-2.5">
                 {[
                   {
                     id: 'slot_today_evening',
@@ -894,20 +922,20 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   <label
                     key={slot.id}
                     onClick={() => setPickupSlot(slot.id)}
-                    className={`p-3.5 rounded-2xl border-2 flex items-center justify-between transition-all cursor-pointer ${
+                    className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border-2 flex items-center justify-between gap-2 transition-all cursor-pointer ${
                       pickupSlot === slot.id
-                        ? 'border-[#9f0038] bg-rose-50/40 shadow-sm'
+                        ? 'border-[#9f0038] bg-rose-50/40 shadow-xs'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-xs text-slate-900">{slot.time}</span>
-                        <span className="text-[10px] font-bold bg-pink-100 text-[#9f0038] px-2 py-0.2 rounded-full">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="font-black text-xs sm:text-sm text-slate-900">{slot.time}</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold bg-pink-100 text-[#9f0038] px-2 py-0.5 rounded-full shrink-0">
                           {slot.tag}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{slot.desc}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{slot.desc}</p>
                     </div>
 
                     <input
@@ -915,7 +943,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                       name="pickupSlot"
                       checked={pickupSlot === slot.id}
                       onChange={() => setPickupSlot(slot.id)}
-                      className="accent-[#9f0038] w-4 h-4"
+                      className="accent-[#9f0038] w-4 h-4 shrink-0"
                     />
                   </label>
                 ))}
@@ -923,27 +951,27 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             </section>
 
             {/* Final Order Return Breakdown Card */}
-            <section className="bg-gradient-to-r from-rose-50 to-pink-50 p-5 rounded-3xl border border-rose-200/80 space-y-2 text-xs">
-              <h4 className="font-black text-slate-900 text-sm">Summary of Request</h4>
-              <div className="flex justify-between text-slate-600">
+            <section className="bg-gradient-to-br from-rose-50/90 via-pink-50/60 to-rose-50/40 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-rose-200/80 space-y-2.5 text-xs shadow-xs">
+              <h4 className="font-black text-slate-900 text-xs sm:text-sm">Summary of Request</h4>
+              <div className="flex justify-between items-center text-slate-600 py-0.5">
                 <span>Request Type:</span>
-                <strong className="text-slate-900 capitalize">{actionType}</strong>
+                <strong className="text-slate-900 capitalize font-bold">{actionType}</strong>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between items-center text-slate-600 py-0.5">
                 <span>Reason:</span>
-                <strong className="text-slate-900">{selectedSubReason}</strong>
+                <strong className="text-slate-900 font-bold">{selectedSubReason}</strong>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between items-center text-slate-600 py-0.5">
                 <span>Doorstep Pickup Fee:</span>
-                <strong className="text-emerald-600">FREE (₹0)</strong>
+                <strong className="text-emerald-600 font-bold">FREE (₹0)</strong>
               </div>
               {actionType === 'return' ? (
-                <div className="flex justify-between text-sm font-black pt-2 border-t border-rose-200 text-slate-900">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-black pt-2.5 border-t border-rose-200/90 text-slate-900">
                   <span>Net Refund to be Credited:</span>
-                  <span className="text-[#9f0038] text-base">₹849.00</span>
+                  <span className="text-[#9f0038] text-base sm:text-lg font-black">₹849.00</span>
                 </div>
               ) : (
-                <div className="flex justify-between text-sm font-black pt-2 border-t border-rose-200 text-slate-900">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-black pt-2.5 border-t border-rose-200/90 text-slate-900">
                   <span>Replacement Item:</span>
                   <span className="text-emerald-700 font-extrabold">Size {selectedExchangeSize}</span>
                 </div>
@@ -951,21 +979,21 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             </section>
 
             {/* Nav and Final CTA */}
-            <div className="flex gap-3">
+            <div className="flex gap-2.5 sm:gap-3 mb-4">
               <button
                 type="button"
                 onClick={() => setCurrentStep(3)}
-                className="w-1/3 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-2xl cursor-pointer transition-colors"
+                className="w-24 sm:w-28 shrink-0 py-3 sm:py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-black text-xs rounded-xl sm:rounded-2xl cursor-pointer transition-colors min-h-[48px]"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={handleSubmitReturn}
-                className="flex-1 py-4 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-sm rounded-2xl shadow-xl shadow-pink-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
+                className="flex-1 py-3 sm:py-3.5 px-3 sm:px-4 bg-gradient-to-r from-[#9f0038] to-[#e11d48] text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-pink-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer uppercase tracking-wide min-h-[48px]"
               >
-                <span>Submit {actionType === 'return' ? 'Return Request' : 'Exchange Request'}</span>
-                <span>✓</span>
+                <span className="truncate">Submit {actionType === 'return' ? 'Return Request' : 'Exchange Request'}</span>
+                <span className="shrink-0 text-sm">✓</span>
               </button>
             </div>
           </div>
@@ -973,17 +1001,17 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
         {/* STEP 5: SUCCESS CONFIRMATION & REVERSE LOGISTICS TRACKER */}
         {currentStep === 5 && (
-          <section className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-100 text-center space-y-5 animate-in zoom-in-95 duration-200">
+          <section className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 text-center space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200">
             {/* Success Icon */}
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl animate-bounce">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl sm:text-4xl animate-bounce">
               ✓
             </div>
 
             <div>
-              <span className="inline-block px-3 py-1 bg-pink-50 text-[#9f0038] font-black text-xs rounded-full uppercase tracking-wider mb-2">
+              <span className="inline-block px-3 py-1 bg-pink-50 text-[#9f0038] font-black text-[11px] sm:text-xs rounded-full uppercase tracking-wide mb-2">
                 Return ID: #RET-92841
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              <h2 className="text-xl sm:text-3xl font-black text-slate-900">
                 {actionType === 'return' ? 'Return Request Placed! 🎉' : 'Exchange Scheduled! 🔄'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
@@ -994,12 +1022,12 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             </div>
 
             {/* Live Reverse Tracking Stepper */}
-            <div className="bg-slate-50 border border-slate-200/70 p-5 rounded-3xl text-left max-w-lg mx-auto space-y-4">
-              <h3 className="font-black text-xs uppercase tracking-wider text-slate-500">
+            <div className="bg-slate-50 border border-slate-200/70 p-3.5 sm:p-5 rounded-xl sm:rounded-2xl text-left max-w-lg mx-auto space-y-3 sm:space-y-4">
+              <h3 className="font-black text-[11px] sm:text-xs uppercase tracking-wide text-slate-500">
                 Reverse Pickup &amp; Refund Journey
               </h3>
 
-              <div className="space-y-4 relative">
+              <div className="space-y-3 sm:space-y-4 relative">
                 {[
                   {
                     title: 'Return Request Registered',
@@ -1032,16 +1060,16 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     current: false,
                   },
                 ].map((st, i, arr) => (
-                  <div key={i} className="flex gap-3 relative">
+                  <div key={i} className="flex gap-2.5 sm:gap-3 relative">
                     {i !== arr.length - 1 && (
                       <div
-                        className={`absolute left-3.5 top-6 bottom-0 w-0.5 ${
+                        className={`absolute left-3 sm:left-3.5 top-6 bottom-0 w-0.5 ${
                           st.done ? 'bg-[#9f0038]' : 'bg-slate-200'
                         }`}
                       ></div>
                     )}
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 z-10 ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-bold shrink-0 z-10 ${
                         st.current
                           ? 'bg-[#9f0038] text-white ring-4 ring-pink-100 animate-pulse'
                           : st.done
@@ -1051,9 +1079,9 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     >
                       {st.done ? '✓' : i + 1}
                     </div>
-                    <div className="flex-1 pb-1">
-                      <p className="font-black text-xs text-slate-900">{st.title}</p>
-                      <p className="text-[11px] text-slate-500">{st.desc}</p>
+                    <div className="flex-1 pb-1 min-w-0">
+                      <p className="font-black text-xs text-slate-900 leading-snug">{st.title}</p>
+                      <p className="text-[11px] text-slate-500 leading-snug mt-0.5">{st.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -1061,18 +1089,18 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5 sm:gap-3 max-w-md mx-auto mb-4">
               <button
                 type="button"
                 onClick={() => onNavigate && onNavigate('/orders')}
-                className="flex-1 py-3.5 bg-[#9f0038] hover:bg-[#85002f] active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-pink-500/20 cursor-pointer transition-all uppercase tracking-wider"
+                className="flex-1 py-3 sm:py-3.5 bg-[#9f0038] hover:bg-[#85002f] active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-lg shadow-pink-500/20 cursor-pointer transition-all uppercase tracking-wide min-h-[46px]"
               >
                 View in My Orders 📦
               </button>
               <button
                 type="button"
                 onClick={() => onNavigate && onNavigate('home')}
-                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-2xl cursor-pointer transition-colors uppercase tracking-wider"
+                className="flex-1 py-3 sm:py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl cursor-pointer transition-colors uppercase tracking-wide min-h-[46px]"
               >
                 Continue Shopping
               </button>
