@@ -604,7 +604,7 @@ export function MeeshoMessengerChatHub({ onNavigate }) {
 
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {[
-                { name: 'Jaipur Kurtis Wholesale', type: 'Supplier', location: 'Jaipur' },
+                { name: 'Jaipur Kurtis Direct', type: 'Supplier', location: 'Jaipur' },
                 { name: 'Kolkata Saree Mills', type: 'Supplier', location: 'Kolkata' },
                 { name: 'Delhi Smart Electronics', type: 'Supplier', location: 'Delhi' },
                 { name: 'Reseller Elite Club', type: 'Community Group', location: 'All India' },

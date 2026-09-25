@@ -47,7 +47,7 @@ const INITIAL_KYC_REQUESTS = [
         image: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=80',
       },
       gst: {
-        number: '27ABCDE1234F1Z8',
+        number: '29ABCDE1234F1Z5',
         legalName: 'AURA TRENDS LUXE PRIVATE LIMITED',
         status: 'Active on GSTN',
         image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
@@ -901,7 +901,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  NSDL PAN active crawler, GST Department cross-checks, and ₹1 Penny Drop validation running live.
+                  NSDL PAN active crawler, GST Department cross-checks, and ₹1 Bank Account verification running live.
                 </p>
               </div>
             </div>
@@ -1442,7 +1442,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                     {activeModalRequest.documents[activeDocTab].pennyDropStatus && (
                       <div className="flex justify-between">
                         <span className="text-slate-400 font-bold uppercase text-[10px]">
-                          Penny Drop Payout
+                          ₹1 Bank Verification
                         </span>
                         <span className="font-bold text-emerald-600">
                           {activeModalRequest.documents[activeDocTab].pennyDropStatus}
@@ -1510,7 +1510,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                           <span className="material-symbols-outlined text-slate-500 text-sm">
                             verified
                           </span>
-                          <span className="font-medium text-slate-800">Penny Drop ₹1 IMPS</span>
+                          <span className="font-medium text-slate-800">₹1 IMPS Bank Verification</span>
                         </div>
                         <span className="font-bold text-slate-700">
                           {activeModalRequest.documents.bank?.pennyDropStatus || 'N/A'}

@@ -1378,7 +1378,7 @@ export default function DropshipperKYCRegister({ onNavigate = () => {}, onBack }
               <div className="p-3.5 bg-emerald-50 border border-emerald-200/70 rounded-2xl flex items-center gap-3 text-xs text-emerald-800">
                 <span className="material-symbols-outlined text-2xl text-emerald-600 shrink-0">verified</span>
                 <div>
-                  <span className="font-bold">Zero Penny Deduction Guarantee:</span>
+                  <span className="font-bold">Zero Deduction Guarantee:</span>
                   <p className="text-[11px] text-emerald-700 mt-0.5">
                     Your dropshipping profits will be settled weekly via IMPS/NEFT without gateway processing cuts.
                   </p>

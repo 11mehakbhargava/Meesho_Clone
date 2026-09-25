@@ -292,6 +292,7 @@ export default function HomeUserReseller() {
           </div>
         </section>
 
+
         {/* Category Carousel */}
         <section className="mt-8">
           <div className="flex items-center justify-between mb-4">

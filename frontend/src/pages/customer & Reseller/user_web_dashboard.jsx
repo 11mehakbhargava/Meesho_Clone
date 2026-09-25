@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppBottomNav from '../../components/AppBottomNav';
 import { getDropshipperApp, subscribeDropshipperApp } from '../../services/dropshipperSessionStore';
+import { getAffiliateApp, subscribeAffiliateApp } from '../../services/affiliateSessionStore';
 
-export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
+export default function UserWebDashboard({ onNavigate, onBack }) {
+  const navigate = useNavigate();
+  const handleNav = (target) => {
+    if (onNavigate) onNavigate(target);
+    else navigate(target.startsWith('/') ? target : `/${target}`);
+  };
   const [activeSidebarTab, setActiveSidebarTab] = useState('Dashboard');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -14,11 +21,20 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
   const [dropshipperApp, setDropshipperApp] = useState(() => getDropshipperApp());
 
   useEffect(() => {
-    setDropshipperApp(getDropshipperApp());
     const unsubscribe = subscribeDropshipperApp((updatedApp) => {
       setDropshipperApp(updatedApp);
     });
     return unsubscribe;
+  }, []);
+
+  // Affiliate KYC State (Synced with affiliateSessionStore & localStorage)
+  const [affiliateApp, setAffiliateApp] = useState(() => getAffiliateApp());
+
+  useEffect(() => {
+    const unsubscribeAffiliate = subscribeAffiliateApp((updatedApp) => {
+      setAffiliateApp(updatedApp);
+    });
+    return unsubscribeAffiliate;
   }, []);
 
   const triggerToast = (msg) => {
@@ -187,15 +203,36 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               }
             }
 
+            let affiliateNavTitle = 'Become an Affiliate';
+            let affiliateNavBadge = 'NEW';
+            let affiliateNavIcon = 'loyalty';
+
+            if (affiliateApp) {
+              if (affiliateApp.status === 'Approved' || affiliateApp.status === 'APPROVED') {
+                affiliateNavTitle = 'Affiliate Status';
+                affiliateNavBadge = 'ACTIVE';
+                affiliateNavIcon = 'verified';
+              } else if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
+                affiliateNavTitle = 'Affiliate KYC';
+                affiliateNavBadge = 'ACTION';
+                affiliateNavIcon = 'warning';
+              } else {
+                affiliateNavTitle = 'Affiliate KYC';
+                affiliateNavBadge = 'REVIEW';
+                affiliateNavIcon = 'pending';
+              }
+            }
+
             return [
               { id: 'Dashboard', icon: 'dashboard', action: () => setActiveSidebarTab('Dashboard') },
-              { id: dropshipperNavTitle, icon: dropshipperNavIcon, badge: dropshipperNavBadge, action: () => onNavigate('/dropshipper-register') },
-              { id: 'Products', icon: 'inventory_2', action: () => onNavigate('explorer') },
-              { id: 'Orders', icon: 'shopping_cart', action: () => onNavigate('cart') },
-              { id: 'Wishlist', icon: 'favorite', action: () => onNavigate('wishlist') },
-              { id: 'Sarees Store', icon: 'styler', action: () => onNavigate('sarees') },
-              { id: 'Flash Drops', icon: 'bolt', action: () => onNavigate('flash') },
-              { id: 'Curator Spotlight', icon: 'auto_awesome', action: () => onNavigate('spotlight') },
+              { id: affiliateNavTitle, icon: affiliateNavIcon, badge: affiliateNavBadge, action: () => handleNav(affiliateApp ? '/affiliate-kyc-status' : 'affiliate-kyc'), highlight: !affiliateApp || affiliateNavBadge === 'REVIEW' },
+              { id: dropshipperNavTitle, icon: dropshipperNavIcon, badge: dropshipperNavBadge, action: () => handleNav('/dropshipper-register') },
+              { id: 'Products', icon: 'inventory_2', action: () => handleNav('explorer') },
+              { id: 'Orders', icon: 'shopping_cart', action: () => handleNav('cart') },
+              { id: 'Wishlist', icon: 'favorite', action: () => handleNav('wishlist') },
+              { id: 'Sarees Store', icon: 'styler', action: () => handleNav('sarees') },
+              { id: 'Flash Drops', icon: 'bolt', action: () => handleNav('flash') },
+              { id: 'Curator Spotlight', icon: 'auto_awesome', action: () => handleNav('spotlight') },
             ];
           })().map((item) => {
             const isActive = activeSidebarTab === item.id;
@@ -206,6 +243,8 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
                 className={`w-full text-left rounded-2xl px-4 py-3 flex items-center justify-between transition-all cursor-pointer ${
                   isActive
                     ? 'bg-pink-50 text-[#b90041] font-bold shadow-sm'
+                    : item.highlight
+                    ? 'bg-gradient-to-r from-rose-50 to-pink-50 text-[#FF3F6C] font-extrabold border border-rose-200/60 shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -222,6 +261,8 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
                         ? 'bg-rose-600 text-white'
                         : item.badge === 'REVIEW'
                         ? 'bg-amber-500 text-white'
+                        : item.badge === 'KYC'
+                        ? 'bg-[#FF3F6C] text-white'
                         : 'bg-[#b90041] text-white'
                     }`}
                   >
@@ -301,11 +342,54 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               You have earned <span className="underline">₹4,250</span> in reseller margins this month.
             </p>
 
-            {/* Mobile / Desktop Action CTA (hidden on mobile to prevent duplicate button above Hero Card) */}
-            <div className="hidden sm:flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            {/* Header Action CTAs */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+              {/* Affiliate Action CTA */}
               <button
-                onClick={() => onNavigate('/dropshipper-register')}
-                className={`w-full sm:w-auto min-h-[42px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer ${
+                onClick={() => handleNav(affiliateApp ? '/affiliate-kyc-status' : 'affiliate-kyc')}
+                className={`w-full sm:w-auto min-h-[38px] flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer ${
+                  affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white shadow-pink-500/20'
+                    : 'bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white shadow-pink-500/20'
+                }`}
+                title={
+                  affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'Affiliate Partner Approved'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'Affiliate KYC Under Review'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'Affiliate KYC Action Needed'
+                    : 'Become an Affiliate & Submit KYC'
+                }
+              >
+                <span className="material-symbols-outlined text-base">
+                  {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'verified'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'warning'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'hourglass_top'
+                    : 'loyalty'}
+                </span>
+                <span>
+                  {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'Affiliate Approved ✓'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'Affiliate KYC Action ⚠️'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'Affiliate KYC In Review ⏳'
+                    : 'Become an Affiliate'}
+                </span>
+              </button>
+
+              {/* Dropshipper Action CTA */}
+              <button
+                onClick={() => handleNav('/dropshipper-register')}
+                className={`w-full sm:w-auto min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer ${
                   dropshipperApp?.status === 'Approved'
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
                     : dropshipperApp?.status === 'Rejected'
@@ -334,9 +418,10 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
                     : 'Become a Dropshipper'}
                 </span>
               </button>
+
               <button
-                onClick={() => onNavigate('explorer')}
-                className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-pink-50 text-[#b90041] font-bold text-xs hover:bg-pink-100 transition-colors cursor-pointer"
+                onClick={() => handleNav('explorer')}
+                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-pink-50 text-[#b90041] font-bold text-xs hover:bg-pink-100 transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
                 <span>Find Products</span>
@@ -365,7 +450,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => onNavigate('/dropshipper-register')}
+                  onClick={() => handleNav('/dropshipper-register')}
                   className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">verified</span>
@@ -393,7 +478,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => onNavigate('/dropshipper-register')}
+                  onClick={() => handleNav('/dropshipper-register')}
                   className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-500 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">edit_document</span>
@@ -421,7 +506,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => onNavigate('/dropshipper-register')}
+                  onClick={() => handleNav('/dropshipper-register')}
                   className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">fact_check</span>
@@ -449,7 +534,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => onNavigate('/dropshipper-register')}
+                  onClick={() => handleNav('/dropshipper-register')}
                   className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-white text-[#b90041] hover:bg-rose-50 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">rocket_launch</span>
@@ -457,6 +542,122 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
                 </button>
               </div>
             </div>
+          </section>
+        )}
+
+        {/* Affiliate Onboarding / KYC Status Hero Banner */}
+        {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#033b23] via-slate-900 to-[#024a2f] p-4 sm:p-7 text-white shadow-xl shadow-emerald-950/10 border border-emerald-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-[11px] font-bold text-emerald-300 border border-emerald-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verified Affiliate Partner • Active • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Welcome, {affiliateApp.fullName || 'Sarah James'}! 🎉
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Your affiliate partner KYC has been approved! You can now share curated Meesho product referral links and earn up to <strong className="text-emerald-300">15% commission</strong> directly into your verified bank account.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-panel')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">loyalty</span>
+                  <span>Open Affiliate Hub</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-slate-900 to-[#7f1d1d] p-4 sm:p-7 text-white shadow-xl shadow-red-950/10 border border-red-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 backdrop-blur-md text-[11px] font-bold text-rose-300 border border-rose-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">KYC Action Required • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Affiliate Verification Needs Attention ⚠️
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Admin feedback: <strong className="text-rose-300">{affiliateApp.rejectionReason || 'Please resubmit your PAN card photo and bank passbook/cheque with matching legal name.'}</strong>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-kyc?edit=true')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-500 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">edit_document</span>
+                  <span>Fix &amp; Resubmit KYC</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : affiliateApp ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#260e22] via-slate-900 to-[#3d122e] p-4 sm:p-7 text-white shadow-xl shadow-pink-950/10 border border-pink-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 backdrop-blur-md text-[11px] font-bold text-pink-300 border border-pink-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verification In Progress • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Your Affiliate KYC is Under Review ⏳
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Submitted for <strong className="text-white">{affiliateApp.fullName || 'Sarah James'}</strong> ({affiliateApp.handle ? <span className="font-mono text-pink-300 font-bold">{affiliateApp.handle}</span> : 'PAN: ' + (affiliateApp.panNumber || 'BKWPS9821K')}). The compliance team is cross-verifying your PAN, Aadhaar and bank payout details (estimated 24-48 hrs).
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-kyc-status')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">fact_check</span>
+                  <span>Check Live Status</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-3xl bg-gradient-to-r from-[#1c1724] via-[#2a1727] to-[#120e18] p-5 sm:p-6 text-white border border-pink-500/20 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF3F6C] to-[#b90041] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#FF3F6C]/30">
+                <span className="material-symbols-outlined text-2xl">loyalty</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-['Plus_Jakarta_Sans'] font-extrabold text-base sm:text-lg text-white">
+                    Become an Affiliate
+                  </h2>
+                  <span className="bg-[#FF3F6C] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                    Earn Commission
+                  </span>
+                </div>
+                <p className="text-slate-300 text-xs mt-0.5 max-w-xl">
+                  Submit your KYC details for Admin verification and approval. Once approved by Admin, start earning commissions on every order!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleNav('affiliate-kyc')}
+              className="w-full sm:w-auto bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md shadow-[#FF3F6C]/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
+            >
+              <span className="material-symbols-outlined text-base">how_to_reg</span>
+              <span>Become an Affiliate</span>
+            </button>
           </section>
         )}
 
@@ -719,7 +920,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
           <div>
             <h3 className="text-base sm:text-lg font-black">Ready to scale your social store?</h3>
             <p className="text-xs text-slate-300 mt-0.5">
-              Browse millions of wholesale sarees, western wear, and accessories with zero investment.
+              Browse millions of trending sarees, western wear, and accessories with zero investment.
             </p>
           </div>
           <div className="flex gap-2.5 w-full sm:w-auto">
