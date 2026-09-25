@@ -82,13 +82,16 @@ const TOP_PRODUCTS = [
 ];
 
 const SIDEBAR_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'inventory', label: 'Products', icon: 'inventory_2' },
-  { id: 'orders', label: 'Orders', icon: 'shopping_cart' },
-  { id: 'returns', label: 'Returns & RTO', icon: 'assignment_return' },
-  { id: 'analytics', label: 'Analytics', icon: 'insights' },
-  { id: 'earnings', label: 'Earnings', icon: 'payments' },
-  { id: 'profile', label: 'Sellers', icon: 'storefront' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/seller-dashboard' },
+  { id: 'inventory', label: 'Products & Catalog', icon: 'inventory_2', path: '/supplier-inventory' },
+  { id: 'orders', label: 'Supplier Orders', icon: 'shopping_cart', path: '/supplier-orders' },
+  { id: 'dropship', label: 'Dropship Fulfilment 📦', icon: 'sync_alt', path: '/dropship-fulfilment' },
+  { id: 'returns', label: 'Returns & RTO Hub 🔄', icon: 'assignment_return', path: '/supplier-returns' },
+  { id: 'add-product', label: 'Add New Product', icon: 'add_box', path: '/add-product' },
+  { id: 'analytics', label: 'Analytics & Insights', icon: 'insights', path: '/admin-analytics' },
+  { id: 'dropshipper-kyc', label: 'Dropshipper KYC', icon: 'verified_user', path: '/admin-dropshipper-kyc' },
+  { id: 'affiliate-kyc', label: 'Affiliate KYC', icon: 'loyalty', path: '/admin-affiliate-kyc' },
+  { id: 'profile', label: 'Supplier Profile', icon: 'storefront', path: '/supplier-profile' },
 ];
 
 export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders }) {
@@ -98,19 +101,40 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
   const [selectedOrderMenu, setSelectedOrderMenu] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleNav = (id) => {
-    setActiveTab(id);
-    if (id === 'returns') {
-      if (onNavigate) onNavigate('/supplier-returns');
+  const handleNav = (itemOrPath) => {
+    let path = itemOrPath;
+    if (typeof itemOrPath === 'object' && itemOrPath !== null) {
+      setActiveTab(itemOrPath.id);
+      path = itemOrPath.path || itemOrPath.id;
+    } else if (typeof itemOrPath === 'string') {
+      const match = SIDEBAR_ITEMS.find((i) => i.id === itemOrPath || i.path === itemOrPath);
+      if (match) {
+        setActiveTab(match.id);
+        path = match.path;
+      } else {
+        setActiveTab(itemOrPath);
+      }
+    }
+
+    if (path === '/supplier-inventory' && onViewProducts) {
+      onViewProducts();
       return;
     }
-    if (onNavigate) onNavigate(id);
+    if (path === '/supplier-orders' && onViewOrders) {
+      onViewOrders();
+      return;
+    }
+
+    if (onNavigate) {
+      onNavigate(path);
+    }
   };
 
   // Filtered orders for table
@@ -135,65 +159,190 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
         </div>
       )}
 
-      <div className="flex min-h-screen flex-1">
-        {/* ===================== SideNavBar (Desktop) ===================== */}
-        <aside className="hidden md:flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-950 border-r border-slate-200/60 dark:border-slate-800 sticky top-0 py-6 space-y-2 z-40 flex-shrink-0">
-          <div className="px-6 mb-8">
-            <div className="text-xl font-black text-[#FF3F6C] font-['Plus_Jakarta_Sans',sans-serif] tracking-tight">
-              Curator Luxe
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">
+      {/* ===================== Mobile Top Bar with Hamburger Menu ===================== */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 cursor-pointer transition-colors"
+            title="Open Side Menu"
+          >
+            <span className="material-symbols-outlined text-xl">menu</span>
+          </button>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#FF3F6C] to-pink-600 flex items-center justify-center text-white font-black text-sm shadow-xs">
+            S
+          </div>
+          <div>
+            <h1 className="font-extrabold text-slate-900 text-sm font-['Plus_Jakarta_Sans',sans-serif] leading-tight">
+              Seller Console
+            </h1>
+            <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">
               Digital Curator Hub
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleNav('/add-product')}
+            className="bg-rose-50 text-[#FF3F6C] px-2.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 border border-rose-200 cursor-pointer hover:bg-rose-100 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xs">add</span>
+            <span>Product</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ===================== Mobile Navigation Drawer ===================== */}
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex animate-in fade-in duration-200"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-72 bg-slate-900 text-white h-full p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200"
+          >
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#FF3F6C] to-pink-600 flex items-center justify-center text-white font-black text-sm shadow-xs">
+                    S
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-rose-500 font-['Plus_Jakarta_Sans',sans-serif]">
+                      Seller Console
+                    </h2>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                      Digital Curator Hub
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <nav className="space-y-1 overflow-y-auto max-h-[70vh]">
+                {SIDEBAR_ITEMS.map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleNav(item);
+                      }}
+                      className={`w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined mr-2.5 text-base">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (onNavigate) onNavigate('/admin-panel');
+                }}
+                className="w-full py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>Switch to Admin Console</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-h-screen flex-1">
+        {/* ===================== SideNavBar (Desktop Shell) ===================== */}
+        <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-slate-50 dark:bg-slate-950 py-6 space-y-2 border-r border-slate-200/60 dark:border-slate-800">
+          <div className="px-6 mb-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#FF3F6C] to-pink-600 flex items-center justify-center text-white font-black text-sm shadow-xs">
+                S
+              </div>
+              <div>
+                <h1 className="text-base font-black text-[#FF3F6C] font-['Plus_Jakarta_Sans',sans-serif] tracking-tight leading-tight">
+                  Seller Console
+                </h1>
+                <p className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mt-0.5">
+                  Supplier &amp; Merchant Hub
+                </p>
+              </div>
             </div>
           </div>
 
-          <nav className="flex-1 px-3 space-y-1">
+          <nav className="flex-1 px-3 space-y-1 overflow-y-auto no-scrollbar">
             {SIDEBAR_ITEMS.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => handleNav(item.id)}
-                  className={`w-full flex items-center px-4 py-3 rounded-xl font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold transition-all cursor-pointer ${
+                  onClick={() => handleNav(item)}
+                  className={`w-full flex items-center px-4 py-2.5 rounded-xl font-['Plus_Jakarta_Sans',sans-serif] text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white dark:bg-slate-900 text-[#FF3F6C] shadow-sm translate-x-1'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1'
+                      ? 'bg-white dark:bg-slate-900 text-[#FF3F6C] shadow-xs border border-rose-100 dark:border-slate-800 translate-x-1 font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1'
                   }`}
                 >
-                  <span className="material-symbols-outlined mr-3">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="material-symbols-outlined mr-3 text-lg">{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          <div className="px-4 mt-auto space-y-1 border-t border-slate-200/60 dark:border-slate-800 pt-4">
+          <div className="px-4 py-4 mt-auto border-t border-slate-200/60 dark:border-slate-800 space-y-1">
             <button
               type="button"
-              onClick={() => showToast('Opening Support & Help Center...')}
-              className="w-full flex items-center px-4 py-2.5 text-slate-500 hover:text-slate-700 cursor-pointer text-sm font-semibold transition-colors rounded-lg"
+              onClick={() => onNavigate && onNavigate('/admin-panel')}
+              className="w-full bg-[#FF3F6C] hover:bg-rose-600 text-white py-2.5 rounded-xl font-['Plus_Jakarta_Sans',sans-serif] text-xs font-bold shadow-md shadow-rose-500/20 transition-all active:scale-95 mb-2 cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <span className="material-symbols-outlined mr-3">help</span>
+              <span>Admin Console</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate && onNavigate('/support-center')}
+              className="w-full flex items-center px-3 py-2 text-slate-500 hover:text-slate-700 cursor-pointer text-xs font-semibold transition-colors rounded-lg"
+            >
+              <span className="material-symbols-outlined mr-2.5 text-base">help</span>
               Support
             </button>
             <button
               type="button"
               onClick={() => showToast('Logging out...')}
-              className="w-full flex items-center px-4 py-2.5 text-red-500 hover:text-red-700 cursor-pointer text-sm font-semibold transition-colors rounded-lg"
+              className="w-full flex items-center px-3 py-2 text-red-500 hover:text-red-700 cursor-pointer text-xs font-semibold transition-colors rounded-lg"
             >
-              <span className="material-symbols-outlined mr-3">logout</span>
+              <span className="material-symbols-outlined mr-2.5 text-base">logout</span>
               Logout
             </button>
           </div>
         </aside>
 
         {/* ===================== Main Content Area ===================== */}
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 md:pl-64">
           {/* TopNavBar */}
-          <header className="flex justify-between items-center px-8 py-3 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-xs sticky top-0 z-40 border-b border-slate-200/60">
+          <header className="flex justify-between items-center px-4 sm:px-8 py-3 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-xs sticky top-0 z-30 border-b border-slate-200/60">
             <div className="flex items-center gap-4 flex-1">
-              <div className="md:hidden text-[#FF3F6C] font-black text-lg">CL</div>
               <div className="relative w-full max-w-md hidden sm:block">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
                   search
@@ -391,6 +540,40 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders })
                   className="bg-[#b90041] hover:bg-[#a00037] text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-rose-200 transition-all cursor-pointer"
                 >
                   <span>Manage Returns & SPF Claims</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              </div>
+            </section>
+
+            {/* Customer Dropship Auto-Sync & Fulfilment Hub Banner */}
+            <section className="bg-gradient-to-r from-pink-50 via-white to-purple-50/40 p-5 rounded-2xl border border-pink-200/70 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FF3F6C] to-[#b90041] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-pink-200">
+                  <span className="material-symbols-outlined text-2xl">sync_alt</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+                      Customer Order & Supplier Fulfilment (Dropshipping)
+                    </h3>
+                    <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                      Auto-Sync Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Customer orders from Dropshipper site auto-sync via Webhook. Pack white-label & ship directly to customer.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 self-end md:self-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('dropship')}
+                  className="bg-[#FF3F6C] hover:bg-[#e02653] text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-pink-200 transition-all cursor-pointer"
+                >
+                  <span>Open Dropship Fulfilment Hub</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
               </div>

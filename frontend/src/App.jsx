@@ -68,6 +68,7 @@ import AddNewProductSupplier from './pages/supplier/add_new_product_supplier';
 import AddCategorySupplier from './pages/supplier/add_category_supplier';
 import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
 import SupplierReturnsRTO from './pages/supplier/SupplierReturnsRTO';
+import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
 
 // Admin Panel Pages
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
@@ -160,6 +161,7 @@ const screenCatalog = [
   { path: '/supplier-profile', name: 'Supplier Profile', icon: '👤', group: 'Supplier' },
   { path: '/seller-dashboard', name: 'Seller Web Dashboard', icon: '💻', group: 'Supplier' },
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
+  { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
 
   // 5. Admin Panel & Support
   { path: '/admin-panel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
@@ -725,6 +727,14 @@ function AppRoutes() {
         <Route
           path="/supplier-returns"
           element={<SupplierReturnsRTO onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/dropship-fulfilment"
+          element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/customer-order-supplier-fulfilment"
+          element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
         />
 
         {/* Admin Panel & Support Routes */}
