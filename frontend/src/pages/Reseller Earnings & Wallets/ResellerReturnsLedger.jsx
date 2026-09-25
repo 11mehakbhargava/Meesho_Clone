@@ -269,6 +269,24 @@ export default function ResellerReturnsLedger({ onNavigate, onBack }) {
 
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
+              onClick={() => handleNav('/dropshipper-rot-manager')}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+              title="ROT Liability & Policy Manager"
+            >
+              <span>🛡️</span>
+              <span className="hidden sm:inline">ROT Policy</span>
+            </button>
+
+            <button
+              onClick={() => handleNav('/dropshipper-settlements')}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+              title="Full Order Settlement & Tracking"
+            >
+              <span>📊</span>
+              <span className="hidden sm:inline">Settlement</span>
+            </button>
+
+            <button
               onClick={handleExportCSV}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
               title="Download Statement"

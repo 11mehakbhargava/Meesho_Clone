@@ -1,7 +1,7 @@
 # 🛍️ Meesho SuperApp Clone – Complete Project & Architecture Overview
 
 > **Version:** 1.0.0 | **Framework:** React 19 + Vite 8 + Tailwind CSS v4 + React Router 7  
-> **Architecture:** 7 Core Modules | 63 Interactive Screens | Multi-Role Ecosystem  
+> **Architecture:** 7 Core Modules | 64 Interactive Screens | Multi-Role Ecosystem  
 > **Roles Supported:** Resellers, Customers, Suppliers/Sellers, Delivery Riders, Platform Admins  
 
 ---
@@ -29,16 +29,16 @@ Isme sirf normal shopping hi nahi, balki Meesho ka core business model—**Socia
 
 ## 🗺️ 3. Navigation System (How the App Connects)
 
-App ke andar **63 screens** hain. Unko aapas mein connect karne ke liye do powerful systems use kiye gaye hain:
+App ke andar **64 screens** hain. Unko aapas mein connect karne ke liye do powerful systems use kiye gaye hain:
 
 1. **Floating Screen Navigator (`FloatingNavigator` in `App.jsx`):**
-   - Screen ke upar ek persistent floating drawer/button hota hai jo category-wise filter karke (Reseller, Shopping, Logistics, Supplier, Admin, Themes) kisi bhi page par 1-click mein jump karne deta hai.
+   - Screen ke upar ek persistent floating drawer/button hota hai jo category-wise filter karke (Dropshipper, Reseller, Shopping, Logistics, Supplier, Admin, Themes) kisi bhi page par 1-click mein jump karne deta hai.
 2. **Dynamic Route Bridge (`handleNav`):**
    - Components ko legacy `onNavigate(actionId)` aur modern `navigate('/route')` dono ko seamlessly support karne ke liye route map bridge diya gaya hai.
 
 ---
 
-## 📦 4. Detailed 7 Modules Breakdown (All 63 Screens)
+## 📦 4. Detailed 7 Modules Breakdown (All 64 Screens)
 
 ```
                        ┌─────────────────────────────────────────┐
@@ -51,7 +51,7 @@ App ke andar **63 screens** hain. Unko aapas mein connect karne ke liye do power
 │  Module 1   │ │  Module 2   │     │  Module 3   │     │  Module 4   │ │  Module 5   │
 │  Reseller & │ │ Shopping &  │     │ Delivery &  │     │  Supplier   │ │ Admin Panel │
 │   Fintech   │ │  Customer   │     │  Logistics  │     │     Hub     │ │ & Analytics │
-│ (18 Screens)│ │(15 Screens) │     │ (9 Screens) │     │ (8 Screens) │ │ (4 Screens) │
+│ (19 Screens)│ │(15 Screens) │     │ (9 Screens) │     │ (8 Screens) │ │ (4 Screens) │
 └─────────────┘ └─────────────┘     └─────────────┘     └─────────────┘ └─────────────┘
                                            │
                        ┌───────────────────┴───────────────────┐
@@ -66,7 +66,7 @@ App ke andar **63 screens** hain. Unko aapas mein connect karne ke liye do power
 
 ---
 
-### 🛍️ Module 1: Reseller & Fintech Hub (18 Screens)
+### 🛍️ Module 1: Reseller & Fintech Hub (19 Screens)
 *Location: `src/pages/Reseller Earnings & Wallets`*
 
 Meesho ka sabse bada USP: **Zero Investment Reselling & Margin Sharing**.
@@ -76,6 +76,8 @@ Meesho ka sabse bada USP: **Zero Investment Reselling & Margin Sharing**.
 - **Share & Earn Config (`/share-earn-config`):** Resellers apna custom margin add karte hain (e.g., Supplier price ₹250 + Margin ₹100 = Final Price ₹350) aur WhatsApp/Facebook par link generate karte hain.
 - **Earnings Dashboards 1 & 2 (`/earnings-dashboard-1`, `/earnings-dashboard-2`):** Total sales, pending margins, weekly payout bar charts, bonuses.
 - **My Wallet Fintech Style & Reseller Wallet (`/my-wallet`, `/reseller-wallet`):** Digital passbook, available balance, transaction history (credits/debits).
+- **Dropshipper Settlement & Tracking (`/dropshipper-settlements`):** 5-Stage order journey tracker (Order -> Dispatch -> Delivery -> Escrow/RTO -> Bank Settlement), net margin invoice math, UTR reference lookup & RTO claim dispute filing.
+- **Returns & Margin Ledger (`/reseller-returns`):** Returned orders margin deductions and dispute hub.
 - **Withdraw Earnings (`/withdraw-earnings`):** Wallet balance ko direct Bank Account ya UPI mein transfer karne ka flow.
 - **Payout Settings (`/payout-settings`):** Bank account, IFSC code, UPI ID, PAN verification settings.
 - **Payout Confirmation (`/payout-confirmation`):** Successful withdrawal receipt & animation.

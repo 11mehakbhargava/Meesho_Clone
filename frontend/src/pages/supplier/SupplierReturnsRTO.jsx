@@ -373,6 +373,15 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               type="button"
+              onClick={() => onNavigate && onNavigate('/supplier-rot-ledger')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+              title="Supplier ROT & Freight Ledger"
+            >
+              <span className="material-symbols-outlined text-sm sm:text-base">receipt_long</span>
+              <span className="hidden xs:inline">ROT Ledger</span>
+            </button>
+            <button
+              type="button"
               onClick={handleExportCSV}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
               title="Export CSV"

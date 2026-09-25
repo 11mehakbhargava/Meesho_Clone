@@ -560,6 +560,15 @@ export default function AdminReturnRefundHub({ onNavigate = () => {}, onBack }) 
             </div>
 
             <button
+              onClick={() => onNavigate('/admin-rot-rules')}
+              className="bg-[#b90041] hover:bg-[#a00038] text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+              title="Configure ROT Business Rules"
+            >
+              <span className="material-symbols-outlined text-sm">rule_settings</span>
+              <span className="hidden md:inline">ROT Rules</span>
+            </button>
+
+            <button
               onClick={handleExportCSV}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
               title="Export CSV Audit"
