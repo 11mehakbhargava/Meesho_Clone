@@ -21,6 +21,9 @@ import EarningsDashboard2 from './pages/Reseller Earnings & Wallets/EarningsDash
 import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
 import WithdrawEarnings from './pages/Reseller Earnings & Wallets/WithdrawEarnings';
 import ResellerReturnsLedger from './pages/Reseller Earnings & Wallets/ResellerReturnsLedger';
+import DropshipperKYCRegister from './pages/Reseller Earnings & Wallets/DropshipperKYCRegister';
+import SupplierProductAccess from './pages/Reseller Earnings & Wallets/SupplierProductAccess';
+import DropshipperLogin from './pages/Reseller Earnings & Wallets/DropshipperLogin';
 
 // Dropshipper Hub Pages
 import DropshipperSettlementTracking from './pages/dropshipper/DropshipperSettlementTracking';
@@ -44,6 +47,8 @@ import CheckoutPayment from './pages/customer & Reseller/checkout_payment';
 import UserWebDashboard from './pages/customer & Reseller/user_web_dashboard';
 import CustomerOrders from './pages/customer & Reseller/CustomerOrders';
 import ReturnRequest from './pages/customer & Reseller/ReturnRequest';
+import AffiliateKYC from './pages/customer & Reseller/AffiliateKYC';
+import AffiliateKycStatus from './pages/customer & Reseller/AffiliateKycStatus';
 
 // Delivery & Driver Logistics Pages
 import DriverDashboardMobile from './pages/delivery & driver logistics/driver_dashboard_mobile';
@@ -68,6 +73,7 @@ import AddCategorySupplier from './pages/supplier/add_category_supplier';
 import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
 import SupplierReturnsRTO from './pages/supplier/SupplierReturnsRTO';
 import SupplierRotLedger from './pages/supplier/SupplierRotLedger';
+import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
 
 // Admin Panel Pages
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
@@ -106,13 +112,18 @@ const screenCatalog = [
 
   // 2. Reseller & Fintech 
   { path: '/reseller-home', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
+  { path: '/dropshipper-login', name: 'Dropshipper B2B Login', icon: '🔐', group: 'Reseller & Shop' },
+  { path: '/supplier-products', name: 'Supplier Product Access', icon: '🏬', group: 'Reseller & Shop' },
   { path: '/resell-earn', name: 'Resell & Earn', icon: '💰', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-1', name: 'Earnings Dashboard 1', icon: '📈', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
+  { path: '/dropshipper-register', name: 'Become Dropshipper (KYC)', icon: '🚀', group: 'Reseller & Shop' },
   { path: '/payout-confirmation', name: 'Payout Confirmation', icon: '✅', group: 'Reseller & Shop' },
   { path: '/refer-earn', name: 'Refer & Earn', icon: '🎁', group: 'Reseller & Shop' },
   { path: '/affiliate-program', name: 'Affiliate Program', icon: '🤝', group: 'Reseller & Shop' },
   { path: '/affiliate-panel', name: 'Affiliate Panel', icon: '👑', group: 'Reseller & Shop' },
+  { path: '/affiliate-kyc', name: 'Become Affiliate (KYC)', icon: '🪪', group: 'Reseller & Shop' },
+  { path: '/affiliate-kyc-status', name: 'Affiliate KYC Status', icon: '⏳', group: 'Reseller & Shop' },
   { path: '/community-hub', name: 'Community Hub', icon: '👥', group: 'Reseller & Shop' },
   { path: '/messenger', name: 'Messenger Hub', icon: '💬', group: 'Reseller & Shop' },
   { path: '/conversation', name: 'Conversation Screen', icon: '🗨️', group: 'Reseller & Shop' },
@@ -162,6 +173,7 @@ const screenCatalog = [
   { path: '/seller-dashboard', name: 'Seller Web Dashboard', icon: '💻', group: 'Supplier' },
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
+  { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
 
   // 6. Admin Panel & Support
   { path: '/admin-panel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
@@ -492,6 +504,11 @@ function AppRoutes() {
       returns: '/orders',
 
       // Reseller & Fintech
+      'dropshipper-login': '/dropshipper-login',
+      dropshipperLogin: '/dropshipper-login',
+      'supplier-products': '/supplier-products',
+      supplierProducts: '/supplier-products',
+      'dropshipper-products': '/supplier-products',
       'resell-earn': '/resell-earn',
       'share-earn-config': '/share-earn-config',
       'earnings-dashboard-1': '/earnings-dashboard-1',
@@ -554,6 +571,11 @@ function AppRoutes() {
       adminCatalog: '/admin-catalog',
       campaignFlow: '/campaign-flow',
       adminAnalytics: '/admin-analytics',
+      'admin-dropshipper-kyc': '/admin-dropshipper-kyc',
+      adminDropshipperKyc: '/admin-dropshipper-kyc',
+      'dropshipper-register': '/dropshipper-register',
+      dropshipperRegister: '/dropshipper-register',
+      'dropshipper-kyc': '/dropshipper-register',
       communityHub: '/community-hub',
       messenger: '/messenger',
       chatScreen: '/conversation',
@@ -561,6 +583,13 @@ function AppRoutes() {
       raiseTicket: '/raise-ticket',
       notifications: '/notifications',
       login: '/login',
+      affiliateKyc: '/affiliate-kyc',
+      'affiliate-kyc': '/affiliate-kyc',
+      becomeAffiliate: '/affiliate-kyc',
+      'become-affiliate': '/affiliate-kyc',
+      affiliateKycStatus: '/affiliate-kyc-status',
+      'affiliate-kyc-status': '/affiliate-kyc-status',
+      'affiliate-status': '/affiliate-kyc-status',
 
       // Themes
       digitalCurator: '/digital-curator',
@@ -583,12 +612,14 @@ function AppRoutes() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#f8f9fb]">
+    <div className="relative min-h-screen bg-[#f8f9fb] w-full max-w-full overflow-x-hidden">
       <FloatingNavigator />
 
       <Routes>
         {/* Reseller & Fintech Routes (Shruti Flow) */}
         <Route path="/reseller-home" element={<HomeUserReseller />} />
+        <Route path="/supplier-products" element={<SupplierProductAccess />} />
+        <Route path="/dropshipper-products" element={<SupplierProductAccess />} />
         <Route path="/share-earn-config" element={<ShareEarnConfig />} />
         <Route path="/resell-earn" element={<ResellEarn />} />
         <Route path="/earnings-dashboard-1" element={<EarningsDashboard1 />} />
@@ -596,12 +627,17 @@ function AppRoutes() {
         <Route path="/refer-earn" element={<ReferEarn />} />
         <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route path="/affiliate-panel" element={<AffiliateProgramPanel />} />
+        <Route path="/affiliate-kyc" element={<AffiliateKYC onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/become-affiliate" element={<AffiliateKYC onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/affiliate-kyc-status" element={<AffiliateKycStatus onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/affiliate-status" element={<AffiliateKycStatus onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/my-wallet" element={<MyWalletFintechStyle />} />
         <Route path="/reseller-wallet" element={<ResellerWallet />} />
         <Route path="/reseller-returns" element={<ResellerReturnsLedger onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/dropshipper-settlements" element={<DropshipperSettlementTracking onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/dropshipper-tracking" element={<DropshipperSettlementTracking onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/dropshipper-rot-manager" element={<DropshipperRotManager onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/dropshipper-register" element={<DropshipperKYCRegister onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/withdraw-earnings" element={<WithdrawEarnings />} />
         <Route path="/payout-settings" element={<PayoutSettings />} />
         <Route path="/payout-confirmation" element={<PayoutConfirmation />} />
@@ -611,6 +647,7 @@ function AppRoutes() {
         <Route path="/notifications" element={<NotificationCenter />} />
         <Route path="/" element={<LoginSignup />} />
         <Route path="/login" element={<LoginSignup />} />
+        <Route path="/dropshipper-login" element={<DropshipperLogin />} />
 
 
         {/* Customer Shopping Routes */}
@@ -718,6 +755,14 @@ function AppRoutes() {
         <Route
           path="/supplier-rot-ledger"
           element={<SupplierRotLedger onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/dropship-fulfilment"
+          element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/customer-order-supplier-fulfilment"
+          element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
         />
 
         {/* Admin Panel & Support Routes */}

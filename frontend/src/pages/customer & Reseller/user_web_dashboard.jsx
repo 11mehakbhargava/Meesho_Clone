@@ -1,12 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppBottomNav from '../../components/AppBottomNav';
+import { getDropshipperApp, subscribeDropshipperApp } from '../../services/dropshipperSessionStore';
+import { getAffiliateApp, subscribeAffiliateApp } from '../../services/affiliateSessionStore';
 
-export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
+export default function UserWebDashboard({ onNavigate, onBack }) {
+  const navigate = useNavigate();
+  const handleNav = (target) => {
+    if (onNavigate) onNavigate(target);
+    else navigate(target.startsWith('/') ? target : `/${target}`);
+  };
   const [activeSidebarTab, setActiveSidebarTab] = useState('Dashboard');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [walletBalance, setWalletBalance] = useState(12840);
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
+
+  // Dropshipper KYC State (Synced with in-memory store; auto-resets on refresh)
+  const [dropshipperApp, setDropshipperApp] = useState(() => getDropshipperApp());
+
+  useEffect(() => {
+    const unsubscribe = subscribeDropshipperApp((updatedApp) => {
+      setDropshipperApp(updatedApp);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Affiliate KYC State (Synced with affiliateSessionStore & localStorage)
+  const [affiliateApp, setAffiliateApp] = useState(() => getAffiliateApp());
+
+  useEffect(() => {
+    const unsubscribeAffiliate = subscribeAffiliateApp((updatedApp) => {
+      setAffiliateApp(updatedApp);
+    });
+    return unsubscribeAffiliate;
+  }, []);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -124,7 +153,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
   ];
 
   return (
-    <div className="bg-[#f8f9fb] font-sans text-[#191c1e] min-h-screen flex antialiased selection:bg-pink-100 selection:text-pink-600">
+    <div className="bg-[#f8f9fb] font-sans text-[#191c1e] min-h-screen flex antialiased selection:bg-pink-100 selection:text-pink-600 w-full max-w-full overflow-x-hidden">
       {/* Toast Alert */}
       {showToast && (
         <div className="fixed top-20 right-6 z-50 bg-[#b90041] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
@@ -153,28 +182,93 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
         </div>
 
         <nav className="flex-1 space-y-1">
-          {[
-            { id: 'Dashboard', icon: 'dashboard', action: () => setActiveSidebarTab('Dashboard') },
-            { id: 'Products', icon: 'inventory_2', action: () => onNavigate('explorer') },
-            { id: 'Orders', icon: 'shopping_cart', action: () => onNavigate('cart') },
-            { id: 'Wishlist', icon: 'favorite', action: () => onNavigate('wishlist') },
-            { id: 'Sarees Store', icon: 'styler', action: () => onNavigate('sarees') },
-            { id: 'Flash Drops', icon: 'bolt', action: () => onNavigate('flash') },
-            { id: 'Curator Spotlight', icon: 'auto_awesome', action: () => onNavigate('spotlight') },
-          ].map((item) => {
+          {(() => {
+            let dropshipperNavTitle = 'Become a Dropshipper';
+            let dropshipperNavBadge = 'NEW';
+            let dropshipperNavIcon = 'local_shipping';
+
+            if (dropshipperApp) {
+              if (dropshipperApp.status === 'Approved') {
+                dropshipperNavTitle = 'Dropshipper Status';
+                dropshipperNavBadge = 'ACTIVE';
+                dropshipperNavIcon = 'verified';
+              } else if (dropshipperApp.status === 'Rejected') {
+                dropshipperNavTitle = 'Dropshipper KYC';
+                dropshipperNavBadge = 'ACTION';
+                dropshipperNavIcon = 'warning';
+              } else {
+                dropshipperNavTitle = 'Dropshipper KYC';
+                dropshipperNavBadge = 'REVIEW';
+                dropshipperNavIcon = 'pending';
+              }
+            }
+
+            let affiliateNavTitle = 'Become an Affiliate';
+            let affiliateNavBadge = 'NEW';
+            let affiliateNavIcon = 'loyalty';
+
+            if (affiliateApp) {
+              if (affiliateApp.status === 'Approved' || affiliateApp.status === 'APPROVED') {
+                affiliateNavTitle = 'Affiliate Status';
+                affiliateNavBadge = 'ACTIVE';
+                affiliateNavIcon = 'verified';
+              } else if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
+                affiliateNavTitle = 'Affiliate KYC';
+                affiliateNavBadge = 'ACTION';
+                affiliateNavIcon = 'warning';
+              } else {
+                affiliateNavTitle = 'Affiliate KYC';
+                affiliateNavBadge = 'REVIEW';
+                affiliateNavIcon = 'pending';
+              }
+            }
+
+            return [
+              { id: 'Dashboard', icon: 'dashboard', action: () => setActiveSidebarTab('Dashboard') },
+              { id: affiliateNavTitle, icon: affiliateNavIcon, badge: affiliateNavBadge, action: () => handleNav(affiliateApp ? '/affiliate-kyc-status' : 'affiliate-kyc'), highlight: !affiliateApp || affiliateNavBadge === 'REVIEW' },
+              { id: dropshipperNavTitle, icon: dropshipperNavIcon, badge: dropshipperNavBadge, action: () => handleNav('/dropshipper-register') },
+              { id: 'Products', icon: 'inventory_2', action: () => handleNav('explorer') },
+              { id: 'Orders', icon: 'shopping_cart', action: () => handleNav('cart') },
+              { id: 'Wishlist', icon: 'favorite', action: () => handleNav('wishlist') },
+              { id: 'Sarees Store', icon: 'styler', action: () => handleNav('sarees') },
+              { id: 'Flash Drops', icon: 'bolt', action: () => handleNav('flash') },
+              { id: 'Curator Spotlight', icon: 'auto_awesome', action: () => handleNav('spotlight') },
+            ];
+          })().map((item) => {
             const isActive = activeSidebarTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={item.action}
-                className={`w-full text-left rounded-2xl px-4 py-3 flex items-center space-x-3 transition-all cursor-pointer ${
+                className={`w-full text-left rounded-2xl px-4 py-3 flex items-center justify-between transition-all cursor-pointer ${
                   isActive
                     ? 'bg-pink-50 text-[#b90041] font-bold shadow-sm'
+                    : item.highlight
+                    ? 'bg-gradient-to-r from-rose-50 to-pink-50 text-[#FF3F6C] font-extrabold border border-rose-200/60 shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <span className="material-symbols-outlined text-xl">{item.icon}</span>
-                <span className="text-xs font-bold">{item.id}</span>
+                <div className="flex items-center space-x-3">
+                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                  <span className="text-xs font-bold">{item.id}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs ${
+                      item.badge === 'ACTIVE'
+                        ? 'bg-emerald-600 text-white'
+                        : item.badge === 'ACTION'
+                        ? 'bg-rose-600 text-white'
+                        : item.badge === 'REVIEW'
+                        ? 'bg-amber-500 text-white'
+                        : item.badge === 'KYC'
+                        ? 'bg-[#FF3F6C] text-white'
+                        : 'bg-[#b90041] text-white'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -200,128 +294,442 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:ml-64 p-4 md:p-8 min-h-screen max-w-7xl mx-auto space-y-8 pb-32">
+      <main className="flex-1 min-w-0 w-full max-w-7xl lg:ml-64 p-3 sm:p-6 md:p-8 min-h-screen mx-auto space-y-5 sm:space-y-8 pb-36 sm:pb-32 overflow-hidden">
         {/* Top Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2">
+        <header className="flex flex-col gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
               <button
                 onClick={() => (onBack ? onBack() : onNavigate('reseller'))}
-                className="lg:hidden p-2 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer"
+                className="lg:hidden p-1.5 -ml-1 hover:bg-slate-100 rounded-full text-slate-700 cursor-pointer shrink-0"
+                aria-label="Back"
               >
                 <span className="material-symbols-outlined text-2xl">arrow_back</span>
               </button>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[#191c1e]">
+              <h1 className="text-base sm:text-2xl md:text-3xl font-black tracking-tight text-[#191c1e] truncate font-['Plus_Jakarta_Sans',sans-serif]">
                 Hello, Sarah James! 👋
               </h1>
             </div>
-            <p className="text-[#b90041] font-bold text-xs md:text-sm mt-1">
-              You have earned <span className="underline">₹4,250</span> in reseller margins this month.
-            </p>
+
+            {/* Quick Profile & Notification Icons */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              <button
+                onClick={() => onNavigate('wishlist')}
+                className="p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                title="Wishlist"
+              >
+                <span className="material-symbols-outlined text-lg sm:text-xl">favorite</span>
+              </button>
+              <button
+                onClick={() => triggerToast('3 new order inquiries today!')}
+                className="p-2 sm:p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer relative"
+                title="Notifications"
+              >
+                <span className="material-symbols-outlined text-lg sm:text-xl">notifications</span>
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500"></span>
+              </button>
+              <div
+                onClick={() => triggerToast('Viewing Sarah James Curator Profile')}
+                className="h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-[#4d41df] text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-md cursor-pointer hover:opacity-90 shrink-0"
+              >
+                SJ
+              </div>
+            </div>
           </div>
 
-          {/* Actions & Profile */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onNavigate('explorer')}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-pink-50 text-[#b90041] font-bold text-xs hover:bg-pink-100 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
-              <span>Find Products</span>
-            </button>
-            <button
-              onClick={() => onNavigate('wishlist')}
-              className="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
-              title="Wishlist"
-            >
-              <span className="material-symbols-outlined text-xl">favorite</span>
-            </button>
-            <button
-              onClick={() => triggerToast('3 new order inquiries today!')}
-              className="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer relative"
-              title="Notifications"
-            >
-              <span className="material-symbols-outlined text-xl">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500"></span>
-            </button>
-            <div
-              onClick={() => triggerToast('Viewing Sarah James Curator Profile')}
-              className="h-10 w-10 rounded-2xl bg-[#4d41df] text-white flex items-center justify-center font-black text-sm shadow-md cursor-pointer hover:opacity-90"
-            >
-              SJ
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
+            <p className="text-[#b90041] font-bold text-xs md:text-sm">
+              You have earned <span className="underline">₹4,250</span> in reseller margins this month.
+            </p>
+
+            {/* Header Action CTAs */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+              {/* Affiliate Action CTA */}
+              <button
+                onClick={() => handleNav(affiliateApp ? '/affiliate-kyc-status' : 'affiliate-kyc')}
+                className={`w-full sm:w-auto min-h-[38px] flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer ${
+                  affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white shadow-pink-500/20'
+                    : 'bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white shadow-pink-500/20'
+                }`}
+                title={
+                  affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'Affiliate Partner Approved'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'Affiliate KYC Under Review'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'Affiliate KYC Action Needed'
+                    : 'Become an Affiliate & Submit KYC'
+                }
+              >
+                <span className="material-symbols-outlined text-base">
+                  {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'verified'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'warning'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'hourglass_top'
+                    : 'loyalty'}
+                </span>
+                <span>
+                  {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED'
+                    ? 'Affiliate Approved ✓'
+                    : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED'
+                    ? 'Affiliate KYC Action ⚠️'
+                    : affiliateApp?.status === 'Under Review' || affiliateApp?.status === 'Pending' || affiliateApp?.status === 'PENDING_ADMIN_APPROVAL' || affiliateApp?.status === 'Pending Review'
+                    ? 'Affiliate KYC In Review ⏳'
+                    : 'Become an Affiliate'}
+                </span>
+              </button>
+
+              {/* Dropshipper Action CTA */}
+              <button
+                onClick={() => handleNav('/dropshipper-register')}
+                className={`w-full sm:w-auto min-h-[38px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer ${
+                  dropshipperApp?.status === 'Approved'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                    : dropshipperApp?.status === 'Rejected'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
+                    : dropshipperApp?.status === 'Under Review' || dropshipperApp?.status === 'Pending Review'
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20'
+                    : 'bg-gradient-to-r from-[#b90041] to-[#df2457] hover:opacity-95 text-white shadow-pink-500/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {dropshipperApp?.status === 'Approved'
+                    ? 'verified'
+                    : dropshipperApp?.status === 'Rejected'
+                    ? 'warning'
+                    : dropshipperApp?.status === 'Under Review' || dropshipperApp?.status === 'Pending Review'
+                    ? 'hourglass_top'
+                    : 'rocket_launch'}
+                </span>
+                <span>
+                  {dropshipperApp?.status === 'Approved'
+                    ? 'Dropshipper Approved ✓'
+                    : dropshipperApp?.status === 'Rejected'
+                    ? 'KYC Action Needed ⚠️'
+                    : dropshipperApp?.status === 'Under Review' || dropshipperApp?.status === 'Pending Review'
+                    ? 'KYC In Review ⏳'
+                    : 'Become a Dropshipper'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleNav('explorer')}
+                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-pink-50 text-[#b90041] font-bold text-xs hover:bg-pink-100 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+                <span>Find Products</span>
+              </button>
             </div>
           </div>
         </header>
 
+        {/* Dropshipper Onboarding / Status Hero Banner */}
+        {dropshipperApp?.status === 'Approved' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-[#005a2b] p-4 sm:p-7 text-white shadow-xl shadow-emerald-950/10 border border-emerald-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-[11px] font-bold text-emerald-300 border border-emerald-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verified Dropshipper Partner • App #{dropshipperApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Welcome, {dropshipperApp.brandName}! 🎉
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Your dropshipping KYC and store (<span className="font-mono text-emerald-300 font-bold break-all">{dropshipperApp.storeUrl}</span>) have been approved! You can now source supplier products with zero inventory and full white-label packaging.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/dropshipper-register')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">verified</span>
+                  <span>View KYC Status &amp; Store</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : dropshipperApp?.status === 'Rejected' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-slate-900 to-[#7f1d1d] p-4 sm:p-7 text-white shadow-xl shadow-red-950/10 border border-red-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 backdrop-blur-md text-[11px] font-bold text-rose-300 border border-rose-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">KYC Action Required • App #{dropshipperApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Document Verification Needs Attention ⚠️
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Admin feedback: <strong className="text-rose-300">{dropshipperApp.rejectionReason || 'Please resubmit your PAN/Aadhaar document proofs.'}</strong>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/dropshipper-register')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-500 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">edit_document</span>
+                  <span>Fix &amp; Resubmit KYC</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : dropshipperApp ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-950 via-slate-900 to-[#78350f] p-4 sm:p-7 text-white shadow-xl shadow-amber-950/10 border border-amber-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 backdrop-blur-md text-[11px] font-bold text-amber-300 border border-amber-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verification In Progress • App #{dropshipperApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Your Dropshipper KYC is Under Review ⏳
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Submitted for <strong className="text-white">{dropshipperApp.brandName}</strong> (<span className="font-mono text-amber-200 font-bold break-all">{dropshipperApp.storeUrl}</span>). The compliance team is cross-verifying your PAN, Aadhaar and bank details (estimated 24-48 hrs).
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/dropshipper-register')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">fact_check</span>
+                  <span>Check Live Status</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-[#8a0030] to-[#b90041] p-4 sm:p-7 text-white shadow-xl shadow-rose-950/10 border border-rose-900/40">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold text-rose-200 border border-white/15 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Dropshipping Model • 0 Inventory Needed</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Launch Your Connected Dropshipping Store 🚀
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Connect your website (Shopify, WooCommerce or Custom Domain), sync supplier products with 1-click, and let suppliers pack &amp; deliver directly to your customers with white-label branding.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/dropshipper-register')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-white text-[#b90041] hover:bg-rose-50 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">rocket_launch</span>
+                  <span>Become a Dropshipper</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Affiliate Onboarding / KYC Status Hero Banner */}
+        {affiliateApp?.status === 'Approved' || affiliateApp?.status === 'APPROVED' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#033b23] via-slate-900 to-[#024a2f] p-4 sm:p-7 text-white shadow-xl shadow-emerald-950/10 border border-emerald-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-[11px] font-bold text-emerald-300 border border-emerald-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verified Affiliate Partner • Active • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Welcome, {affiliateApp.fullName || 'Sarah James'}! 🎉
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Your affiliate partner KYC has been approved! You can now share curated Meesho product referral links and earn up to <strong className="text-emerald-300">15% commission</strong> directly into your verified bank account.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-panel')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">loyalty</span>
+                  <span>Open Affiliate Hub</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : affiliateApp?.status === 'Rejected' || affiliateApp?.status === 'REJECTED' ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-slate-900 to-[#7f1d1d] p-4 sm:p-7 text-white shadow-xl shadow-red-950/10 border border-red-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 backdrop-blur-md text-[11px] font-bold text-rose-300 border border-rose-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">KYC Action Required • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Affiliate Verification Needs Attention ⚠️
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Admin feedback: <strong className="text-rose-300">{affiliateApp.rejectionReason || 'Please resubmit your PAN card photo and bank passbook/cheque with matching legal name.'}</strong>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-kyc?edit=true')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-500 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">edit_document</span>
+                  <span>Fix &amp; Resubmit KYC</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : affiliateApp ? (
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#260e22] via-slate-900 to-[#3d122e] p-4 sm:p-7 text-white shadow-xl shadow-pink-950/10 border border-pink-500/30">
+            <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 backdrop-blur-md text-[11px] font-bold text-pink-300 border border-pink-500/30 max-w-full">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                  <span className="truncate">Verification In Progress • App #{affiliateApp.applicationId || affiliateApp.id}</span>
+                </div>
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug sm:leading-tight font-['Plus_Jakarta_Sans',sans-serif]">
+                  Your Affiliate KYC is Under Review ⏳
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                  Submitted for <strong className="text-white">{affiliateApp.fullName || 'Sarah James'}</strong> ({affiliateApp.handle ? <span className="font-mono text-pink-300 font-bold">{affiliateApp.handle}</span> : 'PAN: ' + (affiliateApp.panNumber || 'BKWPS9821K')}). The compliance team is cross-verifying your PAN, Aadhaar and bank payout details (estimated 24-48 hrs).
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleNav('/affiliate-kyc-status')}
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-2xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs sm:text-sm shadow-lg shadow-black/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">fact_check</span>
+                  <span>Check Live Status</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="rounded-3xl bg-gradient-to-r from-[#1c1724] via-[#2a1727] to-[#120e18] p-5 sm:p-6 text-white border border-pink-500/20 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF3F6C] to-[#b90041] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#FF3F6C]/30">
+                <span className="material-symbols-outlined text-2xl">loyalty</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-['Plus_Jakarta_Sans'] font-extrabold text-base sm:text-lg text-white">
+                    Become an Affiliate
+                  </h2>
+                  <span className="bg-[#FF3F6C] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                    Earn Commission
+                  </span>
+                </div>
+                <p className="text-slate-300 text-xs mt-0.5 max-w-xl">
+                  Submit your KYC details for Admin verification and approval. Once approved by Admin, start earning commissions on every order!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleNav('affiliate-kyc')}
+              className="w-full sm:w-auto bg-gradient-to-r from-[#FF3F6C] to-[#b90041] hover:opacity-95 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-md shadow-[#FF3F6C]/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
+            >
+              <span className="material-symbols-outlined text-base">how_to_reg</span>
+              <span>Become an Affiliate</span>
+            </button>
+          </section>
+        )}
+
         {/* Stats Bento Grid */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div
             onClick={() => onNavigate('cart')}
-            className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all group"
+            className="bg-white p-3.5 sm:p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="p-2.5 bg-pink-50 rounded-2xl text-[#b90041] group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-xl">shopping_bag</span>
+              <span className="p-2 sm:p-2.5 bg-pink-50 rounded-2xl text-[#b90041] group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-lg sm:text-xl">shopping_bag</span>
               </span>
-              <span className="text-[10px] font-black text-[#008644] bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-[9px] sm:text-[10px] font-black text-[#008644] bg-emerald-50 px-2 py-0.5 rounded-full">
                 +12% MoM
               </span>
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400">Total Customer Orders</p>
-              <h3 className="text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">142</h3>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-400">Total Customer Orders</p>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">142</h3>
             </div>
           </div>
 
           <div
             onClick={() => onNavigate('cart')}
-            className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-indigo-300 transition-all group"
+            className="bg-white p-3.5 sm:p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-indigo-300 transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="p-2.5 bg-indigo-50 rounded-2xl text-[#4d41df] group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-xl">local_shipping</span>
+              <span className="p-2 sm:p-2.5 bg-indigo-50 rounded-2xl text-[#4d41df] group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-lg sm:text-xl">local_shipping</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-500">4 arriving today</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-500">4 arriving today</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400">Pending Deliveries</p>
-              <h3 className="text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">8</h3>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-400">Pending Deliveries</p>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">8</h3>
             </div>
           </div>
 
           <div
             onClick={() => onNavigate('wishlist')}
-            className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all group"
+            className="bg-white p-3.5 sm:p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="p-2.5 bg-pink-50 rounded-2xl text-rose-500 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span className="p-2 sm:p-2.5 bg-pink-50 rounded-2xl text-rose-500 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-lg sm:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                   favorite
                 </span>
               </span>
-              <span className="text-[10px] font-bold text-[#b90041]">View All ➔</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-[#b90041]">View All ➔</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400">Saved Wishlist Items</p>
-              <h3 className="text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">24</h3>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-400">Saved Wishlist Items</p>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black mt-1 text-[#191c1e]">24</h3>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#b90041] to-[#df2457] text-white p-5 rounded-3xl shadow-lg shadow-pink-500/20 flex flex-col justify-between">
+          <div className="bg-gradient-to-br from-[#b90041] to-[#df2457] text-white p-3.5 sm:p-5 rounded-3xl shadow-lg shadow-pink-500/20 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="p-2.5 bg-white/20 rounded-2xl">
-                <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
+              <span className="p-2 sm:p-2.5 bg-white/20 rounded-2xl">
+                <span className="material-symbols-outlined text-lg sm:text-xl">account_balance_wallet</span>
               </span>
               <button
                 onClick={() => setShowWithdrawModal(true)}
-                className="text-[10px] font-black uppercase tracking-wider bg-white text-[#b90041] px-3 py-1 rounded-full shadow-sm hover:bg-pink-50 cursor-pointer"
+                className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white text-[#b90041] px-2.5 sm:px-3 py-1 rounded-full shadow-sm hover:bg-pink-50 cursor-pointer"
               >
                 Withdraw
               </button>
             </div>
             <div>
-              <p className="text-xs font-bold text-pink-100">Wallet Balance</p>
-              <h3 className="text-2xl md:text-3xl font-black mt-1">
+              <p className="text-[11px] sm:text-xs font-bold text-pink-100">Wallet Balance</p>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black mt-1">
                 ₹{walletBalance.toLocaleString('en-IN')}
               </h3>
             </div>
@@ -331,7 +739,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
         {/* Charts and Order History Row */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Earnings Breakdown */}
-          <div className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div className="lg:col-span-1 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-base font-extrabold text-[#191c1e]">Reseller Earnings</h2>
@@ -343,7 +751,7 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
             </div>
 
             {/* Bars */}
-            <div className="flex items-end justify-between gap-2 h-44 pb-2">
+            <div className="flex items-end justify-between gap-1 sm:gap-2 h-44 pb-2">
               {weeklyEarnings.map((bar) => (
                 <div
                   key={bar.day}
@@ -382,8 +790,8 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
           </div>
 
           {/* Order History Table */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
+          <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-base font-extrabold text-[#191c1e]">Recent Reseller Orders</h2>
               <button
                 onClick={() => onNavigate('cart')}
@@ -393,8 +801,8 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left min-w-[500px]">
                 <thead>
                   <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
                     <th className="pb-3">Product Name</th>
@@ -508,23 +916,23 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
         </section>
 
         {/* Quick Route Shortcuts Footer Bento */}
-        <section className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <section className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 sm:p-6 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-black">Ready to scale your social store?</h3>
+            <h3 className="text-base sm:text-lg font-black">Ready to scale your social store?</h3>
             <p className="text-xs text-slate-300 mt-0.5">
-              Browse millions of wholesale sarees, western wear, and accessories with zero investment.
+              Browse millions of trending sarees, western wear, and accessories with zero investment.
             </p>
           </div>
-          <div className="flex gap-2.5">
+          <div className="flex gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => onNavigate('sarees')}
-              className="px-4 py-2.5 rounded-2xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white text-slate-900 font-bold text-xs hover:bg-slate-100 cursor-pointer text-center"
             >
               Sarees Catalog 🥻
             </button>
             <button
               onClick={() => onNavigate('flash')}
-              className="px-4 py-2.5 rounded-2xl bg-[#b90041] text-white font-bold text-xs shadow-md shadow-pink-500/30 hover:bg-[#a00037] cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-[#b90041] text-white font-bold text-xs shadow-md shadow-pink-500/30 hover:bg-[#a00037] cursor-pointer text-center"
             >
               Flash Drops ⚡
             </button>
@@ -588,14 +996,19 @@ export default function UserWebDashboard({ onNavigate = () => {}, onBack }) {
         </div>
       )}
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button (desktop/tablet only to avoid overlapping content on mobile screens) */}
       <button
         onClick={() => onNavigate('explorer')}
-        className="fixed bottom-8 right-8 h-14 w-14 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 cursor-pointer shadow-pink-500/40"
+        className="hidden sm:flex fixed sm:bottom-8 sm:right-8 h-14 w-14 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white rounded-full shadow-2xl items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 cursor-pointer shadow-pink-500/40"
         title="Explore Catalogue"
       >
         <span className="material-symbols-outlined text-2xl">search</span>
       </button>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="lg:hidden">
+        <AppBottomNav activeNav="profile" onNavigate={onNavigate} />
+      </div>
     </div>
   );
 }

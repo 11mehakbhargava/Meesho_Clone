@@ -573,7 +573,7 @@ export function RaiseATicket({ onNavigate, onBack }) {
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <h4 className="font-bold text-slate-900 mb-1">💰 Reseller Commission Calculations</h4>
-                <p>Margin is computed as: Customer Price - Wholesale Price. Zero deductions on return if courier fault.</p>
+                <p>Margin is computed as: Customer Price - Supplier Price. Zero deductions on return if courier fault.</p>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <h4 className="font-bold text-slate-900 mb-1">🔒 Account GST & Bank Verification</h4>

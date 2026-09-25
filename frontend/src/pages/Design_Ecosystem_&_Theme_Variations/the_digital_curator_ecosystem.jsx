@@ -586,7 +586,7 @@ export default function TheDigitalCuratorEcosystem({ onNavigate }) {
                   The Reseller Club
                 </h3>
                 <p className="text-slate-600 text-xs sm:text-sm max-w-sm mb-6 leading-relaxed">
-                  Unlock wholesale discounts, personalized WhatsApp catalog links, and dedicated
+                  Unlock exclusive discounts, personalized WhatsApp catalog links, and dedicated
                   account manager support for your business.
                 </p>
                 <button

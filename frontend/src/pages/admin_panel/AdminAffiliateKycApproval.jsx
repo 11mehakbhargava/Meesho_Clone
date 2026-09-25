@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import { getAffiliateApp, saveAffiliateApp, subscribeAffiliateApp } from '../../services/affiliateSessionStore';
 
 // Realistic Mock Data for Affiliate KYC & Program Management
 const INITIAL_AFFILIATES = [
@@ -233,7 +234,7 @@ const INITIAL_AFFILIATES = [
         status: 'Blog Verification Pending',
       },
     },
-    disableReason: 'Bank penny drop verification pending.',
+    disableReason: 'Bank account ₹1 verification pending.',
   },
   {
     id: 'AFF-306',
@@ -340,8 +341,83 @@ const SIDEBAR_NAV = [
   { id: 'finance', label: 'Finance', icon: 'account_balance' },
 ];
 
+const mapUserAppToAdminRecord = (userApp) => {
+  if (!userApp) return null;
+  const isApproved = userApp.status === 'Approved' || userApp.status === 'APPROVED';
+  const isRejected = userApp.status === 'Rejected' || userApp.status === 'REJECTED';
+  const kycStatus = isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending';
+
+  return {
+    id: userApp.applicationId || 'AFF-USER-LIVE',
+    isLiveUserApp: true,
+    name: userApp.fullName || 'User Applicant',
+    handle: '@' + (userApp.fullName || 'affiliate').toLowerCase().replace(/[^a-z0-9]/g, '_'),
+    platform: 'Instagram / Direct Community',
+    followers: '50K+ Audience',
+    email: userApp.email || 'user.applicant@meesho.com',
+    phone: userApp.phone || '+91 98765 43210',
+    location: [userApp.city, userApp.state].filter(Boolean).join(', ') || 'Delhi, India',
+    referralCode: ((userApp.fullName ? userApp.fullName.slice(0, 5) : 'MEE') + '50').toUpperCase(),
+    tier: 'Gold Creator',
+    commissionRate: 15,
+    totalEarnings: '₹0',
+    monthlyConversions: 0,
+    conversionRate: '0.0%',
+    appliedAt: userApp.submittedAt || 'Today, Just now',
+    kycStatus: kycStatus,
+    isEnabled: isApproved,
+    riskScore: isRejected ? 42 : 94,
+    documents: {
+      pan: {
+        number: (userApp.panNumber || 'BKWPS9821K').toUpperCase(),
+        nameOnDoc: (userApp.fullName || 'USER APPLICANT').toUpperCase(),
+        status: isRejected ? 'NSDL Verification Failed' : 'NSDL Verified',
+        image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80',
+      },
+      bank: {
+        accountNumber: userApp.accountNumber ? `••••••••${userApp.accountNumber.slice(-4)}` : '••••••••4892',
+        ifsc: (userApp.ifscCode || 'HDFC0001824').toUpperCase(),
+        bankName: userApp.bankName || 'HDFC Bank Ltd',
+        holderName: (userApp.accountHolderName || userApp.fullName || 'USER APPLICANT').toUpperCase(),
+        pennyDrop: isRejected ? '₹1 Bank Verification Failed' : '₹1 Credited Successfully',
+        image: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=80',
+      },
+      aadhaar: {
+        number: userApp.aadhaarNumber ? `•••• •••• ${userApp.aadhaarNumber.slice(-4)}` : '•••• •••• 9920',
+        status: isRejected ? 'UIDAI Manual Check Failed' : 'UIDAI OTP Verified',
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+      },
+      channelProof: {
+        url: 'https://instagram.com/verified_creator',
+        engagementRate: '5.8%',
+        status: 'Audience Authenticity 98%',
+      },
+    },
+    disableReason: isRejected ? (userApp.rejectionReason || 'KYC Document verification failed.') : null,
+  };
+};
+
 export default function AdminAffiliateKycApproval({ onNavigate, onBack, onSwitchView }) {
-  const [affiliates, setAffiliates] = useState(INITIAL_AFFILIATES);
+  const buildInitialList = () => {
+    const userApp = getAffiliateApp();
+    if (userApp) {
+      const liveRecord = mapUserAppToAdminRecord(userApp);
+      return [liveRecord, ...INITIAL_AFFILIATES.filter((a) => a.id !== liveRecord.id)];
+    }
+    return INITIAL_AFFILIATES;
+  };
+
+  const [affiliates, setAffiliates] = useState(buildInitialList);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAffiliateApp((updatedApp) => {
+      if (updatedApp) {
+        const liveRecord = mapUserAppToAdminRecord(updatedApp);
+        setAffiliates((prev) => [liveRecord, ...prev.filter((a) => a.id !== liveRecord.id)]);
+      }
+    });
+    return unsubscribe;
+  }, []);
   const [selectedStatus, setSelectedStatus] = useState('All'); // 'All' | 'Pending' | 'Approved' | 'Enabled' | 'Disabled' | 'Rejected'
   const [selectedPlatform, setSelectedPlatform] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -438,18 +514,34 @@ export default function AdminAffiliateKycApproval({ onNavigate, onBack, onSwitch
   // KYC Approval
   const handleApproveKyc = (id) => {
     setAffiliates((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, kycStatus: 'Approved', isEnabled: true } : a))
+      prev.map((a) => (a.id === id ? { ...a, kycStatus: 'Approved', isEnabled: true, disableReason: null } : a))
     );
+    const userApp = getAffiliateApp();
+    if (userApp && (id === userApp.applicationId || id === 'AFF-USER-LIVE' || (typeof id === 'string' && id.startsWith('KYC-AFF-')))) {
+      saveAffiliateApp({
+        ...userApp,
+        status: 'Approved',
+        approvedAt: new Date().toLocaleString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        rejectionReason: null,
+      });
+    }
     showToast(`Affiliate KYC #${id} Approved & Account Enabled! 🎉`);
     if (activeModalItem?.id === id) {
       setActiveModalItem((prev) =>
-        prev ? { ...prev, kycStatus: 'Approved', isEnabled: true } : null
+        prev ? { ...prev, kycStatus: 'Approved', isEnabled: true, disableReason: null } : null
       );
     }
   };
 
   // KYC Rejection
   const handleRejectKyc = (id) => {
+    const reason = 'Document verification failed: PAN Card or Bank details could not be authenticated. Please re-upload.';
     setAffiliates((prev) =>
       prev.map((a) =>
         a.id === id
@@ -457,11 +549,19 @@ export default function AdminAffiliateKycApproval({ onNavigate, onBack, onSwitch
               ...a,
               kycStatus: 'Rejected',
               isEnabled: false,
-              disableReason: 'KYC Document verification failed.',
+              disableReason: reason,
             }
           : a
       )
     );
+    const userApp = getAffiliateApp();
+    if (userApp && (id === userApp.applicationId || id === 'AFF-USER-LIVE' || (typeof id === 'string' && id.startsWith('KYC-AFF-')))) {
+      saveAffiliateApp({
+        ...userApp,
+        status: 'Rejected',
+        rejectionReason: reason,
+      });
+    }
     showToast(`Affiliate KYC #${id} Rejected & Access Disabled.`);
     if (activeModalItem?.id === id) {
       setActiveModalItem(null);
@@ -1096,8 +1196,13 @@ export default function AdminAffiliateKycApproval({ onNavigate, onBack, onSwitch
                                 {item.name.slice(0, 2).toUpperCase()}
                               </div>
                               <div>
-                                <div className="font-bold text-[#191c1e] text-xs sm:text-sm">
-                                  {item.name}
+                                <div className="font-bold text-[#191c1e] text-xs sm:text-sm flex items-center gap-1.5 flex-wrap">
+                                  <span>{item.name}</span>
+                                  {item.isLiveUserApp && (
+                                    <span className="bg-rose-100 text-rose-700 border border-rose-200 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full">
+                                      Live User Submission
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-[10px] text-slate-400 font-mono">
                                   {item.id} • {item.location}
@@ -1319,7 +1424,7 @@ export default function AdminAffiliateKycApproval({ onNavigate, onBack, onSwitch
                     {activeModalItem.documents[activeDocTab].pennyDrop && (
                       <div className="flex justify-between">
                         <span className="text-slate-400 font-bold uppercase text-[10px]">
-                          ₹1 Penny Drop Status
+                          ₹1 Bank Verification Status
                         </span>
                         <span className="font-bold text-emerald-600">
                           {activeModalItem.documents[activeDocTab].pennyDrop}

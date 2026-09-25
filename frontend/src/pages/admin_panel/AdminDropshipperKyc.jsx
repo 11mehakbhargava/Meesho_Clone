@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import { getDropshipperApp, saveDropshipperApp } from '../../services/dropshipperSessionStore';
 
 // Comprehensive mock data for KYC verification requests
 const INITIAL_KYC_REQUESTS = [
@@ -46,7 +47,7 @@ const INITIAL_KYC_REQUESTS = [
         image: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=80',
       },
       gst: {
-        number: '27ABCDE1234F1Z8',
+        number: '29ABCDE1234F1Z5',
         legalName: 'AURA TRENDS LUXE PRIVATE LIMITED',
         status: 'Active on GSTN',
         image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80',
@@ -365,7 +366,47 @@ const SIDEBAR_NAV = [
 ];
 
 export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }) {
-  const [requests, setRequests] = useState(INITIAL_KYC_REQUESTS);
+  const [requests, setRequests] = useState(() => {
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && activeApp.id) {
+        const exists = INITIAL_KYC_REQUESTS.some((r) => r.id === activeApp.id);
+        if (!exists) {
+          const mappedReq = {
+            id: activeApp.id,
+            applicantName: `${activeApp.proprietorName || 'Sarah James'} (${activeApp.brandName || 'Store'})`,
+            businessName: activeApp.brandName || 'Aura Trends Luxe',
+            storeUrl: activeApp.storeUrl || 'https://auratrends.shop',
+            storeType: (activeApp.platform || 'Shopify').toUpperCase() + ' STORE',
+            proprietor: activeApp.proprietorName || 'Sarah James',
+            role: 'Dropshipper',
+            phone: activeApp.phone || '+91 98765 43210',
+            email: activeApp.email || 'sarah.james@auratrends.shop',
+            location: 'Mumbai, Maharashtra',
+            submittedAt: 'Today, Just Now',
+            status: activeApp.status || 'Pending',
+            riskLevel: 'Low',
+            matchScore: 98,
+            panIdentifier: activeApp.panNumber || 'ABCDE1234F',
+            aadhaarNumber: activeApp.aadhaarNumber || '4829 1920 3810',
+            documents: {
+              ...INITIAL_KYC_REQUESTS[0].documents,
+              gst: {
+                number: activeApp.businessRegType === 'msme' ? (activeApp.msmeNumber || 'UDYAM-KR-03-0019482') : (activeApp.gstin || '29ABCDE1234F1Z5'),
+                legalName: `${(activeApp.brandName || 'Aura Trends Luxe').toUpperCase()} (${activeApp.businessRegType === 'msme' ? 'MSME / Udyam' : 'GST Registered'})`,
+                status: activeApp.businessRegType === 'msme' ? 'Active Udyam Registration' : 'Active on GSTN',
+                image: activeApp.businessRegFile?.previewUrl || INITIAL_KYC_REQUESTS[0].documents.gst.image,
+              },
+            },
+            notes: `Newly submitted dropshipper KYC from User Portal. Verified ${activeApp.businessRegType === 'msme' ? 'MSME / Udyam Certificate' : 'GST Certificate'}.`,
+            rejectionReason: activeApp.rejectionReason || null,
+          };
+          return [mappedReq, ...INITIAL_KYC_REQUESTS.filter((r) => r.id !== 'DSP-KYC-5089')];
+        }
+      }
+    } catch (e) {}
+    return INITIAL_KYC_REQUESTS;
+  });
   const [selectedRole, setSelectedRole] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -421,6 +462,12 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: 'Approved', rejectionReason: null } : r))
     );
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && (activeApp.id === id || activeApp.proprietorName === 'Sarah James' || id === 'DSP-KYC-5089')) {
+        saveDropshipperApp({ ...activeApp, status: 'Approved' });
+      }
+    } catch (e) {}
     showToast(`KYC Request #${id} Approved & Activated successfully! 🎉`);
     if (activeModalRequest?.id === id) {
       setActiveModalRequest(null);
@@ -461,6 +508,12 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
           : r
       )
     );
+    try {
+      const activeApp = getDropshipperApp();
+      if (activeApp && (activeApp.id === activeModalRequest.id || activeApp.proprietorName === 'Sarah James' || activeModalRequest.id === 'DSP-KYC-5089')) {
+        saveDropshipperApp({ ...activeApp, status: 'Rejected', rejectionReason: reason });
+      }
+    } catch (e) {}
     setShowRejectModal(false);
     showToast(`KYC Request #${activeModalRequest.id} marked as Rejected.`);
     setActiveModalRequest(null);
@@ -848,7 +901,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  NSDL PAN active crawler, GST Department cross-checks, and ₹1 Penny Drop validation running live.
+                  NSDL PAN active crawler, GST Department cross-checks, and ₹1 Bank Account verification running live.
                 </p>
               </div>
             </div>
@@ -1389,7 +1442,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                     {activeModalRequest.documents[activeDocTab].pennyDropStatus && (
                       <div className="flex justify-between">
                         <span className="text-slate-400 font-bold uppercase text-[10px]">
-                          Penny Drop Payout
+                          ₹1 Bank Verification
                         </span>
                         <span className="font-bold text-emerald-600">
                           {activeModalRequest.documents[activeDocTab].pennyDropStatus}
@@ -1457,7 +1510,7 @@ export default function AdminDropshipperKyc({ onNavigate, onBack, onSwitchView }
                           <span className="material-symbols-outlined text-slate-500 text-sm">
                             verified
                           </span>
-                          <span className="font-medium text-slate-800">Penny Drop ₹1 IMPS</span>
+                          <span className="font-medium text-slate-800">₹1 IMPS Bank Verification</span>
                         </div>
                         <span className="font-bold text-slate-700">
                           {activeModalRequest.documents.bank?.pennyDropStatus || 'N/A'}

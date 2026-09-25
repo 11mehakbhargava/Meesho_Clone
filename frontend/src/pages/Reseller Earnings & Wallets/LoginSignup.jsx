@@ -66,7 +66,7 @@ export default function LoginPage() {
           <div className="space-y-3 pt-2">
             <button
               onClick={() => navigate('/reseller-home')}
-              className="w-full bg-[#b7004d] hover:bg-[#990040] text-white font-extrabold py-4 rounded-[2rem] transition-colors cursor-pointer text-sm shadow-lg shadow-[#b7004d]/25 active:scale-95"
+              className="w-full bg-[#b7004d] hover:bg-[#990040] text-white font-extrabold py-3.5 rounded-[2rem] transition-colors cursor-pointer text-sm shadow-lg shadow-[#b7004d]/25 active:scale-95"
             >
               Enter Reseller Catalog →
             </button>
@@ -230,10 +230,21 @@ export default function LoginPage() {
                 setUser('user@theatelier.com');
                 setIsLoggedIn(true);
               }}
-              className="w-full py-4 text-[#b7004d] font-bold text-sm hover:underline underline-offset-4 transition-all cursor-pointer"
+              className="w-full py-3 text-[#b7004d] font-bold text-sm hover:underline underline-offset-4 transition-all cursor-pointer"
             >
               Login with Email
             </button>
+
+            <div className="pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => navigate('/dropshipper-login')}
+                className="w-full py-3 px-4 bg-gray-950 hover:bg-gray-850 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition cursor-pointer shadow-md active:scale-95"
+              >
+                <span className="text-[#FF3F6C]">🏬</span>
+                <span>Are you a Dropshipper? B2B Portal Login →</span>
+              </button>
+            </div>
           </div>
         </div>
 
