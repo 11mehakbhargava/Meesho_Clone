@@ -3,24 +3,37 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const redisClient = createClient({
+let redisClient = null;
+
+if (process.env.ENABLE_REDIS === "true") {
+  redisClient = createClient({
     url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
-})
+    socket: {
+      reconnectStrategy: (retries) => {
+        if (retries > 3) {
+          console.warn("⚠️ Redis reconnect limit reached. Disabling Redis.");
+          return new Error("Redis reconnection stopped");
+        }
+        return 1000;
+      },
+    },
+  });
 
-redisClient.on("connect",()=>{
-    console.log("🟢 Connected to Local Redis (127.0.0.1:6379) successfully!");
-});
+  redisClient.on("connect", () => {
+    console.log("🟢 Connected to Redis successfully!");
+  });
 
-redisClient.on("error",(err)=>{
-    console.error("❌ Local Redis Connection Error:", err.message);
-    console.log("👉 Tip: Make sure your local Redis server / Docker container is running on port 6379.");
-});
+  redisClient.on("error", (err) => {
+    console.warn("⚠️ Redis warning:", err.message);
+  });
 
-try{
+  try {
     await redisClient.connect();
-}catch(error){
-    console.warn("⚠️ Could not connect to local Redis. Server will continue running.");
+  } catch (error) {
+    console.warn("⚠️ Could not connect to Redis. Server will continue without caching.");
+  }
+} else {
+  console.log("ℹ️ Redis is disabled (ENABLE_REDIS=false). Skipping Redis connection.");
 }
-
 
 export default redisClient;
