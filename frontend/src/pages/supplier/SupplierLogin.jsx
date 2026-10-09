@@ -49,32 +49,16 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   };
 
   // ==========================================
-  // --- LOGIN STATE & LOGIC ---
+  // --- LOGIN STATE & LOGIC (EMAIL ONLY) ---
   // ==========================================
-  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
 
-  // Countdown timer for OTP
-  useEffect(() => {
-    let interval = null;
-    if (resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  // Handle Login via Password
-  const handlePasswordLogin = async (e) => {
+  // Handle Login via Email & Password
+  const handleEmailLogin = async (e) => {
     e?.preventDefault();
-    if (!identifier.trim()) {
-      setErrorMessage('Please enter your supplier email or ID');
+    if (!email.trim()) {
+      setErrorMessage('Please enter your supplier email');
       return;
     }
     if (!password) {
@@ -85,7 +69,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const res = await supplierApiService.loginWithPassword(identifier.trim(), password);
+      const res = await supplierApiService.loginWithPassword(email.trim(), password);
       setSuccessMessage(`Welcome back, ${res.supplier?.name || 'Supplier'}! Redirecting...`);
       setTimeout(() => {
         handleNav('/seller-dashboard');
@@ -97,63 +81,9 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
     }
   };
 
-  // Handle Send OTP
-  const handleSendOtp = async (e) => {
-    e?.preventDefault();
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      setErrorMessage('Please enter a valid 10-digit mobile number');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage('');
-    try {
-      const res = await supplierApiService.sendOtp(cleanPhone);
-      setOtpSent(true);
-      setResendTimer(30);
-      setSuccessMessage(res.message || `OTP sent to +91 ${cleanPhone}`);
-    } catch (err) {
-      setErrorMessage(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle Verify OTP
-  const handleVerifyOtp = async (e) => {
-    e?.preventDefault();
-    if (!otp || otp.length < 4) {
-      setErrorMessage('Please enter the 6-digit OTP');
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage('');
-    try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const res = await supplierApiService.verifyOtp(cleanPhone, otp);
-      setSuccessMessage(`Welcome back, ${res.supplier?.name || 'Supplier'}! Redirecting...`);
-      setTimeout(() => {
-        handleNav('/seller-dashboard');
-      }, 700);
-    } catch (err) {
-      setErrorMessage(err.message || 'Invalid or expired OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fillDemoLogin = () => {
-    setIdentifier('supplier@globalexports.com');
+    setEmail('supplier@globalexports.com');
     setPassword('Password@123');
-    setErrorMessage('');
-  };
-
-  const fillDemoOtp = () => {
-    setPhone('9876543210');
-    setOtp('123456');
-    setOtpSent(true);
     setErrorMessage('');
   };
 
@@ -345,198 +275,64 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
           )}
 
           {/* ============================================================ */}
-          {/* TAB CONTENT A: SUPPLIER LOGIN */}
+          {/* TAB CONTENT A: SUPPLIER EMAIL LOGIN ONLY */}
           {/* ============================================================ */}
           {activeTab === 'login' && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {loginMethod === 'password' ? (
-                /* PASSWORD LOGIN FORM (Matching screenshot exactly) */
-                <form onSubmit={handlePasswordLogin} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
-                      Supplier Email
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="supplier@mshoppy.com"
-                      value={identifier}
-                      onChange={(e) => { setIdentifier(e.target.value); setErrorMessage(''); }}
-                      className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
-                      required
-                    />
-                  </div>
+            <form onSubmit={handleEmailLogin} className="space-y-4 pt-1 animate-in fade-in duration-200">
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Supplier Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="supplier@mshoppy.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setErrorMessage(''); }}
+                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
+                  required
+                />
+              </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
-                      className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
-                      required
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
+                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
+                  required
+                />
+              </div>
 
-                  {/* Primary CTA Button matching the deep crimson button in screenshot */}
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2 active:scale-[0.99]"
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Signing in...
-                      </>
-                    ) : (
-                      'Secure Login'
-                    )}
-                  </button>
+              {/* Primary CTA Button matching the deep crimson button in screenshot */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2 active:scale-[0.99]"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  'Secure Login'
+                )}
+              </button>
 
-                  <div className="pt-2 flex items-center justify-between text-xs">
-                    <button
-                      type="button"
-                      onClick={fillDemoLogin}
-                      className="text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
-                    >
-                      ⚡ Demo fill
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { setLoginMethod('otp'); setErrorMessage(''); }}
-                      className="text-[#9e003f] font-semibold hover:underline cursor-pointer"
-                    >
-                      Use Mobile OTP
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                /* MOBILE OTP LOGIN FORM */
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
-                      Registered Mobile Number
-                    </label>
-                    <div className="relative flex rounded-2xl border border-slate-200/90 focus-within:border-[#d82a62] focus-within:ring-2 focus-within:ring-pink-100 overflow-hidden bg-white">
-                      <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200/90 text-xs font-bold text-slate-700 select-none">
-                        🇮🇳 +91
-                      </div>
-                      <input
-                        type="tel"
-                        placeholder="Enter 10-digit number"
-                        value={phone}
-                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setErrorMessage(''); }}
-                        disabled={otpSent}
-                        className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none disabled:bg-slate-50 disabled:text-slate-500 text-slate-800 placeholder-slate-400"
-                        maxLength={10}
-                      />
-                    </div>
-                  </div>
-
-                  {otpSent && (
-                    <div className="space-y-2 pt-1">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-[#3b1227]">Enter 6-Digit OTP</label>
-                        <button
-                          type="button"
-                          className="text-[11px] text-[#9e003f] font-semibold hover:underline cursor-pointer"
-                          onClick={() => setOtpSent(false)}
-                        >
-                          Change Number
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="e.g. 123456"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        className="w-full h-12 text-center text-lg font-black tracking-widest rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none bg-white text-slate-800"
-                        maxLength={6}
-                        autoFocus
-                      />
-
-                      <div className="flex items-center justify-between text-xs pt-1">
-                        {resendTimer > 0 ? (
-                          <span className="text-slate-400">Resend in <span className="font-bold text-slate-600">{resendTimer}s</span></span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleSendOtp}
-                            disabled={isLoading}
-                            className="font-bold text-[#9e003f] hover:underline cursor-pointer"
-                          >
-                            Resend OTP
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setOtp('123456')}
-                          className="text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md cursor-pointer font-medium"
-                        >
-                          Demo OTP (123456)
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {!otpSent ? (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={isLoading || phone.length !== 10}
-                      className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                          Sending OTP...
-                        </>
-                      ) : (
-                        'Send OTP & Continue'
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={isLoading || otp.length < 4}
-                      className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                          Verifying...
-                        </>
-                      ) : (
-                        'Verify & Secure Login'
-                      )}
-                    </button>
-                  )}
-
-                  <div className="pt-2 flex items-center justify-between text-xs">
-                    <button
-                      type="button"
-                      onClick={fillDemoOtp}
-                      className="text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
-                    >
-                      ⚡ Demo phone
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { setLoginMethod('password'); setErrorMessage(''); }}
-                      className="text-[#9e003f] font-semibold hover:underline cursor-pointer"
-                    >
-                      Use Password Login
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={fillDemoLogin}
+                  className="text-xs text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
+                >
+                  ⚡ Auto-fill demo credentials
+                </button>
+              </div>
+            </form>
           )}
 
           {/* ============================================================ */}
