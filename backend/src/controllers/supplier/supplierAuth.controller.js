@@ -1,8 +1,6 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import prisma from '../../config/prisma.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'meesho_supplier_super_secret_jwt_token_2026';
+import { auth as firebaseAuth } from '../../config/firebaseAdmin.js';
 
 // In-Memory store for OTPs (with expiry)
 const otpStore = new Map();
@@ -78,19 +76,21 @@ const formatSupplierResponse = (user) => {
   };
 };
 
-// Generate JWT token helper
-const generateToken = (user) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      name: user.fullName || user.name,
-      role: 'SUPPLIER',
-    },
-    JWT_SECRET,
-    { expiresIn: '30d' }
-  );
+// Generate Firebase Authentication Token helper
+const generateToken = async (user) => {
+  if (firebaseAuth && user.id) {
+    try {
+      const customToken = await firebaseAuth.createCustomToken(user.id, {
+        role: user.role || 'SUPPLIER',
+        email: user.email || '',
+      });
+      return customToken;
+    } catch (fbErr) {
+      console.warn('⚠️ [FIREBASE] createCustomToken fallback:', fbErr.message);
+    }
+  }
+  // Fallback token if Firebase Auth unavailable
+  return `fb_token_${user.id}_${Date.now()}`;
 };
 
 /**
@@ -156,7 +156,51 @@ export const registerSupplier = async (req, res, next) => {
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
-    const supplierId = `sup_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    // Register or sync user in Firebase Authentication
+    let firebaseUid = null;
+    if (firebaseAuth && cleanEmail) {
+      try {
+        const fbUser = await firebaseAuth.createUser({
+          email: cleanEmail,
+          password: password,
+          displayName: supplierName,
+          ...(cleanPhone ? { phoneNumber: `+91${cleanPhone}` } : {}),
+        });
+        firebaseUid = fbUser.uid;
+        console.log(`🔥 [FIREBASE] Created new user in Firebase Auth: ${firebaseUid} (${cleanEmail})`);
+      } catch (fbErr) {
+        if (fbErr.code === 'auth/email-already-exists') {
+          try {
+            const existingFbUser = await firebaseAuth.getUserByEmail(cleanEmail);
+            firebaseUid = existingFbUser.uid;
+            await firebaseAuth.updateUser(firebaseUid, {
+              password: password,
+              displayName: supplierName,
+            });
+            console.log(`🔥 [FIREBASE] Linked existing Firebase user: ${firebaseUid} (${cleanEmail})`);
+          } catch (syncErr) {
+            console.warn('⚠️ [FIREBASE] Sync existing user warning:', syncErr.message);
+          }
+        } else if (fbErr.code === 'auth/phone-number-already-exists') {
+          try {
+            const fbUser = await firebaseAuth.createUser({
+              email: cleanEmail,
+              password: password,
+              displayName: supplierName,
+            });
+            firebaseUid = fbUser.uid;
+            console.log(`🔥 [FIREBASE] Created user without phone: ${firebaseUid}`);
+          } catch (subErr) {
+            console.warn('⚠️ [FIREBASE] Create without phone warning:', subErr.message);
+          }
+        } else {
+          console.warn('⚠️ [FIREBASE] Create user warning:', fbErr.message);
+        }
+      }
+    }
+
+    const supplierId = firebaseUid || `sup_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
     const resolvedBankDetails = {
       accountHolder: (bankDetails?.accountHolder || accountHolder || supplierName || '').trim(),
@@ -193,11 +237,23 @@ export const registerSupplier = async (req, res, next) => {
       gstDetails: resolvedGstDetails,
     };
 
-    // Try creating via Prisma DB
+    // Try creating/upserting via Prisma DB
     let savedSupplier = null;
     try {
-      savedSupplier = await prisma.profile.create({
-        data: {
+      savedSupplier = await prisma.profile.upsert({
+        where: { id: supplierId },
+        update: {
+          fullName: supplierName,
+          email: cleanEmail || undefined,
+          phone: cleanPhone || undefined,
+          role: 'SUPPLIER',
+          passwordHash,
+          storeName: storeName || `${supplierName} Store`,
+          gstin: resolvedGstDetails.gstin || undefined,
+          pan: resolvedGstDetails.pan || undefined,
+          bankDetails: resolvedBankDetails,
+        },
+        create: {
           id: supplierId,
           fullName: supplierName,
           email: cleanEmail || undefined,
@@ -214,13 +270,20 @@ export const registerSupplier = async (req, res, next) => {
       });
     } catch (dbErr) {
       if (dbErr.code === 'P2002') {
-        return res.status(400).json({
-          success: false,
-          message: 'An account with this email or phone already exists',
-        });
+        try {
+          savedSupplier = await prisma.profile.findFirst({
+            where: {
+              OR: [
+                ...(cleanEmail ? [{ email: cleanEmail }] : []),
+                ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+              ],
+            },
+          });
+        } catch (_) {}
       }
-      // Save in fallback in-memory store
-      savedSupplier = newSupplierData;
+      if (!savedSupplier) {
+        savedSupplier = newSupplierData;
+      }
     }
 
     // Always register in fallback memory map for ultra-fast local session resolution
@@ -233,7 +296,7 @@ export const registerSupplier = async (req, res, next) => {
       gstDetails: resolvedGstDetails,
     };
 
-    const token = generateToken(finalSupplierObj);
+    const token = await generateToken(finalSupplierObj);
 
     return res.status(201).json({
       success: true,
@@ -339,7 +402,28 @@ export const loginSupplier = async (req, res, next) => {
       }
     }
 
-    const token = generateToken(supplier);
+    // Ensure supplier exists in Firebase Authentication so it appears in Firebase console
+    if (firebaseAuth && supplier.email) {
+      try {
+        let fbUser = null;
+        try {
+          fbUser = await firebaseAuth.getUserByEmail(supplier.email.toLowerCase());
+        } catch (getErr) {
+          if (getErr.code === 'auth/user-not-found') {
+            fbUser = await firebaseAuth.createUser({
+              email: supplier.email.toLowerCase(),
+              password: password,
+              displayName: supplier.fullName || supplier.name || 'Verified Supplier',
+            });
+            console.log(`🔥 [FIREBASE] Created user in Firebase Auth during login: ${fbUser.uid} (${supplier.email})`);
+          }
+        }
+      } catch (fbLoginErr) {
+        console.warn('⚠️ [FIREBASE] Login sync notice:', fbLoginErr.message);
+      }
+    }
+
+    const token = await generateToken(supplier);
 
     return res.status(200).json({
       success: true,
@@ -495,7 +579,7 @@ export const verifySupplierOtp = async (req, res, next) => {
       supplier = newSupplier;
     }
 
-    const token = generateToken(supplier);
+    const token = await generateToken(supplier);
 
     return res.status(200).json({
       success: true,
@@ -562,9 +646,14 @@ export const updateSupplierProfile = async (req, res, next) => {
 
     let updatedSupplier = null;
     try {
-      updatedSupplier = await prisma.profile.update({
+      updatedSupplier = await prisma.profile.upsert({
         where: { id: supplierId },
-        data: updateData,
+        update: updateData,
+        create: {
+          id: supplierId,
+          role: 'SUPPLIER',
+          ...updateData,
+        },
       });
     } catch {
       // Update in fallback store
@@ -604,9 +693,14 @@ export const updateBankDetails = async (req, res, next) => {
 
     let updatedSupplier = null;
     try {
-      updatedSupplier = await prisma.profile.update({
+      updatedSupplier = await prisma.profile.upsert({
         where: { id: supplierId },
-        data: { bankDetails },
+        update: { bankDetails },
+        create: {
+          id: supplierId,
+          role: 'SUPPLIER',
+          bankDetails,
+        },
       });
     } catch {
       const existing = fallbackSuppliers.get(supplierId) || fallbackSuppliers.get('supplier_demo_001');
@@ -643,9 +737,15 @@ export const updateGstDetails = async (req, res, next) => {
 
     let updatedSupplier = null;
     try {
-      updatedSupplier = await prisma.profile.update({
+      updatedSupplier = await prisma.profile.upsert({
         where: { id: supplierId },
-        data: {
+        update: {
+          gstin: gstin || undefined,
+          pan: pan || undefined,
+        },
+        create: {
+          id: supplierId,
+          role: 'SUPPLIER',
           gstin: gstin || undefined,
           pan: pan || undefined,
         },
