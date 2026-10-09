@@ -1,9 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import supplierApiService from '../../services/supplierApiService';
 
-export default function SupplierLogin({ onNavigate, onBack }) {
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat',
+  'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
+  'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+];
+
+const CATEGORIES = [
+  'Ethnic Wear (Sarees, Kurtis)',
+  'Western Wear & Dresses',
+  'Men Fashion & Footwear',
+  'Jewellery & Accessories',
+  'Beauty & Personal Care',
+  'Home Decor & Kitchenware',
+  'Bags & Luggage',
+  'Electronics & Gadgets'
+];
+
+export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detect active tab from prop or URL
+  const initialTab = defaultTab || (location?.pathname?.includes('register') ? 'register' : 'login');
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync state if defaultTab prop or location changes
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    } else if (location?.pathname?.includes('register')) {
+      setActiveTab('register');
+    } else if (location?.pathname?.includes('login')) {
+      setActiveTab('login');
+    }
+  }, [defaultTab, location?.pathname]);
 
   const handleNav = (path) => {
     if (onNavigate) {
@@ -21,10 +55,21 @@ export default function SupplierLogin({ onNavigate, onBack }) {
     }
   };
 
-  // Sub-mode for Login: 'password' | 'otp'
-  const [loginMethod, setLoginMethod] = useState('password');
+  const handleTabToggle = (tab) => {
+    setActiveTab(tab);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      window.history.replaceState(null, '', tab === 'register' ? '/supplier-register' : '/supplier-login');
+    } catch {
+      // Fallback if history state fails in tests
+    }
+  };
 
-  // --- LOGIN FORM STATE ---
+  // ==========================================
+  // --- LOGIN STATE & LOGIC ---
+  // ==========================================
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -32,13 +77,8 @@ export default function SupplierLogin({ onNavigate, onBack }) {
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Status & Feedback
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // Timer countdown for OTP resend
-  React.useEffect(() => {
+  // Countdown timer for OTP
+  useEffect(() => {
     let interval = null;
     if (resendTimer > 0) {
       interval = setInterval(() => {
@@ -111,7 +151,7 @@ export default function SupplierLogin({ onNavigate, onBack }) {
     try {
       const cleanPhone = phone.replace(/\D/g, '');
       const res = await supplierApiService.verifyOtp(cleanPhone, otp);
-      setSuccessMessage('OTP verified successfully! Redirecting...');
+      setSuccessMessage(`Welcome back, ${res.supplier?.name || 'Supplier'}! Redirecting...`);
       setTimeout(() => {
         handleNav('/seller-dashboard');
       }, 700);
@@ -122,7 +162,6 @@ export default function SupplierLogin({ onNavigate, onBack }) {
     }
   };
 
-  // Quick Demo Auto-Fill Helpers
   const fillDemoLogin = () => {
     setIdentifier('supplier@globalexports.com');
     setPassword('Password@123');
@@ -133,6 +172,153 @@ export default function SupplierLogin({ onNavigate, onBack }) {
     setPhone('9876543210');
     setOtp('123456');
     setOtpSent(true);
+    setErrorMessage('');
+  };
+
+  // ==========================================
+  // --- REGISTRATION STATE & LOGIC ---
+  // ==========================================
+  const [currentStep, setCurrentStep] = useState(1);
+  const [regData, setRegData] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    storeName: '',
+    gstin: '',
+    pan: '',
+    registeredState: 'Gujarat',
+    category: 'Ethnic Wear (Sarees, Kurtis)',
+    accountHolder: '',
+    bankName: '',
+    accountNumber: '',
+    ifsc: '',
+    upiId: '',
+  });
+
+  const [hasNoGstin, setHasNoGstin] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
+
+  // Common Feedback State
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleRegChange = (e) => {
+    const { name, value } = e.target;
+    setRegData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setErrorMessage('');
+  };
+
+  const validateStep1 = () => {
+    if (!regData.fullName.trim()) return 'Please enter your full name';
+    const cleanPhone = regData.phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return 'A valid 10-digit mobile number is required';
+    if (!regData.password || regData.password.length < 6) return 'Password must be at least 6 characters long';
+    if (regData.password !== regData.confirmPassword) return 'Password and Confirm Password do not match';
+    return null;
+  };
+
+  const validateStep2 = () => {
+    if (!regData.storeName.trim()) return 'Store or business name is required';
+    if (!hasNoGstin && regData.gstin.trim() && regData.gstin.trim().length !== 15) {
+      return 'GSTIN must be exactly 15 characters (or select the exemption checkbox)';
+    }
+    return null;
+  };
+
+  const handleNextStep = () => {
+    if (currentStep === 1) {
+      const err = validateStep1();
+      if (err) {
+        setErrorMessage(err);
+        return;
+      }
+      setErrorMessage('');
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      const err = validateStep2();
+      if (err) {
+        setErrorMessage(err);
+        return;
+      }
+      setErrorMessage('');
+      setCurrentStep(3);
+    }
+  };
+
+  const handlePrevStep = () => {
+    setErrorMessage('');
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e?.preventDefault();
+    if (!agreeTerms) {
+      setErrorMessage('Please accept the MShoppy Supplier Terms & Conditions');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const payload = {
+        fullName: regData.fullName.trim(),
+        name: regData.fullName.trim(),
+        phone: regData.phone.replace(/\D/g, '').trim(),
+        email: regData.email.trim() || undefined,
+        password: regData.password,
+        storeName: regData.storeName.trim() || `${regData.fullName}'s Store`,
+        gstin: hasNoGstin ? '' : regData.gstin.trim().toUpperCase(),
+        pan: regData.pan.trim().toUpperCase(),
+        registeredState: regData.registeredState,
+        category: regData.category,
+        bankDetails: {
+          accountHolder: regData.accountHolder || regData.fullName,
+          bankName: regData.bankName || '',
+          accountNumber: regData.accountNumber || '',
+          ifsc: regData.ifsc ? regData.ifsc.toUpperCase() : '',
+          upiId: regData.upiId || '',
+        },
+      };
+
+      await supplierApiService.registerSupplier(payload);
+      setSuccessMessage('🎉 Congratulations! Your supplier account has been created. Redirecting...');
+      setTimeout(() => {
+        handleNav('/seller-dashboard');
+      }, 1000);
+    } catch (err) {
+      setErrorMessage(err.message || 'Registration failed. Please check your details and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fillDemoRegister = () => {
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    setRegData({
+      fullName: 'Aurelia Fashions Hub',
+      phone: `9811${randomDigits}`,
+      email: `aurelia_${randomDigits}@test.com`,
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      storeName: 'Aurelia Silk & Crafts',
+      gstin: '24AAACA1234F1Z5',
+      pan: 'AAACA1234F',
+      registeredState: 'Gujarat',
+      category: 'Ethnic Wear (Sarees, Kurtis)',
+      accountHolder: 'Aurelia Fashions Hub',
+      bankName: 'HDFC Bank',
+      accountNumber: '50100234567891',
+      ifsc: 'HDFC0000123',
+      upiId: 'aurelia@hdfcbank',
+    });
     setErrorMessage('');
   };
 
@@ -149,7 +335,7 @@ export default function SupplierLogin({ onNavigate, onBack }) {
       </div>
 
       {/* Top Floating Badge & Back Button */}
-      <header className="relative z-30 pt-8 pb-4 w-full max-w-md px-6 flex items-center justify-between">
+      <header className={`relative z-30 pt-8 pb-4 w-full px-6 flex items-center justify-between transition-all ${activeTab === 'register' ? 'max-w-xl' : 'max-w-md'}`}>
         <button
           onClick={handleGoBack}
           className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-xs border border-white/60 flex items-center justify-center text-slate-700 hover:text-[#b7004d] transition cursor-pointer"
@@ -168,29 +354,71 @@ export default function SupplierLogin({ onNavigate, onBack }) {
         </div>
 
         <button
-          onClick={() => handleNav('/supplier-register')}
+          onClick={() => handleNav('/seller-dashboard')}
           className="text-xs font-bold text-[#b7004d] bg-white/90 hover:bg-white px-3 py-1.5 rounded-full border border-pink-200/60 shadow-xs transition cursor-pointer flex items-center gap-1"
+          title="Go to Seller Dashboard"
         >
-          Register &rarr;
+          Dashboard &rarr;
         </button>
       </header>
 
       {/* 2. Floating Centered Card */}
-      <main className="relative z-20 w-full max-w-md px-6 pt-4 pb-12 flex flex-col items-center">
-        <div className="w-full shadow-2xl border border-white/60 bg-white/95 backdrop-blur-md rounded-[2rem] p-6 sm:p-8 space-y-6">
-          {/* Card Title */}
-          <div className="text-center pt-2">
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#4a2135]">
-              Supplier Login
+      <main className={`relative z-20 w-full px-4 sm:px-6 pt-2 pb-14 flex flex-col items-center transition-all duration-300 ${activeTab === 'register' ? 'max-w-xl' : 'max-w-md'}`}>
+        <div className="w-full shadow-2xl border border-white/70 bg-white/95 backdrop-blur-md rounded-[2.2rem] p-6 sm:p-8 space-y-6">
+
+          {/* ============================================================ */}
+          {/* TOGGLE BAR (Segmented Pill Switcher) */}
+          {/* ============================================================ */}
+          <div className="bg-[#ffecf1] p-1.5 rounded-2xl flex items-center gap-1.5 shadow-inner border border-pink-200/60">
+            <button
+              type="button"
+              onClick={() => handleTabToggle('login')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                activeTab === 'login'
+                  ? 'bg-white text-[#b7004d] shadow-md shadow-pink-900/10 scale-[1.01]'
+                  : 'text-[#7d4d62] hover:text-[#b7004d] hover:bg-white/50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              <span>Supplier Login</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabToggle('register')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                activeTab === 'register'
+                  ? 'bg-white text-[#b7004d] shadow-md shadow-pink-900/10 scale-[1.01]'
+                  : 'text-[#7d4d62] hover:text-[#b7004d] hover:bg-white/50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              <span>New Registration</span>
+              <span className="hidden sm:inline-block bg-[#ff7293]/20 text-[#b7004d] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                0% Fee
+              </span>
+            </button>
+          </div>
+
+          {/* Header Title based on Active Tab */}
+          <div className="text-center pt-1">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#4a2135]">
+              {activeTab === 'login' ? 'Supplier Login' : 'Register as a Seller'}
             </h1>
-            <p className="text-[#7d4d62] font-medium opacity-80 mt-1.5 text-sm">
-              Secure portal for registered suppliers
+            <p className="text-[#7d4d62] font-medium opacity-80 mt-1 text-xs sm:text-sm">
+              {activeTab === 'login'
+                ? 'Secure portal for registered MShoppy suppliers'
+                : 'Sell to 10+ Crore customers across India with 0% Commission'}
             </p>
           </div>
 
-          {/* Alert Feedback Messages */}
+          {/* Feedback Alerts */}
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-start gap-2.5 animate-in fade-in">
               <svg className="w-4 h-4 shrink-0 mt-0.5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
@@ -199,7 +427,7 @@ export default function SupplierLogin({ onNavigate, onBack }) {
           )}
 
           {successMessage && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-start gap-2">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-start gap-2.5 animate-in fade-in">
               <svg className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -207,221 +435,596 @@ export default function SupplierLogin({ onNavigate, onBack }) {
             </div>
           )}
 
-          {/* ======================= LOGIN FORM ======================= */}
-          <div className="space-y-4">
-            {/* Sub-toggle: Password vs Mobile OTP */}
-            <div className="flex justify-end text-xs">
-              {loginMethod === 'password' ? (
-                <button
-                  type="button"
-                  onClick={() => { setLoginMethod('otp'); setErrorMessage(''); }}
-                  className="text-[#b7004d] font-bold hover:underline cursor-pointer"
-                >
-                  📱 Switch to Mobile OTP
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => { setLoginMethod('password'); setErrorMessage(''); }}
-                  className="text-[#b7004d] font-bold hover:underline cursor-pointer"
-                >
-                  🔑 Switch to Password Login
-                </button>
-              )}
-            </div>
-
-            {/* METHOD A: PASSWORD LOGIN */}
-            {loginMethod === 'password' ? (
-              <form onSubmit={handlePasswordLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a2135] block">
-                    Supplier Email or Mobile
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="supplier@mshoppy.com"
-                    value={identifier}
-                    onChange={(e) => { setIdentifier(e.target.value); setErrorMessage(''); }}
-                    className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a2135] block">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
-                    className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      Logging in...
-                    </>
-                  ) : (
-                    'Secure Login'
-                  )}
-                </button>
-
-                <div className="pt-1 text-center">
+          {/* ============================================================ */}
+          {/* TAB CONTENT A: SUPPLIER LOGIN */}
+          {/* ============================================================ */}
+          {activeTab === 'login' && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* Method Switcher: Password vs Mobile OTP */}
+              <div className="flex justify-end text-xs">
+                {loginMethod === 'password' ? (
                   <button
                     type="button"
-                    onClick={fillDemoLogin}
-                    className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
+                    onClick={() => { setLoginMethod('otp'); setErrorMessage(''); }}
+                    className="text-[#b7004d] font-bold hover:underline cursor-pointer flex items-center gap-1"
                   >
-                    ⚡ Quick Fill Demo Credentials
-                  </button>
-                </div>
-              </form>
-            ) : (
-              /* METHOD B: MOBILE OTP LOGIN */
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#4a2135] block">
-                    Registered Mobile Number
-                  </label>
-                  <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
-                    <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
-                      🇮🇳 +91
-                    </div>
-                    <input
-                      type="tel"
-                      placeholder="Enter 10-digit number"
-                      value={phone}
-                      onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setErrorMessage(''); }}
-                      disabled={otpSent}
-                      className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none disabled:bg-slate-50 disabled:text-slate-500"
-                      maxLength={10}
-                    />
-                  </div>
-                </div>
-
-                {otpSent && (
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-[#4a2135]">Enter 6-Digit OTP</label>
-                      <button
-                        type="button"
-                        className="text-[11px] text-[#b7004d] font-semibold hover:underline cursor-pointer"
-                        onClick={() => setOtpSent(false)}
-                      >
-                        Change Number
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="e.g. 123456"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="w-full h-12 text-center text-lg font-black tracking-widest rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                      maxLength={6}
-                      autoFocus
-                    />
-
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      {resendTimer > 0 ? (
-                        <span className="text-slate-400">Resend in <span className="font-bold text-slate-600">{resendTimer}s</span></span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={handleSendOtp}
-                          disabled={isLoading}
-                          className="font-bold text-[#b7004d] hover:underline cursor-pointer"
-                        >
-                          Resend OTP
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setOtp('123456')}
-                        className="text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md cursor-pointer font-medium"
-                      >
-                        Fill Demo OTP
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {!otpSent ? (
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={isLoading || phone.length !== 10}
-                    className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Sending OTP...
-                      </>
-                    ) : (
-                      'Send OTP & Continue'
-                    )}
+                    <span>📱 Switch to Mobile OTP Login</span>
                   </button>
                 ) : (
                   <button
                     type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={isLoading || otp.length < 4}
+                    onClick={() => { setLoginMethod('password'); setErrorMessage(''); }}
+                    className="text-[#b7004d] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🔑 Switch to Password Login</span>
+                  </button>
+                )}
+              </div>
+
+              {/* PASSWORD LOGIN FORM */}
+              {loginMethod === 'password' ? (
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#4a2135] block">
+                      Supplier Email or Mobile
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="supplier@mshoppy.com"
+                      value={identifier}
+                      onChange={(e) => { setIdentifier(e.target.value); setErrorMessage(''); }}
+                      className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#4a2135] block">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
+                      className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
                     className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
                   >
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Verifying...
+                        Logging in...
                       </>
                     ) : (
-                      'Verify & Secure Login'
+                      'Secure Login'
                     )}
                   </button>
-                )}
 
-                <div className="pt-1 text-center">
-                  <button
-                    type="button"
-                    onClick={fillDemoOtp}
-                    className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
-                  >
-                    ⚡ Quick Fill Demo OTP
-                  </button>
+                  <div className="pt-1 text-center">
+                    <button
+                      type="button"
+                      onClick={fillDemoLogin}
+                      className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
+                    >
+                      ⚡ Quick Fill Demo Credentials
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* MOBILE OTP LOGIN FORM */
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#4a2135] block">
+                      Registered Mobile Number
+                    </label>
+                    <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
+                      <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
+                        🇮🇳 +91
+                      </div>
+                      <input
+                        type="tel"
+                        placeholder="Enter 10-digit number"
+                        value={phone}
+                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setErrorMessage(''); }}
+                        disabled={otpSent}
+                        className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                        maxLength={10}
+                      />
+                    </div>
+                  </div>
+
+                  {otpSent && (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-[#4a2135]">Enter 6-Digit OTP</label>
+                        <button
+                          type="button"
+                          className="text-[11px] text-[#b7004d] font-semibold hover:underline cursor-pointer"
+                          onClick={() => setOtpSent(false)}
+                        >
+                          Change Number
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. 123456"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="w-full h-12 text-center text-lg font-black tracking-widest rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                        maxLength={6}
+                        autoFocus
+                      />
+
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        {resendTimer > 0 ? (
+                          <span className="text-slate-400">Resend in <span className="font-bold text-slate-600">{resendTimer}s</span></span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleSendOtp}
+                            disabled={isLoading}
+                            className="font-bold text-[#b7004d] hover:underline cursor-pointer"
+                          >
+                            Resend OTP
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setOtp('123456')}
+                          className="text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md cursor-pointer font-medium"
+                        >
+                          Fill Demo OTP
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isLoading || phone.length !== 10}
+                      className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Sending OTP...
+                        </>
+                      ) : (
+                        'Send OTP & Continue'
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={isLoading || otp.length < 4}
+                      className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Verifying...
+                        </>
+                      ) : (
+                        'Verify & Secure Login'
+                      )}
+                    </button>
+                  )}
+
+                  <div className="pt-1 text-center">
+                    <button
+                      type="button"
+                      onClick={fillDemoOtp}
+                      className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
+                    >
+                      ⚡ Quick Fill Demo OTP
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* DEDICATED REGISTER BUTTON WITH GST & BANK DETAILS */}
-            <div className="pt-4 border-t border-pink-100/80 text-center space-y-2.5">
-              <p className="text-xs text-[#7d4d62] font-medium">New seller on MShoppy?</p>
-              <button
-                type="button"
-                onClick={() => handleNav('/supplier-register')}
-                className="w-full bg-[#ffecf1] hover:bg-[#ffd9e3] text-[#b7004d] font-bold rounded-xl py-3.5 border border-pink-200 transition cursor-pointer text-sm shadow-xs flex items-center justify-center gap-2"
-              >
-                <span>📝</span> Register with GST &amp; Bank Details &rarr;
-              </button>
-              <p className="text-[11px] text-slate-400">0% Commission • Automated 7-Day Direct Bank Settlements</p>
+              {/* Bottom Quick-Switch Link to Register */}
+              <div className="pt-4 border-t border-pink-100/80 text-center space-y-2">
+                <p className="text-xs text-[#7d4d62] font-medium">New seller on MShoppy?</p>
+                <button
+                  type="button"
+                  onClick={() => handleTabToggle('register')}
+                  className="w-full bg-[#ffecf1] hover:bg-[#ffd9e3] text-[#b7004d] font-bold rounded-xl py-3 border border-pink-200 transition cursor-pointer text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2"
+                >
+                  <span>📝</span> Switch to Registration &rarr;
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TAB CONTENT B: SUPPLIER REGISTRATION (3-Step Stepper) */}
+          {/* ============================================================ */}
+          {activeTab === 'register' && (
+            <div className="space-y-5 animate-in fade-in duration-200">
+              {/* Stepper Progress Bar */}
+              <div className="flex items-center justify-between relative px-2">
+                <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-0.5 bg-slate-200 z-0" />
+                <div
+                  className="absolute top-1/2 left-6 -translate-y-1/2 h-0.5 bg-[#b7004d] transition-all duration-300 z-0"
+                  style={{ width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : '100%' }}
+                />
+
+                {[
+                  { num: 1, label: 'Account' },
+                  { num: 2, label: 'Business & GST' },
+                  { num: 3, label: 'Bank & Payout' },
+                ].map((step) => {
+                  const isDone = currentStep > step.num;
+                  const isCurrent = currentStep === step.num;
+                  return (
+                    <div key={step.num} className="relative z-10 flex flex-col items-center">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          isDone
+                            ? 'bg-[#b7004d] text-white'
+                            : isCurrent
+                            ? 'bg-[#b7004d] text-white ring-4 ring-[#ff7293]/30'
+                            : 'bg-white border-2 border-slate-200 text-slate-400'
+                        }`}
+                      >
+                        {isDone ? '✓' : step.num}
+                      </div>
+                      <span className={`text-[10px] mt-1 font-semibold ${isCurrent ? 'text-[#b7004d]' : 'text-slate-400'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* STEP 1: Account Info */}
+              {currentStep === 1 && (
+                <div className="space-y-3.5 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#4a2135]">Full Name (Owner / Contact Person) *</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      placeholder="e.g. Rahul Sharma"
+                      value={regData.fullName}
+                      onChange={handleRegChange}
+                      className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Mobile Number *</label>
+                      <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
+                        <div className="bg-slate-50 px-2.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-600 select-none">
+                          +91
+                        </div>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="10-digit number"
+                          value={regData.phone}
+                          onChange={handleRegChange}
+                          className="w-full h-11 px-2.5 text-sm outline-none"
+                          maxLength={10}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Email Address (Optional)</label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="seller@brand.com"
+                        value={regData.email}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Password *</label>
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Min 6 characters"
+                        value={regData.password}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Confirm Password *</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Re-enter password"
+                        value={regData.confirmPassword}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-between items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={fillDemoRegister}
+                      className="text-xs text-slate-500 hover:text-[#b7004d] font-medium underline decoration-dotted"
+                    >
+                      ⚡ Auto-Fill Demo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNextStep}
+                      className="bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm shadow-md transition cursor-pointer"
+                    >
+                      Continue to Business &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Business & GST */}
+              {currentStep === 2 && (
+                <div className="space-y-3.5 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#4a2135]">Business / Store Name *</label>
+                    <input
+                      type="text"
+                      name="storeName"
+                      placeholder="e.g. Surat Master Sarees"
+                      value={regData.storeName}
+                      onChange={handleRegChange}
+                      className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#4a2135]">GSTIN (Goods & Services Tax ID)</label>
+                      <label className="text-[11px] text-[#b7004d] font-semibold flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasNoGstin}
+                          onChange={(e) => setHasNoGstin(e.target.checked)}
+                          className="rounded text-[#b7004d] focus:ring-[#b7004d]"
+                        />
+                        <span>Enrolment ID / No GST</span>
+                      </label>
+                    </div>
+
+                    {!hasNoGstin ? (
+                      <input
+                        type="text"
+                        name="gstin"
+                        placeholder="15-character GSTIN (e.g. 24AAAAA0000A1Z5)"
+                        value={regData.gstin}
+                        onChange={handleRegChange}
+                        maxLength={15}
+                        className="w-full h-11 px-3.5 text-sm uppercase font-mono tracking-wider rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      />
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
+                        ℹ️ Compulsory GST exemption applies only to sellers dealing in 100% tax-free goods within a single state.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">PAN Number</label>
+                      <input
+                        type="text"
+                        name="pan"
+                        placeholder="10-digit PAN (e.g. ABCDE1234F)"
+                        value={regData.pan}
+                        onChange={handleRegChange}
+                        maxLength={10}
+                        className="w-full h-11 px-3.5 text-sm uppercase font-mono tracking-wider rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Operating State *</label>
+                      <select
+                        name="registeredState"
+                        value={regData.registeredState}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white cursor-pointer"
+                      >
+                        {INDIAN_STATES.map((st) => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#4a2135]">Primary Product Category *</label>
+                    <select
+                      name="category"
+                      value={regData.category}
+                      onChange={handleRegChange}
+                      className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white cursor-pointer"
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="pt-2 flex justify-between items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePrevStep}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                    >
+                      &larr; Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNextStep}
+                      className="bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm shadow-md transition cursor-pointer"
+                    >
+                      Continue to Bank Details &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Bank Details & Submission */}
+              {currentStep === 3 && (
+                <div className="space-y-3.5 pt-2">
+                  <div className="p-3 bg-pink-50/60 border border-pink-200/60 rounded-xl text-[11px] text-[#4a2135]">
+                    🏦 Settlements are directly transferred to this bank account within 7 days of customer order delivery.
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Account Holder Name</label>
+                      <input
+                        type="text"
+                        name="accountHolder"
+                        placeholder="As in bank records"
+                        value={regData.accountHolder}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Bank Name</label>
+                      <input
+                        type="text"
+                        name="bankName"
+                        placeholder="e.g. State Bank of India"
+                        value={regData.bankName}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">Account Number</label>
+                      <input
+                        type="text"
+                        name="accountNumber"
+                        placeholder="e.g. 10023456789"
+                        value={regData.accountNumber}
+                        onChange={handleRegChange}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-[#4a2135]">IFSC Code</label>
+                      <input
+                        type="text"
+                        name="ifsc"
+                        placeholder="e.g. SBIN0001234"
+                        value={regData.ifsc}
+                        onChange={handleRegChange}
+                        maxLength={11}
+                        className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#4a2135]">UPI ID for Instant Settlements (Optional)</label>
+                    <input
+                      type="text"
+                      name="upiId"
+                      placeholder="merchant@okhdfcbank"
+                      value={regData.upiId}
+                      onChange={handleRegChange}
+                      className="w-full h-11 px-3.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                    />
+                  </div>
+
+                  <label className="flex items-start gap-2.5 text-xs text-[#4a2135] cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="rounded text-[#b7004d] focus:ring-[#b7004d] mt-0.5"
+                    />
+                    <span>
+                      I agree to the <span className="font-bold underline">MShoppy Supplier Agreement</span>, 0% Commission terms, and Return policies.
+                    </span>
+                  </label>
+
+                  <div className="pt-2 flex justify-between items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePrevStep}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                    >
+                      &larr; Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRegisterSubmit}
+                      disabled={isLoading}
+                      className="bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm shadow-md transition cursor-pointer flex items-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Registering...
+                        </>
+                      ) : (
+                        'Complete Registration &rarr;'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Quick-Switch Link to Login */}
+              <div className="pt-4 border-t border-pink-100/80 text-center space-y-1">
+                <p className="text-xs text-[#7d4d62] font-medium">Already have a registered account?</p>
+                <button
+                  type="button"
+                  onClick={() => handleTabToggle('login')}
+                  className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
+                >
+                  Switch to Supplier Login &rarr;
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Footer Security Badge */}
-          <div className="pt-2 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
+          <div className="pt-1 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 border-t border-slate-100">
             <svg className="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
             </svg>
-            <span>SSL Encrypted &amp; Certified Supplier Portal</span>
+            <span>SSL 256-Bit Encrypted &amp; Certified Supplier Portal</span>
           </div>
+
         </div>
       </main>
     </div>
