@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import supplierApiService from '../../services/supplierApiService';
 
-
 export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,7 +74,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const handlePasswordLogin = async (e) => {
     e?.preventDefault();
     if (!identifier.trim()) {
-      setErrorMessage('Please enter your supplier email, phone, or ID');
+      setErrorMessage('Please enter your supplier email or ID');
       return;
     }
     if (!password) {
@@ -159,7 +158,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   };
 
   // ==========================================
-  // --- SINGLE-PAGE REGISTRATION STATE & LOGIC ---
+  // --- REGISTRATION STATE & LOGIC ---
   // ==========================================
   const [regData, setRegData] = useState({
     fullName: '',
@@ -248,8 +247,8 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   return (
     <div className="bg-[#fff4f6] text-[#4a2135] min-h-screen w-full overflow-x-hidden relative font-sans flex flex-col items-center">
       {/* 1. Top Curved Banner Graphic */}
-      <div className="absolute top-0 left-0 w-full h-[353px] overflow-hidden [clip-path:ellipse(110%_100%_at_50%_0%)] bg-[#ff7293]/20 z-10 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#fff4f6]/90 z-10" />
+      <div className="absolute top-0 left-0 w-full h-[320px] sm:h-[350px] overflow-hidden [clip-path:ellipse(110%_100%_at_50%_0%)] bg-[#ff7293]/20 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#fff4f6]/95 z-10" />
         <img
           className="w-full h-full object-cover mix-blend-multiply opacity-80"
           alt="MShoppy Supplier Access"
@@ -258,10 +257,11 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       </div>
 
       {/* Top Floating Badge & Back Button */}
-      <header className="relative z-30 pt-8 pb-4 w-full px-6 flex items-center justify-between transition-all max-w-md">
+      <header className="relative z-20 pt-7 pb-3 w-full flex items-center justify-center">
+        {/* Subtle Back Button */}
         <button
           onClick={handleGoBack}
-          className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-xs border border-white/60 flex items-center justify-center text-slate-700 hover:text-[#b7004d] transition cursor-pointer"
+          className="absolute left-5 sm:left-8 top-7 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md shadow-xs border border-white/60 flex items-center justify-center text-slate-700 hover:text-[#9e003f] transition cursor-pointer"
           title="Go Back"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -269,74 +269,60 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
           </svg>
         </button>
 
-        {/* Brand Pill Badge */}
-        <div className="bg-white/90 backdrop-blur-[20px] px-6 py-2 rounded-full border border-white/40 shadow-[0_12px_40px_rgba(74,33,53,0.06)] flex items-center gap-2">
-          <span className="text-[#b7004d] font-black tracking-tighter text-lg">
-            MSHOPPY <span className="uppercase text-[#ff7293] text-xs font-bold tracking-widest">SUPPLIER</span>
+        {/* Brand Pill Badge - Matching "MSHOPPY USER" from reference */}
+        <div className="bg-white/95 backdrop-blur-md px-6 py-2 rounded-full border border-white/50 shadow-[0_8px_25px_rgba(74,33,53,0.06)] flex items-center gap-1.5">
+          <span className="text-[#880e4f] font-black tracking-tight text-base sm:text-lg">
+            MSHOPPY
+          </span>
+          <span className="text-[#f06292] font-black tracking-wider text-xs sm:text-sm uppercase">
+            SUPPLIER
           </span>
         </div>
-
-        <button
-          onClick={() => handleNav('/seller-dashboard')}
-          className="text-xs font-bold text-[#b7004d] bg-white/90 hover:bg-white px-3 py-1.5 rounded-full border border-pink-200/60 shadow-xs transition cursor-pointer flex items-center gap-1"
-          title="Go to Seller Dashboard"
-        >
-          Dashboard &rarr;
-        </button>
       </header>
 
-      {/* 2. Floating Centered Card */}
-      <main className="relative z-20 w-full px-4 sm:px-6 pt-2 pb-14 flex flex-col items-center transition-all duration-300 max-w-md">
-        <div className="w-full shadow-2xl border border-white/70 bg-white/95 backdrop-blur-md rounded-[2.2rem] p-6 sm:p-8 space-y-6">
+      {/* 2. Floating Centered Card Canvas */}
+      <main className="relative z-10 w-full px-4 pt-1 sm:pt-3 pb-16 flex flex-col items-center">
+        <div className="w-full max-w-[420px] bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(74,33,53,0.09)] border border-white/90 p-7 sm:p-9 space-y-6">
+
+          {/* Card Title & Subtitle */}
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl sm:text-[28px] font-black tracking-tight text-[#3b1227]">
+              Supplier Access
+            </h1>
+            <p className="text-xs sm:text-sm text-[#8a6575] font-medium">
+              {activeTab === 'login'
+                ? 'Secure shopping & seller portal for suppliers'
+                : 'Create your supplier account in seconds'}
+            </p>
+          </div>
 
           {/* ============================================================ */}
-          {/* TOGGLE BAR (Segmented Switcher: Login | Register) */}
+          {/* SEGMENTED TOGGLE PILL: Login | Register (As in screenshot) */}
           {/* ============================================================ */}
-          <div className="bg-[#ffecf1] p-1.5 rounded-2xl flex items-center gap-1.5 shadow-inner border border-pink-200/60">
+          <div className="bg-[#ffeef2] p-1 rounded-full flex items-center">
             <button
               type="button"
               onClick={() => handleTabToggle('login')}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${
                 activeTab === 'login'
-                  ? 'bg-white text-[#b7004d] shadow-md shadow-pink-900/10 scale-[1.01]'
-                  : 'text-[#7d4d62] hover:text-[#b7004d] hover:bg-white/50'
+                  ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
+                  : 'text-[#6e3950] hover:text-[#d82a62]'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
-              <span>Supplier Login</span>
+              Login
             </button>
 
             <button
               type="button"
               onClick={() => handleTabToggle('register')}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${
                 activeTab === 'register'
-                  ? 'bg-white text-[#b7004d] shadow-md shadow-pink-900/10 scale-[1.01]'
-                  : 'text-[#7d4d62] hover:text-[#b7004d] hover:bg-white/50'
+                  ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
+                  : 'text-[#6e3950] hover:text-[#d82a62]'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-              <span>New Registration</span>
-              <span className="hidden sm:inline-block bg-[#ff7293]/20 text-[#b7004d] text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                0% Fee
-              </span>
+              Register
             </button>
-          </div>
-
-          {/* Header Title based on Active Tab */}
-          <div className="text-center pt-1">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#4a2135]">
-              {activeTab === 'login' ? 'Supplier Login' : 'Register as a Seller'}
-            </h1>
-            <p className="text-[#7d4d62] font-medium opacity-80 mt-1 text-xs sm:text-sm">
-              {activeTab === 'login'
-                ? 'Secure portal for registered MShoppy suppliers'
-                : 'Quick registration with 0% Commission • Start selling today'}
-            </p>
           </div>
 
           {/* Feedback Alerts */}
@@ -363,46 +349,25 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
           {/* ============================================================ */}
           {activeTab === 'login' && (
             <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Method Switcher: Password vs Mobile OTP */}
-              <div className="flex justify-end text-xs">
-                {loginMethod === 'password' ? (
-                  <button
-                    type="button"
-                    onClick={() => { setLoginMethod('otp'); setErrorMessage(''); }}
-                    className="text-[#b7004d] font-bold hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <span>📱 Switch to Mobile OTP Login</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => { setLoginMethod('password'); setErrorMessage(''); }}
-                    className="text-[#b7004d] font-bold hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <span>🔑 Switch to Password Login</span>
-                  </button>
-                )}
-              </div>
-
-              {/* PASSWORD LOGIN FORM */}
               {loginMethod === 'password' ? (
+                /* PASSWORD LOGIN FORM (Matching screenshot exactly) */
                 <form onSubmit={handlePasswordLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#4a2135] block">
-                      Supplier Email or Mobile
+                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                      Supplier Email
                     </label>
                     <input
                       type="text"
                       placeholder="supplier@mshoppy.com"
                       value={identifier}
                       onChange={(e) => { setIdentifier(e.target.value); setErrorMessage(''); }}
-                      className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                      className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
                       required
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#4a2135] block">
+                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
                       Password
                     </label>
                     <input
@@ -410,33 +375,42 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
-                      className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                      className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
                       required
                     />
                   </div>
 
+                  {/* Primary CTA Button matching the deep crimson button in screenshot */}
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                    className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2 active:scale-[0.99]"
                   >
                     {isLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Logging in...
+                        Signing in...
                       </>
                     ) : (
                       'Secure Login'
                     )}
                   </button>
 
-                  <div className="pt-1 text-center">
+                  <div className="pt-2 flex items-center justify-between text-xs">
                     <button
                       type="button"
                       onClick={fillDemoLogin}
-                      className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
+                      className="text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
                     >
-                      ⚡ Quick Fill Demo Credentials
+                      ⚡ Demo fill
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setLoginMethod('otp'); setErrorMessage(''); }}
+                      className="text-[#9e003f] font-semibold hover:underline cursor-pointer"
+                    >
+                      Use Mobile OTP
                     </button>
                   </div>
                 </form>
@@ -444,11 +418,11 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                 /* MOBILE OTP LOGIN FORM */
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[#4a2135] block">
+                    <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
                       Registered Mobile Number
                     </label>
-                    <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
-                      <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
+                    <div className="relative flex rounded-2xl border border-slate-200/90 focus-within:border-[#d82a62] focus-within:ring-2 focus-within:ring-pink-100 overflow-hidden bg-white">
+                      <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200/90 text-xs font-bold text-slate-700 select-none">
                         🇮🇳 +91
                       </div>
                       <input
@@ -457,7 +431,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                         value={phone}
                         onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setErrorMessage(''); }}
                         disabled={otpSent}
-                        className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none disabled:bg-slate-50 disabled:text-slate-500"
+                        className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none disabled:bg-slate-50 disabled:text-slate-500 text-slate-800 placeholder-slate-400"
                         maxLength={10}
                       />
                     </div>
@@ -466,10 +440,10 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                   {otpSent && (
                     <div className="space-y-2 pt-1">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-[#4a2135]">Enter 6-Digit OTP</label>
+                        <label className="text-xs font-bold text-[#3b1227]">Enter 6-Digit OTP</label>
                         <button
                           type="button"
-                          className="text-[11px] text-[#b7004d] font-semibold hover:underline cursor-pointer"
+                          className="text-[11px] text-[#9e003f] font-semibold hover:underline cursor-pointer"
                           onClick={() => setOtpSent(false)}
                         >
                           Change Number
@@ -480,7 +454,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                         placeholder="e.g. 123456"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        className="w-full h-12 text-center text-lg font-black tracking-widest rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                        className="w-full h-12 text-center text-lg font-black tracking-widest rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none bg-white text-slate-800"
                         maxLength={6}
                         autoFocus
                       />
@@ -493,7 +467,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                             type="button"
                             onClick={handleSendOtp}
                             disabled={isLoading}
-                            className="font-bold text-[#b7004d] hover:underline cursor-pointer"
+                            className="font-bold text-[#9e003f] hover:underline cursor-pointer"
                           >
                             Resend OTP
                           </button>
@@ -503,7 +477,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                           onClick={() => setOtp('123456')}
                           className="text-[11px] text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-md cursor-pointer font-medium"
                         >
-                          Fill Demo OTP
+                          Demo OTP (123456)
                         </button>
                       </div>
                     </div>
@@ -514,7 +488,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                       type="button"
                       onClick={handleSendOtp}
                       disabled={isLoading || phone.length !== 10}
-                      className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                      className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2"
                     >
                       {isLoading ? (
                         <>
@@ -530,7 +504,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                       type="button"
                       onClick={handleVerifyOtp}
                       disabled={isLoading || otp.length < 4}
-                      className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                      className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2"
                     >
                       {isLoading ? (
                         <>
@@ -543,57 +517,39 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                     </button>
                   )}
 
-                  <div className="pt-1 text-center">
+                  <div className="pt-2 flex items-center justify-between text-xs">
                     <button
                       type="button"
                       onClick={fillDemoOtp}
-                      className="text-xs text-slate-500 hover:text-[#b7004d] font-medium transition cursor-pointer underline decoration-dotted"
+                      className="text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
                     >
-                      ⚡ Quick Fill Demo OTP
+                      ⚡ Demo phone
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setLoginMethod('password'); setErrorMessage(''); }}
+                      className="text-[#9e003f] font-semibold hover:underline cursor-pointer"
+                    >
+                      Use Password Login
                     </button>
                   </div>
                 </div>
               )}
-
-              {/* Bottom Quick-Switch Link to Register */}
-              <div className="pt-4 border-t border-pink-100/80 text-center space-y-2">
-                <p className="text-xs text-[#7d4d62] font-medium">New seller on MShoppy?</p>
-                <button
-                  type="button"
-                  onClick={() => handleTabToggle('register')}
-                  className="w-full bg-[#ffecf1] hover:bg-[#ffd9e3] text-[#b7004d] font-bold rounded-xl py-3 border border-pink-200 transition cursor-pointer text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2"
-                >
-                  <span>📝</span> Switch to Registration &rarr;
-                </button>
-              </div>
             </div>
           )}
 
           {/* ============================================================ */}
-          {/* TAB CONTENT B: REGISTRATION FORM (NAME, PHONE, EMAIL, PASSWORD ONLY) */}
+          {/* TAB CONTENT B: SUPPLIER REGISTRATION FORM */}
+          {/* Only 4 Fields: Full Name, Phone, Email, Password */}
           {/* ============================================================ */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4 animate-in fade-in duration-200">
               
-              {/* Value Proposition Callout Banner */}
-              <div className="p-3 bg-pink-50/70 border border-pink-200/60 rounded-xl flex items-center justify-between text-xs text-[#4a2135]">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🚀</span>
-                  <span className="font-semibold">0% Commission • Sell across India</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={fillDemoRegister}
-                  className="text-[11px] font-bold text-[#b7004d] bg-white border border-pink-200 px-2.5 py-1 rounded-lg hover:bg-pink-50 transition cursor-pointer shrink-0"
-                >
-                  ⚡ Auto-Fill Demo
-                </button>
-              </div>
-
-              {/* 1. Full Name */}
+              {/* Full Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a2135] block">
-                  Full Name *
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Full Name
                 </label>
                 <input
                   type="text"
@@ -601,79 +557,79 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                   placeholder="e.g. Rahul Sharma"
                   value={regData.fullName}
                   onChange={handleRegChange}
-                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
                   required
                 />
               </div>
 
-              {/* 2. Mobile Number */}
+              {/* Mobile Number */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a2135] block">
-                  Mobile Number *
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Mobile Number
                 </label>
-                <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
-                  <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
+                <div className="relative flex rounded-2xl border border-slate-200/90 focus-within:border-[#d82a62] focus-within:ring-2 focus-within:ring-pink-100 overflow-hidden bg-white">
+                  <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200/90 text-xs font-bold text-slate-700 select-none">
                     🇮🇳 +91
                   </div>
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="Enter 10-digit mobile number"
+                    placeholder="Enter 10-digit number"
                     value={regData.phone}
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setRegData((prev) => ({ ...prev, phone: digits }));
                       setErrorMessage('');
                     }}
-                    className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none"
+                    className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none text-slate-800 placeholder-slate-400"
                     maxLength={10}
                     required
                   />
                 </div>
               </div>
 
-              {/* 3. Email Address */}
+              {/* Supplier Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a2135] block">
-                  Email Address *
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Supplier Email
                 </label>
                 <input
                   type="email"
                   name="email"
-                  placeholder="e.g. rahul@example.com"
+                  placeholder="supplier@mshoppy.com"
                   value={regData.email}
                   onChange={handleRegChange}
-                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
                   required
                 />
               </div>
 
-              {/* 4. Password */}
+              {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#4a2135] block">
-                  Password *
+                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                  Password
                 </label>
                 <input
                   type="password"
                   name="password"
-                  placeholder="Min 6 characters"
+                  placeholder="••••••••"
                   value={regData.password}
                   onChange={handleRegChange}
-                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
                   required
                 />
               </div>
 
-              {/* Terms Checkbox */}
-              <label className="flex items-start gap-2.5 text-xs text-[#4a2135] cursor-pointer pt-1">
+              {/* Agreement checkbox */}
+              <label className="flex items-start gap-2.5 text-xs text-[#5f2b43] cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={agreeTerms}
                   onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="rounded text-[#b7004d] focus:ring-[#b7004d] mt-0.5"
+                  className="rounded text-[#9e003f] focus:ring-[#9e003f] mt-0.5"
                 />
                 <span>
-                  I agree to the <span className="font-bold underline">MShoppy Supplier Agreement</span> and Terms of Service.
+                  I agree to the <span className="font-bold underline text-[#3b1227]">MShoppy Supplier Agreement</span> and Terms of Service.
                 </span>
               </label>
 
@@ -681,7 +637,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
+                className="w-full h-12 bg-[#9e003f] hover:bg-[#860035] text-white font-bold rounded-2xl shadow-md shadow-pink-950/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm sm:text-base mt-2 active:scale-[0.99]"
               >
                 {isLoading ? (
                   <>
@@ -689,31 +645,22 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                     Creating Account...
                   </>
                 ) : (
-                  'Create Supplier Account &rarr;'
+                  'Secure Register'
                 )}
               </button>
 
-              {/* Bottom Quick-Switch Link to Login */}
-              <div className="pt-3 border-t border-pink-100/80 text-center space-y-1">
-                <p className="text-xs text-[#7d4d62] font-medium">Already have a registered account?</p>
+              {/* Auto-fill demo link */}
+              <div className="pt-2 text-center">
                 <button
                   type="button"
-                  onClick={() => handleTabToggle('login')}
-                  className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
+                  onClick={fillDemoRegister}
+                  className="text-xs text-slate-400 hover:text-[#9e003f] font-medium transition cursor-pointer underline decoration-dotted"
                 >
-                  Switch to Supplier Login &rarr;
+                  ⚡ Auto-fill demo details
                 </button>
               </div>
             </form>
           )}
-
-          {/* Footer Security Badge */}
-          <div className="pt-1 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 border-t border-slate-100">
-            <svg className="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
-            </svg>
-            <span>SSL 256-Bit Encrypted &amp; Certified Supplier Portal</span>
-          </div>
 
         </div>
       </main>
