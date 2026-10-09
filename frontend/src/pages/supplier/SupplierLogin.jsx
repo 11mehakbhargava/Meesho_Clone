@@ -2,23 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import supplierApiService from '../../services/supplierApiService';
 
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat',
-  'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh',
-  'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana',
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
-];
-
-const CATEGORIES = [
-  'Ethnic Wear (Sarees, Kurtis)',
-  'Western Wear & Dresses',
-  'Men Fashion & Footwear',
-  'Jewellery & Accessories',
-  'Beauty & Personal Care',
-  'Home Decor & Kitchenware',
-  'Bags & Luggage',
-  'Electronics & Gadgets'
-];
 
 export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const navigate = useNavigate();
@@ -183,17 +166,8 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
     phone: '',
     email: '',
     password: '',
-    storeName: '',
-    gstin: '',
-    pan: '',
-    registeredState: 'Gujarat',
-    category: 'Ethnic Wear (Sarees, Kurtis)',
-    accountNumber: '',
-    ifsc: '',
-    upiId: '',
   });
 
-  const [hasNoGstin, setHasNoGstin] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   // Common Feedback State
@@ -210,7 +184,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
     setErrorMessage('');
   };
 
-  // Unified Single-Page Registration Submission
+  // Minimal Registration Submission (Full Name, Phone, Email, Password)
   const handleRegisterSubmit = async (e) => {
     e?.preventDefault();
 
@@ -223,16 +197,12 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       setErrorMessage('A valid 10-digit mobile number is required');
       return;
     }
+    if (!regData.email.trim() || !regData.email.includes('@')) {
+      setErrorMessage('Please enter a valid email address');
+      return;
+    }
     if (!regData.password || regData.password.length < 6) {
       setErrorMessage('Password must be at least 6 characters long');
-      return;
-    }
-    if (!regData.storeName.trim()) {
-      setErrorMessage('Store or business name is required');
-      return;
-    }
-    if (!hasNoGstin && regData.gstin.trim() && regData.gstin.trim().length !== 15) {
-      setErrorMessage('GSTIN must be exactly 15 characters (or select Enrolment ID / No GST)');
       return;
     }
     if (!agreeTerms) {
@@ -247,20 +217,9 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
         fullName: regData.fullName.trim(),
         name: regData.fullName.trim(),
         phone: cleanPhone,
-        email: regData.email.trim() || undefined,
+        email: regData.email.trim().toLowerCase(),
         password: regData.password,
-        storeName: regData.storeName.trim() || `${regData.fullName}'s Store`,
-        gstin: hasNoGstin ? '' : regData.gstin.trim().toUpperCase(),
-        pan: regData.pan.trim().toUpperCase(),
-        registeredState: regData.registeredState,
-        category: regData.category,
-        bankDetails: {
-          accountHolder: regData.fullName.trim(),
-          bankName: '',
-          accountNumber: regData.accountNumber.trim(),
-          ifsc: regData.ifsc ? regData.ifsc.toUpperCase().trim() : '',
-          upiId: regData.upiId.trim() || '',
-        },
+        storeName: `${regData.fullName.trim()}'s Store`,
       };
 
       await supplierApiService.registerSupplier(payload);
@@ -278,18 +237,10 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const fillDemoRegister = () => {
     const randomDigits = Math.floor(100000 + Math.random() * 900000);
     setRegData({
-      fullName: 'Aurelia Fashions Hub',
+      fullName: 'Rahul Sharma',
       phone: `9811${randomDigits}`,
-      email: `aurelia_${randomDigits}@test.com`,
+      email: `rahul_${randomDigits}@test.com`,
       password: 'Password@123',
-      storeName: 'Aurelia Silk & Crafts',
-      gstin: '24AAACA1234F1Z5',
-      pan: 'AAACA1234F',
-      registeredState: 'Gujarat',
-      category: 'Ethnic Wear (Sarees, Kurtis)',
-      accountNumber: '50100234567891',
-      ifsc: 'HDFC0000123',
-      upiId: 'aurelia@hdfcbank',
     });
     setErrorMessage('');
   };
@@ -307,7 +258,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       </div>
 
       {/* Top Floating Badge & Back Button */}
-      <header className={`relative z-30 pt-8 pb-4 w-full px-6 flex items-center justify-between transition-all ${activeTab === 'register' ? 'max-w-xl' : 'max-w-md'}`}>
+      <header className="relative z-30 pt-8 pb-4 w-full px-6 flex items-center justify-between transition-all max-w-md">
         <button
           onClick={handleGoBack}
           className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-xs border border-white/60 flex items-center justify-center text-slate-700 hover:text-[#b7004d] transition cursor-pointer"
@@ -335,7 +286,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       </header>
 
       {/* 2. Floating Centered Card */}
-      <main className={`relative z-20 w-full px-4 sm:px-6 pt-2 pb-14 flex flex-col items-center transition-all duration-300 ${activeTab === 'register' ? 'max-w-xl' : 'max-w-md'}`}>
+      <main className="relative z-20 w-full px-4 sm:px-6 pt-2 pb-14 flex flex-col items-center transition-all duration-300 max-w-md">
         <div className="w-full shadow-2xl border border-white/70 bg-white/95 backdrop-blur-md rounded-[2.2rem] p-6 sm:p-8 space-y-6">
 
           {/* ============================================================ */}
@@ -384,7 +335,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
             <p className="text-[#7d4d62] font-medium opacity-80 mt-1 text-xs sm:text-sm">
               {activeTab === 'login'
                 ? 'Secure portal for registered MShoppy suppliers'
-                : 'Single-step registration with 0% Commission • 7-day automated payouts'}
+                : 'Quick registration with 0% Commission • Start selling today'}
             </p>
           </div>
 
@@ -619,7 +570,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
           )}
 
           {/* ============================================================ */}
-          {/* TAB CONTENT B: SINGLE-PAGE SUPPLIER REGISTRATION FORM */}
+          {/* TAB CONTENT B: REGISTRATION FORM (NAME, PHONE, EMAIL, PASSWORD ONLY) */}
           {/* ============================================================ */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4 animate-in fade-in duration-200">
@@ -628,7 +579,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
               <div className="p-3 bg-pink-50/70 border border-pink-200/60 rounded-xl flex items-center justify-between text-xs text-[#4a2135]">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🚀</span>
-                  <span className="font-semibold">0% Commission • 7-Day Bank Payouts • Sell across India</span>
+                  <span className="font-semibold">0% Commission • Sell across India</span>
                 </div>
                 <button
                   type="button"
@@ -639,206 +590,82 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                 </button>
               </div>
 
-              {/* Section 1: Account & Owner Details */}
-              <div className="space-y-3 pt-1">
-                <div className="flex items-center gap-2 text-xs font-black uppercase text-[#b7004d] tracking-wider border-b border-pink-100 pb-1">
-                  <span>Account &amp; Contact Details</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Full Name *</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      placeholder="e.g. Rahul Sharma"
-                      value={regData.fullName}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Mobile Number *</label>
-                    <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
-                      <div className="bg-slate-50 px-2.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-600 select-none">
-                        +91
-                      </div>
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="10-digit number"
-                        value={regData.phone}
-                        onChange={handleRegChange}
-                        className="w-full h-11 px-2.5 text-sm outline-none"
-                        maxLength={10}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Email Address (Optional)</label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="seller@brand.com"
-                      value={regData.email}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Password *</label>
-                    <input
-                      type="password"
-                      name="password"
-                      placeholder="Min 6 characters"
-                      value={regData.password}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                      required
-                    />
-                  </div>
-                </div>
+              {/* 1. Full Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#4a2135] block">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  name="fullName"
+                  placeholder="e.g. Rahul Sharma"
+                  value={regData.fullName}
+                  onChange={handleRegChange}
+                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  required
+                />
               </div>
 
-              {/* Section 2: Business & GST Details */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-2 text-xs font-black uppercase text-[#b7004d] tracking-wider border-b border-pink-100 pb-1">
-                  <span>Business &amp; Tax Information</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Store / Business Name *</label>
-                    <input
-                      type="text"
-                      name="storeName"
-                      placeholder="e.g. Surat Master Sarees"
-                      value={regData.storeName}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                      required
-                    />
+              {/* 2. Mobile Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#4a2135] block">
+                  Mobile Number *
+                </label>
+                <div className="relative flex rounded-xl border border-slate-200 focus-within:border-[#b7004d] focus-within:ring-2 focus-within:ring-[#ff7293]/20 overflow-hidden bg-white">
+                  <div className="bg-slate-50 px-3.5 flex items-center border-r border-slate-200 text-xs font-bold text-slate-700 select-none">
+                    🇮🇳 +91
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Operating State *</label>
-                    <select
-                      name="registeredState"
-                      value={regData.registeredState}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-2.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white cursor-pointer"
-                    >
-                      {INDIAN_STATES.map((st) => (
-                        <option key={st} value={st}>{st}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[#4a2135]">GSTIN (15-Digit GST Number)</label>
-                    <label className="text-[11px] text-[#b7004d] font-semibold flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasNoGstin}
-                        onChange={(e) => setHasNoGstin(e.target.checked)}
-                        className="rounded text-[#b7004d] focus:ring-[#b7004d]"
-                      />
-                      <span>Enrolment ID / No GST</span>
-                    </label>
-                  </div>
-
-                  {!hasNoGstin ? (
-                    <input
-                      type="text"
-                      name="gstin"
-                      placeholder="e.g. 24AAAAA0000A1Z5"
-                      value={regData.gstin}
-                      onChange={handleRegChange}
-                      maxLength={15}
-                      className="w-full h-11 px-3 text-sm uppercase font-mono tracking-wider rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                    />
-                  ) : (
-                    <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
-                      ℹ️ Compulsory GST exemption applies only to sellers dealing in 100% tax-free goods within a single state.
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#4a2135]">Primary Product Category *</label>
-                  <select
-                    name="category"
-                    value={regData.category}
-                    onChange={handleRegChange}
-                    className="w-full h-11 px-2.5 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white cursor-pointer"
-                  >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Section 3: Bank / Settlement Account (Optional on Registration) */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between border-b border-pink-100 pb-1">
-                  <span className="text-xs font-black uppercase text-[#b7004d] tracking-wider">
-                    Bank Details for Settlements
-                  </span>
-                  <span className="text-[10px] text-slate-400">Can also be added later</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">Bank Account Number</label>
-                    <input
-                      type="text"
-                      name="accountNumber"
-                      placeholder="e.g. 5010023456789"
-                      value={regData.accountNumber}
-                      onChange={handleRegChange}
-                      className="w-full h-11 px-3 text-sm font-mono rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#4a2135]">IFSC Code</label>
-                    <input
-                      type="text"
-                      name="ifsc"
-                      placeholder="e.g. HDFC0000123"
-                      value={regData.ifsc}
-                      onChange={handleRegChange}
-                      maxLength={11}
-                      className="w-full h-11 px-3 text-sm font-mono uppercase rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#4a2135]">UPI ID for Instant Payout (Optional)</label>
                   <input
-                    type="text"
-                    name="upiId"
-                    placeholder="merchant@upi"
-                    value={regData.upiId}
-                    onChange={handleRegChange}
-                    className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none bg-white"
+                    type="tel"
+                    name="phone"
+                    placeholder="Enter 10-digit mobile number"
+                    value={regData.phone}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setRegData((prev) => ({ ...prev, phone: digits }));
+                      setErrorMessage('');
+                    }}
+                    className="w-full h-12 px-3 text-sm font-semibold tracking-wider outline-none"
+                    maxLength={10}
+                    required
                   />
                 </div>
               </div>
 
+              {/* 3. Email Address */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#4a2135] block">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="e.g. rahul@example.com"
+                  value={regData.email}
+                  onChange={handleRegChange}
+                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  required
+                />
+              </div>
+
+              {/* 4. Password */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#4a2135] block">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Min 6 characters"
+                  value={regData.password}
+                  onChange={handleRegChange}
+                  className="w-full h-12 px-4 text-sm rounded-xl border border-slate-200 focus:border-[#b7004d] focus:ring-2 focus:ring-[#ff7293]/20 outline-none transition bg-white"
+                  required
+                />
+              </div>
+
               {/* Terms Checkbox */}
-              <label className="flex items-start gap-2.5 text-xs text-[#4a2135] cursor-pointer pt-2">
+              <label className="flex items-start gap-2.5 text-xs text-[#4a2135] cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={agreeTerms}
@@ -846,7 +673,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                   className="rounded text-[#b7004d] focus:ring-[#b7004d] mt-0.5"
                 />
                 <span>
-                  I agree to the <span className="font-bold underline">MShoppy Supplier Agreement</span>, 0% Commission terms, and Return policies.
+                  I agree to the <span className="font-bold underline">MShoppy Supplier Agreement</span> and Terms of Service.
                 </span>
               </label>
 
@@ -854,7 +681,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-3"
+                className="w-full bg-[#b7004d] hover:bg-[#9e0037] text-white font-bold rounded-xl py-3.5 shadow-md shadow-pink-900/10 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 text-sm mt-2"
               >
                 {isLoading ? (
                   <>
