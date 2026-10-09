@@ -79,7 +79,7 @@ import SupplierLogin from './pages/supplier/SupplierLogin';
 import SupplierRegister from './pages/supplier/SupplierRegister';
 
 // Admin Panel Pages
-import AdminLogin from './pages/admin_panel/AdminLogin';
+import AdminLogin from './pages/admin_panel/adminLogin';
 import AdminLogin1 from './pages/admin_panel/AdminLogin1';
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
 import AdminWebPanel1 from './pages/admin_panel/admin_web_panel1';
