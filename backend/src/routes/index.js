@@ -2,11 +2,15 @@ import { Router } from 'express';
 import healthRoutes from './health.routes.js';
 import supplierRoutes from './supplier.routes.js';
 import supplierAuthRoutes from './supplierAuth.routes.js';
+import adminAuthRoutes from './admin/adminAuth.routes.js';
 
 const apiRouter = Router();
 
 // Health check endpoint
 apiRouter.use('/', healthRoutes);
+
+// Admin Authentication endpoints
+apiRouter.use('/admin-auth', adminAuthRoutes);
 
 // Supplier Authentication endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);

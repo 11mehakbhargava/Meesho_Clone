@@ -34,13 +34,14 @@ app.use(express.urlencoded({ extended: true }));
 // Static uploads directory for product images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
+// Root documentation route
 app.get('/api', (req, res) => {
   res.json({
     message: 'Welcome to the Meesho SuperApp API!',
     status: 'online',
     version: '1.0.0',
     documentation: {
+      adminAuth: '/api/v1/admin-auth',
       supplierAuth: '/api/supplier/auth',
       supplier: '/api/supplier',
       health: '/api/health',
@@ -48,8 +49,9 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Mount Main API Router
+// Mount Main API Router (Supports both /api and /api/v1 prefix)
 app.use('/api', apiRouter);
+app.use('/api/v1', apiRouter);
 
 // Error Handling
 app.use(notFoundHandler);
@@ -59,4 +61,7 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`🚀 Backend server is running on http://localhost:${port}`);
   console.log(`📦 Supplier endpoints available at http://localhost:${port}/api/supplier`);
+  console.log(`🛡️ Admin auth endpoints available at http://localhost:${port}/api/v1/admin-auth`);
 });
+
+export default app;

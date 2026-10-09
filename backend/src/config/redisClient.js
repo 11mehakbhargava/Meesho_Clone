@@ -27,11 +27,9 @@ if (process.env.ENABLE_REDIS === "true") {
     console.warn("⚠️ Redis warning:", err.message);
   });
 
-  try {
-    await redisClient.connect();
-  } catch (error) {
-    console.warn("⚠️ Could not connect to Redis. Server will continue without caching.");
-  }
+  redisClient.connect().catch((error) => {
+    console.warn("⚠️ Could not connect to Redis. Server will continue running without caching.");
+  });
 } else {
   console.log("ℹ️ Redis is disabled (ENABLE_REDIS=false). Skipping Redis connection.");
 }
