@@ -294,9 +294,18 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleNav('/forgot-password')}
+                    className="text-xs text-[#9e003f] hover:text-[#7e0032] font-semibold hover:underline cursor-pointer transition"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
                 <input
                   type="password"
                   placeholder="••••••••"
