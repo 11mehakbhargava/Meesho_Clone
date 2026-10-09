@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from '../config/prisma.js';
+import prisma from '../../config/prisma.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'meesho_supplier_super_secret_jwt_token_2026';
 
@@ -45,32 +45,33 @@ const fallbackSuppliers = new Map([
 // Helper to format supplier response (removes sensitive hash)
 const formatSupplierResponse = (user) => {
   const bank = user.bankDetails || {
-    accountHolder: user.fullName || 'Verified Supplier',
-    bankName: 'HDFC Bank',
-    accountNumber: '•••• •••• 4912',
-    ifsc: 'HDFC0001234',
+    accountHolder: user.fullName || user.name || 'Verified Supplier',
+    bankName: '',
+    accountNumber: '',
+    ifsc: '',
     upiId: `${(user.phone || 'supplier')}@upi`,
   };
 
   const gst = user.gstDetails || {
-    gstin: user.gstin || '29ABCDE1234F1Z5',
-    pan: user.pan || 'ABCDE1234F',
-    registeredState: 'Karnataka',
+    gstin: user.gstin || '',
+    pan: user.pan || '',
+    registeredState: 'Delhi',
   };
 
   return {
     id: user.id,
     name: user.fullName || user.name || 'Verified Supplier',
     fullName: user.fullName || user.name || 'Verified Supplier',
-    email: user.email,
-    phone: user.phone,
-    storeName: user.storeName || `${user.fullName || 'Supplier'}'s Store`,
+    email: user.email || '',
+    phone: user.phone || '',
+    storeName: user.storeName || `${user.fullName || user.name || 'Supplier'}'s Store`,
     avatarUrl: user.avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-    tier: user.tier || 'Gold',
-    tierLabel: user.tierLabel || `${user.tier || 'Gold'} Supplier`,
-    rating: user.rating || 4.8,
-    followers: user.followers || '1.2k',
-    experienceYears: user.experienceYears || '2+',
+    tier: user.tier || 'Silver',
+    tierLabel: user.tierLabel || `${user.tier || 'Silver'} Supplier`,
+    rating: user.rating || 5.0,
+    followers: user.followers || '0',
+    experienceYears: user.experienceYears || '1+',
+    category: user.category || 'General',
     role: user.role || 'SUPPLIER',
     bankDetails: bank,
     gstDetails: gst,
@@ -108,9 +109,16 @@ export const registerSupplier = async (req, res, next) => {
       gstin,
       pan,
       registeredState,
+      category,
+      bankDetails,
+      accountHolder,
+      bankName,
+      accountNumber,
+      ifsc,
+      upiId,
     } = req.body;
 
-    const supplierName = fullName || name;
+    const supplierName = (fullName || name || '').trim();
     if (!supplierName) {
       return res.status(400).json({ success: false, message: 'Supplier name is required' });
     }
@@ -121,15 +129,55 @@ export const registerSupplier = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
 
+    // Clean phone number
+    let cleanPhone = null;
+    if (phone) {
+      const digits = String(phone).replace(/\D/g, '');
+      cleanPhone = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+    }
+
+    const cleanEmail = email ? email.trim().toLowerCase() : null;
+
+    // Check duplicate in fallback store
+    for (const existing of fallbackSuppliers.values()) {
+      if (cleanEmail && existing.email && existing.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this email address already exists',
+        });
+      }
+      if (cleanPhone && existing.phone === cleanPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this phone number already exists',
+        });
+      }
+    }
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
     const supplierId = `sup_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
+    const resolvedBankDetails = {
+      accountHolder: (bankDetails?.accountHolder || accountHolder || supplierName || '').trim(),
+      bankName: (bankDetails?.bankName || bankName || '').trim(),
+      accountNumber: (bankDetails?.accountNumber || accountNumber || '').trim(),
+      ifsc: (bankDetails?.ifsc || ifsc || '').trim().toUpperCase(),
+      upiId: (bankDetails?.upiId || upiId || '').trim(),
+    };
+
+    const resolvedGstDetails = {
+      gstin: (gstin || '').trim().toUpperCase(),
+      pan: (pan || '').trim().toUpperCase(),
+      registeredState: (registeredState || 'Gujarat').trim(),
+    };
+
     const newSupplierData = {
       id: supplierId,
       fullName: supplierName,
-      email: email || null,
-      phone: phone || null,
+      name: supplierName,
+      email: cleanEmail,
+      phone: cleanPhone,
       storeName: storeName || `${supplierName} Store`,
       passwordHash,
       role: 'SUPPLIER',
@@ -138,20 +186,11 @@ export const registerSupplier = async (req, res, next) => {
       rating: 5.0,
       followers: '0',
       experienceYears: 'New',
-      gstin: gstin || '',
-      pan: pan || '',
-      bankDetails: {
-        accountHolder: supplierName,
-        bankName: '',
-        accountNumber: '',
-        ifsc: '',
-        upiId: '',
-      },
-      gstDetails: {
-        gstin: gstin || '',
-        pan: pan || '',
-        registeredState: registeredState || 'Delhi',
-      },
+      category: category || 'General',
+      gstin: resolvedGstDetails.gstin,
+      pan: resolvedGstDetails.pan,
+      bankDetails: resolvedBankDetails,
+      gstDetails: resolvedGstDetails,
     };
 
     // Try creating via Prisma DB
@@ -161,19 +200,19 @@ export const registerSupplier = async (req, res, next) => {
         data: {
           id: supplierId,
           fullName: supplierName,
-          email: email || undefined,
-          phone: phone || undefined,
+          email: cleanEmail || undefined,
+          phone: cleanPhone || undefined,
           role: 'SUPPLIER',
           passwordHash,
           storeName: storeName || `${supplierName} Store`,
-          gstin: gstin || undefined,
-          pan: pan || undefined,
+          gstin: resolvedGstDetails.gstin || undefined,
+          pan: resolvedGstDetails.pan || undefined,
+          bankDetails: resolvedBankDetails,
           tier: 'Silver',
           tierLabel: 'Silver Supplier',
         },
       });
     } catch (dbErr) {
-      // If DB is offline or duplicate, handle gracefully
       if (dbErr.code === 'P2002') {
         return res.status(400).json({
           success: false,
@@ -181,17 +220,26 @@ export const registerSupplier = async (req, res, next) => {
         });
       }
       // Save in fallback in-memory store
-      fallbackSuppliers.set(supplierId, newSupplierData);
       savedSupplier = newSupplierData;
     }
 
-    const token = generateToken(savedSupplier);
+    // Always register in fallback memory map for ultra-fast local session resolution
+    fallbackSuppliers.set(supplierId, { ...newSupplierData, ...(savedSupplier || {}) });
+
+    const finalSupplierObj = {
+      ...newSupplierData,
+      ...(savedSupplier || {}),
+      bankDetails: resolvedBankDetails,
+      gstDetails: resolvedGstDetails,
+    };
+
+    const token = generateToken(finalSupplierObj);
 
     return res.status(201).json({
       success: true,
       message: 'Supplier registered successfully!',
       token,
-      supplier: formatSupplierResponse(savedSupplier),
+      supplier: formatSupplierResponse(finalSupplierObj),
     });
   } catch (error) {
     next(error);
@@ -221,14 +269,24 @@ export const loginSupplier = async (req, res, next) => {
       });
     }
 
+    const digitsOnly = loginKey.replace(/\D/g, '');
+    const cleanPhone =
+      digitsOnly.length === 10
+        ? digitsOnly
+        : digitsOnly.length === 12 && digitsOnly.startsWith('91')
+          ? digitsOnly.slice(2)
+          : null;
+    const lowerKey = loginKey.toLowerCase();
+
     // Try to find supplier in Prisma DB
     let supplier = null;
     try {
       supplier = await prisma.profile.findFirst({
         where: {
           OR: [
-            { email: loginKey },
+            { email: { equals: lowerKey, mode: 'insensitive' } },
             { phone: loginKey },
+            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
             { id: loginKey },
           ],
         },
@@ -241,8 +299,9 @@ export const loginSupplier = async (req, res, next) => {
     if (!supplier) {
       for (const entry of fallbackSuppliers.values()) {
         if (
-          entry.email === loginKey ||
+          (entry.email && entry.email.toLowerCase() === lowerKey) ||
           entry.phone === loginKey ||
+          (cleanPhone && entry.phone === cleanPhone) ||
           entry.id === loginKey
         ) {
           supplier = entry;
@@ -252,7 +311,13 @@ export const loginSupplier = async (req, res, next) => {
     }
 
     // Fallback: If demo login credentials provided
-    if (!supplier && (loginKey === 'demo' || loginKey === 'supplier@globalexports.com' || loginKey === '9876543210')) {
+    if (
+      !supplier &&
+      (loginKey === 'demo' ||
+        loginKey === 'supplier@globalexports.com' ||
+        loginKey === '9876543210' ||
+        cleanPhone === '9876543210')
+    ) {
       supplier = fallbackSuppliers.get('supplier_demo_001');
     }
 
@@ -294,9 +359,12 @@ export const loginSupplier = async (req, res, next) => {
 export const sendSupplierOtp = async (req, res, next) => {
   try {
     const { phone, mobileNumber } = req.body;
-    const mobile = (phone || mobileNumber || '').trim();
+    const rawMobile = (phone || mobileNumber || '').toString().trim();
+    const digitsOnly = rawMobile.replace(/\D/g, '');
+    const mobile =
+      digitsOnly.length === 12 && digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
 
-    if (!mobile || mobile.length < 10) {
+    if (!mobile || mobile.length !== 10) {
       return res.status(400).json({
         success: false,
         message: 'Valid 10-digit mobile number is required',
@@ -304,7 +372,10 @@ export const sendSupplierOtp = async (req, res, next) => {
     }
 
     // Generate 6 digit OTP (Default for demo: 123456 or random)
-    const otp = process.env.NODE_ENV === 'production' ? Math.floor(100000 + Math.random() * 900000).toString() : '123456';
+    const otp =
+      process.env.NODE_ENV === 'production'
+        ? Math.floor(100000 + Math.random() * 900000).toString()
+        : '123456';
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
 
     otpStore.set(mobile, { otp, expiresAt });
@@ -328,7 +399,10 @@ export const sendSupplierOtp = async (req, res, next) => {
 export const verifySupplierOtp = async (req, res, next) => {
   try {
     const { phone, mobileNumber, otp, name } = req.body;
-    const mobile = (phone || mobileNumber || '').trim();
+    const rawMobile = (phone || mobileNumber || '').toString().trim();
+    const digitsOnly = rawMobile.replace(/\D/g, '');
+    const mobile =
+      digitsOnly.length === 12 && digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
 
     if (!mobile || !otp) {
       return res.status(400).json({
@@ -414,9 +488,11 @@ export const verifySupplierOtp = async (req, res, next) => {
           },
         });
       } catch {
-        fallbackSuppliers.set(supplierId, newSupplier);
-        supplier = newSupplier;
+        // Prisma offline
       }
+
+      fallbackSuppliers.set(supplierId, newSupplier);
+      supplier = newSupplier;
     }
 
     const token = generateToken(supplier);

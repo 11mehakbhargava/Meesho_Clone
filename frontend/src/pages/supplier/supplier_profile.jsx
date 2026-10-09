@@ -662,8 +662,8 @@ export function SupplierProfile({ onBack, onNavigate, onLogout, supplier: propSu
                   setActiveModal(null);
                   await supplierApiService.logoutSupplier();
                   if (onLogout) onLogout();
-                  else if (onNavigate) onNavigate('/dropshipper-login');
-                  else window.location.href = '/dropshipper-login';
+                  else if (onNavigate) onNavigate('/supplier-login');
+                  else window.location.href = '/supplier-login';
                 }}
                 className="flex-1 py-2.5 bg-[#ba1a1a] text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-red-700"
               >

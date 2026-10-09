@@ -58,7 +58,7 @@ async function testSupplierAuth() {
     const loginData = await loginRes.json();
     console.log(`   Status: ${loginRes.status} | Success: ${loginData.success} | Logged in as: ${loginData.supplier?.email}`);
 
-    // 4. Register New Supplier
+    // 4. Register New Supplier (with GST and Bank Details)
     const randomMobile = '98' + Math.floor(10000000 + Math.random() * 90000000);
     console.log(`\n4️⃣ Testing New Supplier Registration (Mobile: ${randomMobile})...`);
     const regRes = await fetch(`${BASE_URL}/supplier/auth/register`, {
@@ -72,16 +72,26 @@ async function testSupplierAuth() {
         storeName: 'Surat Sarees Wholesale',
         gstin: '24AAAAA0000A1Z5',
         pan: 'AAAAA0000A',
+        registeredState: 'Gujarat',
+        category: 'Ethnic Wear (Sarees, Kurtis)',
+        bankDetails: {
+          accountHolder: 'Surat Textiles Hub',
+          bankName: 'State Bank of India',
+          accountNumber: '123456789012',
+          ifsc: 'SBIN0001234',
+          upiId: 'surattextiles@sbi',
+        },
       }),
     });
     const regData = await regRes.json();
     console.log(`   Status: ${regRes.status} | Created Supplier: ${regData.supplier?.name} (ID: ${regData.supplier?.id})`);
+    console.log(`   Registered Bank: ${regData.supplier?.bankDetails?.bankName} | IFSC: ${regData.supplier?.bankDetails?.ifsc} | GSTIN: ${regData.supplier?.gstDetails?.gstin}`);
 
     // 5. Fetch Profile using JWT Bearer Token
     console.log('\n5️⃣ Testing GET Profile with Bearer Token (GET /api/supplier/auth/me)...');
     const profileRes = await fetch(`${BASE_URL}/supplier/auth/me`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${regData.token || token}`,
       },
     });
     const profileData = await profileRes.json();

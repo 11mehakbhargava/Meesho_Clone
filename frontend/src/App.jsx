@@ -74,6 +74,8 @@ import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
 import SupplierReturnsRTO from './pages/supplier/SupplierReturnsRTO';
 import SupplierRotLedger from './pages/supplier/SupplierRotLedger';
 import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
+import SupplierLogin from './pages/supplier/SupplierLogin';
+import SupplierRegister from './pages/supplier/SupplierRegister';
 
 // Admin Panel Pages
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
@@ -175,6 +177,8 @@ const screenCatalog = [
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
   { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
+  { path: '/supplier-login', name: 'Supplier Login', icon: '🔐', group: 'Supplier' },
+  { path: '/supplier-register', name: 'Supplier Registration', icon: '📝', group: 'Supplier' },
 
   // 6. Admin Panel & Support
   { path: '/admin-panel', name: 'Admin Web Panel', icon: '🛡️', group: 'Admin' },
@@ -589,6 +593,10 @@ function AppRoutes() {
       'supplier-returns': '/supplier-returns',
       'supplier-rot-ledger': '/supplier-rot-ledger',
       'rot-ledger': '/supplier-rot-ledger',
+      'supplier-login': '/supplier-login',
+      supplierLogin: '/supplier-login',
+      'supplier-register': '/supplier-register',
+      supplierRegister: '/supplier-register',
       returns: '/supplier-returns',
 
       // Admin & Community
@@ -836,6 +844,14 @@ function AppRoutes() {
         <Route
           path="/customer-order-supplier-fulfilment"
           element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier-login"
+          element={<SupplierLogin onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier-register"
+          element={<SupplierRegister onNavigate={handleNav} onBack={handleBack} />}
         />
 
         {/* Admin Panel & Support Routes */}
