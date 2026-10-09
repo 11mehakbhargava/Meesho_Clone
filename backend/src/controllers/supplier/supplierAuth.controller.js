@@ -373,15 +373,41 @@ export const loginSupplier = async (req, res, next) => {
       }
     }
 
-    // Fallback: If demo login credentials provided
-    if (
-      !supplier &&
-      (loginKey === 'demo' ||
-        loginKey === 'supplier@globalexports.com' ||
-        loginKey === '9876543210' ||
-        cleanPhone === '9876543210')
-    ) {
-      supplier = fallbackSuppliers.get('supplier_demo_001');
+    // Fallback: Check if user exists in Firebase Auth if not found in local DB
+    if (!supplier && firebaseAuth) {
+      try {
+        let fbUser = null;
+        if (lowerKey.includes('@')) {
+          fbUser = await firebaseAuth.getUserByEmail(lowerKey);
+        } else if (cleanPhone) {
+          fbUser = await firebaseAuth.getUserByPhoneNumber(`+91${cleanPhone}`).catch(() => null);
+        }
+        if (fbUser) {
+          const salt = await bcrypt.genSalt(10);
+          const passwordHash = await bcrypt.hash(password, salt);
+          supplier = await prisma.profile.upsert({
+            where: { id: fbUser.uid },
+            update: {
+              email: fbUser.email,
+              role: 'SUPPLIER',
+              passwordHash,
+            },
+            create: {
+              id: fbUser.uid,
+              email: fbUser.email,
+              fullName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Supplier',
+              role: 'SUPPLIER',
+              passwordHash,
+              storeName: `${fbUser.displayName || 'Supplier'}'s Store`,
+              tier: 'Silver',
+              tierLabel: 'Silver Supplier',
+            },
+          });
+          console.log(`🔥 [FIREBASE] Auto-synced existing Firebase user to Profile DB: ${fbUser.email}`);
+        }
+      } catch (_) {
+        // User not in Firebase
+      }
     }
 
     if (!supplier) {
