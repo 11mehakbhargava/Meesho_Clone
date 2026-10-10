@@ -16,6 +16,7 @@ enum UserRole {
   SUPPLIER
   DRIVER
   ADMIN
+  DROPSHIPPER
 }
 
 enum KYCStatus {
