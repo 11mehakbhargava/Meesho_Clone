@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "redux-persist/integration/react": "redux-persist/es/integration/react.js",
     },
   },
 })
