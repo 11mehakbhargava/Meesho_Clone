@@ -2,7 +2,7 @@
   "name": "meesho-backend",
   "version": "1.0.0",
   "description": "Backend API for Meesho SuperApp Social Commerce Platform",
-  "main": "indexnp.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js",

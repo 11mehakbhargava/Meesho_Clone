@@ -5,33 +5,39 @@ dotenv.config();
 
 let redisClient = null;
 
-if (process.env.ENABLE_REDIS === "true") {
+if (process.env.ENABLE_REDIS === "false") {
+  console.log("ℹ️ Redis is disabled (ENABLE_REDIS=false). Skipping Redis connection.");
+} else {
   redisClient = createClient({
     url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
     socket: {
       reconnectStrategy: (retries) => {
-        if (retries > 3) {
-          console.warn("⚠️ Redis reconnect limit reached. Disabling Redis.");
-          return new Error("Redis reconnection stopped");
+        // In local dev, stop retry loop after 2 attempts so console isn't spammed
+        if (retries > 2) {
+          return false;
         }
         return 1000;
-      },
-    },
+      }
+    }
   });
 
+  let hasLoggedError = false;
+
   redisClient.on("connect", () => {
-    console.log("🟢 Connected to Redis successfully!");
+    console.log("🟢 Connected to Local Redis (127.0.0.1:6379) successfully!");
   });
 
   redisClient.on("error", (err) => {
-    console.warn("⚠️ Redis warning:", err.message);
+    if (!hasLoggedError) {
+      console.warn("⚠️ Local Redis is not running on port 6379. Running without cache (dev mode).");
+      hasLoggedError = true;
+    }
   });
 
-  redisClient.connect().catch((error) => {
-    console.warn("⚠️ Could not connect to Redis. Server will continue running without caching.");
+  // Attempt initial connection safely without crashing
+  redisClient.connect().catch(() => {
+    // Gracefully ignored in development
   });
-} else {
-  console.log("ℹ️ Redis is disabled (ENABLE_REDIS=false). Skipping Redis connection.");
 }
 
 export default redisClient;

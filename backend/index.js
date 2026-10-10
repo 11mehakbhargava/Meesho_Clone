@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
-
 // Initialize services
 import './src/config/firebaseAdmin.js';
 import './src/config/redisClient.js';
