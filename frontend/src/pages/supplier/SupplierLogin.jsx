@@ -300,7 +300,13 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                   </label>
                   <button
                     type="button"
-                    onClick={() => handleNav('/forgot-password')}
+                    onClick={() => {
+                      if (onNavigate) {
+                        onNavigate('/forgot-password');
+                      } else {
+                        navigate('/forgot-password', { state: { from: '/supplier-login' } });
+                      }
+                    }}
                     className="text-xs text-[#9e003f] hover:text-[#7e0032] font-semibold hover:underline cursor-pointer transition"
                   >
                     Forgot Password?

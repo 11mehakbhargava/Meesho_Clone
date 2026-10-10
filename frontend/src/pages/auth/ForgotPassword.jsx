@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../utils/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import AuthLayout from '../../components/layout/AuthLayout'; 
@@ -9,10 +9,22 @@ import { Label } from "@/components/ui/label";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const handleBackToLogin = (e) => {
+    e?.preventDefault();
+    if (location.state?.from) {
+      navigate(location.state.from);
+    } else if (window.history.length > 2 && window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/supplier-login');
+    }
+  };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -28,7 +40,7 @@ export default function ForgotPassword() {
       
       // Go back to login automatically after 4 seconds
       setTimeout(() => {
-        navigate(-1);
+        handleBackToLogin();
       }, 4000);
 
     } catch (err) {
@@ -78,8 +90,8 @@ export default function ForgotPassword() {
       <div className="text-center pt-2">
         <button 
           type="button" 
-          onClick={() => navigate(-1)} 
-          className="text-sm text-[#b7004d] hover:underline font-bold"
+          onClick={handleBackToLogin} 
+          className="text-sm text-[#b7004d] hover:text-[#8a0039] hover:underline font-bold cursor-pointer transition py-1 px-3"
         >
           ← Back to Login
         </button>
