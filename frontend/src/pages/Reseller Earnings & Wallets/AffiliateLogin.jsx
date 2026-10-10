@@ -141,6 +141,15 @@ export default function AffiliateLogin() {
           required 
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30"
         />
+        <div className="flex justify-end pt-1">
+          <button 
+            type="button" 
+            onClick={() => navigate('/forgot-password?from=/affiliate-login')} 
+            className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
+          >
+            Forgot Password?
+          </button>
+        </div>
       </div>
       {error && !loading && <p className="text-xs text-red-600 font-semibold text-center">{error}</p>}
       <Button type="submit" disabled={loading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">

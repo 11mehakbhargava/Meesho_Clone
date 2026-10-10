@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../utils/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import AuthLayout from '../../components/layout/AuthLayout'; 
@@ -9,10 +9,22 @@ import { Label } from "@/components/ui/label";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const fromParam = searchParams.get('from');
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const handleBack = () => {
+    if (fromParam) {
+      navigate(fromParam);
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -28,7 +40,7 @@ export default function ForgotPassword() {
       
       // Go back to login automatically after 3 seconds
       setTimeout(() => {
-        navigate(-1);
+        handleBack();
       }, 3000);
 
     } catch (err) {
@@ -45,7 +57,7 @@ export default function ForgotPassword() {
         <Input 
           id="email" 
           type="email" 
-          placeholder="admin@mshoppy.com" 
+          placeholder="name@example.com" 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30 w-full"
@@ -60,7 +72,7 @@ export default function ForgotPassword() {
       {/* Primary Action Button */}
       <Button 
         type="submit" 
-        className="w-full bg-gradient-to-br from-[#b7004d] to-[#ff7293] text-white font-bold py-6 rounded-[2rem] shadow-md hover:scale-[0.98] transition-transform" 
+        className="w-full bg-gradient-to-br from-[#b7004d] to-[#ff7293] text-white font-bold py-6 rounded-[2rem] shadow-md hover:scale-[0.98] transition-transform cursor-pointer" 
         disabled={loading}
       >
         {loading ? 'Sending Link...' : 'Send Reset Link'}
@@ -70,8 +82,8 @@ export default function ForgotPassword() {
       <div className="text-center pt-2">
         <button 
           type="button" 
-          onClick={() => navigate(-1)} 
-          className="text-sm text-[#b7004d] hover:underline font-bold"
+          onClick={handleBack} 
+          className="text-sm text-[#b7004d] hover:underline font-bold cursor-pointer"
         >
           ← Back to Login
         </button>
