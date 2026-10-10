@@ -10,6 +10,8 @@ import AuthLayout from '../../components/layout/AuthLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGoogleAuth } from '../../hooks/useGoogleAuth';
+import GoogleAuthButton from '@/components/ui/GoogleAuthButton';
 
 export default function UserLogin() {
   const navigate = useNavigate();
@@ -18,6 +20,8 @@ export default function UserLogin() {
 
   const searchParams = new URLSearchParams(location.search);
   const redirectParam = searchParams.get('redirect') || '/user-home';
+
+  const { loginWithGoogle, isLoading: googleLoading, error: googleError } = useGoogleAuth('USER', redirectParam);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -130,10 +134,18 @@ export default function UserLogin() {
           </button>
         </div>
       </div>
-      {error && !loading && <p className="text-xs text-red-600 font-semibold text-center">{error}</p>}
-      <Button type="submit" disabled={loading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
+      {(error || googleError) && !loading && !googleLoading && (
+        <p className="text-xs text-red-600 font-semibold text-center">{error || googleError}</p>
+      )}
+      <Button type="submit" disabled={loading || googleLoading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
         {loading ? 'Logging in...' : 'Secure Login'}
       </Button>
+
+      <GoogleAuthButton 
+        onClick={loginWithGoogle} 
+        isLoading={googleLoading} 
+        label="Continue with Google" 
+      />
     </form>
   );
 
@@ -175,10 +187,18 @@ export default function UserLogin() {
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30"
         />
       </div>
-      {error && !loading && <p className="text-xs text-red-600 font-semibold text-center">{error}</p>}
-      <Button type="submit" disabled={loading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
+      {(error || googleError) && !loading && !googleLoading && (
+        <p className="text-xs text-red-600 font-semibold text-center">{error || googleError}</p>
+      )}
+      <Button type="submit" disabled={loading || googleLoading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
         {loading ? 'Registering...' : 'Register & Enter'}
       </Button>
+
+      <GoogleAuthButton 
+        onClick={loginWithGoogle} 
+        isLoading={googleLoading} 
+        label="Sign up with Google" 
+      />
     </form>
   );
 
