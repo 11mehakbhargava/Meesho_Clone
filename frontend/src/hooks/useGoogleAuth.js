@@ -28,36 +28,16 @@ export const useGoogleAuth = (role = 'USER', customRedirect = null) => {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api/v1';
 
       // 2. Apne Backend par user ka data bhejna
-      let backendUserData;
-      let token;
+      const response = await axios.post(`${backendUrl}/auth/google`, {
+        firebaseUid: user.uid,
+        email: user.email,
+        name: user.displayName || user.email.split('@')[0],
+        avatar: user.photoURL,
+        role: role,
+      });
 
-      try {
-        const response = await axios.post(`${backendUrl}/auth/google`, {
-          firebaseUid: user.uid,
-          email: user.email,
-          name: user.displayName || user.email.split('@')[0],
-          avatar: user.photoURL,
-          role: role,
-        });
-
-        backendUserData = response.data.user;
-        token = response.data.token;
-      } catch (apiErr) {
-        console.warn('Backend Google Auth API fallback:', apiErr.message);
-        // Resilient fallback in case backend is offline
-        const isAffiliate = role.toUpperCase() === 'AFFILIATE';
-        backendUserData = {
-          id: user.uid,
-          email: user.email,
-          fullName: user.displayName || user.email.split('@')[0],
-          avatarUrl: user.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          role: isAffiliate ? 'AFFILIATE' : 'CUSTOMER',
-          walletBalance: isAffiliate ? 14850 : 12840,
-          referralCode: isAffiliate ? `AFF-${user.email.split('@')[0].toUpperCase().slice(0, 5)}999` : undefined,
-          kycStatus: isAffiliate ? 'APPROVED' : undefined,
-        };
-        token = `mock_google_token_${Date.now()}`;
-      }
+      const backendUserData = response.data.user;
+      const token = response.data.token;
 
       // 3. Save to Redux & Local storage auth service
       dispatch(loginSuccess(backendUserData));

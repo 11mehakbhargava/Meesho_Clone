@@ -56,39 +56,22 @@ export default function AffiliateLogin() {
 
       const firebaseUser = userCredential.user;
 
+      const apiBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api/v1';
       const endpoint = isRegistering
-        ? 'http://localhost:5000/api/v1/affiliate-auth/register'
-        : 'http://localhost:5000/api/v1/affiliate-auth/login';
+        ? `${apiBase}/affiliate-auth/register`
+        : `${apiBase}/affiliate-auth/login`;
 
-      let affiliateData;
-      try {
-        const response = await axios.post(endpoint, {
-          firebaseUid: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName,
-          referralCode: isRegistering ? referralTag : undefined
-        });
-        affiliateData = response.data.user;
-      } catch (apiErr) {
-        console.warn('Backend API fallback for affiliate auth:', apiErr.message);
-        affiliateData = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName || firebaseUser.displayName || 'Affiliate Partner',
-          role: 'AFFILIATE',
-          referralCode: referralTag || 'MEESHO500',
-          kycStatus: 'APPROVED',
-          tier: 'Silver Tier',
-          stats: {
-            totalEarnings: 14850.50,
-            pendingPayout: 2340.00,
-            clicks: 1420,
-            conversions: 84
-          }
-        };
-      }
+      const response = await axios.post(endpoint, {
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+        fullName: fullName,
+        referralCode: isRegistering ? referralTag : undefined
+      });
 
-      affiliateData.role = 'AFFILIATE';
+      const affiliateData = {
+        ...response.data.user,
+        role: 'AFFILIATE',
+      };
 
       // Save to Redux & Affiliate Session Storage
       dispatch(loginSuccess(affiliateData));
@@ -110,11 +93,18 @@ export default function AffiliateLogin() {
       navigate(redirectParam);
 
     } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') setError('Email is already registered.');
-      else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Invalid Login Credentials!');
-      else if (err.code === 'auth/weak-password') setError('Password must be at least 6 characters.');
-      else setError(err.message || 'Authentication failed.');
+      console.error('Affiliate auth error:', err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email is already registered.');
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid Login Credentials!');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else if (err.response?.data?.message || err.response?.data?.error) {
+        setError(err.response.data.message || err.response.data.error);
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

@@ -54,30 +54,21 @@ export default function UserLogin() {
 
       const firebaseUser = userCredential.user;
 
+      const apiBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api/v1';
       const endpoint = isRegistering
-        ? 'http://localhost:5000/api/v1/user-auth/register'
-        : 'http://localhost:5000/api/v1/user-auth/login';
+        ? `${apiBase}/user-auth/register`
+        : `${apiBase}/user-auth/login`;
 
-      let userData;
-      try {
-        const response = await axios.post(endpoint, {
-          firebaseUid: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName
-        });
-        userData = response.data.user;
-      } catch (apiErr) {
-        console.warn('Backend API fallback for user auth:', apiErr.message);
-        userData = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName || firebaseUser.displayName || email.split('@')[0],
-          role: 'CUSTOMER',
-          walletBalance: 12840,
-        };
-      }
+      const response = await axios.post(endpoint, {
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+        fullName: fullName
+      });
 
-      userData.role = 'CUSTOMER';
+      const userData = {
+        ...response.data.user,
+        role: 'CUSTOMER',
+      };
 
       // Save to Redux & Local storage auth service
       dispatch(loginSuccess(userData));
@@ -89,11 +80,18 @@ export default function UserLogin() {
       navigate(redirectParam);
 
     } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') setError('Email is already registered.');
-      else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Invalid Login Credentials!');
-      else if (err.code === 'auth/weak-password') setError('Password must be at least 6 characters.');
-      else setError(err.message || 'Authentication failed.');
+      console.error('User auth error:', err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email is already registered.');
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid Login Credentials!');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else if (err.response?.data?.message || err.response?.data?.error) {
+        setError(err.response.data.message || err.response.data.error);
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
