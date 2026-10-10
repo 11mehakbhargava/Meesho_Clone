@@ -21,19 +21,27 @@ export default function ForgotPassword() {
     setMessage('');
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
       
-      setMessage("Password reset link has been sent to your email!");
+      setMessage("✅ Password reset link has been sent to your email! Please check your Inbox and Spam folder.");
       setLoading(false);
       
-      // Go back to login automatically after 3 seconds
+      // Go back to login automatically after 4 seconds
       setTimeout(() => {
         navigate(-1);
-      }, 3000);
+      }, 4000);
 
     } catch (err) {
       console.error(err);
-      setError("Failed to send reset email. Please try again.");
+      if (err.code === 'auth/user-not-found') {
+        setError("No account found with this email address. Please check and try again.");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("Please enter a valid email address.");
+      } else if (err.code === 'auth/too-many-requests') {
+        setError("Too many requests sent. Please wait a few minutes before trying again.");
+      } else {
+        setError(err.message || "Failed to send reset email. Please try again.");
+      }
       setLoading(false);
     }
   };
