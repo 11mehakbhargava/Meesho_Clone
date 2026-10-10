@@ -6,6 +6,7 @@ import adminAuthRoutes from './admin/adminAuth.routes.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
+import dropshipperRoutes from './dropshipper/dropshipper.routes.js';
 
 const apiRouter = Router();
 
@@ -24,6 +25,9 @@ apiRouter.use('/supplier', supplierRoutes);
 
 // Auth module (Reseller, Customer, Affiliate general endpoints)
 apiRouter.use('/auth', authRoutes);
+
+// Dropshipper Authentication endpoints
+apiRouter.use('/dropshipper', dropshipperRoutes);
 
 // Dedicated affiliate and user auth routes
 apiRouter.use('/affiliate/auth', affiliateAuthRoutes);
