@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Sample mock products for dropshipper catalog
 const SAMPLE_PRODUCTS = [
@@ -597,6 +598,7 @@ export default function CustomerOrderSupplierFulfilment({ onNavigate, onBack }) 
             <span className="material-symbols-outlined text-xs">add_shopping_cart</span>
             <span>Simulate</span>
           </button>
+          <SupplierLogout onNavigate={onNavigate} />
         </div>
       </div>
 
@@ -802,6 +804,8 @@ export default function CustomerOrderSupplierFulfilment({ onNavigate, onBack }) 
                 <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                 <span>Simulate Customer Order</span>
               </button>
+
+              <SupplierLogout onNavigate={onNavigate} />
             </div>
           </div>
         </header>

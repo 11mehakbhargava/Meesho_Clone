@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Mock Supplier ROT Debit Ledger Entries
 const INITIAL_SUPPLIER_ROT_ENTRIES = [
@@ -194,6 +195,7 @@ export default function SupplierRotLedger() {
               <span className="material-symbols-outlined text-sm text-slate-600">inventory</span>
               All Orders
             </button>
+            <SupplierLogout />
           </div>
         </div>
 

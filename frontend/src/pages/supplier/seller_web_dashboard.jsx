@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
 import supplierApiService from '../../services/supplierApiService';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 const INITIAL_ORDERS = [
   {
@@ -356,19 +357,12 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders, o
               <span className="material-symbols-outlined mr-2.5 text-base">help</span>
               Support
             </button>
-            <button
-              type="button"
-              onClick={async () => {
-                showToast('Logging out...');
-                await supplierApiService.logoutSupplier();
-                if (onNavigate) onNavigate('/dropshipper-login');
-                else window.location.href = '/dropshipper-login';
-              }}
-              className="w-full flex items-center px-3 py-2 text-red-500 hover:text-red-700 cursor-pointer text-xs font-semibold transition-colors rounded-lg"
-            >
-              <span className="material-symbols-outlined mr-2.5 text-base">logout</span>
-              Logout
-            </button>
+            <div className="pt-1">
+              <SupplierLogout 
+                onNavigate={onNavigate} 
+                className="w-full justify-start !px-3 !py-2 !rounded-lg text-red-500 bg-transparent hover:bg-red-50 border-transparent hover:border-red-100" 
+              />
+            </div>
           </div>
         </aside>
 
@@ -441,6 +435,7 @@ export function SellerWebDashboard({ onNavigate, onViewProducts, onViewOrders, o
                     account_circle
                   </span>
                 </button>
+                <SupplierLogout onNavigate={onNavigate} />
               </div>
             </div>
           </header>

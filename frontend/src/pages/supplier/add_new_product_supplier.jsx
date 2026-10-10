@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import supplierApiService from '../../services/supplierApiService';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 const INITIAL_COLORS = ['Red', 'Navy Blue', 'Emerald Green', 'Black', 'Wine', 'Mustard Yellow'];
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
@@ -233,6 +234,7 @@ export function AddNewProductSupplier({ onBack, onSaveDraft, onPublish }) {
               <span>Publish Product</span>
               <span className="material-symbols-outlined text-sm">rocket_launch</span>
             </button>
+            <SupplierLogout />
           </div>
         </div>
       </header>

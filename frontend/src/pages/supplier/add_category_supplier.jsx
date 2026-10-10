@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import supplierApiService from '../../services/supplierApiService';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 export function AddCategorySupplier({ onBack, onSaveCategory }) {
   const [categoryName, setCategoryName] = useState('Festive Kurtis & Anarkalis');
@@ -110,14 +111,17 @@ export function AddCategorySupplier({ onBack, onSaveCategory }) {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="px-5 py-2 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white font-extrabold text-xs rounded-xl shadow-md shadow-pink-500/25 active:scale-95 transition-transform flex items-center gap-1.5 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-sm">save</span>
-            <span>Save Category</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="px-5 py-2 bg-gradient-to-r from-[#b90041] to-[#df2457] text-white font-extrabold text-xs rounded-xl shadow-md shadow-pink-500/25 active:scale-95 transition-transform flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">save</span>
+              <span>Save Category</span>
+            </button>
+            <SupplierLogout />
+          </div>
         </div>
       </header>
 

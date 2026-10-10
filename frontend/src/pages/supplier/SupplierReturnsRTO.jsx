@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Mock Initial Returns & RTO Data
 const INITIAL_RETURNS = [
@@ -398,6 +399,7 @@ export default function SupplierReturnsRTO({ onNavigate, onBack }) {
               <span className="material-symbols-outlined text-sm sm:text-base">dashboard</span>
               <span>Console</span>
             </button>
+            <SupplierLogout onNavigate={onNavigate} />
           </div>
         </div>
       </header>

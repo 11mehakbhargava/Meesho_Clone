@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Default initial orders matching design specs
 const INITIAL_ORDERS = [
@@ -156,6 +157,7 @@ export function SupplierOrdersList({ onBack, onNavigate }) {
               search
             </span>
           </button>
+          <SupplierLogout onNavigate={onNavigate} />
         </div>
       </header>
 

@@ -84,7 +84,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import AdminLogin from './pages/admin_panel/adminLogin';
 import UserLogin from './pages/customer & Reseller/UserLogin';
 import AffiliateLogin from './pages/Reseller Earnings & Wallets/AffiliateLogin';
-import { LogoutPage } from './pages/auth/logout';
+import { LogoutPage, SupplierLogoutPage } from './pages/auth/logout';
 import AdminWebPanel from './pages/admin_panel/admin_web_panel';
 import AdminWebPanel1 from './pages/admin_panel/admin_web_panel1';
 import AdminProductCatalog from './pages/admin_panel/admin_product_catalog';
@@ -719,6 +719,8 @@ function AppRoutes() {
         <Route path="/" element={<LoginSignup />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/logout" element={<LogoutPage />} />
+        <Route path="/supplier/logout" element={<SupplierLogoutPage />} />
+        <Route path="/supplier-logout" element={<SupplierLogoutPage />} />
         <Route path="/user/login" element={<UserLogin />} />
         <Route path="/user/auth" element={<UserLogin />} />
         <Route path="/user-login" element={<UserLogin />} />
