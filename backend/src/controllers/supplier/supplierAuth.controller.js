@@ -442,10 +442,15 @@ export const loginSupplier = async (req, res, next) => {
           try {
             const newSalt = await bcrypt.genSalt(10);
             const newPasswordHash = await bcrypt.hash(password, newSalt);
-            await prisma.profile.update({
+            const dbSupplier = await prisma.profile.findUnique({
               where: { id: supplier.id },
-              data: { passwordHash: newPasswordHash },
             });
+            if (dbSupplier) {
+              await prisma.profile.update({
+                where: { id: supplier.id },
+                data: { passwordHash: newPasswordHash },
+              });
+            }
             supplier.passwordHash = newPasswordHash;
             console.log(`🔥 [FIREBASE] Password verified and synced to PostgreSQL for: ${supplier.email}`);
           } catch (_) {}
