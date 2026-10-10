@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
-import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Data models for easy extensibility & dynamic API binding
 const INITIAL_METRICS = [
@@ -143,9 +142,6 @@ export default function SupplierDashboard({ onNavigate, onShipNow, onClaimCredit
               notifications
             </span>
           </button>
-
-          {/* Supplier Logout */}
-          <SupplierLogout onNavigate={onNavigate} />
         </div>
       </header>
 

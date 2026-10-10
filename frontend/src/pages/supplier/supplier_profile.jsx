@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
-import supplierApiService, { clearAuthSession } from '../../services/supplierApiService';
-import SupplierLogout from '../../components/supplier/SupplierLogout';
-import { auth } from '../../utils/firebase';
-import { signOut } from 'firebase/auth';
+import supplierApiService from '../../services/supplierApiService';
 
 // Default mock supplier data matching design specifications
 const DEFAULT_SUPPLIER = {
@@ -95,17 +92,14 @@ export function SupplierProfile({ onBack, onNavigate, onLogout, supplier: propSu
             Supplier Profile
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveModal('settings')}
-            aria-label="Settings"
-            className="text-[#FF3F6C] active:scale-95 duration-200 transition-opacity hover:opacity-80 cursor-pointer p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <span className="material-symbols-outlined text-2xl">settings</span>
-          </button>
-          <SupplierLogout onNavigate={onNavigate} />
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveModal('settings')}
+          aria-label="Settings"
+          className="text-[#FF3F6C] active:scale-95 duration-200 transition-opacity hover:opacity-80 cursor-pointer p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <span className="material-symbols-outlined text-2xl">settings</span>
+        </button>
       </header>
 
       {/* Divider */}
@@ -666,20 +660,10 @@ export function SupplierProfile({ onBack, onNavigate, onLogout, supplier: propSu
                 type="button"
                 onClick={async () => {
                   setActiveModal(null);
-                  try {
-                    await supplierApiService.logoutSupplier().catch(() => {});
-                    if (auth) await signOut(auth).catch(() => {});
-                  } finally {
-                    clearAuthSession();
-                    localStorage.removeItem('meesho_supplier_token');
-                    localStorage.removeItem('meesho_supplier_user');
-                    localStorage.removeItem('supplierToken');
-                    localStorage.removeItem('supplier');
-                    sessionStorage.clear();
-                    if (onLogout) onLogout();
-                    else if (onNavigate) onNavigate('/supplier-login');
-                    else window.location.href = '/supplier-login';
-                  }
+                  await supplierApiService.logoutSupplier();
+                  if (onLogout) onLogout();
+                  else if (onNavigate) onNavigate('/supplier-login');
+                  else window.location.href = '/supplier-login';
                 }}
                 className="flex-1 py-2.5 bg-[#ba1a1a] text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-red-700"
               >

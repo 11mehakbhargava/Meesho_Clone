@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
-import SupplierLogout from '../../components/supplier/SupplierLogout';
 
 // Default initial products data matching design specs
 const INITIAL_PRODUCTS = [
@@ -187,7 +186,6 @@ export function SupplierInventoryManagement({ onNavigate, onAddProduct }) {
           <div className="h-8 w-8 rounded-full bg-[#675df9] flex items-center justify-center text-white text-xs font-bold shadow-sm select-none">
             GE
           </div>
-          <SupplierLogout onNavigate={onNavigate} />
         </div>
       </header>
 
