@@ -11,6 +11,8 @@ import AuthLayout from '../../components/layout/AuthLayout';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGoogleAuth } from '../../hooks/useGoogleAuth';
+import GoogleAuthButton from '@/components/ui/GoogleAuthButton';
 
 export default function AffiliateLogin() {
   const navigate = useNavigate();
@@ -19,6 +21,8 @@ export default function AffiliateLogin() {
 
   const searchParams = new URLSearchParams(location.search);
   const redirectParam = searchParams.get('redirect') || '/affiliate-panel';
+
+  const { loginWithGoogle, isLoading: googleLoading, error: googleError } = useGoogleAuth('AFFILIATE', redirectParam);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,39 +56,22 @@ export default function AffiliateLogin() {
 
       const firebaseUser = userCredential.user;
 
+      const apiBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api/v1';
       const endpoint = isRegistering
-        ? 'http://localhost:5000/api/v1/affiliate-auth/register'
-        : 'http://localhost:5000/api/v1/affiliate-auth/login';
+        ? `${apiBase}/affiliate-auth/register`
+        : `${apiBase}/affiliate-auth/login`;
 
-      let affiliateData;
-      try {
-        const response = await axios.post(endpoint, {
-          firebaseUid: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName,
-          referralCode: isRegistering ? referralTag : undefined
-        });
-        affiliateData = response.data.user;
-      } catch (apiErr) {
-        console.warn('Backend API fallback for affiliate auth:', apiErr.message);
-        affiliateData = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          fullName: fullName || firebaseUser.displayName || 'Affiliate Partner',
-          role: 'AFFILIATE',
-          referralCode: referralTag || 'MEESHO500',
-          kycStatus: 'APPROVED',
-          tier: 'Silver Tier',
-          stats: {
-            totalEarnings: 14850.50,
-            pendingPayout: 2340.00,
-            clicks: 1420,
-            conversions: 84
-          }
-        };
-      }
+      const response = await axios.post(endpoint, {
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email,
+        fullName: fullName,
+        referralCode: isRegistering ? referralTag : undefined
+      });
 
-      affiliateData.role = 'AFFILIATE';
+      const affiliateData = {
+        ...response.data.user,
+        role: 'AFFILIATE',
+      };
 
       // Save to Redux & Affiliate Session Storage
       dispatch(loginSuccess(affiliateData));
@@ -106,11 +93,18 @@ export default function AffiliateLogin() {
       navigate(redirectParam);
 
     } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') setError('Email is already registered.');
-      else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Invalid Login Credentials!');
-      else if (err.code === 'auth/weak-password') setError('Password must be at least 6 characters.');
-      else setError(err.message || 'Authentication failed.');
+      console.error('Affiliate auth error:', err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email is already registered.');
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid Login Credentials!');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else if (err.response?.data?.message || err.response?.data?.error) {
+        setError(err.response.data.message || err.response.data.error);
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -141,11 +135,28 @@ export default function AffiliateLogin() {
           required 
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30"
         />
+        <div className="flex justify-end pt-1">
+          <button 
+            type="button" 
+            onClick={() => navigate('/forgot-password?from=/affiliate-login')} 
+            className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
+          >
+            Forgot Password?
+          </button>
+        </div>
       </div>
-      {error && !loading && <p className="text-xs text-red-600 font-semibold text-center">{error}</p>}
-      <Button type="submit" disabled={loading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
+      {(error || googleError) && !loading && !googleLoading && (
+        <p className="text-xs text-red-600 font-semibold text-center">{error || googleError}</p>
+      )}
+      <Button type="submit" disabled={loading || googleLoading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
         {loading ? 'Logging in...' : 'Affiliate Login'}
       </Button>
+
+      <GoogleAuthButton 
+        onClick={loginWithGoogle} 
+        isLoading={googleLoading} 
+        label="Continue with Google" 
+      />
     </form>
   );
 
@@ -198,10 +209,18 @@ export default function AffiliateLogin() {
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30"
         />
       </div>
-      {error && !loading && <p className="text-xs text-red-600 font-semibold text-center">{error}</p>}
-      <Button type="submit" disabled={loading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
+      {(error || googleError) && !loading && !googleLoading && (
+        <p className="text-xs text-red-600 font-semibold text-center">{error || googleError}</p>
+      )}
+      <Button type="submit" disabled={loading || googleLoading} className="w-full bg-[#b7004d] hover:bg-[#ff7293] text-white rounded-xl py-5 shadow-md cursor-pointer transition-all">
         {loading ? 'Registering...' : 'Register as Affiliate'}
       </Button>
+
+      <GoogleAuthButton 
+        onClick={loginWithGoogle} 
+        isLoading={googleLoading} 
+        label="Sign up with Google" 
+      />
     </form>
   );
 

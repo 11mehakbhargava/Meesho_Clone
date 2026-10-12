@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBkNsdWIycbJ4GfJnmOZJWSVur_m38UNI4',
@@ -12,13 +12,15 @@ const firebaseConfig = {
 
 let app = null;
 let auth = null;
+let googleProvider = null;
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
 } catch (error) {
   console.warn('⚠️ Firebase initialization warning:', error?.message);
 }
 
-export { auth };
+export { auth, googleProvider };
 export default app;

@@ -13,10 +13,10 @@ datasource db {
 enum UserRole {
   CUSTOMER
   RESELLER
-  DROPSHIPPER
   SUPPLIER
   DRIVER
   ADMIN
+  DROPSHIPPER
 }
 
 enum KYCStatus {

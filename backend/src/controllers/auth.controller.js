@@ -1,5 +1,6 @@
 import admin from '../config/firebaseAdmin.js';
 import prisma from '../config/prisma.js';
+import jwt from 'jsonwebtoken';
 
 /**
  * Generate a Firebase token for user or return custom token
@@ -501,6 +502,112 @@ export const updateAffiliateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to update affiliate profile',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * ==========================================
+ * 4. GOOGLE AUTHENTICATION (User & Affiliate)
+ * ==========================================
+ * POST /api/v1/auth/google
+ */
+export const googleAuth = async (req, res) => {
+  try {
+    const { firebaseUid, email, name, avatar, role = 'USER' } = req.body;
+
+    if (!email || !firebaseUid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Firebase UID and Email are required',
+      });
+    }
+
+    const isAffiliate = (role || '').toUpperCase() === 'AFFILIATE';
+    let profile;
+
+    // 1. Prisma DB find or create
+    try {
+      if (prisma?.profile) {
+        profile = await prisma.profile.findUnique({
+          where: { id: firebaseUid }
+        });
+
+        if (!profile) {
+          profile = await prisma.profile.create({
+            data: {
+              id: firebaseUid,
+              email: email,
+              fullName: name || email.split('@')[0],
+              avatarUrl: avatar || null,
+              role: 'CUSTOMER',
+            }
+          });
+        }
+      }
+    } catch (dbError) {
+      console.warn('Prisma DB notice for Google Auth:', dbError.message);
+    }
+
+    // 2. Setup user object based on role
+    const userId = firebaseUid || `google_${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+    if (isAffiliate) {
+      const partnerCode = `AFF-${email.split('@')[0].toUpperCase().slice(0, 5)}${Math.floor(100 + Math.random() * 900)}`;
+      profile = {
+        id: userId,
+        email: email,
+        fullName: name || 'Affiliate Partner',
+        avatarUrl: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        role: 'AFFILIATE',
+        referralCode: partnerCode,
+        kycStatus: 'APPROVED',
+        tier: 'Silver Tier',
+        stats: {
+          totalEarnings: 14850.50,
+          pendingPayout: 2340.00,
+          clicks: 1420,
+          conversions: 84
+        },
+        createdAt: new Date().toISOString(),
+      };
+      affiliateStore.set(userId, profile);
+    } else {
+      let existingCustomer = customerStore.get(userId);
+      profile = {
+        id: userId,
+        email: email,
+        fullName: name || existingCustomer?.fullName || 'MShoppy Customer',
+        avatarUrl: avatar || existingCustomer?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        role: 'CUSTOMER',
+        walletBalance: existingCustomer?.walletBalance || 12840,
+        ordersCount: existingCustomer?.ordersCount || 4,
+        wishlistCount: existingCustomer?.wishlistCount || 3,
+        createdAt: existingCustomer?.createdAt || new Date().toISOString(),
+      };
+      customerStore.set(userId, profile);
+    }
+
+    // 3. Generate JWT Token
+    const token = jwt.sign(
+      { id: profile.id, email: profile.email, role: profile.role },
+      process.env.JWT_SECRET || 'meesho_jwt_secret_super_secure_key_2026',
+      { expiresIn: '7d' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Google authentication successful as ${profile.role}!`,
+      token,
+      user: profile,
+    });
+
+  } catch (error) {
+    console.error('❌ Google Auth Server Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error during Google authentication',
       error: error.message,
     });
   }

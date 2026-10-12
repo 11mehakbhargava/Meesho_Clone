@@ -3,6 +3,7 @@ import {
   resellerLogin, 
   customerLogin, 
   affiliateLogin, 
+  googleAuth,
   getCurrentUser, 
   updateResellerProfile, 
   updateCustomerProfile, 
@@ -12,11 +13,12 @@ import { verifyAuth, authorizeRole } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Public auth endpoints (Firebase Authentication)
+// Public auth endpoints (Firebase Authentication & Google)
 router.post('/reseller-login', resellerLogin);
 router.post('/customer-login', customerLogin);
 router.post('/user-login', customerLogin); // Alias for user login
 router.post('/affiliate-login', affiliateLogin);
+router.post('/google', googleAuth);
 
 // Protected endpoints (Requires valid Firebase Token)
 router.get('/me', verifyAuth, getCurrentUser);
