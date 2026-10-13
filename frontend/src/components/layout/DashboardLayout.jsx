@@ -91,10 +91,10 @@ children
          </Sidebar>
 
          {/* 2. RIGHT MAIN CONTENT */}             
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-50/50">
+      <div className="flex-1 flex flex-col min-w-0 h-screen max-h-screen overflow-hidden bg-gray-50/50">
         
         {/* TOP HEADER */}
-        <header className="h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm">
+        <header className="h-16 border-b bg-white flex items-center justify-between px-6 sticky top-0 shrink-0 z-30 shadow-xs">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="text-[#b7004d]" /> {/* Ye button sidebar ko open/close karega */}
             <div>
@@ -139,7 +139,7 @@ children
              </DropdownMenu>
           </div>
         </header>
-         <main className="flex-1 p-6 overflow-auto">
+         <main className="flex-1 p-6 overflow-y-auto">
           {children}
         </main>
       </div>

@@ -13,7 +13,10 @@ export const getMyProfile = async (req, res) => {
         phone: true,
         avatarUrl: true,
         role: true,
-        addresses: true
+        addresses: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
       }
     });
 
@@ -32,6 +35,41 @@ export const updateMyProfile = async (req, res) => {
   try {
     const { fullName, phone, avatarUrl, addressLine, city, state, pincode } = req.body;
 
+    // 1. Agar address update bheja hai toh pehle Address table me update ya create karein
+    if (addressLine || city || pincode) {
+      const existingAddress = await prisma.address.findFirst({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (existingAddress) {
+        await prisma.address.update({
+          where: { id: existingAddress.id },
+          data: {
+            addressLine: addressLine || existingAddress.addressLine,
+            city: city || existingAddress.city || '',
+            state: state || existingAddress.state || '',
+            pincode: pincode || existingAddress.pincode || '',
+            fullName: fullName || existingAddress.fullName,
+            phone: phone || existingAddress.phone
+          }
+        });
+      } else {
+        await prisma.address.create({
+          data: {
+            userId: req.user.id,
+            addressLine: addressLine || '',
+            city: city || '',
+            state: state || '',
+            pincode: pincode || '',
+            fullName: fullName || 'Admin',
+            phone: phone || ''
+          }
+        });
+      }
+    }
+
+    // 2. Profile update karein (sirf valid columns: fullName, phone, avatarUrl)
     const updatedProfile = await prisma.profile.update({
       where: { id: req.user.id },
       data: {
@@ -46,18 +84,12 @@ export const updateMyProfile = async (req, res) => {
         phone: true,
         avatarUrl: true,
         role: true,
-        addresses: true
+        addresses: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
       }
     });
-
-    // Agar address update bheja hai
-    if (addressLine || city || pincode) {
-      await prisma.address.upsert({
-        where: { id: req.body.addressId || 'non-existent-id' },
-        update: { fullName: fullName || updatedProfile.fullName, phone: phone || updatedProfile.phone || '', addressLine, city: city || '', state: state || '', pincode: pincode || '' },
-        create: { userId: req.user.id, fullName: fullName || updatedProfile.fullName, phone: phone || updatedProfile.phone || '', addressLine: addressLine || '', city: city || '', state: state || '', pincode: pincode || '' }
-      }).catch(() => {});
-    }
 
     return res.status(200).json({
       success: true,
