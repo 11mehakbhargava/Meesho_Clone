@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -7,6 +7,8 @@ dotenv.config();
 import { Router } from 'express';
 import healthRoutes from './src/routes/health.routes.js';
 import adminAuthRoutes from './src/routes/admin/adminAuth.routes.js';
+import adminProfileRoutes from './src/routes/admin/adminProfile.routes.js';
+
 
 const apiRouter = Router();
 
