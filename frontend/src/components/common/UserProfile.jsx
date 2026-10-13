@@ -37,17 +37,32 @@ export default function UserProfile({
 
   const [passData, setPassData] = useState({ current: '', new: '', confirm: '' });
 
-  // Sync formData whenever currentUser in Redux updates
+  // Page mount hote hi database se saved profile aur address lana
   useEffect(() => {
-    if (currentUser) {
-      setFormData((prev) => ({
-        ...prev,
-        name: currentUser.fullName || prev.name,
-        phone: currentUser.phone || prev.phone,
-        avatarUrl: currentUser.avatarUrl || prev.avatarUrl
-      }));
-    }
-  }, [currentUser]);
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+        const res = await axios.get('http://localhost:5000/api/v1/admin-profile/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success && res.data.profile) {
+          const p = res.data.profile;
+          setFormData({
+            name: p.fullName || '',
+            phone: p.phone || '',
+            address: p.addresses?.[0]?.addressLine || '',
+            avatarUrl: p.avatarUrl || ''
+          });
+        }
+      } catch (err) {
+        console.error("Fetch profile error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
    // 1. ASLI SAVE PROFILE (Backend API Call)
   const handleSaveProfile = async () => {
@@ -68,8 +83,10 @@ export default function UserProfile({
       );
       if (response.data.success) {
         setIsEditing(false);
+        const savedAddress = response.data.profile?.addresses?.[0]?.addressLine || formData.address;
+        setFormData((prev) => ({ ...prev, address: savedAddress }));
         // Redux store ko naye data ke sath update karna taaki header mein bhi naam badal jaye
-        dispatch(loginSuccess({ ...currentUser, ...response.data.profile }));
+        dispatch(loginSuccess({ ...currentUser, ...response.data.profile, address: savedAddress }));
         toast.success("Profile Updated", {
           description: "Aapki details database mein save ho gayi hain!"
         });
@@ -77,7 +94,7 @@ export default function UserProfile({
     } catch (err) {
       console.error(err);
       toast.error("Update Failed", {
-        description: err.response?.data?.error || "Profile save nahi ho  payi."
+        description: err.response?.data?.error || "Profile save nahi ho payi."
       });
     } finally {
       setLoading(false);
