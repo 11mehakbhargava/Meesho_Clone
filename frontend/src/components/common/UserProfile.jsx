@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { auth } from '../../utils/firebase';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginSuccess } from '../../redux/userSlice';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
@@ -19,28 +23,113 @@ export default function UserProfile({
   joinDate = "Oct 2026",
   avatarUrl = "" // Asli photo ke liye
 }) {
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.user?.currentUser);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name, phone, address, avatarUrl });
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: currentUser?.fullName || '',
+    phone: currentUser?.phone || '',
+    address: '',
+    avatarUrl: currentUser?.avatarUrl || ''
+  });
+
   const [passData, setPassData] = useState({ current: '', new: '', confirm: '' });
 
-  const handleSaveProfile = () => { 
-    setIsEditing(false); 
-    toast.success("Profile Updated", {
-      description: "Your personal details have been saved successfully."
-    }); 
+  // Sync formData whenever currentUser in Redux updates
+  useEffect(() => {
+    if (currentUser) {
+      setFormData((prev) => ({
+        ...prev,
+        name: currentUser.fullName || prev.name,
+        phone: currentUser.phone || prev.phone,
+        avatarUrl: currentUser.avatarUrl || prev.avatarUrl
+      }));
+    }
+  }, [currentUser]);
+
+   // 1. ASLI SAVE PROFILE (Backend API Call)
+  const handleSaveProfile = async () => {
+    try {
+      setLoading(true);
+      const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      const response = await axios.put(
+        'http://localhost:5000/api/v1/admin-profile/update',
+        {
+          fullName: formData.name,
+          phone: formData.phone,
+          avatarUrl: formData.avatarUrl,
+          addressLine: formData.address
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      if (response.data.success) {
+        setIsEditing(false);
+        // Redux store ko naye data ke sath update karna taaki header mein bhi naam badal jaye
+        dispatch(loginSuccess({ ...currentUser, ...response.data.profile }));
+        toast.success("Profile Updated", {
+          description: "Aapki details database mein save ho gayi hain!"
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Update Failed", {
+        description: err.response?.data?.error || "Profile save nahi ho  payi."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleChangePassword = () => { 
-    toast.success("Password Changed", {
-      description: "Your new password has been set securely."
-    }); 
+  const handleChangePassword = async () => {
+    if (passData.new !== passData.confirm) {
+      return toast.error("Error", { description: "New password aur confirm password match nahi kar rahe!" });
+    }
+    if (passData.new.length < 6) {
+      return toast.error("Error", { description: "Password kam se kam 6 characters ka hona chahiye." });
+    }
+    try {
+      setLoading(true);
+      const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      const response = await axios.post(
+        'http://localhost:5000/api/v1/admin-profile/change-password',
+        { newPassword: passData.new },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        setPassData({ current: '', new: '', confirm: '' });
+        toast.success("Password Changed", {
+          description: "Aapka naya password safely update ho gaya hai!"
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed", {
+        description: err.response?.data?.error || "Password change nahi ho paya."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
   
   const handlePhotoUpload = (e) => { 
-    if (e.target.files && e.target.files[0]) {
-      toast.info("Photo Uploaded", {
-        description: "Your new profile picture is ready."
-      }); 
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        return toast.error("File Too Large", { description: "Photo size 2MB se kam honi chahiye." });
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, avatarUrl: reader.result }));
+        toast.success("Photo Selected", {
+          description: "New photo select ho gayi! 'Save Changes' par click karein."
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -73,9 +162,9 @@ export default function UserProfile({
                 <div className="relative group">
                   <Avatar className="h-28 w-28 bg-pink-100 text-[#b7004d]">
                     {formData.avatarUrl ? (
-                      <AvatarImage src={formData.avatarUrl} alt={name} className="object-cover" />
+                      <AvatarImage src={formData.avatarUrl} alt={formData.name || name} className="object-cover" />
                     ) : (
-                      <AvatarFallback className="text-5xl font-bold uppercase bg-pink-100">{name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="text-5xl font-bold uppercase bg-pink-100">{(formData.name || name).charAt(0)}</AvatarFallback>
                     )}
                   </Avatar>
                   {isEditing && (
@@ -86,7 +175,7 @@ export default function UserProfile({
                   )}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800 capitalize">{name}</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 capitalize">{formData.name || name}</h3>
                   <p className="text-gray-500 font-medium mt-1">{role} • Joined {joinDate}</p>
                 </div>
               </div>
