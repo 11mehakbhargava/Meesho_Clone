@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useLogout } from '../../hooks/useLogout';
 import UserProfile from '../../components/common/UserProfile';
 import AdminUsersManagement from '../../components/admin/AdminUsersManagement';
+import AdminDashboardOverview from '../../components/admin/AdminDashboardOverview';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { 
   LayoutDashboard, ShieldCheck, Truck, Users, 
@@ -89,13 +90,7 @@ export default function AdminWebPanel() {
       )}
 
       {activeTab === 'dashboard' && (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-            <div className="bg-white p-6 rounded-xl border shadow-sm">Total Sales: ₹50,000</div>
-            <div className="bg-white p-6 rounded-xl border shadow-sm">Total Users: 120</div>
-            <div className="bg-white p-6 rounded-xl border shadow-sm">Pending KYC: 5</div>
-          </div>
-        </div>
+        <AdminDashboardOverview onNavigateTab={(tab) => setActiveTab(tab)} />
       )}
 
       {activeTab === 'kyc' && (
