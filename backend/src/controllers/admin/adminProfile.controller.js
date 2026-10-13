@@ -6,7 +6,15 @@ export const getMyProfile = async (req, res) => {
   try {
     const profile = await prisma.profile.findUnique({
       where: { id: req.user.id },
-      include: { addresses: true }
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        addresses: true
+      }
     });
 
     if (!profile) {
@@ -30,6 +38,15 @@ export const updateMyProfile = async (req, res) => {
         fullName: fullName || undefined,
         phone: phone || undefined,
         avatarUrl: avatarUrl || undefined
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        avatarUrl: true,
+        role: true,
+        addresses: true
       }
     });
 

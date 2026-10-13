@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLogout } from '../../hooks/useLogout';
 import UserProfile from '../../components/common/UserProfile';
+import AdminUsersManagement from '../../components/admin/AdminUsersManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { 
   LayoutDashboard, ShieldCheck, Truck, Users, 
@@ -104,9 +105,7 @@ export default function AdminWebPanel() {
       )}
 
       {activeTab === 'users' && (
-        <div className="mt-4">
-          <p>Yahan Users list aayegi...</p>
-        </div>
+        <AdminUsersManagement />
       )}
 
     </DashboardLayout>
