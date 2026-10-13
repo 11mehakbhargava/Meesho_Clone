@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
 
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 export default function DashboardLayout({
 menuItems = [],
@@ -17,6 +17,8 @@ activeTab,
 onTabChange, 
 roleName = "Portal",
 userName = "User",
+pageTitle,
+pageSubtitle,
 onLogout, 
 children
 }) {
@@ -95,9 +97,17 @@ children
         <header className="h-16 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-10 shadow-sm">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="text-[#b7004d]" /> {/* Ye button sidebar ko open/close karega */}
-            <h2 className="text-lg font-bold text-gray-800">
-              {menuItems.find(m => m.id === activeTab)?.label}
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-gray-800 leading-tight">
+                {pageTitle || (menuItems.find(m => m.id === activeTab)?.label || 
+                     menuItems.flatMap(m => m.children || []).find(c => c.id === activeTab)?.label || 
+                     'Dashboard')
+                }
+              </h2>
+              {pageSubtitle && (
+                <p className="text-xs text-gray-500">{pageSubtitle}</p>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -114,6 +124,13 @@ children
                  </Avatar>
                </DropdownMenuTrigger>              
                <DropdownMenuContent align="end" className="w-48">
+                 <DropdownMenuItem 
+    onClick={() => onTabChange('profile')} 
+    className="font-medium cursor-pointer hover:bg-pink-50"
+  >
+    <User className="mr-2 h-4 w-4" />
+    My Profile
+  </DropdownMenuItem>
                  <DropdownMenuItem onClick={onLogout} className="text-red-600 font-medium cursor-pointer">
                    <LogOut className="mr-2 h-4 w-4" />
                    Logout System
