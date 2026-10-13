@@ -4,6 +4,7 @@ import supplierRoutes from './supplier.routes.js';
 import supplierAuthRoutes from './supplierAuth.routes.js';
 import adminAuthRoutes from './admin/adminAuth.routes.js';
 import adminProfileRoutes from './admin/adminProfile.routes.js';
+import adminUsersRoutes from './admin/adminUsers.routes.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
@@ -17,6 +18,7 @@ apiRouter.use('/', healthRoutes);
 // Admin Module endpoints
 apiRouter.use('/admin-auth', adminAuthRoutes);
 apiRouter.use('/admin-profile', adminProfileRoutes);
+apiRouter.use('/admin-users', adminUsersRoutes);
 
 // Supplier Module endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);
