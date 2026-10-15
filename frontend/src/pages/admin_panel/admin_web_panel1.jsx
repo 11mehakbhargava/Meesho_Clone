@@ -8,6 +8,7 @@ import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
 import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersManagement';
 import AdminReturnsManagement from '../../components/admin/returns/AdminReturnsManagement';
 import AdminProductsManagement from '../../components/admin/products/AdminProductsManagement';
+import AdminSellersManagement from '../../components/admin/sellers/AdminSellersManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
   LayoutDashboard, ShieldCheck, Truck, Users,
@@ -29,10 +30,10 @@ const ADMIN_MENU = [
   { id: 'products', label: 'Products 📦', icon: Package },
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: RotateCcw },
+  { id: 'sellers', label: 'Sellers 🏬', icon: Store },
   { id: 'analytics', label: 'Analytics', icon: LineChart, path: '/admin-analytics' },
   { id: 'earnings', label: 'Earnings', icon: Wallet, path: '/earnings-dashboard-1' },
   { id: 'users', label: 'Users', icon: Users, path: '/user-dashboard' },
-  { id: 'sellers', label: 'Sellers', icon: Store, path: '/seller-dashboard' },
   { id: 'finance', label: 'Finance', icon: Banknote },
 ];
 
@@ -66,6 +67,8 @@ export default function AdminWebPanel() {
         return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
       case 'returns':
         return { title: "Returns & Refunds", subtitle: "Inspect claims, manage pickups, and process customer refunds" };
+      case 'sellers':
+        return { title: "Seller & Supplier Management", subtitle: "Monitor registered vendors, verify business credentials, and manage partner tiers" };
       default:
         // Fallback: Menu se title nikal lo
         const item = ADMIN_MENU.find(m => m.id === activeTab) || ADMIN_MENU.flatMap(m => m.children || []).find(c => c.id === activeTab);
@@ -123,6 +126,10 @@ export default function AdminWebPanel() {
 
       {activeTab === 'returns' && (
         <AdminReturnsManagement />
+      )}
+
+      {activeTab === 'sellers' && (
+        <AdminSellersManagement />
       )}
 
     </DashboardLayout>
