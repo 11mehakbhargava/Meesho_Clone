@@ -9,6 +9,10 @@ import adminDashboardRoutes from './admin/adminDashboard.routes.js';
 import adminKycRoutes from './admin/adminKyc.routes.js';
 import adminOrdersRoutes from './admin/adminOrders.routes.js';
 import adminReturnsRoutes from './admin/adminReturns.routes.js';
+import adminProductsRoutes from './admin/adminProducts.routes.js';
+import adminSellersRoutes from './admin/adminSellers.routes.js';
+import adminFinanceRoutes from './admin/adminFinance.routes.js';
+import adminAnalyticsRoutes from './admin/adminAnalytics.routes.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
@@ -27,6 +31,10 @@ apiRouter.use('/admin-dashboard', adminDashboardRoutes);
 apiRouter.use('/admin-kyc', adminKycRoutes);
 apiRouter.use('/admin-orders', adminOrdersRoutes);
 apiRouter.use('/admin-returns', adminReturnsRoutes);
+apiRouter.use('/admin-products', adminProductsRoutes);
+apiRouter.use('/admin-sellers', adminSellersRoutes);
+apiRouter.use('/admin-finance', adminFinanceRoutes);
+apiRouter.use('/admin-analytics', adminAnalyticsRoutes);
 
 // Supplier Module endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);

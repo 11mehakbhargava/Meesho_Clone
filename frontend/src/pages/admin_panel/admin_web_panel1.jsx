@@ -7,6 +7,10 @@ import AdminDashboardOverview from '../../components/admin/dashboard/AdminDashbo
 import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
 import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersManagement';
 import AdminReturnsManagement from '../../components/admin/returns/AdminReturnsManagement';
+import AdminProductsManagement from '../../components/admin/products/AdminProductsManagement';
+import AdminSellersManagement from '../../components/admin/sellers/AdminSellersManagement';
+import AdminFinanceManagement from '../../components/admin/finance/AdminFinanceManagement';
+import AdminAnalyticsManagement from '../../components/admin/analytics/AdminAnalyticsManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
   LayoutDashboard, ShieldCheck, Truck, Users,
@@ -25,14 +29,13 @@ const ADMIN_MENU = [
       { id: 'affiliate-kyc', label: 'Affiliate KYC 🤝', icon: Users, path: '/admin-affiliate-kyc' },
     ],
   },
-  { id: 'products', label: 'Products', icon: Package, path: '/supplier-products' },
+  { id: 'products', label: 'Products 📦', icon: Package },
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: RotateCcw },
-  { id: 'analytics', label: 'Analytics', icon: LineChart, path: '/admin-analytics' },
-  { id: 'earnings', label: 'Earnings', icon: Wallet, path: '/earnings-dashboard-1' },
+  { id: 'sellers', label: 'Sellers 🏬', icon: Store },
+  { id: 'finance', label: 'Finance & Payouts 💳', icon: Banknote },
+  { id: 'analytics', label: 'Analytics 📊', icon: LineChart },
   { id: 'users', label: 'Users', icon: Users, path: '/user-dashboard' },
-  { id: 'sellers', label: 'Sellers', icon: Store, path: '/seller-dashboard' },
-  { id: 'finance', label: 'Finance', icon: Banknote },
 ];
 
 
@@ -59,10 +62,19 @@ export default function AdminWebPanel() {
         return { title: "KYC Verifications", subtitle: "" };
       case 'users':
         return { title: "Manage Users", subtitle: "" };
+      case 'products':
+        return { title: "Product Catalog & Moderation", subtitle: "Inspect supplier listings, manage inventory, and monitor stock levels" };
       case 'orders':
         return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
       case 'returns':
         return { title: "Returns & Refunds", subtitle: "Inspect claims, manage pickups, and process customer refunds" };
+      case 'sellers':
+        return { title: "Seller & Supplier Management", subtitle: "Monitor registered vendors, verify business credentials, and manage partner tiers" };
+      case 'finance':
+      case 'earnings':
+        return { title: "Finance, Escrow & Settlements", subtitle: "Manage partner escrow wallets, process withdrawal payouts, and monitor transaction ledger" };
+      case 'analytics':
+        return { title: "Business Intelligence & Analytics", subtitle: "Analyze sales trends, order progression, catalog distribution, and top suppliers" };
       default:
         // Fallback: Menu se title nikal lo
         const item = ADMIN_MENU.find(m => m.id === activeTab) || ADMIN_MENU.flatMap(m => m.children || []).find(c => c.id === activeTab);
@@ -110,12 +122,28 @@ export default function AdminWebPanel() {
         <AdminUsersManagement />
       )}
 
+      {activeTab === 'products' && (
+        <AdminProductsManagement />
+      )}
+
       {activeTab === 'orders' && (
         <AdminOrdersManagement />
       )}
 
       {activeTab === 'returns' && (
         <AdminReturnsManagement />
+      )}
+
+      {activeTab === 'sellers' && (
+        <AdminSellersManagement />
+      )}
+
+      {(activeTab === 'finance' || activeTab === 'earnings') && (
+        <AdminFinanceManagement />
+      )}
+
+      {activeTab === 'analytics' && (
+        <AdminAnalyticsManagement />
       )}
 
     </DashboardLayout>
