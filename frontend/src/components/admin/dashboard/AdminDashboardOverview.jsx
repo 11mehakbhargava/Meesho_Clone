@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { auth } from '../../utils/firebase';
+import { auth } from '../../../utils/firebase';
 import { useSelector } from 'react-redux';
-import { Button } from '../ui/button';
+import { Button } from '../../ui/button';
 import { 
   Users, 
   Package, 
@@ -13,15 +13,15 @@ import {
   AlertCircle 
 } from 'lucide-react';
 import { toast } from 'sonner';
-import StatCard from './StatCard';
+import StatCard from '../../common/StatCard';
 import RecentOrdersCard from './RecentOrdersCard';
 import RecentUsersCard from './RecentUsersCard';
-import DashboardSkeleton from './DashboardSkeleton';
+import DashboardSkeleton from '../../common/DashboardSkeleton';
 
 /**
  * AdminDashboardOverview Component
  * Orchestrator for real-time overview analytics, delegating sub-views
- * to StatCard, RecentOrdersCard, and RecentUsersCard
+ * to StatCard (common), RecentOrdersCard, and RecentUsersCard
  */
 export default function AdminDashboardOverview({ onNavigateTab }) {
   const currentUser = useSelector((state) => state.user?.currentUser);
@@ -60,6 +60,12 @@ export default function AdminDashboardOverview({ onNavigateTab }) {
 
   useEffect(() => {
     fetchStats();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchStats();
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const formatCurrency = (val) => {
@@ -149,7 +155,7 @@ export default function AdminDashboardOverview({ onNavigateTab }) {
           size="sm"
           onClick={() => fetchStats(true)} 
           disabled={refreshing}
-          className="border-gray-300 hover:border-[#b7004d] hover:text-[#b7004d] transition-colors"
+          className="border-gray-300 hover:border-[#b7004d] hover:text-[#b7004d] transition-colors cursor-pointer"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin text-[#b7004d]' : ''}`} />
           Refresh Stats
