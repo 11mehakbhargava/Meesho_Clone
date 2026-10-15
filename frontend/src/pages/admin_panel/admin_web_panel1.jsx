@@ -7,6 +7,7 @@ import AdminDashboardOverview from '../../components/admin/dashboard/AdminDashbo
 import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
 import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersManagement';
 import AdminReturnsManagement from '../../components/admin/returns/AdminReturnsManagement';
+import AdminProductsManagement from '../../components/admin/products/AdminProductsManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
   LayoutDashboard, ShieldCheck, Truck, Users,
@@ -25,7 +26,7 @@ const ADMIN_MENU = [
       { id: 'affiliate-kyc', label: 'Affiliate KYC 🤝', icon: Users, path: '/admin-affiliate-kyc' },
     ],
   },
-  { id: 'products', label: 'Products', icon: Package, path: '/supplier-products' },
+  { id: 'products', label: 'Products 📦', icon: Package },
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: RotateCcw },
   { id: 'analytics', label: 'Analytics', icon: LineChart, path: '/admin-analytics' },
@@ -59,6 +60,8 @@ export default function AdminWebPanel() {
         return { title: "KYC Verifications", subtitle: "" };
       case 'users':
         return { title: "Manage Users", subtitle: "" };
+      case 'products':
+        return { title: "Product Catalog & Moderation", subtitle: "Inspect supplier listings, manage inventory, and monitor stock levels" };
       case 'orders':
         return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
       case 'returns':
@@ -108,6 +111,10 @@ export default function AdminWebPanel() {
 
       {activeTab === 'users' && (
         <AdminUsersManagement />
+      )}
+
+      {activeTab === 'products' && (
+        <AdminProductsManagement />
       )}
 
       {activeTab === 'orders' && (
