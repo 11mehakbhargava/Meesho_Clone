@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import prisma from '../../config/prisma.js';
 import { auth as firebaseAuth } from '../../config/firebaseAdmin.js';
 
@@ -76,21 +77,26 @@ const formatSupplierResponse = (user) => {
   };
 };
 
-// Generate Firebase Authentication Token helper
+// Generate Authentication Token helper (Standard App JWT)
 const generateToken = async (user) => {
-  if (firebaseAuth && user.id) {
-    try {
-      const customToken = await firebaseAuth.createCustomToken(user.id, {
-        role: user.role || 'SUPPLIER',
+  const jwtSecret = process.env.JWT_SECRET || 'meesho_supplier_super_secret_jwt_token_2026';
+  try {
+    const token = jwt.sign(
+      {
+        id: user.id,
+        uid: user.id,
         email: user.email || '',
-      });
-      return customToken;
-    } catch (fbErr) {
-      console.warn('⚠️ [FIREBASE] createCustomToken fallback:', fbErr.message);
-    }
+        role: user.role || 'SUPPLIER',
+        name: user.fullName || user.name || 'Verified Supplier',
+      },
+      jwtSecret,
+      { expiresIn: '30d' }
+    );
+    return token;
+  } catch (err) {
+    console.warn('⚠️ JWT sign fallback:', err);
+    return `sup_token_${user.id}_${Date.now()}`;
   }
-  // Fallback token if Firebase Auth unavailable
-  return `fb_token_${user.id}_${Date.now()}`;
 };
 
 /**

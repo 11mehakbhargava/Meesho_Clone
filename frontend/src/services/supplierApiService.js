@@ -79,6 +79,9 @@ async function request(endpoint, options = {}) {
     return data;
   } catch (error) {
     console.warn(`[SupplierAPI] Request to ${endpoint} failed:`, error.message);
+    if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('NetworkError'))) {
+      throw new Error('Backend server is offline. Please start backend on http://localhost:5000');
+    }
     throw error;
   }
 }

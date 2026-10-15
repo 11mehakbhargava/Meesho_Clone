@@ -74,6 +74,13 @@ import SupplierProfile from './pages/supplier/supplier_profile';
 import AddNewProductSupplier from './pages/supplier/add_new_product_supplier';
 import AddCategorySupplier from './pages/supplier/add_category_supplier';
 import SellerWebDashboard from './pages/supplier/seller_web_dashboard';
+import SellerWebDashboard1 from './pages/supplier/seller-web-dashboard1';
+import SellerInventory1 from './pages/supplier/SellerInventory1';
+import SellerOrders1 from './pages/supplier/SellerOrders1';
+import SellerDropship1 from './pages/supplier/SellerDropship1';
+import SellerReturns1 from './pages/supplier/SellerReturns1';
+import SellerAddProduct1 from './pages/supplier/SellerAddProduct1';
+import SellerProfile1 from './pages/supplier/SellerProfile1';
 import SupplierReturnsRTO from './pages/supplier/SupplierReturnsRTO';
 import SupplierRotLedger from './pages/supplier/SupplierRotLedger';
 import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
@@ -184,6 +191,13 @@ const screenCatalog = [
   { path: '/add-product', name: 'Add New Product', icon: '➕', group: 'Supplier' },
   { path: '/add-category', name: 'Add Category', icon: '🏷️', group: 'Supplier' },
   { path: '/supplier-profile', name: 'Supplier Profile', icon: '👤', group: 'Supplier' },
+  { path: '/seller-web-dashboard1', name: 'Seller Web Dashboard (Live)', icon: '💻', group: 'Supplier' },
+  { path: '/supplier-inventory1', name: 'Supplier Inventory (Live)', icon: '📦', group: 'Supplier' },
+  { path: '/supplier-orders1', name: 'Supplier Orders (Live)', icon: '📑', group: 'Supplier' },
+  { path: '/supplier-dropship1', name: 'Dropship Fulfillment (Live)', icon: '🚚', group: 'Supplier' },
+  { path: '/supplier-returns1', name: 'Returns & RTO Hub (Live)', icon: '🔄', group: 'Supplier' },
+  { path: '/supplier-add-product1', name: 'Add Product (Live)', icon: '➕', group: 'Supplier' },
+  { path: '/supplier-profile1', name: 'Supplier Profile (Live)', icon: '👤', group: 'Supplier' },
   { path: '/seller-dashboard', name: 'Seller Web Dashboard', icon: '💻', group: 'Supplier' },
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
@@ -595,6 +609,34 @@ function AppRoutes() {
       addCategory: '/add-category',
       profile: '/supplier-profile',
       webDashboard: '/seller-dashboard',
+      'seller-web-dashboard1': '/seller-web-dashboard1',
+      '/seller-web-dashboard1': '/seller-web-dashboard1',
+      'seller-dashboard1': '/seller-web-dashboard1',
+      '/seller-dashboard1': '/seller-web-dashboard1',
+      'supplier-inventory1': '/supplier-inventory1',
+      '/supplier-inventory1': '/supplier-inventory1',
+      'supplier-orders1': '/supplier-orders1',
+      '/supplier-orders1': '/supplier-orders1',
+      'supplier-dropship1': '/supplier-dropship1',
+      '/supplier-dropship1': '/supplier-dropship1',
+      'supplier-returns1': '/supplier-returns1',
+      '/supplier-returns1': '/supplier-returns1',
+      'supplier-add-product1': '/supplier-add-product1',
+      '/supplier-add-product1': '/supplier-add-product1',
+      'supplier-profile1': '/supplier-profile1',
+      '/supplier-profile1': '/supplier-profile1',
+      'seller-inventory1': '/supplier-inventory1',
+      '/seller-inventory1': '/supplier-inventory1',
+      'seller-orders1': '/supplier-orders1',
+      '/seller-orders1': '/supplier-orders1',
+      'seller-dropship1': '/supplier-dropship1',
+      '/seller-dropship1': '/supplier-dropship1',
+      'seller-returns1': '/supplier-returns1',
+      '/seller-returns1': '/supplier-returns1',
+      'seller-add-product1': '/supplier-add-product1',
+      '/seller-add-product1': '/supplier-add-product1',
+      'seller-profile1': '/supplier-profile1',
+      '/seller-profile1': '/supplier-profile1',
       sellers: '/seller-dashboard',
       '/sellers': '/seller-dashboard',
       seller: '/seller-dashboard',
@@ -876,6 +918,132 @@ function AppRoutes() {
         <Route
           path="/supplier-profile"
           element={<SupplierProfile onBack={handleBack} onNavigate={handleNav} onLogout={() => handleNav('/')} />}
+        />
+        <Route
+          path="/seller-web-dashboard1"
+          element={
+            <SellerWebDashboard1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-dashboard1"
+          element={
+            <SellerWebDashboard1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-inventory1"
+          element={
+            <SellerInventory1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-inventory1"
+          element={
+            <SellerInventory1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-orders1"
+          element={
+            <SellerOrders1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-orders1"
+          element={
+            <SellerOrders1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-dropship1"
+          element={
+            <SellerDropship1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-dropship1"
+          element={
+            <SellerDropship1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-returns1"
+          element={
+            <SellerReturns1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-returns1"
+          element={
+            <SellerReturns1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-add-product1"
+          element={
+            <SellerAddProduct1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-add-product1"
+          element={
+            <SellerAddProduct1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/supplier-profile1"
+          element={
+            <SellerProfile1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
+        />
+        <Route
+          path="/seller-profile1"
+          element={
+            <SellerProfile1
+              onNavigate={handleNav}
+              onBack={handleBack}
+            />
+          }
         />
         <Route
           path="/seller-dashboard"

@@ -33,7 +33,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
     if (onBack) {
       onBack();
     } else {
-      handleNav('/seller-dashboard');
+      handleNav('/seller-web-dashboard1');
     }
   };
 
@@ -72,7 +72,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       const res = await supplierApiService.loginWithPassword(email.trim(), password);
       setSuccessMessage(`Welcome back, ${res.supplier?.name || 'Supplier'}! Redirecting...`);
       setTimeout(() => {
-        handleNav('/seller-dashboard');
+        handleNav('/seller-web-dashboard1');
       }, 700);
     } catch (err) {
       setErrorMessage(err.message || 'Invalid credentials. Please verify and try again.');
@@ -154,7 +154,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
       await supplierApiService.registerSupplier(payload);
       setSuccessMessage('🎉 Congratulations! Your supplier account has been registered successfully. Redirecting...');
       setTimeout(() => {
-        handleNav('/seller-dashboard');
+        handleNav('/seller-web-dashboard1');
       }, 1000);
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed. Please check your details and try again.');
