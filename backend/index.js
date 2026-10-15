@@ -42,6 +42,7 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     documentation: {
       adminAuth: '/api/v1/admin-auth',
+      adminProfile: '/api/v1/admin-profile',
       supplierAuth: '/api/supplier/auth',
       supplier: '/api/supplier',
       health: '/api/health',
@@ -60,8 +61,8 @@ app.use(errorHandler);
 // Start the server
 app.listen(port, () => {
   console.log(`🚀 Backend server is running on http://localhost:${port}`);
-  console.log(`📦 Supplier endpoints available at http://localhost:${port}/api/supplier`);
   console.log(`🛡️ Admin auth endpoints available at http://localhost:${port}/api/v1/admin-auth`);
+  console.log(`👤 Admin profile endpoints available at http://localhost:${port}/api/v1/admin-profile`);
 });
 
 export default app;
