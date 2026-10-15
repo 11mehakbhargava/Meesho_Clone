@@ -6,6 +6,7 @@ import adminAuthRoutes from './admin/adminAuth.routes.js';
 import adminProfileRoutes from './admin/adminProfile.routes.js';
 import adminUsersRoutes from './admin/adminUsers.routes.js';
 import adminDashboardRoutes from './admin/adminDashboard.routes.js';
+import adminKycRoutes from './admin/adminKyc.routes.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
@@ -21,6 +22,7 @@ apiRouter.use('/admin-auth', adminAuthRoutes);
 apiRouter.use('/admin-profile', adminProfileRoutes);
 apiRouter.use('/admin-users', adminUsersRoutes);
 apiRouter.use('/admin-dashboard', adminDashboardRoutes);
+apiRouter.use('/admin-kyc', adminKycRoutes);
 
 // Supplier Module endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);

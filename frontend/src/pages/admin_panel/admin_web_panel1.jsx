@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLogout } from '../../hooks/useLogout';
 import UserProfile from '../../components/common/UserProfile';
-import AdminUsersManagement from '../../components/admin/AdminUsersManagement';
-import AdminDashboardOverview from '../../components/admin/AdminDashboardOverview';
+import AdminUsersManagement from '../../components/admin/users/AdminUsersManagement';
+import AdminDashboardOverview from '../../components/admin/dashboard/AdminDashboardOverview';
+import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { 
   LayoutDashboard, ShieldCheck, Truck, Users, 
@@ -93,10 +94,11 @@ export default function AdminWebPanel() {
         <AdminDashboardOverview onNavigateTab={(tab) => setActiveTab(tab)} />
       )}
 
-      {activeTab === 'kyc' && (
-        <div className="mt-4">
-          <p>Yahan Shadcn ka Data Table aayega...</p>
-        </div>
+      {(activeTab === 'kyc' || activeTab === 'dropshipper-kyc' || activeTab === 'affiliate-kyc') && (
+        <AdminKycManagement 
+          key={activeTab}
+          initialType={activeTab === 'dropshipper-kyc' ? 'dropshipper' : activeTab === 'affiliate-kyc' ? 'affiliate' : 'all'} 
+        />
       )}
 
       {activeTab === 'users' && (

@@ -88,8 +88,9 @@ export default function StatCard({
 
           {actionLabel && onAction && (
             <button
+              type="button"
               onClick={onAction}
-              className={`${colorStyles.actionText} hover:underline font-semibold flex items-center shrink-0 ml-1`}
+              className={`${colorStyles.actionText} hover:underline font-semibold flex items-center shrink-0 ml-1 cursor-pointer`}
             >
               {actionLabel} <ChevronRight className="w-3 h-3" />
             </button>
