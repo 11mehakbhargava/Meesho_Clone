@@ -6,11 +6,12 @@ import AdminUsersManagement from '../../components/admin/users/AdminUsersManagem
 import AdminDashboardOverview from '../../components/admin/dashboard/AdminDashboardOverview';
 import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
 import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersManagement';
+import AdminReturnsManagement from '../../components/admin/returns/AdminReturnsManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { 
-  LayoutDashboard, ShieldCheck, Truck, Users, 
-  Package, ShoppingCart, RotateCcw, LineChart, 
-  Heart, Wallet, Banknote, Store
+import {
+  LayoutDashboard, ShieldCheck, Truck, Users,
+  Package, ShoppingCart, RotateCcw, LineChart,
+  Wallet, Banknote, Store
 } from 'lucide-react';
 // Yeh raha aapka MASTER MENU (with Sub-menus)
 const ADMIN_MENU = [
@@ -28,7 +29,6 @@ const ADMIN_MENU = [
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: RotateCcw },
   { id: 'analytics', label: 'Analytics', icon: LineChart, path: '/admin-analytics' },
-  { id: 'wishlist', label: 'Wishlist', icon: Heart },
   { id: 'earnings', label: 'Earnings', icon: Wallet, path: '/earnings-dashboard-1' },
   { id: 'users', label: 'Users', icon: Users, path: '/user-dashboard' },
   { id: 'sellers', label: 'Sellers', icon: Store, path: '/seller-dashboard' },
@@ -39,10 +39,10 @@ const ADMIN_MENU = [
 export default function AdminWebPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const user = useSelector((state) => state.user?.currentUser);
-  
+
   // Real name ya email ka prefix
   const adminName = user?.fullName || user?.email?.split('@')[0] || "Admin";
-  
+
   // Custom Firebase Logout Hook call
   const handleLogout = useLogout('/admin/login');
 
@@ -61,6 +61,8 @@ export default function AdminWebPanel() {
         return { title: "Manage Users", subtitle: "" };
       case 'orders':
         return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
+      case 'returns':
+        return { title: "Returns & Refunds", subtitle: "Inspect claims, manage pickups, and process customer refunds" };
       default:
         // Fallback: Menu se title nikal lo
         const item = ADMIN_MENU.find(m => m.id === activeTab) || ADMIN_MENU.flatMap(m => m.children || []).find(c => c.id === activeTab);
@@ -71,9 +73,9 @@ export default function AdminWebPanel() {
   const headerInfo = getPageHeader();
 
   return (
-    <DashboardLayout 
-      menuItems={ADMIN_MENU} 
-      activeTab={activeTab} 
+    <DashboardLayout
+      menuItems={ADMIN_MENU}
+      activeTab={activeTab}
       onTabChange={setActiveTab}
       roleName="ADMIN"
       userName={adminName}
@@ -81,11 +83,11 @@ export default function AdminWebPanel() {
       pageSubtitle={headerInfo.subtitle}
       onLogout={handleLogout}
     >
-      
+
       {/* ===== YAHAN BAAKI PAGES AAYENGE ===== */}
-      
+
       {activeTab === 'profile' && (
-        <UserProfile 
+        <UserProfile
           name={adminName}
           email={user?.email || "No Email Found"}
           role="Administrator Role"
@@ -98,9 +100,9 @@ export default function AdminWebPanel() {
       )}
 
       {(activeTab === 'kyc' || activeTab === 'dropshipper-kyc' || activeTab === 'affiliate-kyc') && (
-        <AdminKycManagement 
+        <AdminKycManagement
           key={activeTab}
-          initialType={activeTab === 'dropshipper-kyc' ? 'dropshipper' : activeTab === 'affiliate-kyc' ? 'affiliate' : 'all'} 
+          initialType={activeTab === 'dropshipper-kyc' ? 'dropshipper' : activeTab === 'affiliate-kyc' ? 'affiliate' : 'all'}
         />
       )}
 
@@ -110,6 +112,10 @@ export default function AdminWebPanel() {
 
       {activeTab === 'orders' && (
         <AdminOrdersManagement />
+      )}
+
+      {activeTab === 'returns' && (
+        <AdminReturnsManagement />
       )}
 
     </DashboardLayout>
