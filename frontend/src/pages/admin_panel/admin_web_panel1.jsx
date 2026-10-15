@@ -9,6 +9,8 @@ import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersMana
 import AdminReturnsManagement from '../../components/admin/returns/AdminReturnsManagement';
 import AdminProductsManagement from '../../components/admin/products/AdminProductsManagement';
 import AdminSellersManagement from '../../components/admin/sellers/AdminSellersManagement';
+import AdminFinanceManagement from '../../components/admin/finance/AdminFinanceManagement';
+import AdminAnalyticsManagement from '../../components/admin/analytics/AdminAnalyticsManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
   LayoutDashboard, ShieldCheck, Truck, Users,
@@ -31,10 +33,9 @@ const ADMIN_MENU = [
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds 🔄', icon: RotateCcw },
   { id: 'sellers', label: 'Sellers 🏬', icon: Store },
-  { id: 'analytics', label: 'Analytics', icon: LineChart, path: '/admin-analytics' },
-  { id: 'earnings', label: 'Earnings', icon: Wallet, path: '/earnings-dashboard-1' },
+  { id: 'finance', label: 'Finance & Payouts 💳', icon: Banknote },
+  { id: 'analytics', label: 'Analytics 📊', icon: LineChart },
   { id: 'users', label: 'Users', icon: Users, path: '/user-dashboard' },
-  { id: 'finance', label: 'Finance', icon: Banknote },
 ];
 
 
@@ -69,6 +70,11 @@ export default function AdminWebPanel() {
         return { title: "Returns & Refunds", subtitle: "Inspect claims, manage pickups, and process customer refunds" };
       case 'sellers':
         return { title: "Seller & Supplier Management", subtitle: "Monitor registered vendors, verify business credentials, and manage partner tiers" };
+      case 'finance':
+      case 'earnings':
+        return { title: "Finance, Escrow & Settlements", subtitle: "Manage partner escrow wallets, process withdrawal payouts, and monitor transaction ledger" };
+      case 'analytics':
+        return { title: "Business Intelligence & Analytics", subtitle: "Analyze sales trends, order progression, catalog distribution, and top suppliers" };
       default:
         // Fallback: Menu se title nikal lo
         const item = ADMIN_MENU.find(m => m.id === activeTab) || ADMIN_MENU.flatMap(m => m.children || []).find(c => c.id === activeTab);
@@ -130,6 +136,14 @@ export default function AdminWebPanel() {
 
       {activeTab === 'sellers' && (
         <AdminSellersManagement />
+      )}
+
+      {(activeTab === 'finance' || activeTab === 'earnings') && (
+        <AdminFinanceManagement />
+      )}
+
+      {activeTab === 'analytics' && (
+        <AdminAnalyticsManagement />
       )}
 
     </DashboardLayout>
