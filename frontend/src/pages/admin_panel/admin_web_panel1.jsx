@@ -5,6 +5,7 @@ import UserProfile from '../../components/common/UserProfile';
 import AdminUsersManagement from '../../components/admin/users/AdminUsersManagement';
 import AdminDashboardOverview from '../../components/admin/dashboard/AdminDashboardOverview';
 import AdminKycManagement from '../../components/admin/kyc/AdminKycManagement';
+import AdminOrdersManagement from '../../components/admin/orders/AdminOrdersManagement';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { 
   LayoutDashboard, ShieldCheck, Truck, Users, 
@@ -58,6 +59,8 @@ export default function AdminWebPanel() {
         return { title: "KYC Verifications", subtitle: "" };
       case 'users':
         return { title: "Manage Users", subtitle: "" };
+      case 'orders':
+        return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
       default:
         // Fallback: Menu se title nikal lo
         const item = ADMIN_MENU.find(m => m.id === activeTab) || ADMIN_MENU.flatMap(m => m.children || []).find(c => c.id === activeTab);
@@ -103,6 +106,10 @@ export default function AdminWebPanel() {
 
       {activeTab === 'users' && (
         <AdminUsersManagement />
+      )}
+
+      {activeTab === 'orders' && (
+        <AdminOrdersManagement />
       )}
 
     </DashboardLayout>
