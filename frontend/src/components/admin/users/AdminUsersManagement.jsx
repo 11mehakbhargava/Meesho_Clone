@@ -27,14 +27,17 @@ export default function AdminUsersManagement() {
   
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('ALL');
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
   // 1. Fetch Users from Backend
-  const fetchUsers = async () => {
+  const fetchUsers = async (isManual = false) => {
     try {
-      setLoading(true);
+      if (isManual) setRefreshing(true);
+      else setLoading(true);
+
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
 
       const params = {};
@@ -48,6 +51,11 @@ export default function AdminUsersManagement() {
 
       if (response.data.success) {
         setUsers(response.data.users || []);
+        if (isManual) {
+          toast.success("Users Synced", {
+            description: "Users list refreshed from database."
+          });
+        }
       }
     } catch (err) {
       console.error("Fetch Users Error:", err);
@@ -56,15 +64,26 @@ export default function AdminUsersManagement() {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchUsers();
+      }
+    });
+    return () => unsubscribe();
+  }, [selectedRole]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       fetchUsers();
     }, 300);
     return () => clearTimeout(delayDebounce);
-  }, [searchTerm, selectedRole]);
+  }, [searchTerm]);
 
   // 2. Change User Role
   const handleRoleChange = async (userId, newRole) => {
@@ -136,8 +155,8 @@ export default function AdminUsersManagement() {
         onTabChange={setSelectedRole}
         totalCount={users.length}
         countLabel="Users"
-        onRefresh={fetchUsers}
-        refreshing={loading}
+        onRefresh={() => fetchUsers(true)}
+        refreshing={refreshing}
         searchPlaceholder="Search by name, email, or phone..."
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}

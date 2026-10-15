@@ -12,7 +12,7 @@ export default function DataTable({
   data = [],
   keyExtractor = (item, idx) => item.id || idx,
   loading = false,
-  loadingMessage = 'Loading data...',
+  skeletonRows = 5,
   emptyTitle = 'No records found',
   emptyMessage = 'There are no items matching your criteria.',
   emptyIcon: EmptyIcon = FileText,
@@ -38,14 +38,29 @@ export default function DataTable({
         </thead>
         <tbody className="divide-y divide-gray-100">
           {loading ? (
-            <tr>
-              <td colSpan={columns.length || 1} className="py-12 text-center text-gray-400">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <RefreshCw className="h-6 w-6 animate-spin text-[#b7004d]" />
-                  <p className="text-sm font-medium">{loadingMessage}</p>
-                </div>
-              </td>
-            </tr>
+            Array.from({ length: skeletonRows }).map((_, rIdx) => (
+              <tr key={`skel-row-${rIdx}`} className="animate-pulse">
+                {columns.map((col, cIdx) => (
+                  <td key={`skel-col-${cIdx}`} className={col.cellClassName || 'py-3.5 px-4'}>
+                    {cIdx === 0 ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0"></div>
+                        <div className="space-y-1.5 flex-1">
+                          <div className="h-3.5 bg-gray-200 rounded w-24"></div>
+                          <div className="h-2.5 bg-gray-100 rounded w-32"></div>
+                        </div>
+                      </div>
+                    ) : cIdx === columns.length - 1 ? (
+                      <div className="flex justify-end">
+                        <div className="h-7 bg-gray-200 rounded-lg w-16"></div>
+                      </div>
+                    ) : (
+                      <div className="h-3.5 bg-gray-200 rounded w-20"></div>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))
           ) : data.length === 0 ? (
             <tr>
               <td colSpan={columns.length || 1} className="py-14 text-center text-gray-400">
