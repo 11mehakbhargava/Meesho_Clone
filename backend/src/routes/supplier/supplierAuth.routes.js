@@ -9,8 +9,8 @@ import {
   updateBankDetails,
   updateGstDetails,
   logoutSupplier,
-} from '../controllers/supplier/supplierAuth.controller.js';
-import { verifySupplier } from '../middlewares/supplierAuth.middleware.js';
+} from '../../controllers/supplier/supplierAuth.controller.js';
+import { verifySupplier } from '../../middlewares/supplierAuth.middleware.js';
 
 const router = Router();
 

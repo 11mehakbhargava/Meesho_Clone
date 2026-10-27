@@ -9,19 +9,19 @@ import {
   addCategory,
   getSupplierOrders,
   updateOrderStatus,
-} from '../controllers/supplier/supplier.controller.js';
+} from '../../controllers/supplier/supplier.controller.js';
 import {
   getSupplierProfile,
   updateSupplierProfile,
   updateBankDetails,
   updateGstDetails,
-} from '../controllers/supplier/supplierAuth.controller.js';
+} from '../../controllers/supplier/supplierAuth.controller.js';
 import {
   getSupplierKyc,
   submitSupplierKyc,
-} from '../controllers/supplier/supplierKyc.controller.js';
-import { uploadProductMedia } from '../middlewares/upload.middleware.js';
-import { verifySupplier } from '../middlewares/supplierAuth.middleware.js';
+} from '../../controllers/supplier/supplierKyc.controller.js';
+import { uploadProductMedia } from '../../middlewares/upload.middleware.js';
+import { verifySupplier } from '../../middlewares/supplierAuth.middleware.js';
 
 const router = Router();
 
