@@ -457,6 +457,20 @@ export const submitRotDisputeApi = async ({ firebaseUid, orderId, returnId, reas
   return response.data;
 };
 
+/**
+ * 31. Send Test Dropshipper Email Notification (Live SMTP preview)
+ */
+export const sendTestDropshipperEmailApi = async ({ to, templateType, partnerName, storeName }) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/email/test`, {
+    to,
+    templateType,
+    partnerName,
+    storeName
+  });
+  return response.data;
+};
+
+
 
 
 

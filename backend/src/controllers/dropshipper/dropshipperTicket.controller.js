@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { sendSupportTicketActivityEmail } from '../../services/dropshipperEmail.service.js';
 
 /**
  * 1. Create a Support Dispute / Ticket for Dropshipper
@@ -83,11 +84,27 @@ export const createDropshipperTicket = async (req, res) => {
       }
     });
 
+    const formattedTicketId = `TCK-${ticket.id.slice(0, 8).toUpperCase()}`;
+
+    // Asynchronously dispatch ticket creation notification (Non-blocking)
+    if (profile?.email) {
+      sendSupportTicketActivityEmail({
+        partnerEmail: profile.email,
+        partnerName: profile.fullName || dropshipperName || 'Partner',
+        ticketId: formattedTicketId,
+        subject: ticket.subject,
+        category: finalCategoryLabel,
+        orderId: orderId || '',
+        message: description,
+        isReply: false
+      }).catch(err => console.error('Error sending ticket creation email:', err.message));
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Support ticket raised successfully in database!',
       ticket: {
-        id: `TCK-${ticket.id.slice(0, 8).toUpperCase()}`,
+        id: formattedTicketId,
         dbId: ticket.id,
         subject: ticket.subject,
         category: ticket.category,
@@ -303,6 +320,29 @@ export const replyDropshipperTicket = async (req, res) => {
         updatedAt: new Date()
       }
     });
+
+    // Asynchronously dispatch reply email notification
+    (async () => {
+      try {
+        const partnerProfile = await prisma.profile.findUnique({
+          where: { id: ticket.userId },
+          select: { email: true, fullName: true }
+        });
+        if (partnerProfile?.email) {
+          sendSupportTicketActivityEmail({
+            partnerEmail: partnerProfile.email,
+            partnerName: partnerProfile.fullName || 'Partner',
+            ticketId: `TCK-${ticket.id.slice(0, 8).toUpperCase()}`,
+            subject: ticket.subject,
+            category: ticket.category,
+            message: text.trim(),
+            isReply: true
+          }).catch(e => console.error('Error sending reply email:', e.message));
+        }
+      } catch (e) {
+        console.warn('Async email reply notice:', e.message);
+      }
+    })();
 
     return res.status(200).json({
       success: true,

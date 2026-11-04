@@ -47,6 +47,7 @@ import {
 } from '../../controllers/dropshipper/dropshipperRot.controller.js';
 import { uploadAvatar } from '../../middlewares/upload.middleware.js';
 import { getDropshipperDashboardOverview } from '../../controllers/dropshipper/dropshipperDashboard.controller.js';
+import { testDropshipperEmail } from '../../controllers/dropshipper/dropshipperEmail.controller.js';
 
 const router = Router();
 
@@ -107,5 +108,8 @@ router.post('/settlements/claim', submitSettlementClaim);
 router.get('/rot/:firebaseUid', getDropshipperRotData);
 router.post('/rot/plan', updateDropshipperRotPlan);
 router.post('/rot/dispute', submitRotDispute);
+
+// 11. Automated Email Notification & Live Preview Testing
+router.post('/email/test', testDropshipperEmail);
 
 export default router;

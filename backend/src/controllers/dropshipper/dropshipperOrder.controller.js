@@ -1,4 +1,10 @@
 import prisma from '../../config/prisma.js';
+import { 
+  sendDropshipperOrderPushEmail, 
+  sendCustomerWhiteLabelConfirmationEmail,
+  sendOrderDispatchedEmail,
+  sendOrderDeliveredMarginReleasedEmail 
+} from '../../services/dropshipperEmail.service.js';
 
 /**
  * 1. Push a Single Dropshipper Customer Order to Suppliers
@@ -125,6 +131,50 @@ export const pushDropshipperOrder = async (req, res) => {
         items: true
       }
     });
+
+    // Asynchronously trigger automated Order Push email notifications (Non-blocking)
+    (async () => {
+      try {
+        const partnerProfile = await prisma.profile.findUnique({
+          where: { id: firebaseUid },
+          select: { email: true, fullName: true, storeName: true }
+        });
+
+        const storeBrand = whiteLabelStoreName || partnerProfile?.storeName || 'Kunal Retail';
+        const formattedOrderId = `DSP-${newOrder.id.slice(0, 8).toUpperCase()}`;
+
+        if (partnerProfile?.email) {
+          sendDropshipperOrderPushEmail({
+            partnerEmail: partnerProfile.email,
+            partnerName: partnerProfile.fullName || 'Dropship Partner',
+            storeName: storeBrand,
+            orderId: formattedOrderId,
+            productTitle: shippingAddressPayload.productName,
+            quantity: Number(quantity),
+            customerPrice: Number(customerPrice),
+            resellMargin: calculatedMargin,
+            escrowAmount: calculatedMargin,
+            destinationCity: `${city}, ${state}`
+          }).catch(e => console.error('Error dispatching partner email:', e.message));
+        }
+
+        if (req.body.customerEmail) {
+          sendCustomerWhiteLabelConfirmationEmail({
+            customerEmail: req.body.customerEmail,
+            customerName,
+            storeBrandName: storeBrand,
+            orderId: formattedOrderId,
+            productTitle: shippingAddressPayload.productName,
+            quantity: Number(quantity),
+            totalAmount: Number(customerPrice),
+            shippingAddress: `${address}, ${city}, ${state} - ${pincode}`,
+            supportPhone: customerPhone
+          }).catch(e => console.error('Error dispatching customer email:', e.message));
+        }
+      } catch (e) {
+        console.warn('Async email trigger notice:', e.message);
+      }
+    })();
 
     return res.status(201).json({
       success: true,
