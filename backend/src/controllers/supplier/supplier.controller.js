@@ -37,22 +37,29 @@ const saveBase64Image = (base64Str, baseUrl) => {
 /**
  * 1. Get Supplier Dashboard Statistics
  * GET /api/supplier/dashboard-stats
+ * Strict Database Persistence
  */
 export const getDashboardStats = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
 
-    // Total products for this supplier
+    // Total products for this supplier from PostgreSQL
     const totalProducts = await prisma.product.count({
       where: { supplierId },
-    }).catch(() => 0);
+    });
 
     // Low stock products (< 10)
     const lowStockCount = await prisma.product.count({
       where: { supplierId, stock: { lt: 10 } },
-    }).catch(() => 0);
+    });
 
-    // Fetch supplier order items
+    // Fetch supplier order items from PostgreSQL
     const orderItems = await prisma.orderItem.findMany({
       where: {
         product: { supplierId },
@@ -61,15 +68,18 @@ export const getDashboardStats = async (req, res, next) => {
         order: true,
         product: true,
       },
-    }).catch(() => []);
+      orderBy: {
+        order: { createdAt: 'desc' },
+      },
+    });
 
     const totalOrders = orderItems.length;
     const totalRevenue = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
     // Recent 5 orders
-    const recentOrders = orderItems.slice(-5).map((item) => ({
+    const recentOrders = orderItems.slice(0, 5).map((item) => ({
       orderId: item.orderId,
-      productTitle: item.product?.title,
+      productTitle: item.product?.title || 'Unknown Product',
       quantity: item.quantity,
       price: item.price,
       status: item.order?.orderStatus,
@@ -94,16 +104,23 @@ export const getDashboardStats = async (req, res, next) => {
 /**
  * 2. Get Supplier's Products
  * GET /api/supplier/products
+ * Strict Database Persistence
  */
 export const getSupplierProducts = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const { search, category, page = 1, limit = 20 } = req.query;
 
-    const where = {};
-    if (supplierId && supplierId !== 'all') {
-      where.supplierId = supplierId;
-    }
+    const where = {
+      supplierId,
+    };
     if (search) {
       where.title = { contains: search, mode: 'insensitive' };
     }
@@ -136,12 +153,20 @@ export const getSupplierProducts = async (req, res, next) => {
 };
 
 /**
- * 3. Add a New Product (with Image Upload support)
+ * 3. Add a New Product
  * POST /api/supplier/products
+ * Strict Database Persistence - Stores directly in PostgreSQL
  */
 export const addProduct = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const {
       title,
       description,
@@ -153,7 +178,7 @@ export const addProduct = async (req, res, next) => {
       sizes,
       stock,
       isFreeDelivery,
-      supplierName = 'Verified Supplier',
+      supplierName = req.user?.storeName || 'Verified Supplier',
     } = req.body;
 
     if (!title || !price) {
@@ -172,7 +197,7 @@ export const addProduct = async (req, res, next) => {
       finalCategorySlug = 'general';
     }
 
-    // Ensure Category exists or create it
+    // Ensure Category exists or create it in PostgreSQL
     await prisma.category.upsert({
       where: { slug: finalCategorySlug },
       update: {},
@@ -238,47 +263,27 @@ export const addProduct = async (req, res, next) => {
       }
     }
 
-    let newProduct;
-    try {
-      newProduct = await prisma.product.create({
-        data: {
-          title,
-          description: description || '',
-          price: parseFloat(price),
-          originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-          discountPercentage: discountPercentage ? parseInt(discountPercentage, 10) : 0,
-          categorySlug: finalCategorySlug,
-          images: imageUrls,
-          sizes: parsedSizes,
-          stock: stock ? parseInt(stock, 10) : 50,
-          isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
-          supplierName,
-          supplierId,
-        },
-      });
-    } catch (dbErr) {
-      console.warn('Prisma create product fallback:', dbErr.message);
-      // Fallback object to ensure seamless operation
-      const fallbackId = `prod_${Date.now()}`;
-      newProduct = {
-        id: fallbackId,
+    // Persist directly to PostgreSQL database via Prisma
+    const newProduct = await prisma.product.create({
+      data: {
         title,
         description: description || '',
         price: parseFloat(price),
         originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        discountPercentage: discountPercentage ? parseInt(discountPercentage, 10) : 0,
         categorySlug: finalCategorySlug,
         images: imageUrls,
         sizes: parsedSizes,
         stock: stock ? parseInt(stock, 10) : 50,
+        isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
         supplierId,
-        createdAt: new Date().toISOString(),
-      };
-    }
+      },
+    });
 
-    // Also sync to Supabase
-    try {
-      if (supabase && newProduct) {
+    // Optional sync to Supabase if configured
+    if (supabase && newProduct) {
+      try {
         await supabase.from('products').insert([
           {
             id: newProduct.id,
@@ -290,14 +295,16 @@ export const addProduct = async (req, res, next) => {
             category_slug: newProduct.categorySlug,
             supplier_id: supplierId,
             supplier_name: supplierName,
-          }
-        ]).select().catch(() => {});
+          },
+        ]);
+      } catch (sbErr) {
+        console.warn('Optional Supabase product sync skipped:', sbErr.message);
       }
-    } catch (_) {}
+    }
 
     return res.status(201).json({
       success: true,
-      message: 'Product created and synced successfully!',
+      message: 'Product created and stored in database successfully!',
       data: newProduct,
     });
   } catch (error) {
@@ -308,11 +315,33 @@ export const addProduct = async (req, res, next) => {
 /**
  * 4. Update Product
  * PUT /api/supplier/products/:id
+ * Strict Database Persistence
  */
 export const updateProduct = async (req, res, next) => {
   try {
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const { id } = req.params;
     const updateData = { ...req.body };
+
+    // Verify ownership
+    const existing = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    if (existing.supplierId && existing.supplierId !== supplierId) {
+      return res.status(403).json({ success: false, message: 'Access denied: You do not own this product' });
+    }
 
     // Format numbers
     if (updateData.price) updateData.price = parseFloat(updateData.price);
@@ -346,7 +375,7 @@ export const updateProduct = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Product updated successfully!',
+      message: 'Product updated successfully in database!',
       data: updated,
     });
   } catch (error) {
@@ -357,10 +386,31 @@ export const updateProduct = async (req, res, next) => {
 /**
  * 5. Delete Product
  * DELETE /api/supplier/products/:id
+ * Strict Database Persistence
  */
 export const deleteProduct = async (req, res, next) => {
   try {
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const { id } = req.params;
+
+    const existing = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    if (existing.supplierId && existing.supplierId !== supplierId) {
+      return res.status(403).json({ success: false, message: 'Access denied: You do not own this product' });
+    }
 
     await prisma.product.delete({
       where: { id },
@@ -368,7 +418,7 @@ export const deleteProduct = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Product deleted successfully!',
+      message: 'Product deleted from database successfully!',
     });
   } catch (error) {
     next(error);
@@ -411,7 +461,7 @@ export const addCategory = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Category saved successfully!',
+      message: 'Category saved successfully in database!',
       data: category,
     });
   } catch (error) {
@@ -422,10 +472,17 @@ export const addCategory = async (req, res, next) => {
 /**
  * 7. Get Supplier Orders
  * GET /api/supplier/orders
+ * Strict Database Persistence
  */
 export const getSupplierOrders = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
 
     const orders = await prisma.order.findMany({
       where: {
@@ -458,9 +515,18 @@ export const getSupplierOrders = async (req, res, next) => {
 /**
  * 8. Update Order Status
  * PATCH /api/supplier/orders/:id/status
+ * Strict Database Persistence
  */
 export const updateOrderStatus = async (req, res, next) => {
   try {
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const { id } = req.params;
     const { orderStatus } = req.body;
 
@@ -500,12 +566,19 @@ export const updateOrderStatus = async (req, res, next) => {
 /**
  * 9. Get Supplier Settlements & Payouts
  * GET /api/supplier/finance-settlements
+ * Strict Database Persistence - Calculations from real database orders
  */
 export const getSupplierSettlements = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
 
-    // 1. Fetch supplier profile & bank details
+    // 1. Fetch supplier profile & verified bank details from database
     const profile = await prisma.profile.findUnique({
       where: { id: supplierId },
       select: {
@@ -513,11 +586,12 @@ export const getSupplierSettlements = async (req, res, next) => {
         fullName: true,
         storeName: true,
         bankDetails: true,
-        gstDetails: true,
+        gstin: true,
+        pan: true,
       },
-    }).catch(() => null);
+    });
 
-    // 2. Fetch order items for this supplier
+    // 2. Fetch order items for this supplier from database
     const orderItems = await prisma.orderItem.findMany({
       where: {
         product: { supplierId },
@@ -526,10 +600,12 @@ export const getSupplierSettlements = async (req, res, next) => {
         order: true,
         product: true,
       },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => []);
+      orderBy: {
+        order: { createdAt: 'desc' },
+      },
+    });
 
-    // 3. Compute live financial numbers
+    // 3. Compute live financial numbers strictly from real database rows
     let grossRevenue = 0;
     let settledAmount = 0;
     let escrowBalance = 0;
@@ -560,7 +636,7 @@ export const getSupplierSettlements = async (req, res, next) => {
       year: 'numeric',
     });
 
-    // 4. Generate Settlement Ledger
+    // 4. Generate Settlement Ledger strictly based on database orders
     const settlements = [];
     if (orderItems.length > 0) {
       const deliveredItems = orderItems.filter((i) => i.order?.orderStatus === 'DELIVERED');
@@ -568,7 +644,7 @@ export const getSupplierSettlements = async (req, res, next) => {
         const batchGross = deliveredItems.reduce((acc, i) => acc + ((i.price || 0) * (i.quantity || 1)), 0);
         const batchTds = Math.round(batchGross * 0.01 * 100) / 100;
         settlements.push({
-          id: `STL-2026-${deliveredItems[0]?.orderId?.slice(-4) || '8841'}`,
+          id: `STL-DELIVERED-${deliveredItems[0]?.orderId?.slice(-6) || 'BATCH'}`,
           date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
           ordersCount: deliveredItems.length,
           grossAmount: batchGross,
@@ -577,24 +653,25 @@ export const getSupplierSettlements = async (req, res, next) => {
           netAmount: batchGross - batchTds,
           status: 'PAID',
           utrNumber: `CMS${Date.now().toString().slice(-9)}NEFT`,
-          bankName: profile?.bankDetails?.bankName || 'State Bank of India',
+          bankName: profile?.bankDetails?.bankName || 'Registered Bank Account',
         });
       }
-    }
 
-    if (escrowBalance > 0 || settlements.length === 0) {
-      settlements.push({
-        id: `STL-PENDING-${now.getFullYear()}${now.getMonth() + 1}`,
-        date: nextPayoutDateStr,
-        ordersCount: orderItems.filter((i) => i.order?.orderStatus !== 'DELIVERED').length || 1,
-        grossAmount: escrowBalance > 0 ? escrowBalance : 0,
-        commissionRate: '0%',
-        tdsAmount: 0,
-        netAmount: escrowBalance > 0 ? escrowBalance : 0,
-        status: escrowBalance > 0 ? 'PROCESSING' : 'ON_HOLD',
-        utrNumber: 'Awaiting Bank Settlement Cycle',
-        bankName: profile?.bankDetails?.bankName || 'Registered Bank Account',
-      });
+      if (escrowBalance > 0) {
+        const pendingItems = orderItems.filter((i) => i.order?.orderStatus !== 'DELIVERED');
+        settlements.push({
+          id: `STL-PENDING-${now.getFullYear()}${now.getMonth() + 1}`,
+          date: nextPayoutDateStr,
+          ordersCount: pendingItems.length,
+          grossAmount: escrowBalance,
+          commissionRate: '0%',
+          tdsAmount: 0,
+          netAmount: escrowBalance,
+          status: 'PROCESSING',
+          utrNumber: 'Awaiting Bank Settlement Cycle',
+          bankName: profile?.bankDetails?.bankName || 'Registered Bank Account',
+        });
+      }
     }
 
     return res.status(200).json({
@@ -621,21 +698,30 @@ export const getSupplierSettlements = async (req, res, next) => {
 /**
  * 10. Get Supplier Analytics & Performance
  * GET /api/supplier/analytics
+ * Strict Database Persistence - 100% computed from real database records
  */
 export const getSupplierAnalytics = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
 
     const [products, orderItems] = await Promise.all([
       prisma.product.findMany({
         where: { supplierId },
-        select: { id: true, title: true, price: true, stock: true, categorySlug: true, images: true, imageUrl: true },
-      }).catch(() => []),
+        select: { id: true, title: true, price: true, stock: true, categorySlug: true, images: true },
+      }),
       prisma.orderItem.findMany({
         where: { product: { supplierId } },
         include: { order: true, product: true },
-        orderBy: { createdAt: 'desc' },
-      }).catch(() => []),
+        orderBy: {
+          order: { createdAt: 'desc' },
+        },
+      }),
     ]);
 
     const totalOrdersCount = orderItems.length;
@@ -649,18 +735,38 @@ export const getSupplierAnalytics = async (req, res, next) => {
     const fulfillmentRate = totalOrdersCount > 0 ? Math.round(((deliveredCount + shippedCount) / totalOrdersCount) * 100) : 100;
     const returnRate = totalOrdersCount > 0 ? Math.round((returnCount / totalOrdersCount) * 100) : 0;
 
-    // Monthly trends (Last 6 Months)
-    const monthNames = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
-    const revenueTrends = monthNames.map((m, idx) => {
-      const base = totalSales > 0 ? Math.round(totalSales / (6 - idx * 0.4)) : 0;
-      return {
-        month: m,
-        revenue: base,
-        orders: Math.max(1, Math.round(totalOrdersCount / (6 - idx * 0.5))),
-      };
+    // Monthly trends (Last 6 Months calculated strictly from database dates)
+    const now = new Date();
+    const monthlyBuckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthlyBuckets.push({
+        month: d.toLocaleString('en-IN', { month: 'short' }),
+        year: d.getFullYear(),
+        monthIndex: d.getMonth(),
+        revenue: 0,
+        orders: 0,
+      });
+    }
+
+    orderItems.forEach((item) => {
+      const itemDate = new Date(item.order?.createdAt || now);
+      const itemYear = itemDate.getFullYear();
+      const itemMonth = itemDate.getMonth();
+      const bucket = monthlyBuckets.find((b) => b.year === itemYear && b.monthIndex === itemMonth);
+      if (bucket) {
+        bucket.revenue += Math.round(((item.price || 0) * (item.quantity || 1)) * 100) / 100;
+        bucket.orders += 1;
+      }
     });
 
-    // Top Selling Products
+    const revenueTrends = monthlyBuckets.map((b) => ({
+      month: b.month,
+      revenue: Math.round(b.revenue * 100) / 100,
+      orders: b.orders,
+    }));
+
+    // Top Selling Products strictly from database order history
     const productSalesMap = {};
     orderItems.forEach((item) => {
       const pid = item.productId || item.product?.id;
@@ -671,7 +777,7 @@ export const getSupplierAnalytics = async (req, res, next) => {
           title: item.product?.title || 'Catalog Product',
           price: item.price || 0,
           stock: item.product?.stock ?? 0,
-          image: (Array.isArray(item.product?.images) && item.product?.images[0]) || item.product?.imageUrl || null,
+          image: (Array.isArray(item.product?.images) && item.product?.images[0]) || null,
           unitsSold: 0,
           revenue: 0,
         };
@@ -684,7 +790,7 @@ export const getSupplierAnalytics = async (req, res, next) => {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
-    // Fallback if no order items yet, show active products with 0 sales
+    // If no sales yet, show active products from database with 0 units sold
     if (topProducts.length === 0 && products.length > 0) {
       products.slice(0, 5).forEach((p) => {
         topProducts.push({
@@ -692,7 +798,7 @@ export const getSupplierAnalytics = async (req, res, next) => {
           title: p.title,
           price: p.price,
           stock: p.stock ?? 0,
-          image: (Array.isArray(p.images) && p.images[0]) || p.imageUrl || null,
+          image: (Array.isArray(p.images) && p.images[0]) || null,
           unitsSold: 0,
           revenue: 0,
         });
@@ -724,4 +830,3 @@ export const getSupplierAnalytics = async (req, res, next) => {
     next(error);
   }
 };
-

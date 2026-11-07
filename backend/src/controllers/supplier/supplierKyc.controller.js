@@ -3,9 +3,6 @@ import path from 'path';
 import prisma from '../../config/prisma.js';
 import supabase from '../../config/supabaseClient.js';
 
-// In-memory fallback store for offline resiliency
-const fallbackKycStore = new Map();
-
 // Helper to save base64 data URLs as static files in uploads/
 const saveBase64Image = (base64Str, baseUrl) => {
   try {
@@ -42,47 +39,44 @@ const saveBase64Image = (base64Str, baseUrl) => {
 /**
  * 1. Get Current Supplier's KYC Application & Status
  * GET /api/supplier/kyc
+ * Strict Database Persistence - No In-Memory Fallbacks
  */
 export const getSupplierKyc = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || req.user?.id || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
 
-    let kyc = null;
-    try {
-      kyc = await prisma.kYCApplication.findFirst({
-        where: {
-          userId: supplierId,
-          type: 'supplier',
-        },
-        orderBy: { createdAt: 'desc' },
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
       });
-    } catch (err) {
-      console.warn('Prisma getSupplierKyc fallback:', err.message);
     }
 
-    // Check memory fallback
-    if (!kyc) {
-      kyc = fallbackKycStore.get(supplierId) || null;
-    }
+    // Direct database query from KYCApplication
+    const kyc = await prisma.kYCApplication.findFirst({
+      where: {
+        userId: supplierId,
+        type: 'supplier',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    // If still null, check if profile has verified GST/PAN
-    let profile = null;
-    try {
-      profile = await prisma.profile.findUnique({
-        where: { id: supplierId },
-      });
-    } catch (_) {}
+    // Fetch verified profile details from PostgreSQL
+    const profile = await prisma.profile.findUnique({
+      where: { id: supplierId },
+      select: {
+        storeName: true,
+        gstin: true,
+        pan: true,
+        bankDetails: true,
+      },
+    });
 
     return res.status(200).json({
       success: true,
       kyc,
       isVerified: kyc?.status === 'APPROVED',
-      profile: profile ? {
-        storeName: profile.storeName,
-        gstin: profile.gstin,
-        pan: profile.pan,
-        bankDetails: profile.bankDetails,
-      } : null,
+      profile: profile || null,
     });
   } catch (error) {
     next(error);
@@ -92,10 +86,19 @@ export const getSupplierKyc = async (req, res, next) => {
 /**
  * 2. Submit or Re-submit Supplier KYC Application
  * POST /api/supplier/kyc
+ * Strict Database Persistence - Stores in PostgreSQL and uploads directory
  */
 export const submitSupplierKyc = async (req, res, next) => {
   try {
-    const supplierId = req.supplierId || req.user?.id || 'supplier_demo_001';
+    const supplierId = req.supplierId || req.user?.id;
+
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
     const hostBaseUrl = `${req.protocol}://${req.get('host')}`;
 
     const {
@@ -122,7 +125,7 @@ export const submitSupplierKyc = async (req, res, next) => {
       warehousePhone,
     } = req.body;
 
-    // Process uploaded/base64 document proofs
+    // Process uploaded/base64 document proofs to physical storage
     const gstCertificate = saveBase64Image(req.body.gstCertificate, hostBaseUrl);
     const panImage = saveBase64Image(req.body.panImage, hostBaseUrl);
     const aadhaarFrontImage = saveBase64Image(req.body.aadhaarFrontImage, hostBaseUrl);
@@ -184,67 +187,50 @@ export const submitSupplierKyc = async (req, res, next) => {
       submittedAt: new Date().toISOString(),
     };
 
-    let kycApplication = null;
-    try {
-      // Ensure user profile exists
-      await prisma.profile.upsert({
-        where: { id: supplierId },
-        update: {
-          storeName: documents.tradeName,
-          gstin: documents.gstin || undefined,
-          pan: documents.pan.number || undefined,
-          bankDetails: documents.bank,
-        },
-        create: {
-          id: supplierId,
-          role: 'SUPPLIER',
-          fullName: documents.pan.nameOnDoc || documents.businessName,
-          storeName: documents.tradeName,
-          gstin: documents.gstin || undefined,
-          pan: documents.pan.number || undefined,
-          bankDetails: documents.bank,
-        },
-      });
+    // Update Profile in PostgreSQL with latest business & bank details
+    await prisma.profile.upsert({
+      where: { id: supplierId },
+      update: {
+        storeName: documents.tradeName,
+        gstin: documents.gstin || undefined,
+        pan: documents.pan.number || undefined,
+        bankDetails: documents.bank,
+      },
+      create: {
+        id: supplierId,
+        role: 'SUPPLIER',
+        fullName: documents.pan.nameOnDoc || documents.businessName,
+        storeName: documents.tradeName,
+        gstin: documents.gstin || undefined,
+        pan: documents.pan.number || undefined,
+        bankDetails: documents.bank,
+      },
+    });
 
-      // Create new KYC Application record for Admin review
-      kycApplication = await prisma.kYCApplication.create({
-        data: {
-          userId: supplierId,
-          type: 'supplier',
-          status: 'PENDING',
-          documents,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              role: true,
-            },
-          },
-        },
-      });
-    } catch (dbErr) {
-      console.warn('Prisma submitSupplierKyc fallback:', dbErr.message);
-      kycApplication = {
-        id: `kyc_app_${Date.now()}`,
+    // Create new KYC Application record in PostgreSQL database
+    const kycApplication = await prisma.kYCApplication.create({
+      data: {
         userId: supplierId,
         type: 'supplier',
         status: 'PENDING',
         documents,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            role: true,
+          },
+        },
+      },
+    });
 
-    // Persist in fallback store
-    fallbackKycStore.set(supplierId, kycApplication);
-
-    // Sync to Supabase if configured
-    try {
-      if (supabase) {
+    // Optional sync to Supabase if configured
+    if (supabase) {
+      try {
         await supabase.from('kyc_applications').insert([
           {
             id: kycApplication.id,
@@ -254,9 +240,11 @@ export const submitSupplierKyc = async (req, res, next) => {
             documents,
             created_at: new Date().toISOString(),
           },
-        ]).catch(() => {});
+        ]);
+      } catch (sbErr) {
+        console.warn('Optional Supabase sync skipped:', sbErr.message);
       }
-    } catch (_) {}
+    }
 
     return res.status(201).json({
       success: true,
