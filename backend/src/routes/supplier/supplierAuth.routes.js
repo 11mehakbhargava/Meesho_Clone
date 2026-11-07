@@ -2,8 +2,8 @@ import { Router } from 'express';
 import {
   registerSupplier,
   loginSupplier,
-  sendSupplierOtp,
-  verifySupplierOtp,
+} from '../../controllers/supplier/supplierAuth1.controller.js';
+import {
   getSupplierProfile,
   updateSupplierProfile,
   updateBankDetails,
@@ -14,11 +14,9 @@ import { verifySupplier } from '../../middlewares/supplierAuth.middleware.js';
 
 const router = Router();
 
-// Public Authentication Routes
+// Public Authentication Routes (Firebase UID Based, No JWT)
 router.post('/register', registerSupplier);
 router.post('/login', loginSupplier);
-router.post('/send-otp', sendSupplierOtp);
-router.post('/verify-otp', verifySupplierOtp);
 router.post('/logout', logoutSupplier);
 
 // Authenticated Supplier Profile Routes

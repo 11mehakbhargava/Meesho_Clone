@@ -7,15 +7,20 @@ import {
   PlusCircle,
   Store,
   ShieldCheck,
+  Banknote,
+  LineChart,
 } from 'lucide-react';
 
 export const SUPPLIER_MENU = [
-  { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard, path: '/seller-web-dashboard1' },
-  { id: 'inventory', label: 'Products & Catalog', icon: Package, path: '/supplier-inventory1' },
-  { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingCart, path: '/supplier-orders1' },
-  { id: 'dropship', label: 'Dropship Fulfilment', icon: Truck, path: '/supplier-dropship1' },
-  { id: 'returns', label: 'Returns & RTO Hub', icon: RotateCcw, path: '/supplier-returns1' },
-  { id: 'add-product', label: 'Add New Product', icon: PlusCircle, path: '/supplier-add-product1' },
-  { id: 'kyc', label: 'Supplier KYC Hub', icon: ShieldCheck, path: '/supplier-kyc1' },
-  { id: 'profile', label: 'Store Profile & KYC', icon: Store, path: '/supplier-profile1' },
+  { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
+  { id: 'inventory', label: 'Products & Catalog', icon: Package },
+  { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingCart },
+  { id: 'finance', label: 'Settlements & Payouts 💳', icon: Banknote },
+  { id: 'dropship', label: 'Dropship Fulfilment 📦', icon: Truck },
+  { id: 'returns', label: 'Returns & RTO Hub 🔄', icon: RotateCcw },
+  { id: 'add-product', label: 'Add New Product ➕', icon: PlusCircle },
+  { id: 'kyc', label: 'Supplier KYC Hub 🛡️', icon: ShieldCheck },
+  { id: 'analytics', label: 'Sales Analytics 📊', icon: LineChart },
+  { id: 'profile', label: 'Store Profile & Bank', icon: Store },
 ];
+

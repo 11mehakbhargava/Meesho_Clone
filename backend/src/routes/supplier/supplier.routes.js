@@ -9,6 +9,8 @@ import {
   addCategory,
   getSupplierOrders,
   updateOrderStatus,
+  getSupplierSettlements,
+  getSupplierAnalytics,
 } from '../../controllers/supplier/supplier.controller.js';
 import {
   getSupplierProfile,
@@ -40,6 +42,8 @@ router.post('/kyc', submitSupplierKyc);
 
 // Dashboard & Analytics
 router.get('/dashboard-stats', getDashboardStats);
+router.get('/analytics', getSupplierAnalytics);
+router.get('/finance-settlements', getSupplierSettlements);
 
 // Products / Catalog
 router.get('/products', getSupplierProducts);
