@@ -714,9 +714,21 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
                               <h4 className="font-bold text-slate-900 truncate text-[13px] group-hover:text-[#b7004d] transition-colors">
                                 {prod.title}
                               </h4>
-                              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                                SKU: {prod.sku || `MSH-${String(prod.id).slice(-6)}`}
-                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span className="text-[11px] text-slate-400 font-mono">
+                                  SKU: {prod.sku || `MSH-${String(prod.id).slice(-6)}`}
+                                </span>
+                                {prod.thickness && (
+                                  <span className="text-[9.5px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                    {prod.thickness}
+                                  </span>
+                                )}
+                                {Array.isArray(prod.colors) && prod.colors.length > 0 && (
+                                  <span className="text-[9.5px] font-bold text-[#b7004d] bg-pink-50 px-1.5 py-0.5 rounded border border-pink-100">
+                                    {prod.colors.length} Color{prod.colors.length > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>

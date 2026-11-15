@@ -1097,6 +1097,16 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               {/* Product Description */}
               <div className="bg-white rounded-3xl p-5 md:p-6 border border-slate-100 shadow-xs mb-5 space-y-3">
                 <h3 className="font-black text-sm text-slate-900">Product Details &amp; Specifications</h3>
+
+                {product.thickness && (
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-600">Material Thickness / Fabric Weight:</span>
+                    <span className="text-xs font-black text-[#b7004d] bg-pink-50 px-3 py-1 rounded-xl border border-pink-100">
+                      {product.thickness}
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-xs md:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
                   {product.description || 'Premium quality verified product directly from manufacturer. Perfect finish, breathable fabric, and durable stitching.'}
                 </p>
