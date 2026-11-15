@@ -48,27 +48,15 @@ export default function HomeUserReseller() {
     return [];
   });
 
-  // Dynamic Categories from PostgreSQL Database
+  // Pure Dynamic Categories from PostgreSQL Database (Zero hardcoded fallbacks)
   const displayCategories = useMemo(() => {
-    if (dbCategories.length > 0) {
-      return [
-        { name: "All", icon: "dashboard", slug: "All" },
-        ...dbCategories.map((c) => ({
-          name: c.name,
-          icon: getCategoryIcon(c.slug || c.name),
-          slug: c.slug || c.name
-        }))
-      ];
-    }
     return [
       { name: "All", icon: "dashboard", slug: "All" },
-      { name: "Women Ethnic", icon: "checkroom", slug: "women-ethnic" },
-      { name: "Men Western", icon: "styler", slug: "men-western" },
-      { name: "Kids Wear", icon: "child_care", slug: "kids-wear" },
-      { name: "Home & Kitchen", icon: "home_iot_device", slug: "home-kitchen" },
-      { name: "Electronics", icon: "earbuds", slug: "electronics" },
-      { name: "Beauty & Health", icon: "shopping_basket", slug: "beauty-health" },
-      { name: "Jewellery", icon: "diamond", slug: "jewellery" },
+      ...dbCategories.map((c) => ({
+        name: c.name,
+        icon: getCategoryIcon(c.slug || c.name),
+        slug: c.slug || c.name
+      }))
     ];
   }, [dbCategories]);
 
