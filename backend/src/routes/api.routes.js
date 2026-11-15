@@ -19,6 +19,13 @@ import adminCouponsRoutes from './admin/adminCoupons.routes.js';
 import adminBannersRoutes from './admin/adminBanners.routes.js';
 import adminCmsRoutes from './admin/adminCms.routes.js';
 import adminReviewsRoutes from './admin/adminReviews.routes.js';
+import adminFlashSaleRoutes from './admin/adminFlashSale.routes.js';
+import adminSettingsRoutes from './admin/adminSettings.routes.js';
+import adminBroadcastRoutes from './admin/adminBroadcast.routes.js';
+import adminStaffRoutes from './admin/adminStaff.routes.js';
+import adminAuditRoutes from './admin/adminAudit.routes.js';
+import notificationRoutes from './notification.routes.js';
+import { getPublicSettings } from '../controllers/admin/adminSettings.controller.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
@@ -62,6 +69,13 @@ apiRouter.use('/admin-banners', adminBannersRoutes);
 apiRouter.use('/banners', adminBannersRoutes);
 apiRouter.use('/admin-cms', adminCmsRoutes);
 apiRouter.use('/admin-reviews', adminReviewsRoutes);
+apiRouter.use('/admin-flash-sale', adminFlashSaleRoutes);
+apiRouter.use('/admin-settings', adminSettingsRoutes);
+apiRouter.use('/admin-broadcast', adminBroadcastRoutes);
+apiRouter.use('/admin-staff', adminStaffRoutes);
+apiRouter.use('/admin-audit', adminAuditRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.get('/settings/public', getPublicSettings);
 
 // Supplier Module endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);

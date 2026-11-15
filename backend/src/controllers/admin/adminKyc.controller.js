@@ -58,6 +58,7 @@ export const normalizeKycApplication = (app) => {
 };
 
 import prisma from '../../config/prisma.js';
+import { logAdminAction } from '../../utils/auditLogger.js';
 
 /**
  * 1. GET ALL KYC APPLICATIONS (With Filters & Search)
@@ -227,6 +228,17 @@ export const updateKycStatus = async (req, res) => {
         }).catch((err) => console.warn('Affiliate profile auto-update warning:', err.message));
       }
     }
+
+    // Record Audit Log (Task 9 integration)
+    const reasonText = adminNotes || req.body?.rejectionReason || '';
+    await logAdminAction({
+      adminEmail: req.user?.email || 'admin@meesho.com',
+      adminName: req.user?.fullName || 'Super Admin',
+      action: `KYC_${normalizedStatus}`,
+      targetType: 'KYC',
+      targetId: id,
+      details: `${normalizedStatus} KYC application for ${existing.user?.fullName || existing.type} (Type: ${existing.type})${reasonText ? ` - Notes: ${reasonText}` : ''}`
+    });
 
     return res.status(200).json({
       success: true,

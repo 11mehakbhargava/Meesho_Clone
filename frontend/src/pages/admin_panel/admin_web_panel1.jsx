@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { auth } from '../../utils/firebase';
+import { API_V1_BASE } from '../../config/apiConfig';
 import { useLogout } from '../../hooks/useLogout';
 import UserProfile from '../../components/common/UserProfile';
 import AdminUsersManagement from '../../components/admin/users/AdminUsersManagement';
@@ -18,11 +21,18 @@ import AdminBannersManagement from '../../components/admin/banners/AdminBannersM
 import AdminCmsManagement from '../../components/admin/cms/AdminCmsManagement';
 import AdminSeoManagement from '../../components/admin/seo/AdminSeoManagement';
 import AdminReviewsManagement from '../../components/admin/reviews/AdminReviewsManagement';
+import AdminFlashSaleManagement from '../../components/admin/flashSale/AdminFlashSaleManagement';
+import AdminSettingsManagement from '../../components/admin/settings/AdminSettingsManagement';
+import AdminBroadcastManagement from '../../components/admin/broadcast/AdminBroadcastManagement';
+import AdminStaffManagement from '../../components/admin/staff/AdminStaffManagement';
+import AdminAuditManagement from '../../components/admin/audit/AdminAuditManagement';
+import OrderSoundAlertWidget from '../../components/admin/orders/OrderSoundAlertWidget';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
   LayoutDashboard, ShieldCheck, Truck, Users,
   Package, ShoppingCart, RotateCcw, LineChart,
-  Wallet, Banknote, Store, Headphones, Layers, Ticket, Image, FileText, Globe, Star
+  Wallet, Banknote, Store, Headphones, Layers, Ticket, Image, FileText, Globe, Star, Zap, Sliders, Megaphone,
+  UserCheck, FileClock
 } from 'lucide-react';
 // Yeh raha aapka MASTER MENU (with Sub-menus)
 const ADMIN_MENU = [
@@ -40,10 +50,15 @@ const ADMIN_MENU = [
   { id: 'products', label: 'Products ', icon: Package },
   { id: 'categories', label: 'Categories ', icon: Layers },
   { id: 'reviews', label: 'Reviews & Ratings ⭐', icon: Star },
+  { id: 'flash-sale', label: 'Flash Sale & Deals ⚡', icon: Zap },
   { id: 'coupons', label: 'Coupons 🎟️', icon: Ticket },
   { id: 'banners', label: 'Banners 🎨', icon: Image },
   { id: 'cms', label: 'CMS Pages 📄', icon: FileText },
   { id: 'seo', label: 'SEO & Sitemap 🌐', icon: Globe },
+  { id: 'settings', label: 'Platform Settings ⚙️', icon: Sliders },
+  { id: 'broadcast', label: 'Announcements 📢', icon: Megaphone },
+  { id: 'staff', label: 'Staff & Roles 👥', icon: UserCheck },
+  { id: 'audit', label: 'Audit Logs 📜', icon: FileClock },
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'returns', label: 'Returns & Refunds ', icon: RotateCcw },
   { id: 'sellers', label: 'Sellers ', icon: Store },
@@ -56,6 +71,7 @@ const ADMIN_MENU = [
 
 export default function AdminWebPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [staffInfo, setStaffInfo] = useState(null);
   const user = useSelector((state) => state.user?.currentUser);
 
   // Real name ya email ka prefix
@@ -63,6 +79,45 @@ export default function AdminWebPanel() {
 
   // Custom Firebase Logout Hook call
   const handleLogout = useLogout('/admin/login');
+
+  useEffect(() => {
+    const fetchCurrentStaffPermissions = async () => {
+      try {
+        let token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        if (auth.currentUser) {
+          const idToken = await auth.currentUser.getIdToken().catch(() => null);
+          if (idToken) token = idToken;
+        }
+        const res = await axios.get(`${API_V1_BASE}/admin-staff`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          const currentStaff = res.data.data.find(
+            (s) => s.email?.toLowerCase() === user?.email?.toLowerCase()
+          );
+          if (currentStaff) {
+            setStaffInfo(currentStaff);
+          }
+        }
+      } catch (e) {
+        // Silently default to super admin
+      }
+    };
+    if (user?.email) {
+      fetchCurrentStaffPermissions();
+    }
+  }, [user?.email]);
+
+  const isSuperAdmin = !staffInfo || staffInfo.role === 'SUPER_ADMIN' || (staffInfo.permissions && staffInfo.permissions.includes('ALL'));
+
+  const filteredMenuItems = useMemo(() => {
+    if (isSuperAdmin) return ADMIN_MENU;
+    const allowed = Array.isArray(staffInfo?.permissions) ? staffInfo.permissions : [];
+    return ADMIN_MENU.filter((item) => {
+      if (item.id === 'dashboard') return true;
+      return allowed.includes(item.id);
+    });
+  }, [isSuperAdmin, staffInfo]);
 
   // Helper function to get Title and Subtitle dynamically based on Active Tab
   const getPageHeader = () => {
@@ -84,6 +139,8 @@ export default function AdminWebPanel() {
         return { title: "Category Master & Taxonomies", subtitle: "Organize catalog hierarchies, manage category slugs, and link products" };
       case 'reviews':
         return { title: "Customer Reviews & Moderation Hub", subtitle: "Inspect buyer feedback, moderate customer unboxing photos, and manage ratings" };
+      case 'flash-sale':
+        return { title: "Flash Sales & Lightning Deals Manager", subtitle: "Configure live countdown timers, campaign banners, and featured deal products" };
       case 'coupons':
         return { title: "Coupons & Promotional Codes", subtitle: "Configure promotional discounts, validate campaigns, and track customer redemptions" };
       case 'banners':
@@ -92,6 +149,14 @@ export default function AdminWebPanel() {
         return { title: "CMS & Legal Policy Pages", subtitle: "Manage Privacy Policy, Terms, Return policies, and custom storefront pages with SEO tags" };
       case 'seo':
         return { title: "Technical SEO & Sitemap Manager", subtitle: "Live search engine indexing, robots.txt directives, and sitemaps.org protocol" };
+      case 'settings':
+        return { title: "Global Platform Business Settings", subtitle: "Configure commission cuts, reseller payouts, free delivery thresholds, and payment gateway controls" };
+      case 'broadcast':
+        return { title: "Push Announcements & Broadcast Center", subtitle: "Dispatch targeted marketing alerts and platform notifications across all user devices" };
+      case 'staff':
+        return { title: "Staff Roles & Access Control (RBAC)", subtitle: "Delegate sub-admin privileges, configure role presets, and restrict operational tab access" };
+      case 'audit':
+        return { title: "Admin Activity Audit Logs", subtitle: "Immutable forensic activity trail capturing moderation, settings changes, and privileged updates" };
       case 'orders':
         return { title: "Manage Orders", subtitle: "Track, fulfill, and monitor customer orders" };
       case 'returns':
@@ -116,7 +181,7 @@ export default function AdminWebPanel() {
 
   return (
     <DashboardLayout
-      menuItems={ADMIN_MENU}
+      menuItems={filteredMenuItems}
       activeTab={activeTab}
       onTabChange={setActiveTab}
       roleName="ADMIN"
@@ -165,6 +230,10 @@ export default function AdminWebPanel() {
         <AdminReviewsManagement />
       )}
 
+      {activeTab === 'flash-sale' && (
+        <AdminFlashSaleManagement />
+      )}
+
       {activeTab === 'coupons' && (
         <AdminCouponsManagement />
       )}
@@ -179,6 +248,22 @@ export default function AdminWebPanel() {
 
       {activeTab === 'seo' && (
         <AdminSeoManagement />
+      )}
+
+      {activeTab === 'settings' && (
+        <AdminSettingsManagement />
+      )}
+
+      {activeTab === 'broadcast' && (
+        <AdminBroadcastManagement />
+      )}
+
+      {activeTab === 'staff' && (
+        <AdminStaffManagement />
+      )}
+
+      {activeTab === 'audit' && (
+        <AdminAuditManagement />
       )}
 
       {activeTab === 'orders' && (
@@ -204,6 +289,9 @@ export default function AdminWebPanel() {
       {activeTab === 'support' && (
         <AdminSupportManagement />
       )}
+
+      {/* Real-Time Order Sound Alert & Live Radar Widget */}
+      <OrderSoundAlertWidget onNavigateToOrders={setActiveTab} />
 
     </DashboardLayout>
   );

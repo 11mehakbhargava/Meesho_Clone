@@ -218,26 +218,56 @@ export const submitSupplierKyc = async (req, res, next) => {
         },
       });
 
-      // Create new KYC Application record for Admin review
-      kycApplication = await prisma.kYCApplication.create({
-        data: {
+      // Check if application already exists for this supplier to avoid duplicate rows
+      const existingApp = await prisma.kYCApplication.findFirst({
+        where: {
           userId: supplierId,
           type: 'supplier',
-          status: 'PENDING',
-          documents,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              role: true,
-            },
-          },
         },
       });
+
+      if (existingApp) {
+        kycApplication = await prisma.kYCApplication.update({
+          where: { id: existingApp.id },
+          data: {
+            status: 'PENDING',
+            documents,
+            adminNotes: null,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                phone: true,
+                role: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Create new KYC Application record for Admin review
+        kycApplication = await prisma.kYCApplication.create({
+          data: {
+            userId: supplierId,
+            type: 'supplier',
+            status: 'PENDING',
+            documents,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                phone: true,
+                role: true,
+              },
+            },
+          },
+        });
+      }
     } catch (dbErr) {
       console.warn('Prisma submitSupplierKyc fallback:', dbErr.message);
       kycApplication = {
