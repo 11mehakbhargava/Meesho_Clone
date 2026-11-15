@@ -1,4 +1,6 @@
 import prisma from '../../config/prisma.js';
+import { getDirectSettings } from './adminSettings.controller.js';
+import { logAdminAction } from '../../utils/auditLogger.js';
 
 /**
  * 1. GET FINANCE OVERVIEW, WALLETS & TRANSACTIONS
@@ -88,7 +90,11 @@ export const getFinanceOverview = async (req, res) => {
     const totalEscrow = allWallets.reduce((acc, w) => acc + (w.balance || 0), 0);
     const totalPending = allWallets.reduce((acc, w) => acc + (w.pending || 0), 0);
     const grossVolume = orders.reduce((acc, o) => acc + (o.paymentStatus === 'PAID' ? o.totalAmount : 0), 0);
-    const platformCommissions = Number((grossVolume * 0.05 + 1250).toFixed(2));
+    
+    // Read dynamic platform commission rate
+    const currentSettings = getDirectSettings();
+    const activeCommissionRate = (currentSettings.commissionRate ?? 5.0) / 100;
+    const platformCommissions = Number((grossVolume * activeCommissionRate + 1250).toFixed(2));
 
     const stats = {
       totalEscrowBalance: Number(totalEscrow.toFixed(2)),
@@ -177,6 +183,16 @@ export const adjustWalletBalance = async (req, res) => {
         }
       })
     ]);
+
+    // Audit log
+    await logAdminAction({
+      adminEmail: req.user?.email || 'admin@meesho.com',
+      adminName: req.user?.fullName || 'Super Admin',
+      action: `WALLET_BALANCE_${normType.toUpperCase()}`,
+      targetType: 'FINANCE',
+      targetId: walletId,
+      details: `Admin ${normType === 'credit' ? 'credited' : 'debited'} ₹${numAmount} to wallet #${walletId.slice(-6)} (${description || 'Manual adjustment'})`
+    });
 
     return res.status(200).json({
       success: true,
@@ -424,6 +440,16 @@ export const approveWithdrawal = async (req, res) => {
       return { updatedWallet, updatedTx };
     });
 
+    // Audit log
+    await logAdminAction({
+      adminEmail: req.user?.email || 'admin@meesho.com',
+      adminName: req.user?.fullName || 'Super Admin',
+      action: 'WITHDRAWAL_APPROVED',
+      targetType: 'FINANCE',
+      targetId: id,
+      details: `Approved payout of ₹${tx.amount} to ${tx.wallet?.user?.fullName || 'Partner'} (UTR: ${cleanUtr})`
+    });
+
     return res.status(200).json({
       success: true,
       message: `Withdrawal successfully approved! UTR: ${cleanUtr}`,
@@ -530,6 +556,16 @@ export const rejectWithdrawal = async (req, res) => {
       }
 
       return { updatedWallet, reversalTx };
+    });
+
+    // Audit log
+    await logAdminAction({
+      adminEmail: req.user?.email || 'admin@meesho.com',
+      adminName: req.user?.fullName || 'Super Admin',
+      action: 'WITHDRAWAL_REJECTED',
+      targetType: 'FINANCE',
+      targetId: id,
+      details: `Rejected payout request of ₹${tx.amount} for ${tx.wallet?.user?.fullName || 'Partner'} - Reason: ${cleanReason}`
     });
 
     return res.status(200).json({

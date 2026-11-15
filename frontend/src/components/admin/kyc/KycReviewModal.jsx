@@ -12,7 +12,8 @@ import {
   Check,
   Ban,
   Clock,
-  MapPin
+  MapPin,
+  AlertCircle
 } from 'lucide-react';
 import KycStatusBadge from './KycStatusBadge';
 
@@ -55,6 +56,13 @@ export default function KycReviewModal({
 
   // 4. Normalized Address & Demographics
   const hasAddressInfo = Boolean(docs.address || docs.city || docs.state || docs.pincode || docs.dob);
+
+  // Status check for disabling actions when already in that state
+  const currentStatus = String(reviewApp?.status || '').toUpperCase();
+  const isApproved = currentStatus === 'APPROVED';
+  const isRejected = currentStatus === 'REJECTED';
+  const isUnderReview = currentStatus === 'UNDER_REVIEW';
+  const isPending = currentStatus === 'PENDING' || (!isApproved && !isRejected && !isUnderReview);
 
 
   return (
@@ -375,33 +383,71 @@ export default function KycReviewModal({
               Close
             </Button>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+              {/* Mark as Pending */}
               <Button
                 size="sm"
                 variant="outline"
-                disabled={actionLoading}
+                disabled={actionLoading || isPending}
+                onClick={() => onStatusUpdate('PENDING')}
+                className={`text-xs flex-1 sm:flex-initial transition-all ${
+                  isPending
+                    ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200 pointer-events-none'
+                    : 'text-amber-700 border-amber-300 hover:bg-amber-50 cursor-pointer'
+                }`}
+                title={isPending ? 'Application is already Pending' : 'Mark status as Pending'}
+              >
+                <AlertCircle className="w-3.5 h-3.5 mr-1" />
+                {isPending ? 'Pending' : 'Mark Pending'}
+              </Button>
+
+              {/* Mark Under Review */}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={actionLoading || isUnderReview}
                 onClick={() => onStatusUpdate('UNDER_REVIEW')}
-                className="text-blue-700 border-blue-200 hover:bg-blue-50 text-xs flex-1 sm:flex-initial cursor-pointer"
+                className={`text-xs flex-1 sm:flex-initial transition-all ${
+                  isUnderReview
+                    ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200 pointer-events-none'
+                    : 'text-blue-700 border-blue-200 hover:bg-blue-50 cursor-pointer'
+                }`}
+                title={isUnderReview ? 'Application is already Under Review' : 'Mark status as Under Review'}
               >
-                <Clock className="w-3.5 h-3.5 mr-1" /> Mark Under Review
+                <Clock className="w-3.5 h-3.5 mr-1" />
+                {isUnderReview ? 'Under Review' : 'Mark Under Review'}
               </Button>
 
+              {/* Reject */}
               <Button
                 size="sm"
-                disabled={actionLoading}
+                disabled={actionLoading || isRejected}
                 onClick={() => onStatusUpdate('REJECTED')}
-                className="bg-red-600 hover:bg-red-700 text-white text-xs flex-1 sm:flex-initial cursor-pointer"
+                className={`text-white text-xs flex-1 sm:flex-initial transition-all ${
+                  isRejected
+                    ? 'opacity-40 cursor-not-allowed bg-gray-300 hover:bg-gray-300 pointer-events-none text-gray-500'
+                    : 'bg-red-600 hover:bg-red-700 cursor-pointer'
+                }`}
+                title={isRejected ? 'Application is already Rejected' : 'Reject this KYC Application'}
               >
-                <Ban className="w-3.5 h-3.5 mr-1" /> Reject
+                <Ban className="w-3.5 h-3.5 mr-1" />
+                {isRejected ? 'Rejected' : 'Reject'}
               </Button>
 
+              {/* Approve */}
               <Button
                 size="sm"
-                disabled={actionLoading}
+                disabled={actionLoading || isApproved}
                 onClick={() => onStatusUpdate('APPROVED')}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs flex-1 sm:flex-initial cursor-pointer"
+                className={`text-white text-xs flex-1 sm:flex-initial transition-all ${
+                  isApproved
+                    ? 'opacity-40 cursor-not-allowed bg-gray-300 hover:bg-gray-300 pointer-events-none text-gray-500'
+                    : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
+                }`}
+                title={isApproved ? 'Application is already Approved' : 'Approve this KYC Application'}
               >
-                <Check className="w-3.5 h-3.5 mr-1" /> Approve KYC
+                <Check className="w-3.5 h-3.5 mr-1" />
+                {isApproved ? 'Approved' : 'Approve KYC'}
               </Button>
             </div>
           </div>
