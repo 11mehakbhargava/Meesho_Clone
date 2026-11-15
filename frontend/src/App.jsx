@@ -11,7 +11,6 @@ import AffiliateProgramPanel from './pages/Reseller Earnings & Wallets/Affiliate
 import PayoutSettings from './pages/Reseller Earnings & Wallets/PayoutSettings';
 import NotificationCenter from './pages/Reseller Earnings & Wallets/NotificationCenter';
 import LoginSignup from './pages/Reseller Earnings & Wallets/LoginSignup';
-import ReferEarn from './pages/Reseller Earnings & Wallets/ReferEarn';
 import ResellEarn from './pages/Reseller Earnings & Wallets/ResellEarn';
 import EarningsDashboard1 from './pages/Reseller Earnings & Wallets/EarningsDashboard1';
 import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
@@ -128,7 +127,6 @@ const screenCatalog = [
   { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
   { path: '/dropshipper-register', name: 'Become Dropshipper (KYC)', icon: '🚀', group: 'Reseller & Shop' },
   { path: '/payout-confirmation', name: 'Payout Confirmation', icon: '✅', group: 'Reseller & Shop' },
-  { path: '/refer-earn', name: 'Refer & Earn', icon: '🎁', group: 'Reseller & Shop' },
   { path: '/affiliate-program', name: 'Affiliate Program', icon: '🤝', group: 'Reseller & Shop' },
   { path: '/affiliate-panel', name: 'Affiliate Panel', icon: '👑', group: 'Reseller & Shop' },
   { path: '/affiliate-kyc', name: 'Become Affiliate (KYC)', icon: '🪪', group: 'Reseller & Shop' },
@@ -604,7 +602,7 @@ function AppRoutes() {
       'withdraw_earnings': '/withdraw-earnings',
       'payout-settings': '/payout-settings',
       'payout-confirmation': '/payout-confirmation',
-      'refer-earn': '/refer-earn',
+      'refer-earn': '/reseller-home',
       'affiliate-program': '/affiliate-program',
       'affiliate-panel': '/affiliate-panel',
 
@@ -768,7 +766,7 @@ function AppRoutes() {
         <Route path="/earnings-dashboard" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard-1" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard-2" element={<Navigate to="/earnings" replace />} />
-        <Route path="/refer-earn" element={<ReferEarn />} />
+        <Route path="/refer-earn" element={<Navigate to="/reseller-home" replace />} />
         <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route
           path="/affiliate-panel"

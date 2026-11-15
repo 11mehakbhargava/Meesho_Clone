@@ -33,7 +33,6 @@ const navSections = [
   {
     title: "Growth & Programs",
     items: [
-      { name: "Refer & Earn Bonus", path: "/refer-earn", icon: "card_giftcard" },
       { name: "Affiliate Partner Panel", path: "/affiliate-program", icon: "loyalty" },
     ]
   }
