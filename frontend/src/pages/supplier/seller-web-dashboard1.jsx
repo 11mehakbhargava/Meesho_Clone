@@ -186,7 +186,27 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
       }
 
       if (kycRes.status === 'fulfilled' && kycRes.value) {
-        setKycData(kycRes.value);
+        const raw = kycRes.value;
+        const actualKyc = raw?.kyc || raw;
+        const isVerified = Boolean(
+          raw?.isVerified ||
+          actualKyc?.status === 'APPROVED' ||
+          raw?.status === 'APPROVED' ||
+          (raw?.profile?.gstin && raw?.profile?.bankDetails)
+        );
+        const resolvedStatus = (
+          actualKyc?.status ||
+          raw?.status ||
+          (isVerified ? 'APPROVED' : null) ||
+          'PENDING'
+        ).toUpperCase();
+
+        setKycData({
+          ...(actualKyc && typeof actualKyc === 'object' ? actualKyc : {}),
+          status: resolvedStatus,
+          isVerified,
+          kyc: actualKyc,
+        });
       }
 
       if (isRefresh) {

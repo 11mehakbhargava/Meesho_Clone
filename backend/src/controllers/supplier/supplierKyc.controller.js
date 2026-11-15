@@ -83,10 +83,18 @@ export const getSupplierKyc = async (req, res, next) => {
       });
     } catch (_) {}
 
+    const isVerified = Boolean(
+      kyc?.status === 'APPROVED' ||
+      profile?.tierLabel?.toLowerCase().includes('verified') ||
+      (profile?.gstin && profile?.bankDetails)
+    );
+    const resolvedStatus = kyc?.status || (isVerified ? 'APPROVED' : 'PENDING');
+
     return res.status(200).json({
       success: true,
       kyc,
-      isVerified: kyc?.status === 'APPROVED',
+      status: resolvedStatus,
+      isVerified,
       profile: profile ? {
         storeName: profile.storeName,
         gstin: profile.gstin,

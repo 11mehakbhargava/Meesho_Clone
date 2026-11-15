@@ -294,8 +294,13 @@ export default function SellerKyc1({ onNavigate, embedded = false, onNavigateTab
   };
 
   const supplierDisplayName = profile?.storeName || profile?.fullName || profile?.name || 'Verified Supplier';
-  const kycStatus = kycData?.status || 'PENDING';
-  const isApproved = kycStatus === 'APPROVED';
+  const kycStatus = (
+    kycData?.status ||
+    kycData?.kyc?.status ||
+    (profile?.tierLabel?.toLowerCase().includes('verified') ? 'APPROVED' : null) ||
+    'PENDING'
+  ).toUpperCase();
+  const isApproved = kycStatus === 'APPROVED' || kycData?.isVerified === true;
   const isUnderReview = kycStatus === 'UNDER_REVIEW' || (kycData && kycStatus === 'PENDING');
   const isRejected = kycStatus === 'REJECTED';
   const isNotSubmitted = !kycData;

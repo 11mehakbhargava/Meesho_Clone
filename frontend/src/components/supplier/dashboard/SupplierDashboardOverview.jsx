@@ -45,6 +45,20 @@ export default function SupplierDashboardOverview({
   const supplierRoleTitle =
     (typeof profile?.tierLabel === 'string' && profile.tierLabel) || 'MShoppy Supplier';
 
+  // Robust multi-source KYC status resolution
+  const rawKycStatus = (kycData?.status || kycData?.kyc?.status || '').toUpperCase();
+  const isKycApproved = Boolean(
+    rawKycStatus === 'APPROVED' ||
+    kycData?.isVerified === true ||
+    profile?.tierLabel?.toLowerCase().includes('verified') ||
+    (profile?.gstin && profile?.bankDetails)
+  );
+  const currentKycStatus = (
+    rawKycStatus ||
+    (isKycApproved ? 'APPROVED' : null) ||
+    'PENDING'
+  ).toUpperCase();
+
   // Compute combined recent orders from stats or orders list
   const recentOrdersList =
     Array.isArray(stats?.recentOrders) && stats.recentOrders.length > 0
@@ -147,7 +161,7 @@ export default function SupplierDashboardOverview({
       </div>
 
       {/* Dynamic KYC Compliance Alert */}
-      {kycData?.status === 'APPROVED' ? (
+      {isKycApproved ? (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
@@ -175,10 +189,10 @@ export default function SupplierDashboardOverview({
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                  {kycData ? `KYC Status: ${kycData.status}` : 'Action Required: Supplier KYC Verification'}
+                  {`KYC Status: ${currentKycStatus}`}
                 </h4>
                 <span className="px-2 py-0.5 rounded-full bg-pink-100 text-[#b7004d] text-[10px] font-bold">
-                  {kycData?.status || 'Pending'}
+                  {currentKycStatus}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5">
@@ -191,7 +205,7 @@ export default function SupplierDashboardOverview({
             onClick={() => onNavigateTab('kyc')}
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#d82a62] hover:bg-[#b7004d] text-white text-xs font-bold transition shadow-sm shrink-0 cursor-pointer"
           >
-            <span>{kycData ? 'Check KYC Status' : 'Complete KYC Verification'}</span>
+            <span>Check KYC Status</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
