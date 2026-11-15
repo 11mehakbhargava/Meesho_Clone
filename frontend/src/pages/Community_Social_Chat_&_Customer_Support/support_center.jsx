@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AppBottomNav from '../../components/AppBottomNav';
-import { getOrders } from '../../services/ecommerceService';
+import { getOrders, getAuthHeaders } from '../../services/ecommerceService';
+import { API_V1_BASE } from '../../config/apiConfig';
 
 const CATEGORIES = [
   { id: 'orders', name: 'Orders', desc: 'Tracking & Updates', icon: 'inventory_2' },
@@ -54,9 +55,10 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
   const [isOrderHelpOpen, setIsOrderHelpOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isLiveSupportChatOpen, setIsLiveSupportChatOpen] = useState(false);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   // Ticket Form State
-  const [ticketIssue, setTicketIssue] = useState('Order Delivery / Tracking');
+  const [ticketIssue, setTicketIssue] = useState('Payment/Margin Delayed');
   const [ticketOrder, setTicketOrder] = useState(orderIdParam ? `#${orderIdParam}` : '');
   const [ticketDesc, setTicketDesc] = useState('');
   const [latestOrder, setLatestOrder] = useState(null);
@@ -81,15 +83,42 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleCreateTicket = (e) => {
+  const handleCreateTicket = async (e) => {
     e.preventDefault();
-    const ticketId = `#TICK-${Math.floor(10000 + Math.random() * 90000)}`;
-    setIsTicketModalOpen(false);
-    setTicketDesc('');
-    showToast(`Ticket ${ticketId} created! Support team will email within 4 hours.`);
+    if (!ticketDesc.trim()) return;
+
+    setIsSubmittingTicket(true);
+    try {
+      const res = await fetch(`${API_V1_BASE}/admin-support/create`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          subject: ticketIssue,
+          category: ticketIssue,
+          description: ticketDesc.trim(),
+          orderId: ticketOrder.trim(),
+          priority: 'normal'
+        })
+      });
+
+      const result = await res.json();
+      if (result?.success && result?.data) {
+        const ticketDisplayId = result.data.id ? `#TICK-${result.data.id.slice(0, 8).toUpperCase()}` : '#TICK-OK';
+        setIsTicketModalOpen(false);
+        setTicketDesc('');
+        showToast(`Ticket ${ticketDisplayId} saved in Database! Operations desk notified.`);
+      } else {
+        showToast(result?.message || 'Failed to submit ticket');
+      }
+    } catch (err) {
+      console.error('Error creating support ticket:', err);
+      showToast('Network error while submitting support ticket');
+    } finally {
+      setIsSubmittingTicket(false);
+    }
   };
 
   const handleSendChatMessage = (e) => {
@@ -497,16 +526,25 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSubmittingTicket}
                   onClick={() => setIsTicketModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#b90041] hover:bg-[#df2457] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                  disabled={isSubmittingTicket}
+                  className="px-5 py-2 bg-[#b90041] hover:bg-[#df2457] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-70"
                 >
-                  Submit Ticket
+                  {isSubmittingTicket ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Submit Ticket</span>
+                  )}
                 </button>
               </div>
             </form>

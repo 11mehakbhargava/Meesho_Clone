@@ -11,7 +11,6 @@ import AffiliateProgramPanel from './pages/Reseller Earnings & Wallets/Affiliate
 import PayoutSettings from './pages/Reseller Earnings & Wallets/PayoutSettings';
 import NotificationCenter from './pages/Reseller Earnings & Wallets/NotificationCenter';
 import LoginSignup from './pages/Reseller Earnings & Wallets/LoginSignup';
-import ReferEarn from './pages/Reseller Earnings & Wallets/ReferEarn';
 import ResellEarn from './pages/Reseller Earnings & Wallets/ResellEarn';
 import EarningsDashboard1 from './pages/Reseller Earnings & Wallets/EarningsDashboard1';
 import ResellerWallet from './pages/Reseller Earnings & Wallets/ResellerWallet';
@@ -53,6 +52,7 @@ import ReturnRequest from './pages/customer & Reseller/ReturnRequest';
 import AffiliateKYC from './pages/customer & Reseller/AffiliateKYC';
 import AffiliateKycStatus from './pages/customer & Reseller/AffiliateKycStatus';
 import PolicyPage from './pages/customer & Reseller/PolicyPage';
+import { getAffiliateMarginFromParams } from './utils/affiliateLinkHelper';
 
 // Delivery & Driver Logistics Pages
 import DriverDashboardMobile from './pages/delivery & driver logistics/driver_dashboard_mobile';
@@ -121,13 +121,11 @@ const screenCatalog = [
   // 2. Reseller & Fintech 
   { path: '/reseller-home', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
   { path: '/dropshipper-login', name: 'Dropshipper B2B Login', icon: '🔐', group: 'Reseller & Shop' },
-  { path: '/supplier-products', name: 'Supplier Product Access', icon: '🏬', group: 'Reseller & Shop' },
   { path: '/resell-earn', name: 'Resell & Earn', icon: '💰', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-1', name: 'Earnings Dashboard 1', icon: '📈', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
   { path: '/dropshipper-register', name: 'Become Dropshipper (KYC)', icon: '🚀', group: 'Reseller & Shop' },
   { path: '/payout-confirmation', name: 'Payout Confirmation', icon: '✅', group: 'Reseller & Shop' },
-  { path: '/refer-earn', name: 'Refer & Earn', icon: '🎁', group: 'Reseller & Shop' },
   { path: '/affiliate-program', name: 'Affiliate Program', icon: '🤝', group: 'Reseller & Shop' },
   { path: '/affiliate-panel', name: 'Affiliate Panel', icon: '👑', group: 'Reseller & Shop' },
   { path: '/affiliate-kyc', name: 'Become Affiliate (KYC)', icon: '🪪', group: 'Reseller & Shop' },
@@ -496,13 +494,13 @@ function AppRoutes() {
     try {
       const searchParams = new URLSearchParams(location.search);
       const refCode = searchParams.get('ref') || searchParams.get('aff');
-      const customMargin = searchParams.get('margin') || searchParams.get('m');
+      const customMargin = getAffiliateMarginFromParams(searchParams);
       if (refCode && refCode.trim()) {
         const cleanRef = refCode.trim().toUpperCase();
         localStorage.setItem('mshoppy_referral_code', cleanRef);
         localStorage.setItem('mshoppy_referral_timestamp', Date.now().toString());
-        if (customMargin && !isNaN(Number(customMargin))) {
-          localStorage.setItem('mshoppy_affiliate_margin', Number(customMargin).toString());
+        if (customMargin > 0) {
+          localStorage.setItem('mshoppy_affiliate_margin', customMargin.toString());
         }
         recordAffiliateClick(cleanRef);
       }
@@ -603,7 +601,7 @@ function AppRoutes() {
       'withdraw_earnings': '/withdraw-earnings',
       'payout-settings': '/payout-settings',
       'payout-confirmation': '/payout-confirmation',
-      'refer-earn': '/refer-earn',
+      'refer-earn': '/reseller-home',
       'affiliate-program': '/affiliate-program',
       'affiliate-panel': '/affiliate-panel',
 
@@ -767,7 +765,7 @@ function AppRoutes() {
         <Route path="/earnings-dashboard" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard-1" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard-2" element={<Navigate to="/earnings" replace />} />
-        <Route path="/refer-earn" element={<ReferEarn />} />
+        <Route path="/refer-earn" element={<Navigate to="/reseller-home" replace />} />
         <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route
           path="/affiliate-panel"
@@ -847,7 +845,7 @@ function AppRoutes() {
         <Route path="/messenger" element={<Navigate to="/support" replace />} />
         <Route path="/conversation" element={<Navigate to="/support" replace />} />
         <Route path="/notifications" element={<NotificationCenter />} />
-        <Route path="/" element={<LoginSignup />} />
+        <Route path="/" element={<HomeUserCustomer />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/supplier/logout" element={<SupplierLogoutPage />} />
@@ -939,7 +937,7 @@ function AppRoutes() {
         <Route path="/sarees" element={<SareesCategoryListing onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/western" element={<WomenWesternCategory onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/spotlight" element={<CuratedSpotlight onNavigate={handleNav} onBack={handleBack} />} />
-        <Route path="/flash" element={<FlashSaleLandingPage onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/flash" element={<Navigate to="/user-home" replace />} />
         <Route path="/luxe" element={<Navigate to="/user-home" replace />} />
         <Route path="/reviews" element={<RatingsReviews onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/write-review" element={<WriteAReview onNavigate={handleNav} onBack={handleBack} />} />

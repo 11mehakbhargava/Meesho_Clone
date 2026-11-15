@@ -35,6 +35,7 @@ import {
 } from '../../services/customerAuthService';
 import { addNotification } from '../../services/notificationService';
 import INDIAN_STATES from '../../utils/indianStates';
+import { buildAffiliateProductUrl } from '../../utils/affiliateLinkHelper';
 
 import CancelOrderModal from '../../components/customer/CancelOrderModal';
 import OrderTrackingModal from '../../components/customer/OrderTrackingModal';
@@ -151,12 +152,34 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       clearAffiliateApp();
       return null;
     }
-    return stored;
+    if (stored) return stored;
+
+    try {
+      const raw = localStorage.getItem('affiliate_kyc_application');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed) return parsed;
+      }
+    } catch (_) {}
+
+    if (customerUser?.role === 'RESELLER' || customerUser?.role === 'reseller') {
+      return {
+        status: 'Approved',
+        kycStatus: 'Approved',
+        fullName: customerUser?.fullName || 'Partner',
+        phone: customerUser?.phone || '',
+        email: customerUser?.email || '',
+        applicationId: 'AFF-' + (curId ? String(curId).slice(-6).toUpperCase() : 'VERIFIED'),
+        userId: curId,
+        bankName: 'Linked Settlement Bank'
+      };
+    }
+    return null;
   });
 
   // Real-time synchronization states to eliminate stale cache flickering
-  const [isKycSyncing, setIsKycSyncing] = useState(true);
-  const [isWalletLoading, setIsWalletLoading] = useState(true);
+  const [isKycSyncing, setIsKycSyncing] = useState(false);
+  const [isWalletLoading, setIsWalletLoading] = useState(false);
 
   const customerName =
     customerUser?.fullName ||
@@ -347,11 +370,26 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     ];
   });
 
-  // Real Unified Wallet Balance (Loaded authoritatively from PostgreSQL Database)
-  const [walletBalance, setWalletBalance] = useState(0);
+  // Real Unified Wallet Balance (Instant cache-first load, updated live from DB)
+  const [walletBalance, setWalletBalance] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_user_wallet');
+      if (cached !== null && cached !== undefined) return Number(cached) || 0;
+    } catch (_) {}
+    return Number(customerUser?.walletBalance) || 0;
+  });
 
-  // Real Unified Wallet Transactions Ledger (Loaded authoritatively from PostgreSQL Database)
-  const [walletTransactions, setWalletTransactions] = useState([]);
+  // Real Unified Wallet Transactions Ledger (Instant cache-first load, updated live from DB)
+  const [walletTransactions, setWalletTransactions] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_user_wallet_txns');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -383,11 +421,20 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     ? `${affiliateApp.bankName} (•••• ${affiliateApp.accountNumber ? affiliateApp.accountNumber.slice(-4) : 'XXXX'})`
     : '';
 
-  // Real Dynamic Affiliate Tracking Data (100% Database Driven)
-  const [affiliateStats, setAffiliateStats] = useState({
-    totalReferredRevenue: 0,
-    totalCommission: 0,
-    totalOrders: 0
+  // Real Dynamic Affiliate Tracking Data (Instant cache-first load, updated live from DB)
+  const [affiliateStats, setAffiliateStats] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_affiliate_stats');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+    return {
+      totalReferredRevenue: 0,
+      totalCommission: 0,
+      totalOrders: 0
+    };
   });
 
   // Affiliate Calculator State (Custom Profit Margin per product, NOT fixed 15%)
@@ -453,8 +500,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       try {
         const curId = customerUser?.id || customerUser?.uid;
         const curPhone = customerUser?.phone;
+        const curEmail = customerUser?.email;
 
-        if (!curId && !curPhone) {
+        if (!curId && !curPhone && !curEmail) {
           if (isMounted) {
             setAffiliateApp(null);
             setIsKycSyncing(false);
@@ -465,6 +513,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         const queryParams = [];
         if (curId) queryParams.push(`userId=${encodeURIComponent(curId)}`);
         if (curPhone) queryParams.push(`phone=${encodeURIComponent(curPhone)}`);
+        if (curEmail) queryParams.push(`email=${encodeURIComponent(curEmail)}`);
         if (affiliateApp?.applicationId && affiliateApp?.userId === curId) {
           queryParams.push(`applicationId=${encodeURIComponent(affiliateApp.applicationId)}`);
         }
@@ -503,7 +552,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
           } else {
             // Customer has not submitted an affiliate KYC application
             setAffiliateApp(null);
-            clearAffiliateApp();
           }
           setIsKycSyncing(false);
         }
@@ -514,82 +562,103 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     };
 
     syncAffiliateStatus();
-    const interval = setInterval(syncAffiliateStatus, 5000);
+    const interval = setInterval(syncAffiliateStatus, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [customerUser?.id, customerUser?.uid, customerUser?.phone]);
+  }, [customerUser?.id, customerUser?.uid, customerUser?.phone, customerUser?.email]);
 
-  // Fetch Live Dashboard Data from Database (Background SWR if cached)
-  const loadDashboardData = useCallback(async () => {
-    try {
-      if (realOrders.length === 0) setLoading(true);
-      const [ordersRes, wishRes, addrRes, prodsRes, walletRes] = await Promise.allSettled([
-        getOrders(),
-        getWishlist(),
-        getAddresses(),
-        getProducts({ limit: 48 }),
-        getWalletDetails()
-      ]);
+  // Fetch Live Dashboard Data from Database (Instant Non-blocking Parallel SWR)
+  const loadDashboardData = useCallback(() => {
+    // 1. Fetch Orders immediately without blocking other cards
+    getOrders()
+      .then((orders) => {
+        if (Array.isArray(orders)) {
+          setRealOrders(orders);
+          try { localStorage.setItem('mshoppy_user_orders', JSON.stringify(orders)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch orders:', err))
+      .finally(() => setLoading(false));
 
-      if (ordersRes.status === 'fulfilled' && Array.isArray(ordersRes.value)) {
-        setRealOrders(ordersRes.value);
-        try { localStorage.setItem('mshoppy_user_orders', JSON.stringify(ordersRes.value)); } catch (_) {}
-      }
-      if (wishRes.status === 'fulfilled' && Array.isArray(wishRes.value)) {
-        setWishlistItems(wishRes.value);
-      }
-      if (addrRes.status === 'fulfilled' && Array.isArray(addrRes.value)) {
-        setSavedAddresses(addrRes.value);
-        try { localStorage.setItem('mshoppy_user_addresses', JSON.stringify(addrRes.value)); } catch (_) {}
-      }
-      if (prodsRes.status === 'fulfilled' && Array.isArray(prodsRes.value) && prodsRes.value.length > 0) {
-        setCatalogProducts(prodsRes.value);
-        try {
-          localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prodsRes.value.slice(0, 24)));
-        } catch (e) {}
-      }
-      if (walletRes.status === 'fulfilled' && walletRes.value) {
-        const dbBal = Number(walletRes.value.balance ?? 0);
-        setWalletBalance(dbBal);
+    // 2. Fetch Wishlist immediately
+    getWishlist()
+      .then((wishlist) => {
+        if (Array.isArray(wishlist)) {
+          setWishlistItems(wishlist);
+          try { localStorage.setItem('mshoppy_wishlist', JSON.stringify(wishlist)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch wishlist:', err));
 
-        const dbTxns = (Array.isArray(walletRes.value.transactions) ? walletRes.value.transactions : []).map((dt) => ({
-          title: dt.description || dt.title || 'Wallet Transaction',
-          ref: dt.id || dt.ref || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-          date: dt.createdAt ? new Date(dt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : (dt.date || 'Recently'),
-          status: dt.status || 'COMPLETED',
-          amt: dt.amt || (dt.type === 'credit' ? `+₹${dt.amount}` : `-₹${dt.amount}`),
-          green: dt.green ?? (dt.type === 'credit'),
-          type: dt.type || 'credit',
-          amount: dt.amount,
-          orderId: dt.orderId
-        }));
+    // 3. Fetch Saved Addresses immediately
+    getAddresses()
+      .then((addresses) => {
+        if (Array.isArray(addresses)) {
+          setSavedAddresses(addresses);
+          try { localStorage.setItem('mshoppy_user_addresses', JSON.stringify(addresses)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch addresses:', err));
 
-        setWalletTransactions(dbTxns);
+    // 4. Fetch Wallet immediately and update stats
+    getWalletDetails()
+      .then((walletData) => {
+        if (walletData) {
+          const dbBal = Number(walletData.balance ?? 0);
+          setWalletBalance(dbBal);
+          try { localStorage.setItem('mshoppy_user_wallet', String(dbBal)); } catch (_) {}
 
-        const detectedAffTxns = dbTxns.filter(
-          (t) => t && /affiliate|commission|referral/i.test(t.title || t.description || '')
-        );
-        const autoComm = detectedAffTxns.reduce(
-          (s, t) => s + (t.type === 'credit' ? (Number(t.amount) || 0) : 0),
-          0
-        );
-        const autoOrders = detectedAffTxns.filter(t => t.type === 'credit').length;
-        setAffiliateStats({
-          totalReferredRevenue: autoComm * 10,
-          totalCommission: autoComm,
-          totalOrders: autoOrders
-        });
-      }
-      setIsWalletLoading(false);
-    } catch (err) {
-      console.error('Failed to load real user dashboard data:', err);
-      setIsWalletLoading(false);
-    } finally {
-      setLoading(false);
-      setIsWalletLoading(false);
-    }
+          const dbTxns = (Array.isArray(walletData.transactions) ? walletData.transactions : []).map((dt) => ({
+            title: dt.description || dt.title || 'Wallet Transaction',
+            ref: dt.id || dt.ref || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
+            date: dt.createdAt ? new Date(dt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : (dt.date || 'Recently'),
+            status: dt.status || 'COMPLETED',
+            amt: dt.amt || (dt.type === 'credit' ? `+₹${dt.amount}` : `-₹${dt.amount}`),
+            green: dt.green ?? (dt.type === 'credit'),
+            type: dt.type || 'credit',
+            amount: dt.amount,
+            orderId: dt.orderId
+          }));
+
+          setWalletTransactions(dbTxns);
+          try { localStorage.setItem('mshoppy_user_wallet_txns', JSON.stringify(dbTxns)); } catch (_) {}
+
+          const detectedAffTxns = dbTxns.filter(
+            (t) => t && /affiliate|commission|referral/i.test(t.title || t.description || '')
+          );
+          const autoComm = detectedAffTxns.reduce(
+            (s, t) => s + (t.type === 'credit' ? (Number(t.amount) || 0) : 0),
+            0
+          );
+          const autoOrders = detectedAffTxns.filter(t => t.type === 'credit').length;
+          const stats = {
+            totalReferredRevenue: autoComm * 10,
+            totalCommission: autoComm,
+            totalOrders: autoOrders
+          };
+          setAffiliateStats(stats);
+          try { localStorage.setItem('mshoppy_affiliate_stats', JSON.stringify(stats)); } catch (_) {}
+        }
+        setIsWalletLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch wallet:', err);
+        setIsWalletLoading(false);
+      });
+
+    // 5. Fetch Catalog Products asynchronously in background
+    getProducts({ limit: 48 })
+      .then((prods) => {
+        if (Array.isArray(prods) && prods.length > 0) {
+          setCatalogProducts(prods);
+          try {
+            localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prods.slice(0, 24)));
+          } catch (e) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch catalog prods:', err));
   }, []);
 
   useEffect(() => {
@@ -688,12 +757,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     return { weeklyEarnings: bars, totalResaleMargin: totalMargin };
   }, [realOrders]);
 
-  // Handle Share Real Product with Custom Margin
+  // Handle Share Real Product with Custom Margin (Obfuscated parameter protecting margin)
   const handleShareProductWithMargin = (prod, customMargin) => {
     const margin = customMargin !== undefined ? customMargin : getProductMargin(prod?.id);
     const finalPrice = Number(prod?.price || 0) + Number(margin || 0);
     const refCode = affiliateApp?.applicationId || customerUser?.id || 'aff_verified';
-    const link = `${window.location.origin}/product/${prod?.id || ''}?ref=${refCode}&margin=${margin}`;
+    const link = buildAffiliateProductUrl({ productId: prod?.id || '', refCode, margin });
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(link);
       toast.success('Custom product link copied!', {
@@ -708,7 +777,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     const margin = customMargin !== undefined ? customMargin : getProductMargin(prod?.id);
     const finalPrice = Number(prod?.price || 0) + Number(margin || 0);
     const refCode = affiliateApp?.applicationId || customerUser?.id || 'aff_verified';
-    const link = `${window.location.origin}/product/${prod?.id || ''}?ref=${refCode}&margin=${margin}`;
+    const link = buildAffiliateProductUrl({ productId: prod?.id || '', refCode, margin });
     const msg = `🛍️ *${prod?.title || 'Special Exclusive Product'}*\n\nSpecial Price: ₹${finalPrice} only!\n✅ Direct Supplier Quality\n✅ 7-Day Easy Replacement\n✅ Cash on Delivery Available\n\nOrder here: ${link}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -736,14 +805,23 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   const handleShareCustomMarginWhatsApp = (prod, margin) => {
     const targetProd = prod || activeMarginProd;
     const finalP = (targetProd?.price || 499) + Number(margin || customMarginVal || 0);
-    const msg = `🛍️ *${targetProd?.title || 'Special Exclusive Product'}*\n\nSpecial Price: ₹${finalP} only!\n✅ Direct Supplier Quality\n✅ 7-Day Easy Replacement\n✅ Cash on Delivery Available\n\nOrder here: ${window.location.origin}/product/${targetProd?.id || ''}?ref=${affiliateApp?.applicationId || 'aff_verified'}&margin=${margin || customMarginVal || 0}`;
+    const link = buildAffiliateProductUrl({
+      productId: targetProd?.id || '',
+      refCode: affiliateApp?.applicationId || 'aff_verified',
+      margin: margin || customMarginVal || 0
+    });
+    const msg = `🛍️ *${targetProd?.title || 'Special Exclusive Product'}*\n\nSpecial Price: ₹${finalP} only!\n✅ Direct Supplier Quality\n✅ 7-Day Easy Replacement\n✅ Cash on Delivery Available\n\nOrder here: ${link}`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   const handleCopyCustomMarginLink = (prod, margin) => {
     const targetProd = prod || activeMarginProd;
-    const link = `${window.location.origin}/product/${targetProd?.id || ''}?ref=${affiliateApp?.applicationId || 'aff_verified'}&margin=${margin || customMarginVal || 0}`;
+    const link = buildAffiliateProductUrl({
+      productId: targetProd?.id || '',
+      refCode: affiliateApp?.applicationId || 'aff_verified',
+      margin: margin || customMarginVal || 0
+    });
     navigator.clipboard?.writeText(link);
     toast.success(`Custom product link copied with ₹${margin || customMarginVal || 0} margin!`);
   };
@@ -940,18 +1018,18 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     }
   };
 
-  // Role & KYC Enforcement: Strictly ONLY unlocked if affiliateApp is APPROVED
+  // Role & KYC Enforcement: Strictly ONLY unlocked if affiliateApp is APPROVED or customerUser is RESELLER
   const isResellerApproved = Boolean(
-    !isKycSyncing &&
-    affiliateApp && (
+    (customerUser?.role === 'RESELLER' || customerUser?.role === 'reseller') ||
+    (affiliateApp && (
       affiliateApp.status === 'Approved' ||
       affiliateApp.status === 'APPROVED' ||
       affiliateApp.status === 'Active' ||
       affiliateApp.status === 'ACTIVE'
-    )
+    ))
   );
   const isKycUnderReview = Boolean(
-    !isKycSyncing &&
+    !isResellerApproved &&
     affiliateApp && (
       affiliateApp.status === 'Pending' ||
       affiliateApp.status === 'PENDING' ||
@@ -960,34 +1038,30 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     )
   );
   const isKycRejected = Boolean(
-    !isKycSyncing &&
+    !isResellerApproved &&
     affiliateApp && (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED')
   );
 
-  // Automatically redirect away from resale/wallet tabs if not approved & purge unapproved stats (wait until sync completes)
+  // Automatically redirect away from resale/wallet tabs if not approved
   useEffect(() => {
-    if (isKycSyncing) return;
     if (!isResellerApproved) {
       if (activeTab === 'resale' || activeTab === 'wallet') {
         setActiveTab('affiliate');
       }
     }
-  }, [isKycSyncing, isResellerApproved, activeTab]);
+  }, [isResellerApproved, activeTab]);
+
   // Dynamic Badges & Titles for Sidebar
   let affiliateNavTitle = 'Become a Partner 🤝';
   let affiliateNavBadge = 'NEW';
   let affiliateNavBadgeClass = 'bg-[#b7004d] text-white';
 
-  if (isKycSyncing) {
-    affiliateNavTitle = 'Partner Hub';
-    affiliateNavBadge = 'SYNC';
-    affiliateNavBadgeClass = 'bg-slate-200 text-slate-700 animate-pulse';
+  if (isResellerApproved) {
+    affiliateNavTitle = 'Partner Hub 🤝';
+    affiliateNavBadge = 'ACTIVE';
+    affiliateNavBadgeClass = 'bg-emerald-600 text-white';
   } else if (affiliateApp) {
-    if (affiliateApp.status === 'Approved' || affiliateApp.status === 'APPROVED') {
-      affiliateNavTitle = 'Partner Hub 🤝';
-      affiliateNavBadge = 'ACTIVE';
-      affiliateNavBadgeClass = 'bg-emerald-600 text-white';
-    } else if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
+    if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
       affiliateNavTitle = 'Partner KYC ⚠️';
       affiliateNavBadge = 'ACTION';
       affiliateNavBadgeClass = 'bg-rose-600 text-white';
@@ -1030,17 +1104,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         ]
       : []),
     { id: 'addresses', label: 'Saved Addresses 📍', icon: MapPin },
-    {
-      id: 'shopping-catalog',
-      label: 'Explore Catalog',
-      icon: ShoppingBag,
-      children: [
-        { id: 'cat-products', label: 'All Categories 🗂️', icon: Search },
-        { id: 'cat-sarees', label: 'Sarees Store 🥻', icon: Sparkles },
-        { id: 'cat-flash', label: 'Flash Sale Drops ⚡', icon: AlertTriangle },
-        { id: 'cat-spotlight', label: 'Curator Spotlight 🌟', icon: Award },
-      ],
-    },
     { id: 'profile', label: 'Account Settings ⚙️', icon: User },
   ];
 
@@ -1170,15 +1233,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
           <div className="space-y-6">
 
             {/* Dynamic Real Margin Summary Banner - Only shows resale margin to approved resellers */}
-            {isKycSyncing ? (
-              <div className="animate-pulse flex flex-wrap items-center justify-between gap-3 bg-slate-100/90 border border-slate-200/80 px-4 py-3 rounded-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                  <div className="h-4 w-48 sm:w-72 bg-slate-200 rounded-md"></div>
-                </div>
-                <div className="h-8 w-28 bg-slate-200 rounded-xl"></div>
-              </div>
-            ) : isResellerApproved ? (
+            {isResellerApproved ? (
               <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200/80 px-4 py-3 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <span className="flex h-2.5 w-2.5 relative">
@@ -1431,18 +1486,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
               </div>
 
               {/* Card 4: Real Wallet Balance OR KYC Required Status */}
-              {isKycSyncing ? (
-                <div className="bg-slate-100/90 border border-slate-200/80 p-5 rounded-3xl animate-pulse flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-200"></div>
-                    <div className="w-16 h-5 rounded-full bg-slate-200"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 w-24 bg-slate-200 rounded"></div>
-                    <div className="h-6 w-32 bg-slate-200 rounded"></div>
-                  </div>
-                </div>
-              ) : isResellerApproved ? (
+              {isResellerApproved ? (
                 <div className="bg-gradient-to-br from-[#b7004d] via-[#cf125d] to-[#e62973] text-white p-5 rounded-3xl shadow-lg shadow-pink-600/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -1854,25 +1898,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         )}
 
         {/* =========================================================================
-            TAB 2: BECOME AN AFFILIATE
+            TAB 2: BECOME AN AFFILIATE / PARTNER HUB
         ========================================================================= */}
         {activeTab === 'affiliate' && (
           <div className="space-y-6">
 
-            {isKycSyncing ? (
-              <div className="space-y-6">
-                <div className="bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-700/50 space-y-4 animate-pulse">
-                  <div className="h-6 w-48 bg-slate-800 rounded-full"></div>
-                  <div className="h-8 w-72 bg-slate-800 rounded-lg"></div>
-                  <div className="h-4 w-96 bg-slate-800/80 rounded"></div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                  </div>
-                </div>
-              </div>
-            ) : isResellerApproved ? (
+            {isResellerApproved ? (
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-[#005a2b] p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl text-white shadow-xl border border-emerald-500/30 space-y-4 min-w-0 w-full max-w-full overflow-hidden">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2074,7 +2105,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                             type="button"
                             onClick={() => {
                               const refCode = affiliateApp?.applicationId || 'aff_verified';
-                              window.open(`/product?id=${activeMarginProd.id}&ref=${refCode}&margin=${customMarginVal}`, '_blank');
+                              const liveUrl = buildAffiliateProductUrl({
+                                productId: activeMarginProd.id,
+                                refCode,
+                                margin: customMarginVal
+                              });
+                              window.open(liveUrl, '_blank');
                             }}
                             className="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0"
                             title="Open live product page with your custom margin applied"
@@ -2228,7 +2264,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                                   type="button"
                                   onClick={() => {
                                     const refCode = affiliateApp?.applicationId || 'aff_verified';
-                                    window.open(`/product?id=${prod.id}&ref=${refCode}&margin=150`, '_blank');
+                                    const liveUrl = buildAffiliateProductUrl({
+                                      productId: prod.id,
+                                      refCode,
+                                      margin: 150
+                                    });
+                                    window.open(liveUrl, '_blank');
                                   }}
                                   className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-1"
                                   title="View live product with +₹150 margin"
@@ -3212,15 +3253,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base sm:text-lg font-black text-slate-900 truncate">{customerName}</h3>
                     <p className="text-xs text-slate-500 truncate">{customerEmail || 'No email registered'}</p>
-                    {isKycSyncing ? (
-                      <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-400 text-[10px] font-black uppercase border border-slate-200 animate-pulse">
-                        Verifying Status...
-                      </span>
-                    ) : (
-                      <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#b7004d] text-[10px] font-black uppercase border border-pink-100 truncate max-w-full">
-                        {isResellerApproved ? 'Verified Partner & Reseller' : isKycUnderReview ? 'Partner (KYC Under Review)' : 'Verified Customer'}
-                      </span>
-                    )}
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#b7004d] text-[10px] font-black uppercase border border-pink-100 truncate max-w-full">
+                      {isResellerApproved ? 'Verified Partner & Reseller' : isKycUnderReview ? 'Partner (KYC Under Review)' : 'Verified Customer'}
+                    </span>
                   </div>
                 </div>
 
@@ -3314,9 +3349,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                       type="text"
                       disabled
                       value={
-                        isKycSyncing
-                          ? 'Verifying Status...'
-                          : isResellerApproved
+                        isResellerApproved
                           ? 'Approved Reseller & Partner'
                           : isKycUnderReview
                           ? 'Partner (KYC Under Review)'

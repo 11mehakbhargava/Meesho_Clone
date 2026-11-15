@@ -33,7 +33,7 @@ export default function UserLogin() {
   const dispatch = useDispatch();
 
   const searchParams = new URLSearchParams(location.search);
-  const redirectParam = searchParams.get('redirect') || '/user-home';
+  const redirectParam = searchParams.get('redirect') || '/';
 
   const { loginWithGoogle, isLoading: googleLoading, error: googleError } = useGoogleAuth('USER', redirectParam);
 
@@ -305,7 +305,7 @@ export default function UserLogin() {
 
       <button
         type="button"
-        onClick={() => navigate(redirectParam || '/user-home')}
+        onClick={() => navigate(redirectParam || '/')}
         className="w-full h-10 mt-1.5 flex items-center justify-center gap-2 px-4 rounded-xl border border-pink-200/80 hover:border-[#b7004d]/40 bg-pink-50/40 hover:bg-pink-100/60 text-[#4a2135] hover:text-[#b7004d] font-bold text-xs sm:text-sm transition-all shadow-2xs cursor-pointer active:scale-[0.99]"
       >
         <span>Continue as Guest</span>
@@ -379,7 +379,7 @@ export default function UserLogin() {
 
       <button
         type="button"
-        onClick={() => navigate(redirectParam || '/user-home')}
+        onClick={() => navigate(redirectParam || '/')}
         className="w-full h-10 mt-1.5 flex items-center justify-center gap-2 px-4 rounded-xl border border-pink-200/80 hover:border-[#b7004d]/40 bg-pink-50/40 hover:bg-pink-100/60 text-[#4a2135] hover:text-[#b7004d] font-bold text-xs sm:text-sm transition-all shadow-2xs cursor-pointer active:scale-[0.99]"
       >
         <span>Continue as Guest</span>
