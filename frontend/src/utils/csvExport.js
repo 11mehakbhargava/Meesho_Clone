@@ -336,3 +336,247 @@ export function exportReviewsToCsv(reviews = []) {
   return reviews.length;
 }
 
+/**
+ * 6. Download Sample Bulk Product Catalog Template (CSV)
+ */
+export function downloadBulkProductTemplateCsv() {
+  const headers = [
+    'Title',
+    'Category',
+    'Price',
+    'MRP',
+    'Stock',
+    'SKU',
+    'Sizes',
+    'Colors',
+    'Thickness',
+    'Images',
+    'Description',
+  ];
+
+  const sampleRows = [
+    [
+      'Anarkali Printed Rayon Kurti & Dupatta Set',
+      'Women Ethnic',
+      499,
+      999,
+      60,
+      'KURTI-ANAR-01',
+      'S, M, L, XL, XXL',
+      'Red, Navy Blue, Emerald Green',
+      '180 GSM (Regular / Bio-Wash)',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800, https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800',
+      'Premium 100% breathable rayon anarkali kurti with intricate foil work and matching dupatta.',
+    ],
+    [
+      'Men Pure Cotton Casual Spread Collar Shirt',
+      'Men Western',
+      399,
+      799,
+      50,
+      'SHIRT-COT-02',
+      'M, L, XL, XXL',
+      'White, Sky Blue, Charcoal Grey',
+      '220 GSM (Heavy / Winter Wear)',
+      'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800',
+      'Pre-shrunk combed cotton casual shirt for formal and daily office styling. Double stitched buttons.',
+    ],
+    [
+      'Embroidered Silk Blend Festive Saree with Blouse Piece',
+      'Sarees',
+      699,
+      1499,
+      40,
+      'SAREE-SILK-03',
+      'Free Size',
+      'Maroon, Mustard Yellow, Royal Blue',
+      'Jacquard Weave 120 GSM',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=800',
+      'Traditional woven kanjivaram style art silk saree with rich pallu design. Includes 0.8m unstitched blouse.',
+    ],
+  ];
+
+  const filename = `mshoppy_bulk_catalog_sample_template.csv`;
+  exportToCsv(filename, headers, sampleRows);
+  return true;
+}
+
+/**
+ * 7. Parse CSV String into Product Objects (RFC 4180 Compliant with Header Normalization)
+ */
+export function parseProductsCsv(csvString) {
+  if (!csvString || typeof csvString !== 'string') {
+    throw new Error('CSV content is empty or invalid.');
+  }
+
+  // Strip UTF-8 BOM if present
+  let cleanCsv = csvString;
+  if (cleanCsv.charCodeAt(0) === 0xFEFF) {
+    cleanCsv = cleanCsv.slice(1);
+  }
+
+  // Parse lines considering quoted cells with newlines
+  const rows = [];
+  let currentRow = [];
+  let currentCell = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < cleanCsv.length; i++) {
+    const char = cleanCsv[i];
+    const nextChar = cleanCsv[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        currentCell += '"';
+        i++; // skip escaped quote
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (char === ',' && !insideQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = '';
+    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      currentRow.push(currentCell.trim());
+      if (currentRow.some((c) => c !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    if (currentRow.some((c) => c !== '')) {
+      rows.push(currentRow);
+    }
+  }
+
+  if (rows.length < 2) {
+    throw new Error('CSV must contain a header row and at least one product row.');
+  }
+
+  const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+  // Header mapping dictionary
+  const headerMap = {
+    title: ['title', 'producttitle', 'productname', 'name', 'itemname'],
+    category: ['category', 'categoryname', 'categoryslug', 'cat'],
+    price: ['price', 'sellingprice', 'offerprice', 'unitprice', 'finalprice'],
+    mrp: ['mrp', 'originalprice', 'regularprice', 'retailprice', 'strikeprice'],
+    stock: ['stock', 'quantity', 'qty', 'inventory', 'units', 'initialstock'],
+    sku: ['sku', 'skucode', 'itemcode', 'productcode', 'stylecode'],
+    sizes: ['sizes', 'size', 'availablesizes', 'variantsizes'],
+    colors: ['colors', 'color', 'availablecolors', 'variantcolors', 'colour', 'colours'],
+    thickness: ['thickness', 'thicknesses', 'gsm', 'fabricweight', 'weight'],
+    images: ['images', 'image', 'imageurl', 'imageurls', 'photos', 'photourls'],
+    description: ['description', 'desc', 'productdescription', 'details'],
+  };
+
+  const colIndices = {};
+  for (const [key, aliases] of Object.entries(headerMap)) {
+    const idx = rawHeaders.findIndex((h) => aliases.includes(h));
+    if (idx !== -1) {
+      colIndices[key] = idx;
+    }
+  }
+
+  if (colIndices.title === undefined || colIndices.price === undefined) {
+    throw new Error('CSV missing required header columns: "Title" and "Price" are mandatory.');
+  }
+
+  const parsedProducts = [];
+  const errors = [];
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const rowNum = r + 1;
+
+    const title = colIndices.title !== undefined ? (row[colIndices.title] || '').trim() : '';
+    if (!title) {
+      errors.push(`Row ${rowNum}: Title is empty`);
+      continue;
+    }
+
+    const priceRaw = colIndices.price !== undefined ? row[colIndices.price] : '';
+    const cleanPrice = String(priceRaw).replace(/[^0-9.]/g, '');
+    const priceNum = parseFloat(cleanPrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      errors.push(`Row ${rowNum} ("${title}"): Invalid selling price "${priceRaw}"`);
+      continue;
+    }
+
+    const mrpRaw = colIndices.mrp !== undefined ? row[colIndices.mrp] : '';
+    const cleanMrp = String(mrpRaw).replace(/[^0-9.]/g, '');
+    const mrpNum = parseFloat(cleanMrp) || Math.round(priceNum * 1.3);
+
+    const stockRaw = colIndices.stock !== undefined ? row[colIndices.stock] : '50';
+    const cleanStock = String(stockRaw).replace(/[^0-9]/g, '');
+    let stockNum = parseInt(cleanStock, 10);
+    if (isNaN(stockNum) || stockNum < 0) stockNum = 50;
+
+    const category = colIndices.category !== undefined && row[colIndices.category]
+      ? row[colIndices.category].trim()
+      : 'Women Ethnic';
+
+    const sku = colIndices.sku !== undefined && row[colIndices.sku]
+      ? row[colIndices.sku].trim()
+      : `MSH-${Date.now().toString().slice(-5)}-${r}`;
+
+    const sizesRaw = colIndices.sizes !== undefined ? (row[colIndices.sizes] || '') : '';
+    const sizes = sizesRaw
+      ? sizesRaw.split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+      : ['Free Size'];
+
+    const colorsRaw = colIndices.colors !== undefined ? (row[colIndices.colors] || '') : '';
+    const colors = colorsRaw
+      ? colorsRaw.split(/[,;|]/).map((c) => c.trim()).filter(Boolean)
+      : [];
+
+    const thickness = colIndices.thickness !== undefined && row[colIndices.thickness]
+      ? row[colIndices.thickness].trim()
+      : null;
+
+    const imagesRaw = colIndices.images !== undefined ? (row[colIndices.images] || '') : '';
+    const images = imagesRaw
+      ? imagesRaw.split(/[,;\s]+/).map((u) => u.trim()).filter((u) => u.startsWith('http'))
+      : [];
+    if (images.length === 0) {
+      images.push('https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800');
+    }
+
+    const description = colIndices.description !== undefined && row[colIndices.description]
+      ? row[colIndices.description].trim()
+      : 'Premium quality verified wholesale catalog item directly from verified manufacturer.';
+
+    parsedProducts.push({
+      rowNumber: rowNum,
+      title,
+      category,
+      categorySlug: category.toLowerCase().replace(/\s+/g, '-'),
+      price: priceNum,
+      mrp: mrpNum,
+      stock: stockNum,
+      sku,
+      sizes: sizes.length > 0 ? sizes : ['Free Size'],
+      colors,
+      thickness,
+      images,
+      imageUrl: images[0] || '',
+      description,
+    });
+  }
+
+  return {
+    products: parsedProducts,
+    errors,
+    totalRows: rows.length - 1,
+    validRows: parsedProducts.length,
+  };
+}
+

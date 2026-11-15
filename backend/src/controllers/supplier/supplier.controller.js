@@ -275,6 +275,8 @@ export const addProduct = async (req, res, next) => {
       thickness,
       thicknesses,
       stock,
+      sku,
+      variants,
       isFreeDelivery,
       supplierName = supplierProfile.storeName || supplierProfile.fullName || 'Verified Supplier',
     } = req.body;
@@ -409,6 +411,36 @@ export const addProduct = async (req, res, next) => {
       parsedThicknesses.unshift(parsedThickness);
     }
 
+    // Parse variants (Color × Size × SKU matrix)
+    let parsedVariants = [];
+    if (variants) {
+      if (Array.isArray(variants)) {
+        parsedVariants = variants;
+      } else if (typeof variants === 'string') {
+        try {
+          parsedVariants = JSON.parse(variants);
+        } catch (_) {
+          parsedVariants = [];
+        }
+      }
+    }
+    // Clean and validate variants
+    parsedVariants = parsedVariants.map((v, idx) => ({
+      id: v.id || `var_${Date.now()}_${idx}`,
+      color: v.color || 'Default',
+      size: v.size || 'Free Size',
+      sku: (v.sku || `${sku || 'MSH'}-${v.color || 'CLR'}-${v.size || 'SZ'}`).toUpperCase().replace(/\s+/g, '-'),
+      stock: parseInt(v.stock, 10) >= 0 ? parseInt(v.stock, 10) : 0,
+      price: v.price ? parseFloat(v.price) : priceNum,
+      status: parseInt(v.stock, 10) > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+    }));
+
+    // If variants exist, calculate total stock as sum of variants unless explicitly overridden
+    let finalStock = stock !== undefined && stock !== null && stock !== '' ? parseInt(stock, 10) : 50;
+    if (parsedVariants.length > 0) {
+      finalStock = parsedVariants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0);
+    }
+
     // Authoritative Database Persistence (Strict - NO FAKE FALLBACKS)
     const newProduct = await prisma.product.create({
       data: {
@@ -423,7 +455,9 @@ export const addProduct = async (req, res, next) => {
         colors: parsedColors,
         thickness: parsedThickness,
         thicknesses: parsedThicknesses,
-        stock: stock !== undefined && stock !== null && stock !== '' ? parseInt(stock, 10) : 50,
+        sku: (sku || '').trim() || null,
+        variants: parsedVariants,
+        stock: finalStock,
         isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
         supplierId,
@@ -610,6 +644,35 @@ export const updateProduct = async (req, res, next) => {
     }
     if (typeof updateData.isFreeDelivery === 'string') {
       updateData.isFreeDelivery = updateData.isFreeDelivery === 'true';
+    }
+
+    if (updateData.sku !== undefined) {
+      updateData.sku = typeof updateData.sku === 'string' && updateData.sku.trim() ? updateData.sku.trim() : null;
+    }
+
+    if (updateData.variants !== undefined) {
+      let rawVariants = updateData.variants;
+      if (typeof rawVariants === 'string') {
+        try {
+          rawVariants = JSON.parse(rawVariants);
+        } catch (_) {
+          rawVariants = [];
+        }
+      }
+      if (Array.isArray(rawVariants)) {
+        updateData.variants = rawVariants.map((v, idx) => ({
+          id: v.id || `var_${Date.now()}_${idx}`,
+          color: v.color || 'Default',
+          size: v.size || 'Free Size',
+          sku: (v.sku || `${updateData.sku || existing.sku || 'MSH'}-${v.color || 'CLR'}-${v.size || 'SZ'}`).toUpperCase().replace(/\s+/g, '-'),
+          stock: parseInt(v.stock, 10) >= 0 ? parseInt(v.stock, 10) : 0,
+          price: v.price ? parseFloat(v.price) : (updateData.price || existing.price),
+          status: parseInt(v.stock, 10) > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+        }));
+        if (updateData.stock === undefined && updateData.variants.length > 0) {
+          updateData.stock = updateData.variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0);
+        }
+      }
     }
 
     if (updateData.categoryName && !updateData.categorySlug) {
@@ -807,6 +870,214 @@ export const bulkUpdateProducts = async (req, res, next) => {
       message: `Successfully bulk updated ${updatedResults.length} product(s)!`,
       count: updatedResults.length,
       data: updatedResults,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 5c. Bulk Product Catalog Upload (Excel / CSV Mass Import)
+ * POST /api/supplier/products/bulk-upload
+ */
+export const bulkUploadProducts = async (req, res, next) => {
+  try {
+    const supplierId = req.supplierId || req.user?.id;
+    if (!supplierId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Supplier session missing',
+      });
+    }
+
+    // Verify supplier profile exists
+    const supplierProfile = await prisma.profile.findUnique({
+      where: { id: supplierId },
+      select: {
+        id: true,
+        storeName: true,
+        fullName: true,
+        gstin: true,
+        pan: true,
+        bankDetails: true,
+        role: true,
+      },
+    });
+    if (!supplierProfile) {
+      return res.status(401).json({
+        success: false,
+        message: 'Supplier profile not found or session invalid',
+      });
+    }
+
+    // Check KYC
+    const kycApplication = await prisma.kYCApplication.findFirst({
+      where: { userId: supplierId, type: 'supplier' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const isKycApproved = kycApplication?.status === 'APPROVED';
+    const hasVerifiedTaxProfile = Boolean(supplierProfile.gstin && supplierProfile.bankDetails);
+
+    if (!isKycApproved && !hasVerifiedTaxProfile) {
+      return res.status(403).json({
+        success: false,
+        error: 'KYC_REQUIRED',
+        message: 'KYC Verification Required: You must complete business verification before publishing bulk listings.',
+      });
+    }
+
+    const { products: rawProducts } = req.body;
+    if (!Array.isArray(rawProducts) || rawProducts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Products array is required and cannot be empty',
+      });
+    }
+
+    const supplierDisplayName = supplierProfile.storeName || supplierProfile.fullName || 'Verified Supplier';
+    const createdProducts = [];
+    const errors = [];
+
+    for (let i = 0; i < rawProducts.length; i++) {
+      const item = rawProducts[i];
+      const rowNum = i + 1;
+
+      if (!item.title || typeof item.title !== 'string' || !item.title.trim()) {
+        errors.push(`Row ${rowNum}: Product title is required`);
+        continue;
+      }
+
+      const priceNum = parseFloat(item.price);
+      if (isNaN(priceNum) || priceNum <= 0) {
+        errors.push(`Row ${rowNum} ("${item.title}"): Invalid selling price`);
+        continue;
+      }
+
+      // Determine Category
+      let catName = item.categoryName || item.category || 'Women Ethnic';
+      let catSlug = item.categorySlug || slugify(catName, { lower: true, strict: true });
+      if (!catSlug) catSlug = 'women-ethnic';
+
+      // Ensure Category exists
+      await prisma.category.upsert({
+        where: { slug: catSlug },
+        update: {},
+        create: {
+          name: catName,
+          slug: catSlug,
+        },
+      });
+
+      // Parse sizes
+      let parsedSizes = ['Free Size'];
+      if (item.sizes) {
+        if (Array.isArray(item.sizes)) parsedSizes = item.sizes.filter(Boolean);
+        else if (typeof item.sizes === 'string') {
+          parsedSizes = item.sizes.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+      }
+      if (parsedSizes.length === 0) parsedSizes = ['Free Size'];
+
+      // Parse colors
+      let parsedColors = [];
+      if (item.colors) {
+        if (Array.isArray(item.colors)) parsedColors = item.colors.filter(Boolean);
+        else if (typeof item.colors === 'string') {
+          parsedColors = item.colors.split(',').map((c) => c.trim()).filter(Boolean);
+        }
+      }
+
+      // Parse images
+      let parsedImages = [];
+      if (item.images) {
+        if (Array.isArray(item.images)) parsedImages = item.images.filter(Boolean);
+        else if (typeof item.images === 'string') {
+          parsedImages = item.images.split(',').map((img) => img.trim()).filter(Boolean);
+        }
+      }
+      if (item.imageUrl && typeof item.imageUrl === 'string' && item.imageUrl.trim()) {
+        parsedImages.unshift(item.imageUrl.trim());
+      }
+      parsedImages = [...new Set(parsedImages.filter(Boolean))];
+      if (parsedImages.length === 0) {
+        parsedImages = ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800'];
+      }
+
+      // Parse base SKU
+      const baseSku = (item.sku || `MSH-${Date.now().toString().slice(-5)}-${rowNum}`).trim();
+
+      // Parse stock
+      let initialStock = item.stock !== undefined && item.stock !== null && item.stock !== ''
+        ? parseInt(item.stock, 10)
+        : 50;
+      if (isNaN(initialStock) || initialStock < 0) initialStock = 50;
+
+      // Handle or generate variants (Color × Size)
+      let parsedVariants = [];
+      if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+        parsedVariants = item.variants.map((v, vIdx) => ({
+          id: v.id || `var_${Date.now()}_${rowNum}_${vIdx}`,
+          color: v.color || 'Default',
+          size: v.size || 'Free Size',
+          sku: (v.sku || `${baseSku}-${v.color || 'CLR'}-${v.size || 'SZ'}`).toUpperCase().replace(/\s+/g, '-'),
+          stock: parseInt(v.stock, 10) >= 0 ? parseInt(v.stock, 10) : 0,
+          price: v.price ? parseFloat(v.price) : priceNum,
+          status: parseInt(v.stock, 10) > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+        }));
+        initialStock = parsedVariants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0);
+      } else if (parsedColors.length > 0 && parsedSizes.length > 0) {
+        // Auto-generate variants from Color × Size matrix for bulk items!
+        const totalCombinations = parsedColors.length * parsedSizes.length;
+        const stockPerVariant = Math.max(0, Math.floor(initialStock / totalCombinations));
+        let variantIndex = 0;
+        for (const col of parsedColors) {
+          for (const sz of parsedSizes) {
+            const vSku = `${baseSku}-${col.slice(0, 3).toUpperCase()}-${sz.replace(/\s+/g, '')}`.replace(/[^A-Z0-9-]/gi, '');
+            parsedVariants.push({
+              id: `var_${Date.now()}_${rowNum}_${variantIndex++}`,
+              color: col,
+              size: sz,
+              sku: vSku,
+              stock: stockPerVariant,
+              price: priceNum,
+              status: stockPerVariant > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+            });
+          }
+        }
+      }
+
+      // Create Product in Database
+      const newProduct = await prisma.product.create({
+        data: {
+          title: item.title.trim(),
+          description: (item.description || '').trim(),
+          price: priceNum,
+          originalPrice: item.mrp || item.originalPrice ? parseFloat(item.mrp || item.originalPrice) : Math.round(priceNum * 1.3),
+          discountPercentage: item.discountPercentage ? parseInt(item.discountPercentage, 10) : 0,
+          categorySlug: catSlug,
+          images: parsedImages,
+          sizes: parsedSizes,
+          colors: parsedColors,
+          thickness: item.thickness ? String(item.thickness).trim() : null,
+          thicknesses: item.thickness ? [String(item.thickness).trim()] : [],
+          sku: baseSku,
+          variants: parsedVariants,
+          stock: initialStock,
+          isFreeDelivery: item.isFreeDelivery !== false,
+          supplierName: supplierDisplayName,
+          supplierId,
+        },
+      });
+
+      createdProducts.push(newProduct);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `🎉 Successfully published ${createdProducts.length} product(s) to live catalog!`,
+      count: createdProducts.length,
+      errors: errors.length > 0 ? errors : undefined,
+      data: createdProducts,
     });
   } catch (error) {
     next(error);
