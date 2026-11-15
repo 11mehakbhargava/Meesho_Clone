@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavDrawer from "../../components/NavDrawer";
 import AppBottomNav from "../../components/AppBottomNav";
-import { getStoredAffiliate } from "../../services/affiliateAuthService";
+import { getStoredAffiliate, fetchAffiliateStats } from "../../services/affiliateAuthService";
 import { getAffiliateApp } from "../../services/affiliateSessionStore";
 import { getStoredCustomer } from "../../services/customerAuthService";
 
@@ -21,6 +21,37 @@ export default function ReferEarn({ onBack }) {
   const [copied, setCopied] = useState(false);
   const [activeNav, setActiveNav] = useState("account");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showReferralsModal, setShowReferralsModal] = useState(false);
+
+  // Live Database Referral Stats
+  const [stats, setStats] = useState({
+    totalReferrals: 0,
+    totalEarnings: 0,
+    recentOrders: []
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStats() {
+      try {
+        const data = await fetchAffiliateStats();
+        if (isMounted && data) {
+          setStats({
+            totalReferrals: Number(data.convertedOrders || 0),
+            totalEarnings: Number(data.totalCommission || 0),
+            recentOrders: Array.isArray(data.recentOrders) ? data.recentOrders : []
+          });
+        }
+      } catch (err) {
+        console.warn('Could not load live referral stats:', err);
+      } finally {
+        if (isMounted) setLoadingStats(false);
+      }
+    }
+    loadStats();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleBack = () => {
     if (onBack) {
@@ -295,37 +326,99 @@ export default function ReferEarn({ onBack }) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-
               <div className="bg-white p-4 rounded-2xl shadow-sm">
-
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#5b4042] mb-1">
                   Total Referrals
                 </p>
-
-                <p className="text-2xl font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#4d41df]">
-                  24
-                </p>
-
+                <div className="text-2xl font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#4d41df] min-h-[32px] flex items-center">
+                  {loadingStats ? (
+                    <span className="w-5 h-5 border-2 border-[#4d41df] border-t-transparent rounded-full animate-spin inline-block"></span>
+                  ) : (
+                    stats.totalReferrals
+                  )}
+                </div>
               </div>
 
               <div className="bg-white p-4 rounded-2xl shadow-sm">
-
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#5b4042] mb-1">
                   Total Earnings
                 </p>
-
-                <p className="text-2xl font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#b90041]">
-                  ₹2,400
-                </p>
-
+                <div className="text-2xl font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#b90041] min-h-[32px] flex items-center">
+                  {loadingStats ? (
+                    <span className="w-5 h-5 border-2 border-[#b90041] border-t-transparent rounded-full animate-spin inline-block"></span>
+                  ) : (
+                    `₹${stats.totalEarnings.toLocaleString('en-IN')}`
+                  )}
+                </div>
               </div>
-
             </div>
 
           </div>
         </section>
 
       </main>
+
+      {/* Referrals Details Modal */}
+      {showReferralsModal && (
+        <div 
+          onClick={() => setShowReferralsModal(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto space-y-4"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-rose-50 text-[#FF3F6C] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-lg">loyalty</span>
+                </span>
+                <h3 className="font-bold text-base text-slate-900">Referral Details</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowReferralsModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {stats.recentOrders && stats.recentOrders.length > 0 ? (
+              <div className="space-y-3">
+                {stats.recentOrders.map((ord, idx) => (
+                  <div key={ord.id || idx} className="p-3 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100">
+                    <div>
+                      <p className="font-bold text-xs text-slate-800">{ord.title || `Referral Order #${String(ord.id || idx).slice(0, 6)}`}</p>
+                      <p className="text-[10px] text-slate-400">{ord.date ? new Date(ord.date).toLocaleDateString() : 'Confirmed'}</p>
+                    </div>
+                    <span className="text-xs font-black text-[#008644] bg-emerald-50 px-2.5 py-1 rounded-full">
+                      +₹{ord.orderTotal || 100}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">group_add</span>
+                <p className="text-sm font-bold text-slate-700">No Referrals Yet</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                  Share your referral link on WhatsApp. Once your friend completes their first order, your referral bonuses will be credited here!
+                </p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowReferralsModal(false)}
+              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Universal Bottom Navigation Bar */}
       <AppBottomNav activeNav="profile" />
 
