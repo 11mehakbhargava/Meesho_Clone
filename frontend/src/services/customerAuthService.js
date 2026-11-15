@@ -43,9 +43,12 @@ export async function loginCustomer({ phone, email, fullName, otp = '123456' }) 
     if (data.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     }
-    try {
-      clearAffiliateApp();
-    } catch (e) {}
+    const prevUser = current?.user;
+    if (prevUser && data.user && prevUser.id !== data.user.id && prevUser.email !== data.user.email) {
+      try {
+        clearAffiliateApp();
+      } catch (e) {}
+    }
 
     notifyListeners();
     return data;

@@ -152,7 +152,29 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       clearAffiliateApp();
       return null;
     }
-    return stored;
+    if (stored) return stored;
+
+    try {
+      const raw = localStorage.getItem('affiliate_kyc_application');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed) return parsed;
+      }
+    } catch (_) {}
+
+    if (customerUser?.role === 'RESELLER' || customerUser?.role === 'reseller') {
+      return {
+        status: 'Approved',
+        kycStatus: 'Approved',
+        fullName: customerUser?.fullName || 'Partner',
+        phone: customerUser?.phone || '',
+        email: customerUser?.email || '',
+        applicationId: 'AFF-' + (curId ? String(curId).slice(-6).toUpperCase() : 'VERIFIED'),
+        userId: curId,
+        bankName: 'Linked Settlement Bank'
+      };
+    }
+    return null;
   });
 
   // Real-time synchronization states to eliminate stale cache flickering
@@ -348,11 +370,26 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     ];
   });
 
-  // Real Unified Wallet Balance (Loaded authoritatively from PostgreSQL Database)
-  const [walletBalance, setWalletBalance] = useState(0);
+  // Real Unified Wallet Balance (Instant cache-first load, updated live from DB)
+  const [walletBalance, setWalletBalance] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_user_wallet');
+      if (cached !== null && cached !== undefined) return Number(cached) || 0;
+    } catch (_) {}
+    return Number(customerUser?.walletBalance) || 0;
+  });
 
-  // Real Unified Wallet Transactions Ledger (Loaded authoritatively from PostgreSQL Database)
-  const [walletTransactions, setWalletTransactions] = useState([]);
+  // Real Unified Wallet Transactions Ledger (Instant cache-first load, updated live from DB)
+  const [walletTransactions, setWalletTransactions] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_user_wallet_txns');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -384,11 +421,20 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     ? `${affiliateApp.bankName} (•••• ${affiliateApp.accountNumber ? affiliateApp.accountNumber.slice(-4) : 'XXXX'})`
     : '';
 
-  // Real Dynamic Affiliate Tracking Data (100% Database Driven)
-  const [affiliateStats, setAffiliateStats] = useState({
-    totalReferredRevenue: 0,
-    totalCommission: 0,
-    totalOrders: 0
+  // Real Dynamic Affiliate Tracking Data (Instant cache-first load, updated live from DB)
+  const [affiliateStats, setAffiliateStats] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mshoppy_affiliate_stats');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+    return {
+      totalReferredRevenue: 0,
+      totalCommission: 0,
+      totalOrders: 0
+    };
   });
 
   // Affiliate Calculator State (Custom Profit Margin per product, NOT fixed 15%)
@@ -523,75 +569,96 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     };
   }, [customerUser?.id, customerUser?.uid, customerUser?.phone, customerUser?.email]);
 
-  // Fetch Live Dashboard Data from Database (Background SWR if cached)
-  const loadDashboardData = useCallback(async () => {
-    try {
-      if (realOrders.length === 0) setLoading(true);
-      const [ordersRes, wishRes, addrRes, prodsRes, walletRes] = await Promise.allSettled([
-        getOrders(),
-        getWishlist(),
-        getAddresses(),
-        getProducts({ limit: 48 }),
-        getWalletDetails()
-      ]);
+  // Fetch Live Dashboard Data from Database (Instant Non-blocking Parallel SWR)
+  const loadDashboardData = useCallback(() => {
+    // 1. Fetch Orders immediately without blocking other cards
+    getOrders()
+      .then((orders) => {
+        if (Array.isArray(orders)) {
+          setRealOrders(orders);
+          try { localStorage.setItem('mshoppy_user_orders', JSON.stringify(orders)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch orders:', err))
+      .finally(() => setLoading(false));
 
-      if (ordersRes.status === 'fulfilled' && Array.isArray(ordersRes.value)) {
-        setRealOrders(ordersRes.value);
-        try { localStorage.setItem('mshoppy_user_orders', JSON.stringify(ordersRes.value)); } catch (_) {}
-      }
-      if (wishRes.status === 'fulfilled' && Array.isArray(wishRes.value)) {
-        setWishlistItems(wishRes.value);
-      }
-      if (addrRes.status === 'fulfilled' && Array.isArray(addrRes.value)) {
-        setSavedAddresses(addrRes.value);
-        try { localStorage.setItem('mshoppy_user_addresses', JSON.stringify(addrRes.value)); } catch (_) {}
-      }
-      if (prodsRes.status === 'fulfilled' && Array.isArray(prodsRes.value) && prodsRes.value.length > 0) {
-        setCatalogProducts(prodsRes.value);
-        try {
-          localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prodsRes.value.slice(0, 24)));
-        } catch (e) {}
-      }
-      if (walletRes.status === 'fulfilled' && walletRes.value) {
-        const dbBal = Number(walletRes.value.balance ?? 0);
-        setWalletBalance(dbBal);
+    // 2. Fetch Wishlist immediately
+    getWishlist()
+      .then((wishlist) => {
+        if (Array.isArray(wishlist)) {
+          setWishlistItems(wishlist);
+          try { localStorage.setItem('mshoppy_wishlist', JSON.stringify(wishlist)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch wishlist:', err));
 
-        const dbTxns = (Array.isArray(walletRes.value.transactions) ? walletRes.value.transactions : []).map((dt) => ({
-          title: dt.description || dt.title || 'Wallet Transaction',
-          ref: dt.id || dt.ref || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-          date: dt.createdAt ? new Date(dt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : (dt.date || 'Recently'),
-          status: dt.status || 'COMPLETED',
-          amt: dt.amt || (dt.type === 'credit' ? `+₹${dt.amount}` : `-₹${dt.amount}`),
-          green: dt.green ?? (dt.type === 'credit'),
-          type: dt.type || 'credit',
-          amount: dt.amount,
-          orderId: dt.orderId
-        }));
+    // 3. Fetch Saved Addresses immediately
+    getAddresses()
+      .then((addresses) => {
+        if (Array.isArray(addresses)) {
+          setSavedAddresses(addresses);
+          try { localStorage.setItem('mshoppy_user_addresses', JSON.stringify(addresses)); } catch (_) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch addresses:', err));
 
-        setWalletTransactions(dbTxns);
+    // 4. Fetch Wallet immediately and update stats
+    getWalletDetails()
+      .then((walletData) => {
+        if (walletData) {
+          const dbBal = Number(walletData.balance ?? 0);
+          setWalletBalance(dbBal);
+          try { localStorage.setItem('mshoppy_user_wallet', String(dbBal)); } catch (_) {}
 
-        const detectedAffTxns = dbTxns.filter(
-          (t) => t && /affiliate|commission|referral/i.test(t.title || t.description || '')
-        );
-        const autoComm = detectedAffTxns.reduce(
-          (s, t) => s + (t.type === 'credit' ? (Number(t.amount) || 0) : 0),
-          0
-        );
-        const autoOrders = detectedAffTxns.filter(t => t.type === 'credit').length;
-        setAffiliateStats({
-          totalReferredRevenue: autoComm * 10,
-          totalCommission: autoComm,
-          totalOrders: autoOrders
-        });
-      }
-      setIsWalletLoading(false);
-    } catch (err) {
-      console.error('Failed to load real user dashboard data:', err);
-      setIsWalletLoading(false);
-    } finally {
-      setLoading(false);
-      setIsWalletLoading(false);
-    }
+          const dbTxns = (Array.isArray(walletData.transactions) ? walletData.transactions : []).map((dt) => ({
+            title: dt.description || dt.title || 'Wallet Transaction',
+            ref: dt.id || dt.ref || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
+            date: dt.createdAt ? new Date(dt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : (dt.date || 'Recently'),
+            status: dt.status || 'COMPLETED',
+            amt: dt.amt || (dt.type === 'credit' ? `+₹${dt.amount}` : `-₹${dt.amount}`),
+            green: dt.green ?? (dt.type === 'credit'),
+            type: dt.type || 'credit',
+            amount: dt.amount,
+            orderId: dt.orderId
+          }));
+
+          setWalletTransactions(dbTxns);
+          try { localStorage.setItem('mshoppy_user_wallet_txns', JSON.stringify(dbTxns)); } catch (_) {}
+
+          const detectedAffTxns = dbTxns.filter(
+            (t) => t && /affiliate|commission|referral/i.test(t.title || t.description || '')
+          );
+          const autoComm = detectedAffTxns.reduce(
+            (s, t) => s + (t.type === 'credit' ? (Number(t.amount) || 0) : 0),
+            0
+          );
+          const autoOrders = detectedAffTxns.filter(t => t.type === 'credit').length;
+          const stats = {
+            totalReferredRevenue: autoComm * 10,
+            totalCommission: autoComm,
+            totalOrders: autoOrders
+          };
+          setAffiliateStats(stats);
+          try { localStorage.setItem('mshoppy_affiliate_stats', JSON.stringify(stats)); } catch (_) {}
+        }
+        setIsWalletLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch wallet:', err);
+        setIsWalletLoading(false);
+      });
+
+    // 5. Fetch Catalog Products asynchronously in background
+    getProducts({ limit: 48 })
+      .then((prods) => {
+        if (Array.isArray(prods) && prods.length > 0) {
+          setCatalogProducts(prods);
+          try {
+            localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prods.slice(0, 24)));
+          } catch (e) {}
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch catalog prods:', err));
   }, []);
 
   useEffect(() => {
@@ -951,16 +1018,18 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     }
   };
 
-  // Role & KYC Enforcement: Strictly ONLY unlocked if affiliateApp is APPROVED
+  // Role & KYC Enforcement: Strictly ONLY unlocked if affiliateApp is APPROVED or customerUser is RESELLER
   const isResellerApproved = Boolean(
-    affiliateApp && (
+    (customerUser?.role === 'RESELLER' || customerUser?.role === 'reseller') ||
+    (affiliateApp && (
       affiliateApp.status === 'Approved' ||
       affiliateApp.status === 'APPROVED' ||
       affiliateApp.status === 'Active' ||
       affiliateApp.status === 'ACTIVE'
-    )
+    ))
   );
   const isKycUnderReview = Boolean(
+    !isResellerApproved &&
     affiliateApp && (
       affiliateApp.status === 'Pending' ||
       affiliateApp.status === 'PENDING' ||
@@ -969,6 +1038,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     )
   );
   const isKycRejected = Boolean(
+    !isResellerApproved &&
     affiliateApp && (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED')
   );
 
@@ -986,12 +1056,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   let affiliateNavBadge = 'NEW';
   let affiliateNavBadgeClass = 'bg-[#b7004d] text-white';
 
-  if (affiliateApp) {
-    if (affiliateApp.status === 'Approved' || affiliateApp.status === 'APPROVED') {
-      affiliateNavTitle = 'Partner Hub 🤝';
-      affiliateNavBadge = 'ACTIVE';
-      affiliateNavBadgeClass = 'bg-emerald-600 text-white';
-    } else if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
+  if (isResellerApproved) {
+    affiliateNavTitle = 'Partner Hub 🤝';
+    affiliateNavBadge = 'ACTIVE';
+    affiliateNavBadgeClass = 'bg-emerald-600 text-white';
+  } else if (affiliateApp) {
+    if (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED') {
       affiliateNavTitle = 'Partner KYC ⚠️';
       affiliateNavBadge = 'ACTION';
       affiliateNavBadgeClass = 'bg-rose-600 text-white';
