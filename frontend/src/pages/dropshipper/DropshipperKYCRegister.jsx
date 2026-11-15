@@ -5,7 +5,7 @@ import { auth } from '../../utils/firebase';
 import AppBottomNav from '../../components/AppBottomNav';
 import BankAutocompleteSelect from '../../components/BankAutocompleteSelect';
 import { getDropshipperApp, saveDropshipperApp, subscribeDropshipperApp } from '../../services/dropshipperSessionStore';
-import { submitDropshipperKycApi, getDropshipperKycStatusApi } from '../../services/dropshipperService';
+import { submitDropshipperKycApi, getDropshipperKycStatusApi, uploadDropshipperAssetApi } from '../../services/dropshipperService';
 
 export default function DropshipperKYCRegister({ onNavigate = () => {}, onBack }) {
   const currentUser = useSelector((state) => state.user?.currentUser);
@@ -213,28 +213,66 @@ export default function DropshipperKYCRegister({ onNavigate = () => {}, onBack }
     });
   };
 
-  const handlePanUpload = (e) => {
+  const handlePanUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
     setPanFile({
       name: file.name,
       size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
       type: file.type,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl,
+      uploading: true
     });
-    showToast(`Uploaded PAN proof: ${file.name}`);
+    showToast(`Uploading PAN proof to Supabase Storage: ${file.name}...`);
+
+    try {
+      const res = await uploadDropshipperAssetApi({ file, folder: 'kyc' });
+      if (res?.success && res?.url) {
+        setPanFile(prev => ({
+          ...prev,
+          url: res.url,
+          previewUrl: res.url,
+          uploading: false,
+          storage: 'supabase'
+        }));
+        showToast(`PAN proof securely stored on Supabase CDN!`);
+      }
+    } catch (err) {
+      console.warn('Supabase upload fallback to local preview:', err.message);
+      setPanFile(prev => ({ ...prev, uploading: false }));
+    }
   };
 
-  const handleAadhaarUpload = (e) => {
+  const handleAadhaarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
     setAadhaarFile({
       name: file.name,
       size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
       type: file.type,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl,
+      uploading: true
     });
-    showToast(`Uploaded Aadhaar proof: ${file.name}`);
+    showToast(`Uploading Aadhaar proof to Supabase Storage: ${file.name}...`);
+
+    try {
+      const res = await uploadDropshipperAssetApi({ file, folder: 'kyc' });
+      if (res?.success && res?.url) {
+        setAadhaarFile(prev => ({
+          ...prev,
+          url: res.url,
+          previewUrl: res.url,
+          uploading: false,
+          storage: 'supabase'
+        }));
+        showToast(`Aadhaar proof securely stored on Supabase CDN!`);
+      }
+    } catch (err) {
+      console.warn('Supabase upload fallback to local preview:', err.message);
+      setAadhaarFile(prev => ({ ...prev, uploading: false }));
+    }
   };
 
   const handleRegTypeSwitch = (type) => {
@@ -259,16 +297,35 @@ export default function DropshipperKYCRegister({ onNavigate = () => {}, onBack }
     }
   };
 
-  const handleBusinessRegUpload = (e) => {
+  const handleBusinessRegUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
     setBusinessRegFile({
       name: file.name,
       size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
       type: file.type,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl,
+      uploading: true
     });
-    showToast(`Uploaded ${formData.businessRegType === 'gstin' ? 'GST Certificate' : 'MSME Certificate'} proof: ${file.name}`);
+    showToast(`Uploading certificate to Supabase Storage: ${file.name}...`);
+
+    try {
+      const res = await uploadDropshipperAssetApi({ file, folder: 'kyc' });
+      if (res?.success && res?.url) {
+        setBusinessRegFile(prev => ({
+          ...prev,
+          url: res.url,
+          previewUrl: res.url,
+          uploading: false,
+          storage: 'supabase'
+        }));
+        showToast(`Certificate proof securely stored on Supabase CDN!`);
+      }
+    } catch (err) {
+      console.warn('Supabase upload fallback to local preview:', err.message);
+      setBusinessRegFile(prev => ({ ...prev, uploading: false }));
+    }
   };
 
   const handleNextStep = () => {
@@ -376,8 +433,12 @@ export default function DropshipperKYCRegister({ onNavigate = () => {}, onBack }
         upiId: formData.upiId,
         documents: {
           panFile: panFile?.name || null,
+          panImage: panFile?.url || panFile?.previewUrl || null,
           aadhaarFile: aadhaarFile?.name || null,
+          aadhaarImage: aadhaarFile?.url || aadhaarFile?.previewUrl || null,
           businessRegFile: businessRegFile?.name || null,
+          businessRegImage: businessRegFile?.url || businessRegFile?.previewUrl || null,
+          storage: panFile?.storage || 'supabase'
         }
       };
 

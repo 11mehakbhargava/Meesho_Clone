@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import { uploadFileToSupabase } from '../../services/supabaseStorage.service.js';
 const prisma = new PrismaClient();
 
 /**
@@ -232,8 +234,29 @@ export const uploadDropshipperAvatar = async (req, res) => {
       return res.status(404).json({ error: "Dropshipper profile not found in database" });
     }
 
-    // Public URL path relative to static server
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    // Default local fallback path relative to static server
+    let avatarPath = `/uploads/avatars/${req.file.filename}`;
+    let storageEngine = 'local';
+
+    // 1. Auto-Upload to Supabase Storage Bucket ('dropshipper-assets/avatars')
+    try {
+      if (fs.existsSync(req.file.path)) {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const uploadResult = await uploadFileToSupabase({
+          fileBuffer,
+          originalFilename: req.file.originalname || req.file.filename,
+          mimeType: req.file.mimetype || 'image/png',
+          folder: 'avatars'
+        });
+
+        if (uploadResult?.url) {
+          avatarPath = uploadResult.url;
+          storageEngine = 'supabase';
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[AvatarUpload] Supabase auto-upload failed, using local storage fallback:', sbErr.message);
+    }
 
     const updatedProfile = await prisma.profile.update({
       where: { id: firebaseUid },
@@ -253,8 +276,9 @@ export const uploadDropshipperAvatar = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Profile avatar uploaded successfully",
+      message: `Profile avatar uploaded successfully (${storageEngine === 'supabase' ? 'Cloud CDN' : 'Local Storage'})`,
       avatarUrl: avatarPath,
+      storage: storageEngine,
       profile: updatedProfile
     });
 

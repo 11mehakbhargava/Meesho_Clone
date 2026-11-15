@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getMessaging } from "firebase-admin/messaging";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -30,15 +31,20 @@ if (!existsSync(serviceAccountPath)) {
   }
 }
 
-// Export auth helper and admin object for verifying tokens in middleware
+// Export auth and messaging helpers
 export const auth = getApps().length > 0 ? getAuth() : null;
+export const messaging = getApps().length > 0 ? getMessaging() : null;
 export { serviceAccount };
 
 const admin = {
   auth: () => auth,
+  messaging: () => messaging,
 };
 if (auth) {
   Object.assign(admin.auth, auth);
+}
+if (messaging) {
+  Object.assign(admin.messaging, messaging);
 }
 
 export default admin;

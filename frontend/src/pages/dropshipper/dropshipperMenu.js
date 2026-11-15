@@ -12,9 +12,7 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   LifeBuoy, 
-  MessageSquareText, 
   SlidersHorizontal,
-  AlertCircle,
   Send,
   Cable
 } from 'lucide-react';
@@ -56,7 +54,7 @@ export const DROPSHIPPER_MENU = [
         id: 'wholesale-catalog', 
         label: 'Wholesale Sourcing', 
         icon: Package, 
-        path: '/supplier-products',
+        path: '/dropshipper-wholesale-catalog',
         requiresKyc: false
       },
       { 
@@ -89,16 +87,9 @@ export const DROPSHIPPER_MENU = [
       },
       { 
         id: 'rot-manager', 
-        label: 'ROT Liability & Return', 
+        label: 'ROT Liability & Returns', 
         icon: RotateCcw, 
         path: '/dropshipper-rot-manager',
-        requiresKyc: true
-      },
-      { 
-        id: 'returns-ledger', 
-        label: 'Margin Returns Ledger', 
-        icon: Percent, 
-        path: '/reseller-returns',
         requiresKyc: true
       },
     ]
@@ -126,21 +117,21 @@ export const DROPSHIPPER_MENU = [
         id: 'wallet-passbook', 
         label: 'Fintech Wallet', 
         icon: Wallet, 
-        path: '/my-wallet',
+        path: '/dropshipper-settlements',
         requiresKyc: true
       },
       { 
         id: 'withdraw-funds', 
         label: 'Withdraw Margin', 
         icon: Banknote, 
-        path: '/withdraw-earnings',
+        path: '/dropshipper-settlements?action=withdraw',
         requiresKyc: true
       },
       { 
         id: 'payout-settings', 
         label: 'Bank & UPI Settings', 
         icon: CheckCircle2, 
-        path: '/payout-settings',
+        path: '/dropshipper-dashboard?tab=profile',
         requiresKyc: true
       },
     ]

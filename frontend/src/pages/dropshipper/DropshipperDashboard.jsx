@@ -5,6 +5,8 @@ import { logout, updateProfileSuccess } from '../../redux/userSlice';
 import { signOut, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { auth } from '../../utils/firebase';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import DropshipperPushPrompt from '../../components/dropshipper/DropshipperPushPrompt';
+import { initForegroundNotificationListener, unregisterPushNotifications, syncUserPushToken } from '../../utils/fcm';
 import { 
   getDropshipperProfileApi, 
   updateDropshipperProfileApi, 
@@ -102,6 +104,21 @@ export default function DropshipperDashboard() {
       setActiveTab(qTab);
     }
   }, [location.search]);
+
+  // Live Foreground FCM Notification Listener & Account Token Sync
+  useEffect(() => {
+    const uid = currentUser?.uid || currentUser?.id;
+    if (uid) {
+      syncUserPushToken(uid).catch(() => {});
+    }
+
+    const unsubscribe = initForegroundNotificationListener((payload) => {
+      console.log('Incoming live push notification in DropshipperDashboard:', payload);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [currentUser?.uid, currentUser?.id]);
 
   const avatarInputRef = useRef(null);
 
@@ -793,6 +810,10 @@ export default function DropshipperDashboard() {
   // Safe Dropshipper Logout
   const handleLogout = async () => {
     try {
+      const uid = currentUser?.uid || currentUser?.id;
+      if (uid) {
+        await unregisterPushNotifications(uid).catch(() => {});
+      }
       await signOut(auth);
       dispatch(logout());
       localStorage.removeItem('meesho_dropshipper_session');
@@ -818,6 +839,8 @@ export default function DropshipperDashboard() {
       onLogout={handleLogout}
     >
       <div className="space-y-6 max-w-7xl mx-auto pb-10">
+        {/* Instant Push Notification Opt-in Prompt & Status Bar */}
+        <DropshipperPushPrompt firebaseUid={currentUser?.uid || currentUser?.id} />
 
         {/* ======================================================== */}
         {/* CONDITIONAL VIEW: TAB 1 - PROFILE & STORE SETTINGS */}
@@ -1761,7 +1784,7 @@ export default function DropshipperDashboard() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div 
-                  onClick={() => navigate('/supplier-products')}
+                  onClick={() => navigate('/dropshipper-wholesale-catalog')}
                   className="p-5 bg-white border border-gray-200/80 rounded-2xl hover:border-[#b7004d]/40 hover:shadow-md transition-all cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
@@ -1899,7 +1922,7 @@ export default function DropshipperDashboard() {
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => navigate('/supplier-products')}
+                          onClick={() => navigate('/dropshipper-wholesale-catalog')}
                           className="rounded-2xl px-5 py-5 text-xs font-bold border-gray-200 hover:bg-white cursor-pointer"
                         >
                           <Package className="w-4 h-4 mr-1.5 text-gray-600" />
@@ -2057,84 +2080,86 @@ export default function DropshipperDashboard() {
 
       {/* SOFT DELETE / ACCOUNT DEACTIVATION CONFIRMATION MODAL */}
       {isDeactivatingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-rose-100 relative space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-rose-100 animate-in zoom-in-95 duration-150">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-gray-900">Deactivate Dropshipper Account?</h3>
+                  <p className="text-xs text-gray-500">
+                    This initiates a protected soft-deactivation of your account.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-gray-900">Deactivate Dropshipper Account?</h3>
-                <p className="text-xs text-gray-500">
-                  This initiates a protected soft-deactivation of your account.
-                </p>
+
+              {/* Explanatory Callout */}
+              <div className="rounded-2xl bg-amber-50/70 border border-amber-200/80 p-4 space-y-2 text-xs text-amber-900">
+                <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Mentor Requirement & Soft-Delete Safeguards:</span>
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-amber-900/90 pl-1">
+                  <li>Your products will be <strong>hidden from new buyers</strong> immediately.</li>
+                  <li><strong>Past buyers will STILL see</strong> their orders, invoices, and delivery status.</li>
+                  <li>Your wallet ledger, margin history, and return tracking remain 100% safe.</li>
+                  <li>You can restore/reactivate anytime by logging back in.</li>
+                </ul>
               </div>
-            </div>
 
-            {/* Explanatory Callout */}
-            <div className="rounded-2xl bg-amber-50/70 border border-amber-200/80 p-4 space-y-2 text-xs text-amber-900">
-              <div className="font-bold flex items-center gap-1.5 text-amber-950">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Mentor Requirement & Soft-Delete Safeguards:</span>
-              </div>
-              <ul className="list-disc list-inside space-y-1 text-amber-900/90 pl-1">
-                <li>Your products will be <strong>hidden from new buyers</strong> immediately.</li>
-                <li><strong>Past buyers will STILL see</strong> their orders, invoices, and delivery status.</li>
-                <li>Your wallet ledger, margin history, and return tracking remain 100% safe.</li>
-                <li>You can restore/reactivate anytime by logging back in.</li>
-              </ul>
-            </div>
-
-            {/* Reason selector */}
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Reason for Deactivation
-              </Label>
-              <select
-                value={deactivateReason}
-                onChange={(e) => setDeactivateReason(e.target.value)}
-                className="w-full h-11 px-3 rounded-2xl border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:outline-none focus:border-rose-500"
-              >
-                <option value="Temporary break / Business model switch">Temporary break / Business model switch</option>
-                <option value="Switching primary supplier channels">Switching primary supplier channels</option>
-                <option value="Updating store or tax entity information">Updating store or tax entity information</option>
-                <option value="Other / Personal reasons">Other / Personal reasons</option>
-              </select>
-            </div>
-
-            {/* Type DEACTIVATE Input */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              {/* Reason selector */}
+              <div className="space-y-2">
                 <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Type <span className="font-mono text-rose-600 font-black">DEACTIVATE</span> to confirm:
+                  Reason for Deactivation
                 </Label>
-                {(deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE' && (
-                  <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
-                    <Check className="w-3.5 h-3.5" /> Confirmed
-                  </span>
-                )}
+                <select
+                  value={deactivateReason}
+                  onChange={(e) => setDeactivateReason(e.target.value)}
+                  className="w-full h-11 px-3 rounded-2xl border border-gray-200 bg-white text-xs font-medium text-gray-700 focus:outline-none focus:border-rose-500"
+                >
+                  <option value="Temporary break / Business model switch">Temporary break / Business model switch</option>
+                  <option value="Switching primary supplier channels">Switching primary supplier channels</option>
+                  <option value="Updating store or tax entity information">Updating store or tax entity information</option>
+                  <option value="Other / Personal reasons">Other / Personal reasons</option>
+                </select>
               </div>
-              <Input
-                type="text"
-                placeholder="Type DEACTIVATE"
-                value={deactivateConfirmText}
-                onChange={(e) => setDeactivateConfirmText(e.target.value.toUpperCase())}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE' && !isSubmittingDeactivation) {
-                    handleDeactivateAccount();
-                  }
-                }}
-                className={`h-11 rounded-2xl border-gray-200 focus:border-rose-500 font-mono text-sm uppercase tracking-wider ${
-                  (deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE'
-                    ? 'border-emerald-500 bg-emerald-50/20 text-emerald-900 focus:border-emerald-600'
-                    : ''
-                }`}
-                autoFocus
-              />
+
+              {/* Type DEACTIVATE Input */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Type <span className="font-mono text-rose-600 font-black">DEACTIVATE</span> to confirm:
+                  </Label>
+                  {(deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE' && (
+                    <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
+                      <Check className="w-3.5 h-3.5" /> Confirmed
+                    </span>
+                  )}
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Type DEACTIVATE"
+                  value={deactivateConfirmText}
+                  onChange={(e) => setDeactivateConfirmText(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE' && !isSubmittingDeactivation) {
+                      handleDeactivateAccount();
+                    }
+                  }}
+                  className={`h-11 rounded-2xl border-gray-200 focus:border-rose-500 font-mono text-sm uppercase tracking-wider ${
+                    (deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE'
+                      ? 'border-emerald-500 bg-emerald-50/20 text-emerald-900 focus:border-emerald-600'
+                      : ''
+                  }`}
+                  autoFocus
+                />
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            {/* Pinned Actions Footer */}
+            <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-gray-50/95 border-t border-gray-100 flex items-center justify-end gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -2143,7 +2168,7 @@ export default function DropshipperDashboard() {
                   setIsDeactivatingModalOpen(false);
                   setDeactivateConfirmText('');
                 }}
-                className="rounded-2xl border-gray-200 text-gray-600 hover:bg-gray-50 px-5 py-5 text-xs font-bold cursor-pointer"
+                className="rounded-xl border-gray-200 text-gray-600 hover:bg-gray-100 px-4 py-2 text-xs font-bold cursor-pointer"
               >
                 Cancel
               </Button>
@@ -2151,9 +2176,9 @@ export default function DropshipperDashboard() {
                 type="button"
                 disabled={(deactivateConfirmText || '').trim().toUpperCase() !== 'DEACTIVATE' || isSubmittingDeactivation}
                 onClick={handleDeactivateAccount}
-                className={`text-white rounded-2xl px-6 py-5 text-xs font-bold shadow-lg transition-all flex items-center gap-2 ${
+                className={`text-white rounded-xl px-5 py-2.5 text-xs font-bold shadow-md transition-all flex items-center gap-2 ${
                   (deactivateConfirmText || '').trim().toUpperCase() === 'DEACTIVATE' && !isSubmittingDeactivation
-                    ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30 cursor-pointer'
+                    ? 'bg-rose-600 hover:bg-rose-700 cursor-pointer'
                     : 'bg-rose-400 opacity-50 cursor-not-allowed shadow-none'
                 }`}
               >

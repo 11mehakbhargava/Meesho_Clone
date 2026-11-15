@@ -1,4 +1,6 @@
 import prisma from '../../config/prisma.js';
+import { sendDropshipperKycStatusEmail } from '../../services/dropshipperEmail.service.js';
+import { sendKycStatusPush } from '../../services/fcm.service.js';
 
 /**
  * 1. GET ALL KYC APPLICATIONS (With Filters & Search)
@@ -160,6 +162,26 @@ export const updateKycStatus = async (req, res) => {
           }
         }).catch((err) => console.warn('Supplier profile auto-update warning:', err.message));
       }
+    }
+
+    // Asynchronously dispatch KYC approval/rejection email to applicant
+    if (existing.user?.email && (normalizedStatus === 'APPROVED' || normalizedStatus === 'REJECTED')) {
+      sendDropshipperKycStatusEmail({
+        partnerEmail: existing.user.email,
+        partnerName: existing.user.fullName || 'Partner',
+        storeName: existing.user.storeName || 'Kunal Retail',
+        status: normalizedStatus,
+        rejectionReason: adminNotes || 'Please check your KYC document details and re-upload clear photos.'
+      }).catch((e) => console.error('Error sending KYC status email:', e.message));
+    }
+
+    // Asynchronously dispatch Instant FCM Push Notification
+    if (existing.userId && (normalizedStatus === 'APPROVED' || normalizedStatus === 'REJECTED')) {
+      sendKycStatusPush({
+        userId: existing.userId,
+        status: normalizedStatus,
+        reason: adminNotes || 'Please check your KYC document details.'
+      }).catch((e) => console.error('Error sending KYC push alert:', e.message));
     }
 
     return res.status(200).json({

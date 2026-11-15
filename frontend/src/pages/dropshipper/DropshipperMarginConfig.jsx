@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { signOut } from 'firebase/auth';
@@ -21,15 +21,12 @@ import {
   Download, 
   Save, 
   RotateCcw, 
-  HelpCircle, 
   CheckCircle2, 
   ArrowRight,
   TrendingUp,
   Tag,
   ShieldCheck,
   ShoppingBag,
-  ExternalLink,
-  Copy,
   Check,
   Loader2,
   Plus,
@@ -47,6 +44,7 @@ const DEFAULT_CONFIG = {
   percentageMarkup: 25,
   smartRounding: true, // e.g. 749 instead of 750
   categoryRules: [], // Clean by default: 100% dynamic, no fake pre-filled categories
+  productRules: [], // Priority 1 Product Specific Overrides (Highest priority)
   shippingMode: 'FREE_TO_CUSTOMER', // 'FREE_TO_CUSTOMER' (markup covers shipping) | 'SEPARATE'
   estimatedShippingFee: 60
 };
@@ -72,7 +70,7 @@ export default function DropshipperMarginConfig() {
 
   // Simulator Interactive States
   const [sampleWholesale, setSampleWholesale] = useState(699);
-  const [sampleShipping, setSampleShipping] = useState(60);
+  const sampleShipping = 60;
   const [copiedLink, setCopiedLink] = useState(false);
 
   // 1. Fetch Dropshipper Margin Config & Real Categories on Mount
@@ -98,7 +96,8 @@ export default function DropshipperMarginConfig() {
           if (res?.success && res.config && isMounted) {
             setConfig({
               ...res.config,
-              categoryRules: Array.isArray(res.config.categoryRules) ? res.config.categoryRules : []
+              categoryRules: Array.isArray(res.config.categoryRules) ? res.config.categoryRules : [],
+              productRules: Array.isArray(res.config.productRules) ? res.config.productRules : []
             });
             setIsCustomRule(Boolean(res.isCustom));
           }
@@ -159,7 +158,8 @@ export default function DropshipperMarginConfig() {
           smartRounding: config.smartRounding,
           shippingMode: config.shippingMode,
           estimatedShippingFee: config.estimatedShippingFee,
-          categoryRules: updatedRules
+          categoryRules: updatedRules,
+          productRules: config.productRules || []
         });
         setIsCustomRule(true);
         toast.success(`Override rule for ${targetCat.name} saved to Database!`);
@@ -188,11 +188,42 @@ export default function DropshipperMarginConfig() {
           smartRounding: config.smartRounding,
           shippingMode: config.shippingMode,
           estimatedShippingFee: config.estimatedShippingFee,
-          categoryRules: updatedRules
+          categoryRules: updatedRules,
+          productRules: config.productRules || []
         });
         toast.info("Category override removed and updated in Database.");
       } catch (e) {
         console.error("Auto-save delete error:", e);
+      }
+    }
+  };
+
+  // Handler: Delete Product SKU Override (Auto-persists deletion to PostgreSQL)
+  const handleDeleteProductRule = async (targetProductId) => {
+    const updatedProductRules = (config.productRules || []).filter(
+      r => String(r.productId) !== String(targetProductId)
+    );
+    setConfig(prev => ({
+      ...prev,
+      productRules: updatedProductRules
+    }));
+
+    if (userUid) {
+      try {
+        await saveDropshipperMarginConfigApi({
+          firebaseUid: userUid,
+          pricingStrategy: config.pricingStrategy,
+          fixedMarkup: config.fixedMarkup,
+          percentageMarkup: config.percentageMarkup,
+          smartRounding: config.smartRounding,
+          shippingMode: config.shippingMode,
+          estimatedShippingFee: config.estimatedShippingFee,
+          categoryRules: config.categoryRules,
+          productRules: updatedProductRules
+        });
+        toast.info("Product override rule removed and updated in Database.");
+      } catch (e) {
+        console.error("Auto-save delete product rule error:", e);
       }
     }
   };
@@ -240,7 +271,8 @@ export default function DropshipperMarginConfig() {
         smartRounding: config.smartRounding,
         shippingMode: config.shippingMode,
         estimatedShippingFee: config.estimatedShippingFee,
-        categoryRules: config.categoryRules
+        categoryRules: config.categoryRules,
+        productRules: config.productRules || []
       });
 
       if (res?.success) {
@@ -334,7 +366,7 @@ export default function DropshipperMarginConfig() {
       localStorage.removeItem('meesho_dropshipper_session');
       toast.success("Successfully logged out!");
       navigate('/dropshipper-login');
-    } catch (e) {
+    } catch {
       toast.error("Logout failed.");
     }
   };
@@ -401,6 +433,33 @@ export default function DropshipperMarginConfig() {
                 {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                 <span>{copiedLink ? "Link Copied!" : "Share Store Catalog"}</span>
               </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* 3-Tier Priority Hierarchy Industrial Standard Banner */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 flex items-center gap-3 shadow-2xs">
+            <span className="text-xl">🥇</span>
+            <div>
+              <h4 className="text-xs font-bold text-amber-950">Tier 1: Product Override</h4>
+              <p className="text-[11px] text-amber-800">Highest priority. Individual SKU custom prices</p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50/40 border border-purple-200/80 flex items-center gap-3 shadow-2xs">
+            <span className="text-xl">🥈</span>
+            <div>
+              <h4 className="text-xs font-bold text-purple-950">Tier 2: Category Override</h4>
+              <p className="text-[11px] text-purple-800">Medium priority. Specific category markup rules</p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/40 border border-blue-200/80 flex items-center gap-3 shadow-2xs">
+            <span className="text-xl">🥉</span>
+            <div>
+              <h4 className="text-xs font-bold text-blue-950">Tier 3: Default Strategy</h4>
+              <p className="text-[11px] text-blue-800">Fallback. Store-wide flat ₹ or % markup</p>
             </div>
           </div>
         </div>
@@ -741,6 +800,93 @@ export default function DropshipperMarginConfig() {
               )}
             </div>
 
+            {/* 3. PRODUCT-SPECIFIC SKU OVERRIDES (TIER 1 PRIORITY - HIGHEST) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-gray-100 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
+                    <Tag className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-gray-900">3. Individual Product SKU Overrides</h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 uppercase tracking-wide">
+                        🥇 Priority 1 (Highest)
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Product-specific selling prices override both category rules and global strategy.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate('/dropshipper-wholesale-catalog')}
+                  className="rounded-xl border-amber-200 bg-amber-50/50 hover:bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Browse Catalog & Set Override</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Button>
+              </div>
+
+              {/* Product Rules List or Clean Empty State */}
+              {!config.productRules || config.productRules.length === 0 ? (
+                <div className="py-8 px-4 text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center">
+                    <Tag className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-gray-800">No Product SKU Overrides Yet</h4>
+                    <p className="text-[11px] text-gray-500 max-w-md mx-auto leading-relaxed">
+                      You can set custom selling prices for high-ticket items (e.g. premium jackets) or low-ticket items (e.g. socks) directly from the <strong>Wholesale Sourcing Hub</strong> by clicking the "Calc" button and saving your custom margin.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {config.productRules.map((prodRule, idx) => (
+                    <div
+                      key={prodRule.productId || idx}
+                      className="p-3.5 rounded-2xl border border-amber-100 bg-amber-50/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-amber-200 transition"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] tracking-wide">
+                            {prodRule.sku || 'SKU'}
+                          </span>
+                          <h5 className="text-xs font-bold text-gray-800 line-clamp-1 max-w-md">
+                            {prodRule.title || `Product #${prodRule.productId}`}
+                          </h5>
+                        </div>
+                        <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                          <span>Selling Price: <strong className="text-gray-900">₹{prodRule.customPrice}</strong></span>
+                          <span>•</span>
+                          <span className="text-emerald-700 font-bold">Net Margin: +₹{prodRule.markupValue || prodRule.value || 0}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteProductRule(prodRule.productId)}
+                          className="w-8 h-8 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          title="Remove Product Override"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Bottom Save Action Bar */}
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
@@ -887,7 +1033,7 @@ export default function DropshipperMarginConfig() {
 
               <Button
                 type="button"
-                onClick={() => navigate('/supplier-products')}
+                onClick={() => navigate('/dropshipper-wholesale-catalog')}
                 className="w-full bg-[#b7004d] hover:bg-[#92003d] text-white rounded-2xl py-3 text-xs font-bold shadow-md shadow-[#b7004d]/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
                 <span>Browse Wholesale Catalog</span>

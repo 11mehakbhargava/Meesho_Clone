@@ -77,6 +77,25 @@ export const uploadDropshipperAvatarApi = async (firebaseUid, file) => {
 };
 
 /**
+ * Upload any dropshipper asset (Store Logo, KYC Doc, Proof Image) to Supabase Storage CDN
+ */
+export const uploadDropshipperAssetApi = async ({ file, base64Data, filename, folder = 'general', firebaseUid }) => {
+  const formData = new FormData();
+  if (file) formData.append('file', file);
+  if (base64Data) formData.append('base64Data', base64Data);
+  if (filename) formData.append('filename', filename);
+  if (folder) formData.append('folder', folder);
+  if (firebaseUid) formData.append('firebaseUid', firebaseUid);
+
+  const response = await axios.post(`${API_BASE}/dropshipper/upload/asset`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+/**
  * 6. Submit Dropshipper 4-Step KYC Application
  */
 export const submitDropshipperKycApi = async (kycPayload) => {
@@ -209,6 +228,14 @@ export const saveDropshipperIntegrationApi = async (integrationPayload) => {
 };
 
 /**
+ * 13.2b 1-Click Sync Wholesale Product to Store Channel
+ */
+export const syncProductToChannelApi = async (payload) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/integrations/sync-product`, payload);
+  return response.data;
+};
+
+/**
  * 13.3 Fetch Real Webhook Traffic Logs for Dropshipper from Database
  */
 export const getDropshipperWebhookLogsApi = async (firebaseUid) => {
@@ -298,7 +325,7 @@ export const isDropshipperAuthenticated = () => {
     }
 
     return true;
-  } catch (e) {
+  } catch {
     localStorage.removeItem('meesho_dropshipper_session');
     return false;
   }
@@ -317,7 +344,7 @@ export const updateDropshipperKycStatus = (status) => {
     session.isKycApproved = norm === 'APPROVED';
     localStorage.setItem('meesho_dropshipper_session', JSON.stringify(session));
     return session;
-  } catch (e) {
+  } catch {
     return null;
   }
 };
@@ -336,7 +363,7 @@ export const getDropshipperKycState = () => {
       isKycApproved: kycStatus === 'APPROVED',
       isUnderReview: ['PENDING', 'UNDER_REVIEW'].includes(kycStatus)
     };
-  } catch (e) {
+  } catch {
     return { kycStatus: 'NOT_SUBMITTED', isKycApproved: false, isUnderReview: false };
   }
 };
@@ -414,12 +441,24 @@ export const getDropshipperSettlementsApi = async (firebaseUid) => {
 /**
  * 26. Submit Dispute Claim for RTO / Reverse Freight in Database
  */
-export const submitSettlementClaimApi = async ({ firebaseUid, orderId, claimReason, description }) => {
+export const submitSettlementClaimApi = async ({ firebaseUid, orderId, claimReason, description, proofUrl }) => {
   const response = await axios.post(`${API_BASE}/dropshipper/settlements/claim`, {
     firebaseUid,
     orderId,
     claimReason,
-    description
+    description,
+    proofUrl
+  });
+  return response.data;
+};
+
+/**
+ * 26.1 Request Instant Bank Cashout / Margin Withdrawal
+ */
+export const requestDropshipperWithdrawalApi = async ({ firebaseUid, amount }) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/settlements/withdraw`, {
+    firebaseUid,
+    amount
   });
   return response.data;
 };
@@ -469,6 +508,101 @@ export const sendTestDropshipperEmailApi = async ({ to, templateType, partnerNam
   });
   return response.data;
 };
+
+/**
+ * 32. Register FCM Device Token for WebPush Alerts
+ */
+export const registerDropshipperFcmTokenApi = async ({ firebaseUid, token, deviceType = 'web', userAgent = '' }) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/fcm/register`, {
+    firebaseUid,
+    token,
+    deviceType,
+    userAgent
+  });
+  return response.data;
+};
+
+/**
+ * 33. Unregister FCM Device Token (Logout / Disable)
+ */
+export const unregisterDropshipperFcmTokenApi = async ({ firebaseUid, token }) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/fcm/unregister`, {
+    firebaseUid,
+    token
+  });
+  return response.data;
+};
+
+/**
+ * 34. Check FCM Registration Status
+ */
+export const getDropshipperFcmStatusApi = async (firebaseUid) => {
+  const response = await axios.get(`${API_BASE}/dropshipper/fcm/status/${firebaseUid}`);
+  return response.data;
+};
+
+/**
+ * 35. Trigger Live Test Push Notification
+ */
+export const sendDropshipperTestPushApi = async ({ firebaseUid, title, body }) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/fcm/test-push`, {
+    firebaseUid,
+    title,
+    body
+  });
+  return response.data;
+};
+
+/**
+ * 36. Notification Center History & Unread Count
+ */
+export const getDropshipperNotificationsApi = async (firebaseUid, limit = 30) => {
+  const response = await axios.get(`${API_BASE}/dropshipper/notifications/${firebaseUid}?limit=${limit}`);
+  return response.data;
+};
+
+/**
+ * 37. Mark Single Notification As Read
+ */
+export const markNotificationReadApi = async (notificationId) => {
+  const response = await axios.patch(`${API_BASE}/dropshipper/notifications/${notificationId}/read`);
+  return response.data;
+};
+
+/**
+ * 38. Mark All Notifications Read
+ */
+export const markAllNotificationsReadApi = async (firebaseUid) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/notifications/${firebaseUid}/read-all`);
+  return response.data;
+};
+
+/**
+ * 39. Send WhatsApp / SMS Courier Tracking Alert to Customer
+ */
+export const sendOrderTrackingAlertApi = async (orderId, payload = {}) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/orders/${orderId}/send-tracking-alert`, payload);
+  return response.data;
+};
+
+/**
+ * 40. Simulate Courier Status & Auto-Release Escrow Margin
+ */
+export const simulateCourierStatusApi = async (orderId, payload = {}) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/orders/${orderId}/simulate-status`, payload);
+  return response.data;
+};
+
+/**
+ * 41. Recharge Wallet / Top-Up Security Reserve
+ */
+export const rechargeDropshipperWalletApi = async (payload = {}) => {
+  const response = await axios.post(`${API_BASE}/dropshipper/settlements/recharge-wallet`, payload);
+  return response.data;
+};
+
+
+
 
 
 

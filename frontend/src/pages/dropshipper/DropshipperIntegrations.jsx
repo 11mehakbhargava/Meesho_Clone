@@ -768,9 +768,9 @@ export default function DropshipperIntegrations() {
 
         {/* 5. PAYLOAD INSPECTION MODAL */}
         {inspectedPayload && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-gray-100 space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
+              <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-[#b7004d]">
                     <Code className="w-4 h-4" />
@@ -788,11 +788,13 @@ export default function DropshipperIntegrations() {
                 </button>
               </div>
 
-              <div className="bg-gray-900 text-emerald-400 font-mono text-xs p-4 rounded-2xl max-h-72 overflow-y-auto">
-                <pre>{JSON.stringify(inspectedPayload.payload, null, 2)}</pre>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="bg-gray-900 text-emerald-400 font-mono text-xs p-4 rounded-2xl">
+                  <pre className="whitespace-pre-wrap break-all">{JSON.stringify(inspectedPayload.payload, null, 2)}</pre>
+                </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-gray-50/95 border-t border-gray-100 flex justify-end">
                 <Button
                   onClick={() => setInspectedPayload(null)}
                   className="bg-[#b7004d] hover:bg-[#92003d] text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer"

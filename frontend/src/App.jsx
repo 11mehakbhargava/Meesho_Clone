@@ -35,6 +35,7 @@ import DropshipperMarginConfig from './pages/dropshipper/DropshipperMarginConfig
 import DropshipperSupportDesk from './pages/dropshipper/DropshipperSupportDesk';
 import DropshipperOrdersPush from './pages/dropshipper/DropshipperOrdersPush';
 import DropshipperIntegrations from './pages/dropshipper/DropshipperIntegrations';
+import DropshipperWholesaleCatalog from './pages/dropshipper/DropshipperWholesaleCatalog';
 
 // Customer & Reseller Shopping Pages
 import HomeUserCustomer from './pages/customer & Reseller/HomeUserCustomer';
@@ -128,14 +129,14 @@ import StructureFlow from './pages/Design_Ecosystem_&_Theme_Variations/structure
 const screenCatalog = [
   // 1. Dropshipper Portal Screens
   { path: '/dropshipper-dashboard', name: 'Dropshipper Dashboard', icon: '📊', group: 'Dropshipper' },
+  { path: '/dropshipper-wholesale-catalog', name: 'Wholesale Sourcing Hub', icon: '📦', group: 'Dropshipper' },
+  { path: '/dropshipper-orders-push', name: 'Push Customer Orders', icon: '📤', group: 'Dropshipper' },
   { path: '/dropshipper-margin-config', name: 'Margin & Price Rules', icon: '🏷️', group: 'Dropshipper' },
-  { path: '/dropshipper-support', name: 'Disputes & Support Desk', icon: '🎧', group: 'Dropshipper' },
   { path: '/dropshipper-settlements', name: 'Settlement & Tracking', icon: '📈', group: 'Dropshipper' },
   { path: '/dropshipper-rot-manager', name: 'ROT Liability & Policy Manager', icon: '🛡️', group: 'Dropshipper' },
-  { path: '/reseller-returns', name: 'Returns & Margin Ledger', icon: '🔄', group: 'Dropshipper' },
-  { path: '/my-wallet', name: 'Fintech Wallet & Passbook', icon: '👛', group: 'Dropshipper' },
-  { path: '/withdraw-earnings', name: 'Withdraw Margin to Bank', icon: '🏦', group: 'Dropshipper' },
-  { path: '/payout-settings', name: 'Bank & UPI Settings', icon: '⚙️', group: 'Dropshipper' },
+  { path: '/dropshipper-integrations', name: 'Store Channels & API', icon: '🔌', group: 'Dropshipper' },
+  { path: '/dropshipper-support', name: 'Disputes & Support Desk', icon: '🎧', group: 'Dropshipper' },
+  { path: '/dropshipper-profile', name: 'View Profile & KYC', icon: '👤', group: 'Dropshipper' },
   { path: '/dropshipper-register', name: '4-Step KYC Verification', icon: '🚀', group: 'Dropshipper' },
 
   // 2. Reseller & Fintech 
@@ -580,7 +581,11 @@ function AppRoutes() {
       'supplier-product': '/supplier-products',
       supplierProducts: '/supplier-products',
       supplier_products: '/supplier-products',
-      'dropshipper-products': '/supplier-products',
+      'dropshipper-products': '/dropshipper-wholesale-catalog',
+      'dropshipper-wholesale-catalog': '/dropshipper-wholesale-catalog',
+      'dropshipper-wholesale': '/dropshipper-wholesale-catalog',
+      'wholesale-catalog': '/dropshipper-wholesale-catalog',
+      wholesaleCatalog: '/dropshipper-wholesale-catalog',
       'resell-earn': '/resell-earn',
       'share-earn-config': '/share-earn-config',
       earnings: '/earnings-dashboard-1',
@@ -912,6 +917,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute role="dropshipper" requiresKyc={true} featureName="Store Integrations & Webhook Channels">
               <DropshipperIntegrations />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dropshipper-wholesale-catalog" 
+          element={
+            <ProtectedRoute role="dropshipper">
+              <DropshipperWholesaleCatalog />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/wholesale-catalog" 
+          element={
+            <ProtectedRoute role="dropshipper">
+              <DropshipperWholesaleCatalog />
             </ProtectedRoute>
           } 
         />

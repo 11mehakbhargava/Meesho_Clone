@@ -521,3 +521,4 @@ export const sendDropshipperKycStatusEmail = async ({
 
   return sendEmailSafely({ to: partnerEmail, subject, html });
 };
+
