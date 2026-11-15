@@ -156,8 +156,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   });
 
   // Real-time synchronization states to eliminate stale cache flickering
-  const [isKycSyncing, setIsKycSyncing] = useState(true);
-  const [isWalletLoading, setIsWalletLoading] = useState(true);
+  const [isKycSyncing, setIsKycSyncing] = useState(false);
+  const [isWalletLoading, setIsWalletLoading] = useState(false);
 
   const customerName =
     customerUser?.fullName ||
@@ -454,8 +454,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       try {
         const curId = customerUser?.id || customerUser?.uid;
         const curPhone = customerUser?.phone;
+        const curEmail = customerUser?.email;
 
-        if (!curId && !curPhone) {
+        if (!curId && !curPhone && !curEmail) {
           if (isMounted) {
             setAffiliateApp(null);
             setIsKycSyncing(false);
@@ -466,6 +467,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         const queryParams = [];
         if (curId) queryParams.push(`userId=${encodeURIComponent(curId)}`);
         if (curPhone) queryParams.push(`phone=${encodeURIComponent(curPhone)}`);
+        if (curEmail) queryParams.push(`email=${encodeURIComponent(curEmail)}`);
         if (affiliateApp?.applicationId && affiliateApp?.userId === curId) {
           queryParams.push(`applicationId=${encodeURIComponent(affiliateApp.applicationId)}`);
         }
@@ -504,7 +506,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
           } else {
             // Customer has not submitted an affiliate KYC application
             setAffiliateApp(null);
-            clearAffiliateApp();
           }
           setIsKycSyncing(false);
         }
@@ -515,12 +516,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     };
 
     syncAffiliateStatus();
-    const interval = setInterval(syncAffiliateStatus, 5000);
+    const interval = setInterval(syncAffiliateStatus, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [customerUser?.id, customerUser?.uid, customerUser?.phone]);
+  }, [customerUser?.id, customerUser?.uid, customerUser?.phone, customerUser?.email]);
 
   // Fetch Live Dashboard Data from Database (Background SWR if cached)
   const loadDashboardData = useCallback(async () => {
@@ -952,7 +953,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Role & KYC Enforcement: Strictly ONLY unlocked if affiliateApp is APPROVED
   const isResellerApproved = Boolean(
-    !isKycSyncing &&
     affiliateApp && (
       affiliateApp.status === 'Approved' ||
       affiliateApp.status === 'APPROVED' ||
@@ -961,7 +961,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     )
   );
   const isKycUnderReview = Boolean(
-    !isKycSyncing &&
     affiliateApp && (
       affiliateApp.status === 'Pending' ||
       affiliateApp.status === 'PENDING' ||
@@ -970,29 +969,24 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     )
   );
   const isKycRejected = Boolean(
-    !isKycSyncing &&
     affiliateApp && (affiliateApp.status === 'Rejected' || affiliateApp.status === 'REJECTED')
   );
 
-  // Automatically redirect away from resale/wallet tabs if not approved & purge unapproved stats (wait until sync completes)
+  // Automatically redirect away from resale/wallet tabs if not approved
   useEffect(() => {
-    if (isKycSyncing) return;
     if (!isResellerApproved) {
       if (activeTab === 'resale' || activeTab === 'wallet') {
         setActiveTab('affiliate');
       }
     }
-  }, [isKycSyncing, isResellerApproved, activeTab]);
+  }, [isResellerApproved, activeTab]);
+
   // Dynamic Badges & Titles for Sidebar
   let affiliateNavTitle = 'Become a Partner 🤝';
   let affiliateNavBadge = 'NEW';
   let affiliateNavBadgeClass = 'bg-[#b7004d] text-white';
 
-  if (isKycSyncing) {
-    affiliateNavTitle = 'Partner Hub';
-    affiliateNavBadge = 'SYNC';
-    affiliateNavBadgeClass = 'bg-slate-200 text-slate-700 animate-pulse';
-  } else if (affiliateApp) {
+  if (affiliateApp) {
     if (affiliateApp.status === 'Approved' || affiliateApp.status === 'APPROVED') {
       affiliateNavTitle = 'Partner Hub 🤝';
       affiliateNavBadge = 'ACTIVE';
@@ -1169,15 +1163,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
           <div className="space-y-6">
 
             {/* Dynamic Real Margin Summary Banner - Only shows resale margin to approved resellers */}
-            {isKycSyncing ? (
-              <div className="animate-pulse flex flex-wrap items-center justify-between gap-3 bg-slate-100/90 border border-slate-200/80 px-4 py-3 rounded-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                  <div className="h-4 w-48 sm:w-72 bg-slate-200 rounded-md"></div>
-                </div>
-                <div className="h-8 w-28 bg-slate-200 rounded-xl"></div>
-              </div>
-            ) : isResellerApproved ? (
+            {isResellerApproved ? (
               <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200/80 px-4 py-3 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <span className="flex h-2.5 w-2.5 relative">
@@ -1430,18 +1416,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
               </div>
 
               {/* Card 4: Real Wallet Balance OR KYC Required Status */}
-              {isKycSyncing ? (
-                <div className="bg-slate-100/90 border border-slate-200/80 p-5 rounded-3xl animate-pulse flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-200"></div>
-                    <div className="w-16 h-5 rounded-full bg-slate-200"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 w-24 bg-slate-200 rounded"></div>
-                    <div className="h-6 w-32 bg-slate-200 rounded"></div>
-                  </div>
-                </div>
-              ) : isResellerApproved ? (
+              {isResellerApproved ? (
                 <div className="bg-gradient-to-br from-[#b7004d] via-[#cf125d] to-[#e62973] text-white p-5 rounded-3xl shadow-lg shadow-pink-600/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -1853,25 +1828,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         )}
 
         {/* =========================================================================
-            TAB 2: BECOME AN AFFILIATE
+            TAB 2: BECOME AN AFFILIATE / PARTNER HUB
         ========================================================================= */}
         {activeTab === 'affiliate' && (
           <div className="space-y-6">
 
-            {isKycSyncing ? (
-              <div className="space-y-6">
-                <div className="bg-slate-900/60 p-6 sm:p-8 rounded-3xl border border-slate-700/50 space-y-4 animate-pulse">
-                  <div className="h-6 w-48 bg-slate-800 rounded-full"></div>
-                  <div className="h-8 w-72 bg-slate-800 rounded-lg"></div>
-                  <div className="h-4 w-96 bg-slate-800/80 rounded"></div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                    <div className="h-16 bg-slate-800/60 rounded-2xl"></div>
-                  </div>
-                </div>
-              </div>
-            ) : isResellerApproved ? (
+            {isResellerApproved ? (
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-[#005a2b] p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl text-white shadow-xl border border-emerald-500/30 space-y-4 min-w-0 w-full max-w-full overflow-hidden">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3221,15 +3183,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base sm:text-lg font-black text-slate-900 truncate">{customerName}</h3>
                     <p className="text-xs text-slate-500 truncate">{customerEmail || 'No email registered'}</p>
-                    {isKycSyncing ? (
-                      <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-400 text-[10px] font-black uppercase border border-slate-200 animate-pulse">
-                        Verifying Status...
-                      </span>
-                    ) : (
-                      <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#b7004d] text-[10px] font-black uppercase border border-pink-100 truncate max-w-full">
-                        {isResellerApproved ? 'Verified Partner & Reseller' : isKycUnderReview ? 'Partner (KYC Under Review)' : 'Verified Customer'}
-                      </span>
-                    )}
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-pink-50 text-[#b7004d] text-[10px] font-black uppercase border border-pink-100 truncate max-w-full">
+                      {isResellerApproved ? 'Verified Partner & Reseller' : isKycUnderReview ? 'Partner (KYC Under Review)' : 'Verified Customer'}
+                    </span>
                   </div>
                 </div>
 
@@ -3323,9 +3279,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                       type="text"
                       disabled
                       value={
-                        isKycSyncing
-                          ? 'Verifying Status...'
-                          : isResellerApproved
+                        isResellerApproved
                           ? 'Approved Reseller & Partner'
                           : isKycUnderReview
                           ? 'Partner (KYC Under Review)'
