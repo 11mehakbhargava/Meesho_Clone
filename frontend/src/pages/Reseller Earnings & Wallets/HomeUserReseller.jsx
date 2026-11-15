@@ -37,16 +37,8 @@ export default function HomeUserReseller() {
   const [toastMessage, setToastMessage] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const [banners, setBanners] = useState(() => {
-    try {
-      const cached = localStorage.getItem('mshoppy_cached_banners');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (_) {}
-    return [];
-  });
+  // Pure dynamic admin banners - zero fallback banners
+  const [banners, setBanners] = useState([]);
 
   const [dbCategories, setDbCategories] = useState(() => {
     try {
@@ -137,13 +129,11 @@ export default function HomeUserReseller() {
           getBanners(),
         ]);
         if (isMounted) {
-          if (Array.isArray(bannersData) && bannersData.length > 0) {
+          if (Array.isArray(bannersData)) {
             setBanners(bannersData);
-            try { localStorage.setItem('mshoppy_cached_banners', JSON.stringify(bannersData)); } catch (_) {}
           }
           if (Array.isArray(catsData) && catsData.length > 0) {
             setDbCategories(catsData);
-            try { sessionStorage.setItem('mshoppy_cached_cats', JSON.stringify(catsData)); } catch (_) {}
           }
         }
       } catch (err) {
@@ -536,15 +526,15 @@ export default function HomeUserReseller() {
           </form>
         </div>
 
-        {/* Hero Carousel Section - Dynamic Admin Banners */}
-        <section className="mt-2 relative group">
-          <div 
-            ref={bannerRef}
-            onScroll={handleBannerScroll}
-            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-2 scroll-smooth"
-          >
-            {banners.length > 0 ? (
-              banners.map((banner, idx) => (
+        {/* Hero Carousel Section - Only render when real Admin banners exist */}
+        {banners.length > 0 && (
+          <section className="mt-2 relative group">
+            <div 
+              ref={bannerRef}
+              onScroll={handleBannerScroll}
+              className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-2 scroll-smooth"
+            >
+              {banners.map((banner, idx) => (
                 <div 
                   key={banner.id || idx}
                   onClick={() => banner.targetUrl && navigate(banner.targetUrl)}
@@ -587,65 +577,45 @@ export default function HomeUserReseller() {
                     )}
                   </div>
                 </div>
-              ))
-            ) : (
-              /* Fallback banner while metadata loads */
-              <div 
-                onClick={() => navigate('/explorer')}
-                className="min-w-[85%] md:min-w-[100%] snap-center shrink-0 cursor-pointer"
-              >
-                <div className="h-48 md:h-80 rounded-3xl bg-gradient-to-br from-[#b90041] to-[#df2457] relative overflow-hidden flex items-center px-8 text-white shadow-lg shadow-[#b90041]/20">
-                  <div className="relative z-10 max-w-xs md:max-w-md">
-                    <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">
-                      Reseller Hub
-                    </span>
-                    <h2 className="text-2xl md:text-4xl font-black font-headline leading-tight">
-                      Share & Earn Margins
-                    </h2>
-                    <p className="mt-2 text-xs md:text-sm opacity-90">
-                      Explore catalog items at wholesale prices and share on WhatsApp.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Carousel Chevrons for Desktop */}
-          {banners.length > 1 && activeSlide > 0 && (
-            <button
-              onClick={() => scrollToSlide(activeSlide - 1)}
-              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
-              aria-label="Previous Banner"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-          )}
-          {banners.length > 1 && activeSlide < banners.length - 1 && (
-            <button
-              onClick={() => scrollToSlide(activeSlide + 1)}
-              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
-              aria-label="Next Banner"
-            >
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
-          )}
-
-          {/* Indicators */}
-          {banners.length > 1 && (
-            <div className="flex justify-center gap-2 mt-3">
-              {banners.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => scrollToSlide(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${activeSlide === idx ? 'w-6 bg-[#b90041]' : 'w-2 bg-gray-300'}`}
-                  aria-label={`Slide ${idx + 1}`}
-                />
               ))}
             </div>
-          )}
-        </section>
+
+            {/* Carousel Chevrons for Desktop */}
+            {banners.length > 1 && activeSlide > 0 && (
+              <button
+                onClick={() => scrollToSlide(activeSlide - 1)}
+                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
+                aria-label="Previous Banner"
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+            )}
+            {banners.length > 1 && activeSlide < banners.length - 1 && (
+              <button
+                onClick={() => scrollToSlide(activeSlide + 1)}
+                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
+                aria-label="Next Banner"
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            )}
+
+            {/* Indicators */}
+            {banners.length > 1 && (
+              <div className="flex justify-center gap-2 mt-3">
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => scrollToSlide(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${activeSlide === idx ? 'w-6 bg-[#b90041]' : 'w-2 bg-gray-300'}`}
+                    aria-label={`Slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Category Carousel - Dynamic from Database */}
         <section className="mt-8">
