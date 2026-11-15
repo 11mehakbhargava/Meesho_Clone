@@ -634,7 +634,7 @@ export default function HomeUserReseller() {
                   </div>
                   <span 
                     title={cat.name}
-                    className={`text-[11px] leading-tight text-center capitalize line-clamp-2 max-w-[72px] sm:max-w-[76px] transition-colors ${
+                    className={`text-[11px] sm:text-xs text-center capitalize truncate w-full transition-colors ${
                       isSelected ? 'font-bold text-[#FF3F6C]' : 'font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#FF3F6C]'
                     }`}
                   >
