@@ -121,7 +121,6 @@ const screenCatalog = [
   // 2. Reseller & Fintech 
   { path: '/reseller-home', name: 'Reseller Home', icon: '🛍️', group: 'Reseller & Shop' },
   { path: '/dropshipper-login', name: 'Dropshipper B2B Login', icon: '🔐', group: 'Reseller & Shop' },
-  { path: '/supplier-products', name: 'Supplier Product Access', icon: '🏬', group: 'Reseller & Shop' },
   { path: '/resell-earn', name: 'Resell & Earn', icon: '💰', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-1', name: 'Earnings Dashboard 1', icon: '📈', group: 'Reseller & Shop' },
   { path: '/earnings-dashboard-2', name: 'Earnings Dashboard 2', icon: '📊', group: 'Reseller & Shop' },
