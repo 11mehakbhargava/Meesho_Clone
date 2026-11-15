@@ -1040,16 +1040,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         ]
       : []),
     { id: 'addresses', label: 'Saved Addresses 📍', icon: MapPin },
-    {
-      id: 'shopping-catalog',
-      label: 'Explore Catalog',
-      icon: ShoppingBag,
-      children: [
-        { id: 'cat-products', label: 'All Categories 🗂️', icon: Search },
-        { id: 'cat-sarees', label: 'Sarees Store 🥻', icon: Sparkles },
-        { id: 'cat-spotlight', label: 'Curator Spotlight 🌟', icon: Award },
-      ],
-    },
     { id: 'profile', label: 'Account Settings ⚙️', icon: User },
   ];
 
