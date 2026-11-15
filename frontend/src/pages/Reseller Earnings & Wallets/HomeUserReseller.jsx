@@ -607,27 +607,42 @@ export default function HomeUserReseller() {
 
         {/* Category Carousel - Dynamic from Database */}
         <section className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-headline font-bold text-lg text-on-surface">Categories</h3>
-            <button onClick={() => navigate('/explorer')} className="text-[#b90041] text-xs font-bold font-label uppercase tracking-wider cursor-pointer hover:underline">See All</button>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-headline font-bold text-lg text-slate-900 dark:text-slate-100">Categories</h3>
+            <button 
+              onClick={() => navigate('/explorer')} 
+              className="text-[#FF3F6C] text-xs font-bold font-label uppercase tracking-wider cursor-pointer hover:underline"
+            >
+              See All
+            </button>
           </div>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {displayCategories.map((cat, idx) => (
-              <div
-                key={idx} 
-                onClick={() => setSelectedCategory(cat.name)}
-                className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"
-              >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
-                  selectedCategory === cat.name 
-                    ? 'bg-[#FF3F6C] text-white shadow-lg shadow-[#FF3F6C]/20 scale-105' 
-                    : 'bg-surface-container-high group-hover:bg-[#ffd9dc] text-on-surface-variant'
-                }`}>
-                  <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
+          <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
+            {displayCategories.map((cat, idx) => {
+              const isSelected = selectedCategory === cat.name;
+              return (
+                <div
+                  key={idx} 
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className="w-[72px] sm:w-[76px] flex flex-col items-center gap-1.5 cursor-pointer group flex-shrink-0 select-none"
+                >
+                  <div className={`w-14 h-14 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                    isSelected 
+                      ? 'bg-[#FF3F6C] text-white shadow-md shadow-[#FF3F6C]/30 scale-105 ring-2 ring-[#FF3F6C]/20' 
+                      : 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 group-hover:border-[#FF3F6C]/50 group-hover:bg-[#FFF5F7] group-hover:text-[#FF3F6C] shadow-2xs'
+                  }`}>
+                    <span className="material-symbols-outlined text-[26px]">{cat.icon}</span>
+                  </div>
+                  <span 
+                    title={cat.name}
+                    className={`text-[11px] leading-tight text-center capitalize line-clamp-2 max-w-[72px] sm:max-w-[76px] transition-colors ${
+                      isSelected ? 'font-bold text-[#FF3F6C]' : 'font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#FF3F6C]'
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
                 </div>
-                <span className={`text-xs font-medium ${selectedCategory === cat.name ? 'font-bold text-[#FF3F6C]' : 'text-on-surface'}`}>{cat.name}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
