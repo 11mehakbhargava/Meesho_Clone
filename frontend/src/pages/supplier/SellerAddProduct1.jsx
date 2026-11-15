@@ -460,10 +460,12 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
 
   const isKycVerified = Boolean(
     kycData?.isVerified ||
+    kycData?.status === 'APPROVED' ||
     kycData?.kyc?.status === 'APPROVED' ||
+    profile?.tierLabel?.toLowerCase().includes('verified') ||
     (profile?.gstin && profile?.bankDetails)
   );
-  const kycStatus = kycData?.kyc?.status || (isKycVerified ? 'APPROVED' : 'NOT_SUBMITTED');
+  const kycStatus = kycData?.status || kycData?.kyc?.status || (isKycVerified ? 'APPROVED' : 'NOT_SUBMITTED');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
