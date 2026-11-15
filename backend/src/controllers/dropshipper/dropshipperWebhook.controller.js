@@ -56,7 +56,9 @@ export const receiveInboundWebhook = async (req, res) => {
     const quantity = Number(firstItem.quantity || payload.quantity || 1);
     const totalPrice = Number(payload.total_price || payload.customer_price || 999);
 
-    const fallbackProduct = await prisma.product.findFirst();
+    const fallbackProduct = await prisma.product.findFirst({
+      where: { isDeleted: false, isActive: true }
+    });
     const randomAwb = `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
 
     const shippingAddress = {

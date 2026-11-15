@@ -413,6 +413,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   const handleAddToCart = async () => {
     if (!product) return;
+    if (product.isDeleted || product.isActive === false) {
+      triggerToast('This product has been discontinued by the seller.');
+      return;
+    }
     if (isVariantOutOfStock) {
       triggerToast(`Selected variant is Out of Stock! ⚠️`);
       return;
@@ -458,6 +462,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   const handleBuyNow = async () => {
     if (!product) return;
+    if (product.isDeleted || product.isActive === false) {
+      triggerToast('This product has been discontinued by the seller.');
+      return;
+    }
     if (isVariantOutOfStock) {
       triggerToast(`Selected variant is Out of Stock! ⚠️`);
       return;
@@ -470,6 +478,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   };
 
   const proceedWithBuyNow = async () => {
+    if (product?.isDeleted || product?.isActive === false) {
+      triggerToast('This product has been discontinued by the seller.');
+      return;
+    }
     if (isVariantOutOfStock) {
       triggerToast(`Selected variant is Out of Stock! ⚠️`);
       return;
@@ -614,8 +626,11 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     return match;
   }, [variants, selectedColor, selectedSize]);
 
+  const isProductUnavailable = Boolean(
+    product && (product.isDeleted === true || product.isActive === false)
+  );
   const isVariantOutOfStock = Boolean(
-    activeVariant ? Number(activeVariant.stock) === 0 : (Number(product.stock) === 0)
+    isProductUnavailable || (activeVariant ? Number(activeVariant.stock) === 0 : (Number(product?.stock) === 0))
   );
   const currentVariantStock = activeVariant ? Number(activeVariant.stock) : Number(product.stock ?? 50);
   const activeSku = activeVariant?.sku || product.sku || null;
@@ -868,7 +883,17 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
               {/* Real Multi-Variant Stock Indicator Banner */}
               <div className="py-0.5">
-                {isVariantOutOfStock ? (
+                {isProductUnavailable ? (
+                  <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-rose-800 text-xs font-bold animate-in fade-in">
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-base text-rose-600">block</span>
+                      <span>This product has been unlisted or discontinued by the seller.</span>
+                    </span>
+                    <span className="text-[10px] uppercase font-black bg-rose-200/80 text-rose-900 px-2 py-0.5 rounded-full">
+                      Discontinued
+                    </span>
+                  </div>
+                ) : isVariantOutOfStock ? (
                   <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-rose-800 text-xs font-bold animate-in fade-in">
                     <span className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-base text-rose-600">error</span>
@@ -931,7 +956,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                  <span className="truncate">{isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart')}</span>
+                  <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
                 </button>
                 <button
                   type="button"
@@ -944,7 +969,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">bolt</span>
-                  <span className="truncate">{isVariantOutOfStock ? 'Sold Out' : 'Buy Now'}</span>
+                  <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
                 </button>
               </div>
 
@@ -1416,7 +1441,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             }`}
           >
             <span className="material-symbols-outlined text-lg">shopping_bag</span>
-            <span className="truncate">{isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart')}</span>
+            <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
           </button>
 
           <button
@@ -1430,7 +1455,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             }`}
           >
             <span className="material-symbols-outlined text-lg">bolt</span>
-            <span className="truncate">{isVariantOutOfStock ? 'Sold Out' : 'Buy Now'}</span>
+            <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
           </button>
         </div>
       </div>
