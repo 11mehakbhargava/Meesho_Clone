@@ -227,14 +227,6 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
 
   return (
     <div className="bg-[#f8f9fb] font-sans text-[#191c1e] h-screen max-h-screen overflow-hidden flex flex-col antialiased selection:bg-pink-100 selection:text-pink-700">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header */}
       <header className="shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">

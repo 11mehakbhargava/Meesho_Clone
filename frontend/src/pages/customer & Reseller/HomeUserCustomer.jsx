@@ -13,7 +13,6 @@ import {
 } from "../../services/ecommerceService";
 import { useCart } from "../../hooks/useCart";
 import { getUnreadCount, subscribeNotifications } from "../../services/notificationService";
-import GuestWelcomeModal from "../../components/customer/GuestWelcomeModal";
 
 const REAL_DATABASE_BANNERS = [
   {
@@ -150,47 +149,8 @@ export default function HomeUserCustomer() {
     );
   }, [registeredUser]);
 
-  // Guest Welcome / Login Prompt Modal State
+  // Guest Welcome / Login Prompt Modal State (Disabled per user request)
   const [showGuestModal, setShowGuestModal] = useState(false);
-
-  // Helper to check whether visitor has an active authenticated customer session
-  const checkIsCustomerLoggedIn = useCallback(() => {
-    try {
-      const token = localStorage.getItem('mshoppy_customer_token');
-      const userStr = localStorage.getItem('mshoppy_customer_user');
-      if (token && userStr) {
-        const u = JSON.parse(userStr);
-        if (u && (u.id || u.uid || u.email || u.phone)) {
-          return true;
-        }
-      }
-    } catch (_) {}
-    return false;
-  }, []);
-
-  // Delayed Guest / Login Prompt (Triggers after 4-5 seconds of exploring the homepage)
-  useEffect(() => {
-    // 1. If actively logged in as a verified customer, never show modal
-    if (checkIsCustomerLoggedIn()) {
-      return;
-    }
-
-    // 2. Check if already dismissed in this browsing session
-    const isDismissed = sessionStorage.getItem('mshoppy_guest_prompt_dismissed') === 'true';
-    if (isDismissed) {
-      return;
-    }
-
-    // 3. Fire after 4.2 seconds of exploring the homepage
-    // Mount timer runs smoothly without being cancelled by fluctuating state re-renders
-    const timer = setTimeout(() => {
-      if (!checkIsCustomerLoggedIn()) {
-        setShowGuestModal(true);
-      }
-    }, 4200);
-
-    return () => clearTimeout(timer);
-  }, [checkIsCustomerLoggedIn]);
 
   const handleContinueAsGuest = useCallback(() => {
     sessionStorage.setItem('mshoppy_guest_prompt_dismissed', 'true');
@@ -1102,14 +1062,6 @@ export default function HomeUserCustomer() {
 
       {/* Customer Bottom Navigation */}
       <AppBottomNav activeNav="home" role="customer" homePath="/" />
-
-      {/* Guest Welcome & Login Prompt Modal (Shown after 4-5 seconds for guest exploration) */}
-      <GuestWelcomeModal
-        isOpen={showGuestModal}
-        onClose={handleContinueAsGuest}
-        onContinueAsGuest={handleContinueAsGuest}
-        onLogin={handleModalLogin}
-      />
     </div>
   );
 }

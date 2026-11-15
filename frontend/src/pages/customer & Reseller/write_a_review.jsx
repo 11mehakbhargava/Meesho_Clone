@@ -185,14 +185,6 @@ export default function WriteAReview({ onNavigate = () => {}, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] font-sans text-[#191c1e] min-h-screen flex flex-col pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#b90041] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">star</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top App Bar */}
       <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto w-full">

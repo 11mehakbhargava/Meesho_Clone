@@ -32,14 +32,6 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
 
   return (
     <div className="bg-[#fcf9f8] text-[#1c1b1b] min-h-screen w-full max-w-full overflow-x-hidden font-sans antialiased selection:bg-pink-100 selection:text-pink-600 pb-32">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs w-full max-w-full overflow-hidden">
         <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16 max-w-7xl mx-auto w-full gap-2 sm:gap-4">

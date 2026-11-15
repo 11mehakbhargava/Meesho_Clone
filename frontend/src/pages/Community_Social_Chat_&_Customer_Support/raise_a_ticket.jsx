@@ -220,14 +220,6 @@ export function RaiseATicket({ onNavigate, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] min-h-screen pb-32 font-['Inter',sans-serif] antialiased">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#b90041] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce text-xs font-semibold">
-          <span className="material-symbols-outlined text-xl">confirmation_number</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* TopAppBar */}
       <header className="bg-[#F8F9FB] sticky top-0 z-40 border-b border-slate-200/80 shadow-2xs font-['Plus_Jakarta_Sans',sans-serif]">
         <div className="flex items-center justify-between px-6 py-4 w-full max-w-screen-xl mx-auto">

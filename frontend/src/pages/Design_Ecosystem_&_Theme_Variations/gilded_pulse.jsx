@@ -102,14 +102,6 @@ export default function GildedPulse({ onNavigate }) {
 
   return (
     <div className="bg-[#100d15] text-[#f6eefa] min-h-screen selection:bg-[#f6b630]/30 font-['Plus_Jakarta_Sans'] relative antialiased pb-36">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#282430]/95 backdrop-blur-xl text-[#f6b630] border border-[#f6b630]/30 px-5 py-2.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-xs font-bold flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-sm">verified</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* Top Navigation Bar */}
       <header className="fixed top-0 z-50 w-full bg-[#100d15]/85 backdrop-blur-2xl border-b border-[#282430]/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
         <div className="flex justify-between items-center w-full px-4 sm:px-6 py-3.5 max-w-7xl mx-auto">

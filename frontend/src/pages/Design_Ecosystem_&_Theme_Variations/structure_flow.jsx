@@ -97,14 +97,6 @@ export default function StructureFlow({
 
   return (
     <div className="bg-[#f4fafd] text-[#161d1f] min-h-screen pb-32 font-['Plus_Jakarta_Sans'] selection:bg-[#005ea5]/20 selection:text-[#005ea5] antialiased">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#161d1f]/95 backdrop-blur-md text-white px-5 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 animate-bounce border border-white/10">
-          <span className="material-symbols-outlined text-sm text-[#0077ce]">verified</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* TopAppBar (The Efficient Enterprise Header) */}
       <header className="bg-white/80 backdrop-blur-xl flex justify-between items-center w-full px-4 sm:px-8 py-3.5 sticky top-0 z-40 shadow-[0px_12px_32px_rgba(22,29,31,0.06)] border-b border-[#e2e9ec]/60">
         <div className="flex items-center gap-3">

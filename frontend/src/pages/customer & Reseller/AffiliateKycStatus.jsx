@@ -174,14 +174,6 @@ export default function AffiliateKycStatus({ onNavigate, onBack }) {
 
   return (
     <div className="min-h-screen bg-[#0d0914] text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#FF3F6C] text-white px-5 py-2.5 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 border border-white/20 animate-bounce">
-          <span className="material-symbols-outlined text-base">info</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="sticky top-0 z-40 bg-[#150d1e]/90 backdrop-blur-xl border-b border-pink-500/15 px-4 sm:px-6 py-3.5">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">

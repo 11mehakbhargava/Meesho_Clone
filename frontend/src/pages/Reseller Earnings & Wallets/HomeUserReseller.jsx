@@ -862,14 +862,6 @@ export default function HomeUserReseller() {
         </section>
       </main>
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Quick Share to WhatsApp Modal */}
       {quickShareProduct && (
         <div 
