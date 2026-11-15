@@ -45,7 +45,7 @@ export default function GuestWelcomeModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-300"
+      className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
       onClick={handleDismiss}
       role="dialog"
       aria-modal="true"

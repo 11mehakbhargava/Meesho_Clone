@@ -153,49 +153,53 @@ export default function HomeUserCustomer() {
   // Guest Welcome / Login Prompt Modal State
   const [showGuestModal, setShowGuestModal] = useState(false);
 
-  // Delayed Guest / Login Prompt (Triggers after 4-5 seconds if unauthenticated and not yet handled)
-  useEffect(() => {
-    // 1. Check if user is authenticated
-    const hasToken = Boolean(localStorage.getItem('mshoppy_customer_token'));
-    const hasUser = Boolean(
-      registeredUser ||
-      currentUser ||
-      reduxUser ||
-      localStorage.getItem('mshoppy_customer_user')
-    );
+  // Helper to check whether visitor has an active authenticated customer session
+  const checkIsCustomerLoggedIn = useCallback(() => {
+    try {
+      const token = localStorage.getItem('mshoppy_customer_token');
+      const userStr = localStorage.getItem('mshoppy_customer_user');
+      if (token && userStr) {
+        const u = JSON.parse(userStr);
+        if (u && (u.id || u.uid || u.email || u.phone)) {
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }, []);
 
-    if (hasToken || hasUser) {
+  // Delayed Guest / Login Prompt (Triggers after 4-5 seconds of exploring the homepage)
+  useEffect(() => {
+    // 1. If actively logged in as a verified customer, never show modal
+    if (checkIsCustomerLoggedIn()) {
       return;
     }
 
-    // 2. Check if already handled in this session
-    const isDismissed = sessionStorage.getItem('mshoppy_guest_prompt_handled') === 'true';
+    // 2. Check if already dismissed in this browsing session
+    const isDismissed = sessionStorage.getItem('mshoppy_guest_prompt_dismissed') === 'true';
     if (isDismissed) {
       return;
     }
 
-    // 3. Trigger after 4.5 seconds (allowing free exploration first)
+    // 3. Fire after 4.2 seconds of exploring the homepage
+    // Mount timer runs smoothly without being cancelled by fluctuating state re-renders
     const timer = setTimeout(() => {
-      const liveToken = Boolean(localStorage.getItem('mshoppy_customer_token'));
-      const liveUser = Boolean(localStorage.getItem('mshoppy_customer_user'));
-      const liveDismissed = sessionStorage.getItem('mshoppy_guest_prompt_handled') === 'true';
-
-      if (!liveToken && !liveUser && !liveDismissed) {
+      if (!checkIsCustomerLoggedIn()) {
         setShowGuestModal(true);
       }
-    }, 4500);
+    }, 4200);
 
     return () => clearTimeout(timer);
-  }, [registeredUser, currentUser, reduxUser]);
+  }, [checkIsCustomerLoggedIn]);
 
   const handleContinueAsGuest = useCallback(() => {
-    sessionStorage.setItem('mshoppy_guest_prompt_handled', 'true');
+    sessionStorage.setItem('mshoppy_guest_prompt_dismissed', 'true');
     localStorage.setItem('mshoppy_guest_mode', 'true');
     setShowGuestModal(false);
   }, []);
 
   const handleModalLogin = useCallback(() => {
-    sessionStorage.setItem('mshoppy_guest_prompt_handled', 'true');
+    sessionStorage.setItem('mshoppy_guest_prompt_dismissed', 'true');
     setShowGuestModal(false);
     navigate('/user/login?redirect=' + encodeURIComponent(window.location.pathname || '/'));
   }, [navigate]);
