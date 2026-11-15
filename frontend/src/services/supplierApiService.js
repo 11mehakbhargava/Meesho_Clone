@@ -1,6 +1,9 @@
 // frontend/src/services/supplierApiService.js
+import { API_BASE } from '../config/apiConfig';
+import { store } from '../redux/store';
+import { loginSuccess, updateProfileSuccess, logout } from '../redux/userSlice';
 
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = API_BASE;
 
 const TOKEN_KEY = 'meesho_supplier_token';
 const SUPPLIER_KEY = 'meesho_supplier_user';
@@ -25,10 +28,36 @@ export function getCurrentSupplier() {
   }
 }
 
-export function saveAuthSession(token, supplier) {
+export function saveAuthSession(token, supplier, isNewLogin = false) {
   try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    if (supplier) localStorage.setItem(SUPPLIER_KEY, JSON.stringify(supplier));
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem('supplierToken', token);
+    }
+    if (supplier) {
+      localStorage.setItem(SUPPLIER_KEY, JSON.stringify(supplier));
+      localStorage.setItem('supplier', JSON.stringify(supplier));
+
+      // 1. Reactive CustomEvent broadcast for active tab components (Header, Sidebar, Forms)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('supplier-profile-updated', { detail: supplier })
+        );
+      }
+
+      // 2. Synchronize Redux user slice state reactively
+      try {
+        if (store && store.dispatch) {
+          if (isNewLogin) {
+            store.dispatch(loginSuccess(supplier));
+          } else {
+            store.dispatch(updateProfileSuccess(supplier));
+          }
+        }
+      } catch (reduxErr) {
+        console.warn('Redux sync warning in saveAuthSession:', reduxErr);
+      }
+    }
   } catch (err) {
     console.error('Failed to save session to localStorage:', err);
   }
@@ -38,6 +67,22 @@ export function clearAuthSession() {
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(SUPPLIER_KEY);
+    localStorage.removeItem('supplierToken');
+    localStorage.removeItem('supplier');
+
+    // 1. Reactive CustomEvent broadcast for active tab
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('supplier-session-cleared'));
+    }
+
+    // 2. Synchronize Redux user slice logout
+    try {
+      if (store && store.dispatch) {
+        store.dispatch(logout());
+      }
+    } catch (reduxErr) {
+      console.warn('Redux logout warning in clearAuthSession:', reduxErr);
+    }
   } catch (err) {
     console.error('Failed to clear session from localStorage:', err);
   }
@@ -80,7 +125,7 @@ async function request(endpoint, options = {}) {
   } catch (error) {
     console.warn(`[SupplierAPI] Request to ${endpoint} failed:`, error.message);
     if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('NetworkError'))) {
-      throw new Error('Backend server is offline. Please start backend on http://localhost:5000');
+      throw new Error(`Backend server is offline or unreachable at ${API_BASE_URL}.`);
     }
     throw error;
   }
@@ -108,33 +153,49 @@ export async function verifyOtp(phone, otp, name = '') {
   });
 
   if (data.token && data.supplier) {
-    saveAuthSession(data.token, data.supplier);
+    saveAuthSession(data.token, data.supplier, true);
   }
   return data;
 }
 
-// Email/ID + Password Login
-export async function loginWithPassword(identifier, password) {
+// Login Supplier (Firebase UID Based)
+export async function loginSupplier({ firebaseUid, email }) {
   const data = await request('/supplier/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ identifier, password }),
+    body: JSON.stringify({ firebaseUid, email }),
   });
 
-  if (data.token && data.supplier) {
-    saveAuthSession(data.token, data.supplier);
+  if (data.user) {
+    saveAuthSession(firebaseUid, data.user, true);
   }
   return data;
 }
 
-// Register New Supplier
+// Email/ID + Password Login (Firebase wrapper for backward compatibility)
+export async function loginWithPassword(identifier, password) {
+  // If identifier is an object containing firebaseUid, forward to loginSupplier
+  if (typeof identifier === 'object' && identifier?.firebaseUid) {
+    return loginSupplier(identifier);
+  }
+  return loginSupplier({ firebaseUid: identifier, email: identifier });
+}
+
+// Register New Supplier (Firebase UID Based)
 export async function registerSupplier(supplierData) {
+  const { firebaseUid, email, fullName, storeName, phone, name } = supplierData;
   const data = await request('/supplier/auth/register', {
     method: 'POST',
-    body: JSON.stringify(supplierData),
+    body: JSON.stringify({
+      firebaseUid,
+      email,
+      fullName: fullName || name || 'Supplier Partner',
+      storeName: storeName || `${fullName || name || 'Supplier'}'s Store`,
+      phone: phone || null,
+    }),
   });
 
-  if (data.token && data.supplier) {
-    saveAuthSession(data.token, data.supplier);
+  if (data.user) {
+    saveAuthSession(firebaseUid, data.user, true);
   }
   return data;
 }
@@ -180,6 +241,11 @@ export async function updateBankDetails(bankData) {
     method: 'PUT',
     body: JSON.stringify(bankData),
   });
+  if (data.bankDetails) {
+    const current = getCurrentSupplier() || {};
+    const updated = { ...current, bankDetails: data.bankDetails };
+    saveAuthSession(getAuthToken(), updated);
+  }
   return data.bankDetails;
 }
 
@@ -189,6 +255,11 @@ export async function updateGstDetails(gstData) {
     method: 'PUT',
     body: JSON.stringify(gstData),
   });
+  if (data.gstDetails) {
+    const current = getCurrentSupplier() || {};
+    const updated = { ...current, gstDetails: data.gstDetails };
+    saveAuthSession(getAuthToken(), updated);
+  }
   return data.gstDetails;
 }
 
@@ -248,11 +319,23 @@ export async function createSupplierProduct(payload) {
   return data.data;
 }
 
-// Update Product
+// Update Product (Supports FormData with uploaded images or standard JSON)
 export async function updateSupplierProduct(productId, updateData) {
+  let body;
+  let headers = {};
+
+  if (updateData instanceof FormData) {
+    body = updateData;
+    // Let browser set multipart boundary
+  } else {
+    body = JSON.stringify(updateData);
+    headers['Content-Type'] = 'application/json';
+  }
+
   const data = await request(`/supplier/products/${productId}`, {
     method: 'PUT',
-    body: JSON.stringify(updateData),
+    headers,
+    body,
   });
   return data.data;
 }
@@ -262,6 +345,26 @@ export async function deleteSupplierProduct(productId) {
   return request(`/supplier/products/${productId}`, {
     method: 'DELETE',
   });
+}
+
+// Bulk Update Products (Stock or Price)
+export async function bulkUpdateSupplierProducts(payload) {
+  const data = await request('/supplier/products/bulk', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+// Bulk Delete Products
+export async function bulkDeleteSupplierProducts(productIds) {
+  const data = await request('/supplier/products/bulk-delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productIds }),
+  });
+  return data;
 }
 
 // Get Categories
@@ -285,13 +388,75 @@ export async function fetchSupplierOrders() {
   return data.data || [];
 }
 
-// Update Order Status
-export async function updateOrderStatus(orderId, orderStatus) {
+// Update Order Status (supports optional item-level targeting)
+export async function updateOrderStatus(orderId, orderStatus, orderItemId = null) {
+  const payload = { orderStatus };
+  if (orderItemId) payload.orderItemId = orderItemId;
   const data = await request(`/supplier/orders/${orderId}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ orderStatus }),
+    body: JSON.stringify(payload),
   });
   return data.data;
+}
+
+// Get Settlements & Payouts (Finance)
+export async function fetchSupplierSettlements() {
+  const data = await request('/supplier/finance-settlements');
+  return data.data;
+}
+
+// Request Escrow / Settled Payout Withdrawal to Registered Bank Account
+export async function requestSupplierPayout(amount, notes = '') {
+  const data = await request('/supplier/finance-settlements/withdraw', {
+    method: 'POST',
+    body: JSON.stringify({ amount, notes }),
+  });
+  return data;
+}
+
+// Get Supplier Analytics & Performance
+export async function fetchSupplierAnalytics() {
+  const data = await request('/supplier/analytics');
+  return data.data;
+}
+
+export function downloadOrderInvoice(orderId) {
+  const token = getAuthToken();
+  const url = `${API_BASE_URL}/supplier/orders/${orderId}/invoice${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  window.open(url, '_blank');
+}
+
+export function downloadShippingLabel(orderId) {
+  const token = getAuthToken();
+  const url = `${API_BASE_URL}/supplier/orders/${orderId}/shipping-label${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  window.open(url, '_blank');
+}
+
+export async function fetchSupplierReturns() {
+  const data = await request('/supplier/returns');
+  return data.data;
+}
+
+export async function updateReturnStatus(id, status, extra = {}) {
+  const data = await request(`/supplier/returns/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, ...extra }),
+  });
+  return data;
+}
+
+// Product Reviews & Ratings (UGC & Feedback)
+export async function fetchSupplierReviews() {
+  const data = await request('/supplier/reviews');
+  return data.data;
+}
+
+export async function replyToSupplierReview(reviewId, reply) {
+  const data = await request(`/supplier/reviews/${reviewId}/reply`, {
+    method: 'POST',
+    body: JSON.stringify({ reply }),
+  });
+  return data;
 }
 
 export default {
@@ -301,6 +466,7 @@ export default {
   clearAuthSession,
   sendOtp,
   verifyOtp,
+  loginSupplier,
   loginWithPassword,
   registerSupplier,
   logoutSupplier,
@@ -315,8 +481,19 @@ export default {
   createSupplierProduct,
   updateSupplierProduct,
   deleteSupplierProduct,
+  bulkUpdateSupplierProducts,
+  bulkDeleteSupplierProducts,
   fetchCategories,
   createCategory,
   fetchSupplierOrders,
   updateOrderStatus,
+  fetchSupplierSettlements,
+  requestSupplierPayout,
+  fetchSupplierAnalytics,
+  downloadOrderInvoice,
+  downloadShippingLabel,
+  fetchSupplierReturns,
+  updateReturnStatus,
+  fetchSupplierReviews,
+  replyToSupplierReview,
 };

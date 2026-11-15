@@ -115,7 +115,7 @@ export const DROPSHIPPER_MENU = [
     children: [
       { 
         id: 'wallet-passbook', 
-        label: 'Fintech Wallet', 
+        label: 'Reseller & Margin Wallet',
         icon: Wallet, 
         path: '/dropshipper-settlements',
         requiresKyc: true

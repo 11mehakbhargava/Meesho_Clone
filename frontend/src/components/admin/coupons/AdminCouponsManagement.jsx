@@ -1,3 +1,4 @@
+import { API_BASE, API_V1_BASE } from '../../../config/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../../../utils/firebase';
@@ -5,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { Ticket, Plus } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { exportToCsv } from '../../../utils/csvExporter';
 
 import CouponStatsGrid from './CouponStatsGrid';
 import FilterBar from '../../common/FilterBar';
@@ -51,7 +53,8 @@ export default function AdminCouponsManagement() {
       else setLoading(true);
 
       const token = await getAuthToken();
-      const res = await axios.get('http://localhost:5000/api/admin-coupons', {
+      if (!token) return;
+      const res = await axios.get(`${API_BASE}/admin-coupons`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -76,7 +79,15 @@ export default function AdminCouponsManagement() {
   };
 
   useEffect(() => {
-    fetchCoupons();
+    if (auth.currentUser || currentUser?.id) {
+      fetchCoupons();
+    }
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchCoupons();
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleOpenCreate = () => {
@@ -94,11 +105,12 @@ export default function AdminCouponsManagement() {
     try {
       setIsSubmitting(true);
       const token = await getAuthToken();
+      if (!token) return;
 
       if (editingCoupon) {
         // UPDATE
         const res = await axios.put(
-          `http://localhost:5000/api/admin-coupons/${editingCoupon.id}`,
+          `${API_BASE}/admin-coupons/${editingCoupon.id}`,
           formData,
           {
             headers: {
@@ -117,7 +129,7 @@ export default function AdminCouponsManagement() {
       } else {
         // CREATE
         const res = await axios.post(
-          'http://localhost:5000/api/admin-coupons',
+          `${API_BASE}/admin-coupons`,
           formData,
           {
             headers: {
@@ -148,8 +160,9 @@ export default function AdminCouponsManagement() {
   const handleToggleStatus = async (coupon) => {
     try {
       const token = await getAuthToken();
+      if (!token) return;
       const res = await axios.patch(
-        `http://localhost:5000/api/admin-coupons/${coupon.id}/toggle`,
+        `${API_BASE}/admin-coupons/${coupon.id}/toggle`,
         {},
         {
           headers: {
@@ -184,8 +197,9 @@ export default function AdminCouponsManagement() {
 
     try {
       const token = await getAuthToken();
+      if (!token) return;
       const res = await axios.delete(
-        `http://localhost:5000/api/admin-coupons/${coupon.id}`,
+        `${API_BASE}/admin-coupons/${coupon.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -278,6 +292,24 @@ export default function AdminCouponsManagement() {
         countLabel="Coupons"
         onRefresh={() => fetchCoupons(true)}
         refreshing={refreshing}
+        onExport={() => {
+          exportToCsv({
+            data: filteredCoupons,
+            filename: `coupons_report_${statusFilter.toLowerCase()}`,
+            columns: [
+              { key: 'code', label: 'Coupon Code' },
+              { key: 'title', label: 'Campaign Title' },
+              { key: 'discountType', label: 'Type' },
+              { key: 'discountValue', label: 'Discount Value' },
+              { key: 'minOrderValue', label: 'Min Order Value (₹)' },
+              { key: 'maxDiscount', label: 'Max Cap (₹)' },
+              { key: 'usageCount', label: 'Total Redemptions' },
+              { key: 'isActive', label: 'Status', formatter: (val) => (val ? 'ACTIVE' : 'DISABLED') },
+              { key: 'endDate', label: 'Expiry Date', formatter: (val) => (val ? new Date(val).toLocaleDateString('en-IN') : 'No Expiry') }
+            ]
+          });
+        }}
+        exportLabel="Export Coupons"
       />
 
       {/* 4. Reusable DataTable */}

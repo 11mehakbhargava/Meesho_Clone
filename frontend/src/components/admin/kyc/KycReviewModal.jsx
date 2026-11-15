@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Button } from '../../ui/button';
-import { 
-  Store, 
-  Share2, 
-  CreditCard, 
-  Building, 
-  ExternalLink, 
-  Eye, 
-  X, 
-  Check, 
-  Ban, 
-  Clock 
+import {
+  Store,
+  Share2,
+  CreditCard,
+  Building,
+  ExternalLink,
+  Eye,
+  X,
+  Check,
+  Ban,
+  Clock,
+  MapPin
 } from 'lucide-react';
 import KycStatusBadge from './KycStatusBadge';
 
@@ -27,6 +28,7 @@ export default function KycReviewModal({
   const [previewImage, setPreviewImage] = useState(null);
 
   if (!reviewApp) return null;
+
 
   const docs = reviewApp?.documents || {};
 
@@ -54,11 +56,12 @@ export default function KycReviewModal({
   // 4. Normalized Address & Demographics
   const hasAddressInfo = Boolean(docs.address || docs.city || docs.state || docs.pincode || docs.dob);
 
+
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
         <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 p-6 space-y-6 animate-in fade-in zoom-in-95 duration-150">
-          
+
           {/* Modal Header */}
           <div className="flex justify-between items-start border-b pb-4">
             <div>
@@ -71,10 +74,10 @@ export default function KycReviewModal({
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                Application ID: <span className="font-mono text-gray-700">#{reviewApp.id}</span> • Submitted {formatDate(reviewApp.createdAt)}
+                Application ID: <span className="font-mono text-gray-700">#{reviewApp.id}</span> • Submitted {typeof formatDate === 'function' ? formatDate(reviewApp.createdAt) : (reviewApp.createdAt || 'Recently')}
               </p>
             </div>
-            <button 
+            <button
               type="button"
               onClick={onClose}
               className="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
@@ -107,7 +110,7 @@ export default function KycReviewModal({
           {/* Store / Business / Platform Details */}
           {reviewApp.documents && (
             <div className="space-y-4">
-              
+
               {/* 1. Store or Social info */}
               <div className="border border-gray-100 rounded-xl p-4 space-y-2 bg-white">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
@@ -121,7 +124,7 @@ export default function KycReviewModal({
                       <span className="font-semibold text-gray-800">{reviewApp.documents.businessName}</span>
                     </div>
                   )}
-                                    {/* GSTIN Number agar available ho */}
+                  {/* GSTIN Number agar available ho */}
                   {reviewApp.documents.gstin && (
                     <div>
                       <span className="text-gray-400 block">GSTIN Number</span>
@@ -154,10 +157,10 @@ export default function KycReviewModal({
                   {reviewApp.documents.storeUrl && (
                     <div className="col-span-2">
                       <span className="text-gray-400 block">Website URL</span>
-                      <a 
-                        href={reviewApp.documents.storeUrl} 
-                        target="_blank" 
-                        rel="noreferrer" 
+                      <a
+                        href={reviewApp.documents.storeUrl}
+                        target="_blank"
+                        rel="noreferrer"
                         className="font-semibold text-[#b7004d] hover:underline flex items-center gap-1"
                       >
                         {reviewApp.documents.storeUrl} <ExternalLink className="w-3 h-3" />
@@ -186,13 +189,16 @@ export default function KycReviewModal({
                   Identity Documents
                 </h5>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  
+
                   {/* PAN Card */}
+
                   {panNumber ? (
+
                     <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-100 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-gray-700">PAN Card</span>
                         <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+
                           {panStatus || 'Submitted'}
                         </span>
                       </div>
@@ -206,6 +212,7 @@ export default function KycReviewModal({
                         <button
                           type="button"
                           onClick={() => setPreviewImage(panImage)}
+
                           className="text-[11px] text-[#b7004d] hover:underline flex items-center gap-1 font-semibold pt-1 cursor-pointer"
                         >
                           <Eye className="w-3 h-3" /> View PAN Photo
@@ -221,11 +228,14 @@ export default function KycReviewModal({
                   ) : null}
 
                   {/* Aadhaar Card */}
+
                   {aadhaarNumber ? (
+
                     <div className="bg-gray-50/70 p-3 rounded-lg border border-gray-100 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-gray-700">Aadhaar Card</span>
                         <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+
                           {aadhaarStatus || 'Submitted'}
                         </span>
                       </div>
@@ -239,6 +249,7 @@ export default function KycReviewModal({
                         <button
                           type="button"
                           onClick={() => setPreviewImage(aadhaarImage)}
+
                           className="text-[11px] text-[#b7004d] hover:underline flex items-center gap-1 font-semibold pt-1 cursor-pointer"
                         >
                           <Eye className="w-3 h-3" /> View Aadhaar Photo
@@ -263,7 +274,9 @@ export default function KycReviewModal({
               </div>
 
               {/* 3. Bank Account & Settlement Details */}
+
               {(bankName || accountNumber) && (
+
                 <div className="border border-gray-100 rounded-xl p-4 space-y-2 bg-white">
                   <h5 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5 text-emerald-600" />
@@ -272,6 +285,7 @@ export default function KycReviewModal({
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-gray-400 block">Bank Name</span>
+
                       <span className="font-semibold text-gray-800">{bankName || '—'}</span>
                     </div>
                     <div>
@@ -326,6 +340,7 @@ export default function KycReviewModal({
                       <div className="col-span-2">
                         <span className="text-gray-400 block">Full Residential Address</span>
                         <span className="text-gray-700">{docs.address}</span>
+
                       </div>
                     )}
                   </div>
@@ -351,9 +366,9 @@ export default function KycReviewModal({
 
           {/* Modal Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 border-t pt-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onClose}
               className="w-full sm:w-auto cursor-pointer"
             >
@@ -396,7 +411,7 @@ export default function KycReviewModal({
 
       {/* Lightbox Image Preview */}
       {previewImage && (
-        <div 
+        <div
           onClick={() => setPreviewImage(null)}
           className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4 cursor-pointer animate-in fade-in"
         >

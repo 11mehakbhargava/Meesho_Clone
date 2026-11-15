@@ -1,3 +1,4 @@
+import { API_BASE, API_V1_BASE } from '../../../config/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../../../utils/firebase';
@@ -49,7 +50,8 @@ export default function AdminCategoriesManagement() {
       else setLoading(true);
 
       const token = await getAuthToken();
-      const res = await axios.get('http://localhost:5000/api/admin-categories', {
+      if (!token) return;
+      const res = await axios.get(`${API_BASE}/admin-categories`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,7 +76,15 @@ export default function AdminCategoriesManagement() {
   };
 
   useEffect(() => {
-    fetchCategories();
+    if (auth.currentUser || currentUser?.id) {
+      fetchCategories();
+    }
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchCategories();
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   // Modal triggers
@@ -93,11 +103,12 @@ export default function AdminCategoriesManagement() {
     try {
       setIsSubmitting(true);
       const token = await getAuthToken();
+      if (!token) return;
 
       if (editingCategory) {
         // UPDATE
         const res = await axios.put(
-          `http://localhost:5000/api/admin-categories/${editingCategory.id}`,
+          `${API_BASE}/admin-categories/${editingCategory.id}`,
           formData,
           {
             headers: {
@@ -116,7 +127,7 @@ export default function AdminCategoriesManagement() {
       } else {
         // CREATE
         const res = await axios.post(
-          'http://localhost:5000/api/admin-categories',
+          `${API_BASE}/admin-categories`,
           formData,
           {
             headers: {
@@ -165,8 +176,9 @@ export default function AdminCategoriesManagement() {
 
     try {
       const token = await getAuthToken();
+      if (!token) return;
       const res = await axios.delete(
-        `http://localhost:5000/api/admin-categories/${category.id}`,
+        `${API_BASE}/admin-categories/${category.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

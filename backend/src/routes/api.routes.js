@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
-import supplierRoutes from './supplier.routes.js';
-import supplierAuthRoutes from './supplierAuth.routes.js';
+import supplierRoutes from './supplier/supplier.routes.js';
+import supplierAuthRoutes from './supplier/supplierAuth.routes.js';
 import adminAuthRoutes from './admin/adminAuth.routes.js';
 import adminProfileRoutes from './admin/adminProfile.routes.js';
 import adminUsersRoutes from './admin/adminUsers.routes.js';
@@ -18,6 +18,7 @@ import adminCategoriesRoutes from './admin/adminCategories.routes.js';
 import adminCouponsRoutes from './admin/adminCoupons.routes.js';
 import adminBannersRoutes from './admin/adminBanners.routes.js';
 import adminCmsRoutes from './admin/adminCms.routes.js';
+import adminReviewsRoutes from './admin/adminReviews.routes.js';
 import authRoutes from './auth.routes.js';
 import affiliateAuthRoutes from './affiliate/affiliateAuth.routes.js';
 import userAuthRoutes from './user/userAuth.routes.js';
@@ -30,6 +31,12 @@ import wishlistRoutes from './wishlist.routes.js';
 import addressRoutes from './address.routes.js';
 import reviewRoutes from './review.routes.js';
 import couponRoutes from './coupon.routes.js';
+import flashSaleRoutes from './flashSale.routes.js';
+import returnRoutes from './return.routes.js';
+import paymentRoutes from './payment.routes.js';
+import walletRoutes from './wallet.routes.js';
+import bannerRoutes from './banner.routes.js';
+import uploadRoutes from './upload.routes.js';
 
 const apiRouter = Router();
 
@@ -54,6 +61,7 @@ apiRouter.use('/admin-coupons', adminCouponsRoutes);
 apiRouter.use('/admin-banners', adminBannersRoutes);
 apiRouter.use('/banners', adminBannersRoutes);
 apiRouter.use('/admin-cms', adminCmsRoutes);
+apiRouter.use('/admin-reviews', adminReviewsRoutes);
 
 // Supplier Module endpoints
 apiRouter.use('/supplier/auth', supplierAuthRoutes);
@@ -83,5 +91,12 @@ apiRouter.use('/wishlist', wishlistRoutes);
 apiRouter.use('/addresses', addressRoutes);
 apiRouter.use('/reviews', reviewRoutes);
 apiRouter.use('/coupons', couponRoutes);
+apiRouter.use('/flash-sale', flashSaleRoutes);
+apiRouter.use('/returns', returnRoutes);
+apiRouter.use('/payment', paymentRoutes);
+apiRouter.use('/wallet', walletRoutes);
+apiRouter.use('/wallets', walletRoutes);
+apiRouter.use('/banners', bannerRoutes);
+apiRouter.use('/upload', uploadRoutes);
 
 export default apiRouter;

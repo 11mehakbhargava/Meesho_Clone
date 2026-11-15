@@ -1,8 +1,10 @@
+import { API_BASE, API_V1_BASE } from '../../../config/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../../../utils/firebase';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
+import { exportToCsv } from '../../../utils/csvExporter';
 
 import FilterBar from '../../common/FilterBar';
 import UserTable from './UserTable';
@@ -45,12 +47,13 @@ export default function AdminUsersManagement() {
       else setLoading(true);
 
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      if (!token) return;
 
       const params = {};
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (selectedRole !== 'ALL') params.role = selectedRole;
 
-      const response = await axios.get('http://localhost:5000/api/v1/admin-users', {
+      const response = await axios.get(`${API_V1_BASE}/admin-users`, {
         headers: { Authorization: `Bearer ${token}` },
         params
       });
@@ -75,7 +78,9 @@ export default function AdminUsersManagement() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    if (auth.currentUser || currentUser?.id) {
+      fetchUsers();
+    }
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         fetchUsers();
@@ -103,9 +108,10 @@ export default function AdminUsersManagement() {
     try {
       setIsSavingUser(true);
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      if (!token) return;
 
       const response = await axios.put(
-        `http://localhost:5000/api/v1/admin-users/${editingUser.id}`,
+        `${API_V1_BASE}/admin-users/${editingUser.id}`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -142,9 +148,10 @@ export default function AdminUsersManagement() {
     try {
       setActionLoadingId(userId);
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      if (!token) return;
 
       const response = await axios.put(
-        `http://localhost:5000/api/v1/admin-users/${userId}/role`,
+        `${API_V1_BASE}/admin-users/${userId}/role`,
         { role: newRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -177,9 +184,10 @@ export default function AdminUsersManagement() {
     try {
       setActionLoadingId(userId);
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      if (!token) return;
 
       const response = await axios.put(
-        `http://localhost:5000/api/v1/admin-users/${userId}/status`,
+        `${API_V1_BASE}/admin-users/${userId}/status`,
         { isActive: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -215,9 +223,10 @@ export default function AdminUsersManagement() {
     try {
       setActionLoadingId(userId);
       const token = (await auth.currentUser?.getIdToken()) || currentUser?.id;
+      if (!token) return;
 
       const response = await axios.delete(
-        `http://localhost:5000/api/v1/admin-users/${userId}`,
+        `${API_V1_BASE}/admin-users/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -237,6 +246,24 @@ export default function AdminUsersManagement() {
     }
   };
 
+  // ── 5. EXPORT USERS TO CSV ──────────────────────────────────────────
+  const handleExportUsers = () => {
+    exportToCsv({
+      data: users,
+      filename: `users_directory_${selectedRole.toLowerCase()}`,
+      columns: [
+        { key: 'id', label: 'User ID' },
+        { key: 'fullName', label: 'Full Name' },
+        { key: 'email', label: 'Email Address' },
+        { key: 'phone', label: 'Phone Number' },
+        { key: 'role', label: 'Role' },
+        { key: 'isActive', label: 'Status', formatter: (val) => (val !== false ? 'ACTIVE' : 'BLOCKED') },
+        { key: '_count.orders', label: 'Total Orders Placed' },
+        { key: 'createdAt', label: 'Joined Date', formatter: (val) => val ? new Date(val).toLocaleDateString('en-IN') : '—' }
+      ]
+    });
+  };
+
   return (
     <div className="space-y-6 mt-4">
       {/* ── COMMON SEARCH & ROLE FILTER BAR ─────────────────── */}
@@ -251,6 +278,8 @@ export default function AdminUsersManagement() {
         searchPlaceholder="Search by name, email, or phone..."
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
+        onExport={handleExportUsers}
+        exportLabel="Export Users"
       />
 
       {/* ── USERS DATA TABLE ─────────────────────────────────── */}

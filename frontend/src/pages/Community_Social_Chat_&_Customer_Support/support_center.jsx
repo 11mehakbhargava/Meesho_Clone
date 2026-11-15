@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AppBottomNav from '../../components/AppBottomNav';
+import { getOrders, getAuthHeaders } from '../../services/ecommerceService';
+import { API_V1_BASE } from '../../config/apiConfig';
 
 const CATEGORIES = [
   { id: 'orders', name: 'Orders', desc: 'Tracking & Updates', icon: 'inventory_2' },
@@ -40,8 +43,11 @@ const FAQS = [
 ];
 
 export function SupportCenter({ onNavigate, onOpenChat }) {
+  const [searchParams] = useSearchParams();
+  const orderIdParam = searchParams.get('orderId');
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(orderIdParam ? 'orders' : null);
   const [expandedFaqId, setExpandedFaqId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -49,11 +55,25 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
   const [isOrderHelpOpen, setIsOrderHelpOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isLiveSupportChatOpen, setIsLiveSupportChatOpen] = useState(false);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   // Ticket Form State
   const [ticketIssue, setTicketIssue] = useState('Payment/Margin Delayed');
-  const [ticketOrder, setTicketOrder] = useState('#ME-88291029');
+  const [ticketOrder, setTicketOrder] = useState(orderIdParam ? `#${orderIdParam}` : '');
   const [ticketDesc, setTicketDesc] = useState('');
+  const [latestOrder, setLatestOrder] = useState(null);
+
+  useEffect(() => {
+    getOrders().then(orders => {
+      if (Array.isArray(orders) && orders.length > 0) {
+        setLatestOrder(orders[0]);
+        if (!orderIdParam) {
+          setTicketOrder(`#${orders[0].id.slice(0, 8)}`);
+        }
+      }
+    }).catch(() => {});
+  }, [orderIdParam]);
+
 
   // Live Chat state
   const [chatMessages, setChatMessages] = useState([
@@ -63,15 +83,42 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleCreateTicket = (e) => {
+  const handleCreateTicket = async (e) => {
     e.preventDefault();
-    const ticketId = `#TICK-${Math.floor(10000 + Math.random() * 90000)}`;
-    setIsTicketModalOpen(false);
-    setTicketDesc('');
-    showToast(`Ticket ${ticketId} created! Support team will email within 4 hours.`);
+    if (!ticketDesc.trim()) return;
+
+    setIsSubmittingTicket(true);
+    try {
+      const res = await fetch(`${API_V1_BASE}/admin-support/create`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          subject: ticketIssue,
+          category: ticketIssue,
+          description: ticketDesc.trim(),
+          orderId: ticketOrder.trim(),
+          priority: 'normal'
+        })
+      });
+
+      const result = await res.json();
+      if (result?.success && result?.data) {
+        const ticketDisplayId = result.data.id ? `#TICK-${result.data.id.slice(0, 8).toUpperCase()}` : '#TICK-OK';
+        setIsTicketModalOpen(false);
+        setTicketDesc('');
+        showToast(`Ticket ${ticketDisplayId} saved in Database! Operations desk notified.`);
+      } else {
+        showToast(result?.message || 'Failed to submit ticket');
+      }
+    } catch (err) {
+      console.error('Error creating support ticket:', err);
+      showToast('Network error while submitting support ticket');
+    } finally {
+      setIsSubmittingTicket(false);
+    }
   };
 
   const handleSendChatMessage = (e) => {
@@ -145,6 +192,36 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
 
       {/* Main Content Area */}
       <main className="max-w-screen-xl mx-auto px-4 sm:px-6 pt-6 pb-32 w-full">
+        {orderIdParam && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-100 text-[#9f0038] flex items-center justify-center font-bold">
+                <span className="material-symbols-outlined text-xl">inventory_2</span>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-800">Direct Support for Order #{orderIdParam}</div>
+                <div className="text-[11px] text-slate-500">Need help with tracking, return pickup, or refund status for this order?</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsTicketModalOpen(true)}
+                className="px-3.5 py-1.5 bg-[#9f0038] hover:bg-[#80002d] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Raise Ticket
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLiveSupportChatOpen(true)}
+                className="px-3.5 py-1.5 bg-white border border-pink-200 text-[#9f0038] hover:bg-pink-50 rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                Chat with Agent
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hero Search Section */}
         <section className="mb-10">
           <div className="relative group">
@@ -180,25 +257,25 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
           <div className="bg-white rounded-3xl p-6 flex flex-col md:flex-row gap-6 items-center shadow-xs border border-slate-100 hover:shadow-md transition-all">
             <div className="w-22 h-22 bg-slate-100 rounded-2xl flex-shrink-0 overflow-hidden border border-slate-200">
               <img
-                alt="Minimalist Ceramic Watch"
+                alt={latestOrder?.items?.[0]?.product?.title || "Recent Purchase"}
                 className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNwJNreXrxO2McKFSQplCmbdn4grgCMWr1TneXlp18OAHUwMguAUJKl_366lS42uli0pQOedVG5u0ELftJDfIexTYo1mjZh7tkRJSdLt9hgvKY880sA9_2SNY-8RFjUXJFn1fyJ8VKQ3YmuBqmuvq7xx9sZtSdcwsyMrjA28X4lsC3Ld66dqaI3wSenhfVG88zlHWjyLnP_nb_WEK-9jOzrhXq4wS4O27KwszZscow0STK8MdWDpDR5KNSZZ9lVwvyLvkHqGXAJTQ"
+                src={latestOrder?.items?.[0]?.product?.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300"}
               />
             </div>
 
             <div className="flex-grow text-center md:text-left min-w-0">
               <p className="text-emerald-700 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-center md:justify-start gap-1">
                 <span className="material-symbols-outlined text-xs">check_circle</span>
-                Delivered • 12 Oct 2023
+                {latestOrder ? `${latestOrder.orderStatus} • ${new Date(latestOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : `Recent Verified Order`}
               </p>
-              <h3 className="font-headline font-bold text-lg text-slate-900 mb-0.5">
-                Minimalist Ceramic Watch
+              <h3 className="font-headline font-bold text-lg text-slate-900 mb-0.5 truncate">
+                {latestOrder?.items?.[0]?.product?.title || (latestOrder?.totalAmount ? `Order for ₹${latestOrder.totalAmount}` : "Order Verified & Confirmed")}
               </h3>
-              <p className="text-slate-500 text-xs mb-3 font-medium">Order ID: #ME-88291029</p>
+              <p className="text-slate-500 text-xs mb-3 font-medium">Order ID: #{latestOrder ? latestOrder.id.slice(0, 8) : 'ORD-LATEST'}</p>
 
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                 <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
-                  Electronics
+                  {latestOrder?.paymentMethod || 'Online Order'}
                 </span>
                 <span className="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-xs font-semibold">
                   Quality Checked
@@ -449,16 +526,25 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
+                  disabled={isSubmittingTicket}
                   onClick={() => setIsTicketModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#b90041] hover:bg-[#df2457] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                  disabled={isSubmittingTicket}
+                  className="px-5 py-2 bg-[#b90041] hover:bg-[#df2457] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-70"
                 >
-                  Submit Ticket
+                  {isSubmittingTicket ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Submit Ticket</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -529,6 +615,9 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
           </div>
         </div>
       )}
+
+      {/* Bottom Nav */}
+      <AppBottomNav role="customer" homePath="/user-home" />
     </div>
   );
 }

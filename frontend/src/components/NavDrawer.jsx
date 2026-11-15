@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { auth } from '../utils/firebase';
+import { signOut } from 'firebase/auth';
+import { logoutCustomer } from '../services/customerAuthService';
 
 const navSections = [
   {
     title: "Shop & Catalog",
     items: [
       { name: "Home & Curated Catalog", path: "/reseller-home", icon: "home" },
-      { name: "Supplier Product Access", path: "/supplier-products", icon: "inventory_2", badge: "Direct" },
       { name: "Resell & Earn Products", path: "/resell-earn", icon: "storefront", badge: "Popular" },
       { name: "Profit Margin & Sharing", path: "/share-earn-config", icon: "share" },
     ]
@@ -15,25 +17,21 @@ const navSections = [
     title: "Business & Earnings",
     items: [
       { name: "My Business Dashboard", path: "/earnings-dashboard-1", icon: "trending_up" },
-      { name: "Analytics & Performance", path: "/earnings-dashboard-2", icon: "query_stats" },
-      { name: "Fintech Wallet", path: "/my-wallet", icon: "account_balance_wallet" },
-      { name: "Reseller Wallet", path: "/reseller-wallet", icon: "payments" },
+      { name: "Reseller Wallet & Payouts", path: "/reseller-wallet", icon: "payments" },
       { name: "Withdraw Earnings", path: "/withdraw-earnings", icon: "savings" },
       { name: "Payout Settings", path: "/payout-settings", icon: "settings_suggest" },
     ]
   },
   {
-    title: "Community & Network",
+    title: "Alerts & Notifications",
     items: [
-      { name: "Community Hub", path: "/community-hub", icon: "groups", badge: "Live" },
-      { name: "Reseller Messenger", path: "/messenger", icon: "chat" },
       { name: "Notification Center", path: "/notifications", icon: "notifications" },
+      { name: "Help & Support", path: "/support-center", icon: "support_agent" },
     ]
   },
   {
     title: "Growth & Programs",
     items: [
-      { name: "Refer & Earn Bonus", path: "/refer-earn", icon: "card_giftcard" },
       { name: "Affiliate Partner Panel", path: "/affiliate-program", icon: "loyalty" },
     ]
   }
@@ -43,9 +41,8 @@ const customerNavSections = [
   {
     title: "Shop & Categories",
     items: [
-      { name: "Home & Deals", path: "/user-home", icon: "home" },
+      { name: "Home & Deals", path: "/", icon: "home" },
       { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
-      { name: "Flash Sale Deals", path: "/flash", icon: "bolt", badge: "Hot" },
       { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" },
     ]
   },
@@ -73,7 +70,7 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
   const navigate = useNavigate();
   const location = useLocation();
 
-  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home';
+  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home' || location.pathname === '/';
   const sections = customerMode ? customerNavSections : navSections;
 
   useEffect(() => {
@@ -208,9 +205,11 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
             <span>{customerMode ? '100% Genuine Shopping' : '100% Safe Reselling'}</span>
           </div>
           <button 
-            onClick={() => {
+            onClick={async () => {
               onClose();
-              navigate('/login');
+              try { await signOut(auth); } catch (e) {}
+              logoutCustomer();
+              navigate('/user/login');
             }}
             className="text-xs font-semibold text-[#FF3F6C] hover:underline cursor-pointer"
           >

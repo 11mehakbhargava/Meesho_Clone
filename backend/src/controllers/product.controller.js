@@ -1,11 +1,28 @@
 import prisma from '../config/prisma.js';
+import redisClient from '../config/redisClient.js';
 
 /**
  * Controller to fetch all products with optional filters, search, and sorting.
  */
 export const getProducts = async (req, res) => {
   try {
-    const { category, search, minPrice, maxPrice, sort, page = 1, limit = 50 } = req.query;
+    const { category, search, minPrice, maxPrice, sort, page = 1, limit, all } = req.query;
+
+    const isFetchAll = all === 'true' || limit === 'all' || limit === '0' || limit === 'max';
+    const pageNum = parseInt(page) || 1;
+    const take = isFetchAll ? undefined : (parseInt(limit) || 24);
+    const skip = isFetchAll ? undefined : ((pageNum - 1) * take);
+
+    // Fast-path: Check Redis cache if running
+    const cacheKey = `products:${category || 'all'}:${search || ''}:${minPrice || ''}:${maxPrice || ''}:${sort || 'default'}:${isFetchAll ? 'all' : pageNum}:${isFetchAll ? 'all' : take}`;
+    if (redisClient?.isOpen) {
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return res.status(200).json(JSON.parse(cached));
+        }
+      } catch (cacheErr) {}
+    }
 
     const conditions = [
       { isDeleted: false } // Soft delete filter: do not show discontinued/deleted products in live catalog
@@ -16,7 +33,7 @@ export const getProducts = async (req, res) => {
       const catLower = category.toLowerCase().trim();
       let targetSlugs = [];
 
-      if (catLower === 'men') {
+      if (catLower === 'men' || catLower === 'men-western' || catLower === 'menswear') {
         targetSlugs = ['men'];
       } else if (catLower === 'women' || catLower === 'women ethnic' || catLower === 'women-ethnic' || catLower === 'ethnic wear') {
         targetSlugs = ['women-ethnic'];
@@ -79,9 +96,6 @@ export const getProducts = async (req, res) => {
     if (sort === 'rating' || sort === 'highest_rating') orderBy = { rating: 'desc' };
     if (sort === 'popular') orderBy = { reviewsCount: 'desc' };
 
-    const take = parseInt(limit);
-    const skip = (parseInt(page) - 1) * take;
-
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -91,18 +105,32 @@ export const getProducts = async (req, res) => {
           }
         },
         orderBy,
-        skip,
-        take
+        ...(take !== undefined ? { skip, take } : {})
       }),
       prisma.product.count({ where })
     ]);
 
-    return res.status(200).json({
+    const totalPages = isFetchAll ? 1 : Math.ceil(total / (take || 1));
+    const hasMore = isFetchAll ? false : (skip + products.length < total);
+
+    const responsePayload = {
       success: true,
       count: products.length,
       total,
+      page: isFetchAll ? 1 : pageNum,
+      limit: isFetchAll ? total : take,
+      totalPages,
+      hasMore,
       data: products
-    });
+    };
+
+    if (redisClient?.isOpen) {
+      redisClient.setEx(cacheKey, 60, JSON.stringify(responsePayload)).catch(() => {});
+    }
+
+    // High performance Vercel Edge caching header for sub-300ms global delivery
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+    return res.status(200).json(responsePayload);
   } catch (error) {
     console.error('Error fetching products:', error);
     return res.status(500).json({
@@ -146,6 +174,8 @@ export const getProductById = async (req, res) => {
       });
     }
 
+    // High performance Vercel Edge caching header for sub-300ms global delivery
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     return res.status(200).json({
       success: true,
       data: product
@@ -308,9 +338,44 @@ export const updateProduct = async (req, res) => {
     if (originalPrice !== undefined) data.originalPrice = parseFloat(originalPrice);
     if (discountPercentage !== undefined) data.discountPercentage = parseInt(discountPercentage, 10);
     if (stock !== undefined) data.stock = parseInt(stock, 10);
-    if (Array.isArray(sizes)) data.sizes = sizes;
-    if (Array.isArray(colors)) data.colors = colors;
-    if (Array.isArray(images)) data.images = images;
+
+    // Arrays parsing from JSON or multipart form-data
+    if (sizes !== undefined) {
+      if (typeof sizes === 'string') {
+        try { data.sizes = JSON.parse(sizes); } catch { data.sizes = sizes.split(',').map((s) => s.trim()).filter(Boolean); }
+      } else if (Array.isArray(sizes)) {
+        data.sizes = sizes;
+      }
+    }
+
+    if (colors !== undefined) {
+      if (typeof colors === 'string') {
+        try { data.colors = JSON.parse(colors); } catch { data.colors = colors.split(',').map((c) => c.trim()).filter(Boolean); }
+      } else if (Array.isArray(colors)) {
+        data.colors = colors;
+      }
+    }
+
+    // Handle uploaded files + images array
+    let resolvedImages = [];
+    if (images !== undefined) {
+      if (typeof images === 'string') {
+        try { resolvedImages = JSON.parse(images); } catch { resolvedImages = images.split(',').map((s) => s.trim()).filter(Boolean); }
+      } else if (Array.isArray(images)) {
+        resolvedImages = images;
+      }
+    }
+
+    if (req.files && req.files.length > 0) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const newUrls = req.files.map((f) => `${baseUrl}/uploads/${f.filename}`);
+      resolvedImages = [...resolvedImages, ...newUrls];
+    }
+
+    if (resolvedImages.length > 0 || (images !== undefined && Array.isArray(images))) {
+      data.images = resolvedImages;
+    }
+
     if (supplierName !== undefined) data.supplierName = supplierName;
 
     const updated = await prisma.product.update({

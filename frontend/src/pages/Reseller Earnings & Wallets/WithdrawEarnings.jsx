@@ -2,79 +2,86 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import NavDrawer from '../../components/NavDrawer';
+import { getAffiliateApp } from '../../services/affiliateSessionStore';
+import { addNotification } from '../../services/notificationService';
+import { getWalletDetails, requestWalletWithdrawal } from '../../services/ecommerceService';
 
-// Initial realistic withdrawal records if none exist in localStorage
-const INITIAL_WITHDRAWALS = [
-  {
-    id: "WTH-984210",
-    amount: 3200.00,
-    method: "bank",
-    accountLabel: "HDFC Bank (•••• 4321)",
-    date: "Today, 10:15 AM",
-    status: "PROCESSING", // "PROCESSING" | "COMPLETED" | "PENDING"
-    statusLabel: "Processing (24 - 48 Hrs)",
-    estimatedArrival: "24 to 48 Hours",
-    progress: 50
-  },
-  {
-    id: "WTH-972104",
-    amount: 4500.00,
-    method: "bank",
-    accountLabel: "HDFC Bank (•••• 4321)",
-    date: "24 Oct 2026, 11:15 AM",
-    status: "COMPLETED",
-    statusLabel: "Credited to Bank",
-    estimatedArrival: "Completed",
-    progress: 100
-  },
-  {
-    id: "WTH-960182",
-    amount: 1850.00,
-    method: "upi",
-    accountLabel: "partner@upi",
-    date: "18 Oct 2026, 02:40 PM",
-    status: "COMPLETED",
-    statusLabel: "Credited via UPI",
-    estimatedArrival: "Completed",
-    progress: 100
-  }
-];
+// Initial clean slate - live records loaded directly from PostgreSQL database
+const INITIAL_WITHDRAWALS = [];
 
 export default function WithdrawEarnings() {
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.user || {});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dynamic Balance State
-  const [withdrawableBalance, setWithdrawableBalance] = useState(() => {
-    try {
-      const stored = localStorage.getItem('meesho_dropshipper_balance');
-      return stored ? parseFloat(stored) : 8450.50;
-    } catch (e) {
-      return 8450.50;
-    }
-  });
 
-  const [amount, setAmount] = useState('2500');
+  // Dynamic States from PostgreSQL Database
+  const [withdrawableBalance, setWithdrawableBalance] = useState(0);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [loadingWallet, setLoadingWallet] = useState(true);
+
+  const [linkedBank, setLinkedBank] = useState(null);
+  const [linkedUpi, setLinkedUpi] = useState(null);
+
+  // Fetch authoritative balance & transaction history & bank details from backend PostgreSQL
+  useEffect(() => {
+    let isMounted = true;
+    getWalletDetails()
+      .then((wallet) => {
+        if (isMounted && wallet) {
+          if (typeof wallet.balance === 'number') {
+            setWithdrawableBalance(wallet.balance);
+          }
+          if (Array.isArray(wallet.transactions)) {
+            const debits = wallet.transactions
+              .filter((t) => t.type === 'debit' || /withdraw|payout/i.test(t.description || ''))
+              .map((t) => ({
+                id: t.id || `WTH-${String(t.id || '').slice(-6)}`,
+                amount: t.amount,
+                method: /upi/i.test(t.description || '') ? 'upi' : 'bank',
+                accountLabel: t.description || 'Bank Payout',
+                date: t.createdAt
+                  ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : 'Recent',
+                status: t.status || 'COMPLETED',
+                statusLabel: t.status === 'PENDING' ? 'Processing (24 - 48 Hrs)' : 'Credited to Account',
+                estimatedArrival: t.status === 'PENDING' ? '24 to 48 Hours' : 'Completed',
+                progress: t.status === 'PENDING' ? 50 : 100
+              }));
+            setWithdrawals(debits);
+          }
+          if (wallet.user?.bankDetails) {
+            const bd = wallet.user.bankDetails;
+            const bankObj = bd.bankDetails || (bd.bankName ? bd : null);
+            if (bankObj?.bankName) {
+              setLinkedBank({
+                bankName: bankObj.bankName,
+                accountNumber: bankObj.accountNumber ? (bankObj.accountNumber.startsWith('•') ? bankObj.accountNumber : `•••• ${bankObj.accountNumber.slice(-4)}`) : '•••• XXXX'
+              });
+            }
+            if (Array.isArray(bd.upiList) && bd.upiList.length > 0) {
+              setLinkedUpi(bd.upiList[0].upiId);
+            } else if (bd.upiId) {
+              setLinkedUpi(bd.upiId);
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load wallet from database:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingWallet(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  const [amount, setAmount] = useState('');
+
   const [payoutMethod, setPayoutMethod] = useState('bank');
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState('');
-
-  // Withdrawals List (with localStorage persistence)
-  const [withdrawals, setWithdrawals] = useState(() => {
-    try {
-      const saved = localStorage.getItem('meesho_dropshipper_withdrawals');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_WITHDRAWALS;
-  });
-
-  // Sync withdrawals to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('meesho_dropshipper_withdrawals', JSON.stringify(withdrawals));
-    } catch (e) {}
-  }, [withdrawals]);
 
   // Find active withdrawal (currently in PROCESSING state)
   const activeWithdrawal = withdrawals.find((w) => w.status === 'PROCESSING');
@@ -99,8 +106,8 @@ export default function WithdrawEarnings() {
     setTimeout(() => setCopiedId(''), 2000);
   };
 
-  // Proceed Withdraw
-  const handleProceedWithdraw = () => {
+  // Proceed Withdraw with Real Backend Persistence
+  const handleProceedWithdraw = async () => {
     const numAmount = parseFloat(amount) || 0;
 
     if (numAmount < 100) {
@@ -115,45 +122,91 @@ export default function WithdrawEarnings() {
       return;
     }
 
-    // Generate new unique transaction
-    const newTxnId = `WTH-${Math.floor(100000 + Math.random() * 900000)}`;
-    const destination = payoutMethod === 'bank' ? 'HDFC Bank (•••• 4321)' : 'partner@upi';
 
-    const newRecord = {
-      id: newTxnId,
-      amount: numAmount,
-      method: payoutMethod,
-      accountLabel: destination,
-      date: 'Just now',
-      status: 'PROCESSING',
-      statusLabel: 'Processing (24 - 48 Hrs)',
-      estimatedArrival: '24 to 48 Hours',
-      progress: 35
-    };
+    if (payoutMethod === 'bank' && !linkedBank) {
+      setError('Please add a bank account in Payout Settings first');
+      return;
+    }
 
-    // Update state and deduct balance
-    const updatedBalance = Number((withdrawableBalance - numAmount).toFixed(2));
-    setWithdrawableBalance(updatedBalance);
+    if (payoutMethod === 'upi' && !linkedUpi) {
+      setError('Please add a UPI ID in Payout Settings first');
+      return;
+    }
+
+    const chosenBankName = payoutMethod === 'bank'
+      ? `${linkedBank?.bankName || 'Settlement Bank'} (•••• ${linkedBank?.accountNumber?.slice(-4) || 'XXXX'})`
+      : `UPI (${linkedUpi || 'Direct UPI'})`;
+
+    setIsSubmitting(true);
+    setError('');
+
     try {
-      localStorage.setItem('meesho_dropshipper_balance', updatedBalance.toString());
-    } catch (e) {}
-
-    const updatedList = [newRecord, ...withdrawals];
-    setWithdrawals(updatedList);
-
-    // Redirect to payout confirmation receipt screen with 24-48 hr ETA
-    navigate('/payout-confirmation', {
-      state: {
-        txnId: newTxnId,
+      const response = await requestWalletWithdrawal({
         amount: numAmount,
         method: payoutMethod,
-        bankName: payoutMethod === 'bank' ? 'HDFC Bank' : 'UPI ID',
-        accountEnding: payoutMethod === 'bank' ? '•••• 4321' : 'partner@upi',
-        estimatedArrival: 'Within 24 to 48 Hours',
-        status: 'PROCESSING',
-        statusLabel: 'Processing (24 - 48 Hrs)'
+        destination: chosenBankName
+      });
+
+      if (!response?.success) {
+        setError(response?.message || 'Withdrawal request failed on server.');
+        setIsSubmitting(false);
+        return;
       }
-    });
+
+      const realTxnId = response?.data?.txnId || `TXN-${Date.now().toString().slice(-7)}`;
+      const newBal = typeof response?.data?.remainingBalance === 'number' 
+        ? response.data.remainingBalance 
+        : Math.max(0, withdrawableBalance - numAmount);
+
+      setWithdrawableBalance(newBal);
+
+      const payoutData = {
+        amount: numAmount,
+        method: payoutMethod,
+        destination: chosenBankName,
+        txnId: realTxnId,
+        remainingBalance: newBal
+      };
+
+      sessionStorage.setItem('mshoppy_last_payout', JSON.stringify(payoutData));
+
+      // Append to local state list for instant feedback
+      setWithdrawals((prev) => [
+        {
+          id: realTxnId,
+          amount: numAmount,
+          method: payoutMethod,
+          accountLabel: chosenBankName,
+          date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          status: 'PROCESSING',
+          statusLabel: 'Processing (24 - 48 Hrs)',
+          estimatedArrival: '24 to 48 Hours',
+          progress: 50
+        },
+        ...prev
+      ]);
+
+      // Dispatch Real Live Notification
+      addNotification({
+        title: 'Payout Request Initiated! 🏦',
+        message: `Your withdrawal of ₹${numAmount.toLocaleString('en-IN')} to ${chosenBankName} has been processed successfully. Ref: ${payoutData.txnId}`,
+        category: 'Earnings',
+        icon: 'account_balance',
+        iconBg: 'bg-emerald-50 text-emerald-600',
+        actionPath: '/reseller-wallet',
+        actionText: 'View Earnings Status',
+        data: payoutData
+      });
+
+      // Redirect to payout confirmation receipt screen
+      navigate('/payout-confirmation', { state: payoutData });
+    } catch (err) {
+      console.error('Withdrawal error:', err);
+      setError(err.message || 'Network error while contacting payout gateway');
+    } finally {
+      setIsSubmitting(false);
+    }
+
   };
 
   const numericAmount = parseFloat(amount) || 0;
@@ -300,8 +353,14 @@ export default function WithdrawEarnings() {
                   <span className="material-symbols-outlined text-2xl">account_balance</span>
                 </div>
                 <div>
-                  <p className="font-bold text-sm sm:text-base text-[#1c1b1b] dark:text-white">HDFC Bank</p>
-                  <p className="text-xs sm:text-sm text-slate-500">Verified Payout Account •••• 4321</p>
+
+                  <p className="font-bold text-sm sm:text-base text-[#1c1b1b] dark:text-white">
+                    {linkedBank ? linkedBank.bankName : 'No Bank Linked Yet'}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    {linkedBank ? `Ending in ${linkedBank.accountNumber}` : 'Click + Add New to set up bank payouts'}
+                  </p>
+
                 </div>
               </div>
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${payoutMethod === 'bank' ? 'border-[#b90041]' : 'border-slate-300'}`}>
@@ -325,8 +384,12 @@ export default function WithdrawEarnings() {
                   <span className="material-symbols-outlined text-2xl">qr_code_2</span>
                 </div>
                 <div>
-                  <p className="font-bold text-sm sm:text-base text-[#1c1b1b] dark:text-white">UPI VPA</p>
-                  <p className="text-xs sm:text-sm text-slate-500">partner@upi (Instant Routing)</p>
+
+                  <p className="font-bold text-sm sm:text-base text-[#1c1b1b] dark:text-white">UPI ID</p>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    {linkedUpi ? linkedUpi : 'Click + Add New to link UPI ID'}
+                  </p>
+
                 </div>
               </div>
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${payoutMethod === 'upi' ? 'border-[#b90041]' : 'border-slate-300'}`}>

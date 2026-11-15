@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
+import path from 'path';
+import prisma from '../../config/prisma.js';
 import { uploadFileToSupabase } from '../../services/supabaseStorage.service.js';
-const prisma = new PrismaClient();
 
 /**
  * 1. GET DROPSHIPPER PROFILE
@@ -240,13 +240,14 @@ export const uploadDropshipperAvatar = async (req, res) => {
 
     // 1. Auto-Upload to Supabase Storage Bucket ('dropshipper-assets/avatars')
     try {
-      if (fs.existsSync(req.file.path)) {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
         const fileBuffer = fs.readFileSync(req.file.path);
         const uploadResult = await uploadFileToSupabase({
           fileBuffer,
           originalFilename: req.file.originalname || req.file.filename,
           mimeType: req.file.mimetype || 'image/png',
-          folder: 'avatars'
+          folder: 'avatars',
+          bucket: 'dropshipper-assets'
         });
 
         if (uploadResult?.url) {

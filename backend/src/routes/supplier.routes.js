@@ -5,10 +5,21 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
+  bulkUpdateProducts,
+  bulkDeleteProducts,
   getCategories,
   addCategory,
   getSupplierOrders,
   updateOrderStatus,
+  getSupplierSettlements,
+  requestSupplierPayout,
+  getSupplierAnalytics,
+  downloadOrderInvoice,
+  downloadShippingLabel,
+  getSupplierReturns,
+  updateReturnStatus,
+  getSupplierReviews,
+  replyToProductReview,
 } from '../controllers/supplier/supplier.controller.js';
 import {
   getSupplierProfile,
@@ -40,11 +51,18 @@ router.post('/kyc', submitSupplierKyc);
 
 // Dashboard & Analytics
 router.get('/dashboard-stats', getDashboardStats);
+router.get('/finance-settlements', getSupplierSettlements);
+router.post('/finance-settlements/withdraw', requestSupplierPayout);
+router.post('/request-payout', requestSupplierPayout);
+router.get('/analytics', getSupplierAnalytics);
 
 // Products / Catalog
 router.get('/products', getSupplierProducts);
 router.post('/products', uploadProductMedia.array('images', 8), addProduct);
-router.put('/products/:id', updateProduct);
+router.patch('/products/bulk', bulkUpdateProducts);
+router.post('/products/bulk-delete', bulkDeleteProducts);
+router.delete('/products/bulk', bulkDeleteProducts);
+router.put('/products/:id', uploadProductMedia.array('images', 8), updateProduct);
 router.delete('/products/:id', deleteProduct);
 
 // Categories
@@ -54,5 +72,15 @@ router.post('/categories', addCategory);
 // Orders & Fulfillment
 router.get('/orders', getSupplierOrders);
 router.patch('/orders/:id/status', updateOrderStatus);
+router.get('/orders/:id/invoice', downloadOrderInvoice);
+router.get('/orders/:id/shipping-label', downloadShippingLabel);
+
+// Returns & RTO Hub
+router.get('/returns', getSupplierReturns);
+router.patch('/returns/:id/status', updateReturnStatus);
+
+// Product Reviews & Ratings (UGC & Feedback Hub)
+router.get('/reviews', getSupplierReviews);
+router.post('/reviews/:id/reply', replyToProductReview);
 
 export default router;

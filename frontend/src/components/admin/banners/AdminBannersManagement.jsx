@@ -1,3 +1,4 @@
+import { API_BASE, API_V1_BASE } from '../../../config/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../../../utils/firebase';
@@ -47,7 +48,8 @@ export default function AdminBannersManagement() {
       else setLoading(true);
 
       const token = await getAuthToken();
-      const res = await axios.get('http://localhost:5000/api/admin-banners', {
+      if (!token) return;
+      const res = await axios.get(`${API_BASE}/admin-banners`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -69,7 +71,15 @@ export default function AdminBannersManagement() {
   };
 
   useEffect(() => {
-    fetchBanners();
+    if (auth.currentUser || currentUser?.id) {
+      fetchBanners();
+    }
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchBanners();
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleOpenCreateModal = () => {
@@ -86,10 +96,11 @@ export default function AdminBannersManagement() {
     try {
       setIsSubmitting(true);
       const token = await getAuthToken();
+      if (!token) return;
 
       if (editingBanner) {
         const res = await axios.put(
-          `http://localhost:5000/api/admin-banners/${editingBanner.id}`,
+          `${API_BASE}/admin-banners/${editingBanner.id}`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -103,7 +114,7 @@ export default function AdminBannersManagement() {
         }
       } else {
         const res = await axios.post(
-          'http://localhost:5000/api/admin-banners',
+          `${API_BASE}/admin-banners`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -131,8 +142,9 @@ export default function AdminBannersManagement() {
     if (!id) return;
     try {
       const token = await getAuthToken();
+      if (!token) return;
       const res = await axios.patch(
-        `http://localhost:5000/api/admin-banners/${id}/toggle`,
+`${API_BASE}/admin-banners/${id}/toggle`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -158,8 +170,9 @@ export default function AdminBannersManagement() {
 
     try {
       const token = await getAuthToken();
+      if (!token) return;
       const res = await axios.delete(
-        `http://localhost:5000/api/admin-banners/${banner.id}`,
+        `${API_BASE}/admin-banners/${banner.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {

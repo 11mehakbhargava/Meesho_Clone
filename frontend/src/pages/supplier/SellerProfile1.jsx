@@ -23,7 +23,7 @@ import {
   Landmark
 } from 'lucide-react';
 
-export default function SellerProfile1({ onNavigate }) {
+export default function SellerProfile1({ onNavigate, embedded = false, onNavigateTab }) {
   const navigate = useNavigate();
 
   const handleNav = useCallback((path) => {
@@ -34,8 +34,46 @@ export default function SellerProfile1({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('general'); // 'general' | 'bank' | 'gst'
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => getCurrentSupplier() || null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Reactive Supplier Profile & Session Sync (Same Window + Cross-Tab)
+  useEffect(() => {
+    const handleProfileUpdate = (event) => {
+      if (event?.detail) {
+        const updated = event.detail;
+        setProfile((prev) => ({ ...(prev || {}), ...updated }));
+      }
+    };
+
+    const handleStorageChange = (event) => {
+      if (event.key === 'meesho_supplier_user' || event.key === 'supplier') {
+        if (event.newValue) {
+          try {
+            const updated = JSON.parse(event.newValue);
+            setProfile((prev) => ({ ...(prev || {}), ...updated }));
+            setGeneralForm((prev) => ({
+              ...prev,
+              storeName: updated.storeName || prev.storeName,
+              fullName: updated.fullName || updated.name || prev.fullName,
+              phone: updated.phone || prev.phone,
+              email: updated.email || prev.email,
+            }));
+          } catch (e) {
+            console.warn('Cross-tab profile sync error in SellerProfile1:', e);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('supplier-profile-updated', handleProfileUpdate);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('supplier-profile-updated', handleProfileUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // Editable Form States
   const [generalForm, setGeneralForm] = useState({
@@ -117,6 +155,7 @@ export default function SellerProfile1({ onNavigate }) {
   }, [loadProfile]);
 
   const handleTabChange = (tabId) => {
+    if (onNavigateTab) return onNavigateTab(tabId);
     const item = SUPPLIER_MENU.find((m) => m.id === tabId);
     if (item?.path) handleNav(item.path);
   };
@@ -179,16 +218,8 @@ export default function SellerProfile1({ onNavigate }) {
 
   const supplierDisplayName = profile?.storeName || profile?.fullName || profile?.name || 'Verified Supplier';
 
-  return (
-    <DashboardLayout
-      menuItems={SUPPLIER_MENU}
-      activeTab="profile"
-      onTabChange={handleTabChange}
-      roleName="SUPPLIER"
-      userName={supplierDisplayName}
-      onLogout={() => setShowLogoutConfirm(true)}
-    >
-      <div className="space-y-6 max-w-5xl mx-auto pb-12">
+  const mainContent = (
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
         {/* Profile Card Header */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -490,6 +521,22 @@ export default function SellerProfile1({ onNavigate }) {
           </form>
         )}
       </div>
+  );
+
+  if (embedded) {
+    return mainContent;
+  }
+
+  return (
+    <DashboardLayout
+      menuItems={SUPPLIER_MENU}
+      activeTab="profile"
+      onTabChange={handleTabChange}
+      roleName="SUPPLIER"
+      userName={supplierDisplayName}
+      onLogout={() => setShowLogoutConfirm(true)}
+    >
+      {mainContent}
 
       <LogoutConfirmDialog
         isOpen={showLogoutConfirm}
