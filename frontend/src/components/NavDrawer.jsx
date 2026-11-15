@@ -43,7 +43,7 @@ const customerNavSections = [
   {
     title: "Shop & Categories",
     items: [
-      { name: "Home & Deals", path: "/user-home", icon: "home" },
+      { name: "Home & Deals", path: "/", icon: "home" },
       { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
       { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" },
     ]
@@ -72,7 +72,7 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
   const navigate = useNavigate();
   const location = useLocation();
 
-  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home';
+  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home' || location.pathname === '/';
   const sections = customerMode ? customerNavSections : navSections;
 
   useEffect(() => {

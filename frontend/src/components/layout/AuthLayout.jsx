@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs as TabsPrimitive } from "radix-ui";
 
@@ -33,11 +34,15 @@ export default function AuthLayout({
       <div className="relative z-10 w-full max-w-[420px] my-auto py-2 flex flex-col items-center">
         {/* 2. Floating Brand Logo Badge (Floating safely above card) */}
         <div className="mb-2.5 shrink-0 flex items-center justify-center">
-          <div className="bg-white/95 backdrop-blur-[20px] px-4 py-1.5 rounded-full border border-white/80 shadow-[0_4px_20px_rgba(74,33,53,0.08)] flex items-center gap-1.5">
+          <Link
+            to="/"
+            title="Return to MShoppy Home"
+            className="bg-white/95 hover:bg-white backdrop-blur-[20px] px-4 py-1.5 rounded-full border border-white/80 shadow-[0_4px_20px_rgba(74,33,53,0.08)] flex items-center gap-1.5 transition-transform hover:scale-105 active:scale-95 cursor-pointer no-underline"
+          >
             <span className="text-[#b7004d] font-black tracking-tight text-sm sm:text-base">
               MSHOPPY <span className="uppercase text-[#ff7293] text-[11px] font-black">{roleName}</span>
             </span>
-          </div>
+          </Link>
         </div>
 
         {/* 3. Authentication Card Container */}

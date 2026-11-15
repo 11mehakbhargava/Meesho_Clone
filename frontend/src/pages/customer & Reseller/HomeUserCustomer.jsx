@@ -13,6 +13,7 @@ import {
 } from "../../services/ecommerceService";
 import { useCart } from "../../hooks/useCart";
 import { getUnreadCount, subscribeNotifications } from "../../services/notificationService";
+import GuestWelcomeModal from "../../components/customer/GuestWelcomeModal";
 
 const REAL_DATABASE_BANNERS = [
   {
@@ -148,6 +149,56 @@ export default function HomeUserCustomer() {
       (registeredUser.phone ? `+91 ${registeredUser.phone.slice(-4)}` : null)
     );
   }, [registeredUser]);
+
+  // Guest Welcome / Login Prompt Modal State
+  const [showGuestModal, setShowGuestModal] = useState(false);
+
+  // Delayed Guest / Login Prompt (Triggers after 4-5 seconds if unauthenticated and not yet handled)
+  useEffect(() => {
+    // 1. Check if user is authenticated
+    const hasToken = Boolean(localStorage.getItem('mshoppy_customer_token'));
+    const hasUser = Boolean(
+      registeredUser ||
+      currentUser ||
+      reduxUser ||
+      localStorage.getItem('mshoppy_customer_user')
+    );
+
+    if (hasToken || hasUser) {
+      return;
+    }
+
+    // 2. Check if already handled in this session
+    const isDismissed = sessionStorage.getItem('mshoppy_guest_prompt_handled') === 'true';
+    if (isDismissed) {
+      return;
+    }
+
+    // 3. Trigger after 4.5 seconds (allowing free exploration first)
+    const timer = setTimeout(() => {
+      const liveToken = Boolean(localStorage.getItem('mshoppy_customer_token'));
+      const liveUser = Boolean(localStorage.getItem('mshoppy_customer_user'));
+      const liveDismissed = sessionStorage.getItem('mshoppy_guest_prompt_handled') === 'true';
+
+      if (!liveToken && !liveUser && !liveDismissed) {
+        setShowGuestModal(true);
+      }
+    }, 4500);
+
+    return () => clearTimeout(timer);
+  }, [registeredUser, currentUser, reduxUser]);
+
+  const handleContinueAsGuest = useCallback(() => {
+    sessionStorage.setItem('mshoppy_guest_prompt_handled', 'true');
+    localStorage.setItem('mshoppy_guest_mode', 'true');
+    setShowGuestModal(false);
+  }, []);
+
+  const handleModalLogin = useCallback(() => {
+    sessionStorage.setItem('mshoppy_guest_prompt_handled', 'true');
+    setShowGuestModal(false);
+    navigate('/user/login?redirect=' + encodeURIComponent(window.location.pathname || '/'));
+  }, [navigate]);
   
   // Real Meesho Infinite Scroll State & Stable Refs
   const [page, setPage] = useState(1);
@@ -440,7 +491,7 @@ export default function HomeUserCustomer() {
               <span className="material-symbols-outlined text-2xl">menu</span>
             </button>
             <div 
-              onClick={() => navigate('/user-home')}
+              onClick={() => navigate('/')}
               className="flex items-center gap-2 cursor-pointer group select-none"
             >
               <img 
@@ -1046,7 +1097,15 @@ export default function HomeUserCustomer() {
       </main>
 
       {/* Customer Bottom Navigation */}
-      <AppBottomNav activeNav="home" role="customer" homePath="/user-home" />
+      <AppBottomNav activeNav="home" role="customer" homePath="/" />
+
+      {/* Guest Welcome & Login Prompt Modal (Shown after 4-5 seconds for guest exploration) */}
+      <GuestWelcomeModal
+        isOpen={showGuestModal}
+        onClose={handleContinueAsGuest}
+        onContinueAsGuest={handleContinueAsGuest}
+        onLogin={handleModalLogin}
+      />
     </div>
   );
 }

@@ -20,7 +20,7 @@ export default function AppBottomNav({ activeNav, active, onNavigate, role = 're
   };
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const isCustomerPath = [
+  const isCustomerPath = currentPath === '/' || currentPath === '' || [
     '/user-home',
     '/flash',
     '/explorer',
@@ -35,8 +35,8 @@ export default function AppBottomNav({ activeNav, active, onNavigate, role = 're
     '/spotlight'
   ].some((p) => currentPath.startsWith(p));
 
-  const isCustomer = role === 'customer' || homePath === '/user-home' || isCustomerPath;
-  const effectiveHome = homePath || (isCustomer ? '/user-home' : '/reseller-home');
+  const isCustomer = role === 'customer' || homePath === '/user-home' || homePath === '/' || isCustomerPath;
+  const effectiveHome = homePath || (isCustomer ? '/' : '/reseller-home');
 
   const navItems = isCustomer ? [
     { id: 'home', label: 'Home', icon: 'home', path: effectiveHome },

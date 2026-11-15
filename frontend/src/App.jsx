@@ -848,7 +848,7 @@ function AppRoutes() {
         <Route path="/messenger" element={<Navigate to="/support" replace />} />
         <Route path="/conversation" element={<Navigate to="/support" replace />} />
         <Route path="/notifications" element={<NotificationCenter />} />
-        <Route path="/" element={<LoginSignup />} />
+        <Route path="/" element={<HomeUserCustomer />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/supplier/logout" element={<SupplierLogoutPage />} />
