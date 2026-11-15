@@ -10,7 +10,6 @@ on:
 jobs:
   deploy:
     name: Deploy to Oracle Cloud VPS
-    if: github.repository == 'Sakshamgithub2811/Meesho_clone'
     runs-on: ubuntu-latest
 
     steps:
