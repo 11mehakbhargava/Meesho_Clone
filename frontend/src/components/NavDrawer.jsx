@@ -9,7 +9,6 @@ const navSections = [
     title: "Shop & Catalog",
     items: [
       { name: "Home & Curated Catalog", path: "/reseller-home", icon: "home" },
-      { name: "Supplier Product Access", path: "/supplier-products", icon: "inventory_2", badge: "Direct" },
       { name: "Resell & Earn Products", path: "/resell-earn", icon: "storefront", badge: "Popular" },
       { name: "Profit Margin & Sharing", path: "/share-earn-config", icon: "share" },
     ]
@@ -33,7 +32,6 @@ const navSections = [
   {
     title: "Growth & Programs",
     items: [
-      { name: "Refer & Earn Bonus", path: "/refer-earn", icon: "card_giftcard" },
       { name: "Affiliate Partner Panel", path: "/affiliate-program", icon: "loyalty" },
     ]
   }
@@ -43,9 +41,8 @@ const customerNavSections = [
   {
     title: "Shop & Categories",
     items: [
-      { name: "Home & Deals", path: "/user-home", icon: "home" },
+      { name: "Home & Deals", path: "/", icon: "home" },
       { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
-      { name: "Flash Sale Deals", path: "/flash", icon: "bolt", badge: "Hot" },
       { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" },
     ]
   },
@@ -73,7 +70,7 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
   const navigate = useNavigate();
   const location = useLocation();
 
-  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home';
+  const customerMode = isCustomer || role === 'customer' || location.pathname === '/user-home' || location.pathname === '/';
   const sections = customerMode ? customerNavSections : navSections;
 
   useEffect(() => {

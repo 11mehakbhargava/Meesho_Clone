@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavDrawer from "../../components/NavDrawer";
 import AppBottomNav from "../../components/AppBottomNav";
 import { getUnreadCount, subscribeNotifications } from '../../services/notificationService';
-import { getProducts } from '../../services/ecommerceService';
+import { getProducts, getCategories, getBanners } from '../../services/ecommerceService';
 import { getAffiliateApp } from '../../services/affiliateSessionStore';
+import { buildAffiliateProductUrl } from '../../utils/affiliateLinkHelper';
 
-const categories = [
-  { name: "All", icon: "dashboard" },
-  { name: "Women", icon: "checkroom" },
-  { name: "Men", icon: "styler" },
-  { name: "Kids", icon: "child_care" },
-  { name: "Home", icon: "home_iot_device" },
-  { name: "Gadgets", icon: "earbuds" },
-  { name: "Beauty", icon: "shopping_basket" },
-  { name: "Jewelry", icon: "diamond" },
-  { name: "Brands", icon: "verified" }
-];
+const getCategoryIcon = (slugOrName) => {
+  const s = String(slugOrName || '').toLowerCase();
+  if (s.includes('women')) return 'checkroom';
+  if (s.includes('men')) return 'styler';
+  if (s.includes('kid')) return 'child_care';
+  if (s.includes('home') || s.includes('kitchen')) return 'home_iot_device';
+  if (s.includes('gadget') || s.includes('electronic')) return 'earbuds';
+  if (s.includes('beauty') || s.includes('health')) return 'shopping_basket';
+  if (s.includes('jewel')) return 'diamond';
+  if (s.includes('footwear') || s.includes('shoe')) return 'steps';
+  return 'grid_view';
+};
 
 export default function HomeUserReseller() {
   const navigate = useNavigate();
@@ -34,6 +36,29 @@ export default function HomeUserReseller() {
   const [quickShareMargin, setQuickShareMargin] = useState(100);
   const [toastMessage, setToastMessage] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Pure dynamic admin banners - zero fallback banners
+  const [banners, setBanners] = useState([]);
+
+  const [dbCategories, setDbCategories] = useState(() => {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_cats') || '[]');
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+    } catch (_) {}
+    return [];
+  });
+
+  // Pure Dynamic Categories from PostgreSQL Database (Zero hardcoded fallbacks)
+  const displayCategories = useMemo(() => {
+    return [
+      { name: "All", icon: "dashboard", slug: "All" },
+      ...dbCategories.map((c) => ({
+        name: c.name,
+        icon: getCategoryIcon(c.slug || c.name),
+        slug: c.slug || c.name
+      }))
+    ];
+  }, [dbCategories]);
 
   const getReferralCode = () => {
     try {
@@ -54,7 +79,7 @@ export default function HomeUserReseller() {
     const refCode = getReferralCode();
     const numericMargin = Number(margin) || 0;
     const finalPrice = prod.price + numericMargin;
-    const orderLink = `${window.location.origin}/product?id=${prod.id}&ref=${refCode}&margin=${numericMargin}`;
+    const orderLink = buildAffiliateProductUrl({ productId: prod.id, refCode, margin: numericMargin });
     const msg = `✨ *${prod.title}*\n\nSpecial Price: ₹${finalPrice} only (Free Shipping!)\n\n✅ 7-Day Easy Replacement Guarantee\n✅ Cash on Delivery Available\n\n👉 Order directly online:\n${orderLink}\n\nOr reply with your delivery address & size to book!`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
@@ -65,7 +90,7 @@ export default function HomeUserReseller() {
   const handleCopyQuickLink = (prod, margin) => {
     const refCode = getReferralCode();
     const numericMargin = Number(margin) || 0;
-    const orderLink = `${window.location.origin}/product?id=${prod.id}&ref=${refCode}&margin=${numericMargin}`;
+    const orderLink = buildAffiliateProductUrl({ productId: prod.id, refCode, margin: numericMargin });
     navigator.clipboard.writeText(orderLink);
     setCopiedLink(true);
     setToastMessage('Referral link with margin copied!');
@@ -80,6 +105,31 @@ export default function HomeUserReseller() {
       setUnreadNotifs(getUnreadCount());
     });
     return unsub;
+  }, []);
+
+  // Load dynamic database categories & admin banners on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadEcommerceMetadata() {
+      try {
+        const [catsData, bannersData] = await Promise.all([
+          getCategories(),
+          getBanners(),
+        ]);
+        if (isMounted) {
+          if (Array.isArray(bannersData)) {
+            setBanners(bannersData);
+          }
+          if (Array.isArray(catsData) && catsData.length > 0) {
+            setDbCategories(catsData);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load reseller metadata:", err);
+      }
+    }
+    loadEcommerceMetadata();
+    return () => { isMounted = false; };
   }, []);
 
   React.useEffect(() => {
@@ -464,138 +514,135 @@ export default function HomeUserReseller() {
           </form>
         </div>
 
-        {/* Hero Carousel Section */}
-        <section className="mt-2 relative group">
-          <div 
-            ref={bannerRef}
-            onScroll={handleBannerScroll}
-            className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-2 scroll-smooth"
-          >
-            {/* Card 1: Flash Sale (Pink / Magenta) */}
+        {/* Hero Carousel Section - Only render when real Admin banners exist */}
+        {banners.length > 0 && (
+          <section className="mt-2 relative group">
             <div 
-              onClick={() => navigate('/flash')}
-              className="min-w-[85%] md:min-w-[100%] snap-center shrink-0 cursor-pointer"
+              ref={bannerRef}
+              onScroll={handleBannerScroll}
+              className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-4 pb-2 scroll-smooth"
             >
-              <div className="h-48 md:h-80 rounded-3xl bg-gradient-to-br from-[#b90041] to-[#df2457] relative overflow-hidden flex items-center px-8 text-white shadow-lg shadow-[#b90041]/20">
-                <div className="relative z-10 max-w-xs md:max-w-md">
-                  <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">
-                    Flash Sale
-                  </span>
-                  <h2 className="text-3xl md:text-5xl font-black font-headline leading-tight">
-                    UP TO 80% OFF
-                  </h2>
-                  <p className="mt-2 text-sm opacity-90">
-                    Curated ethnic wear for the festive season.
-                  </p>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/flash');
-                    }} 
-                    className="mt-6 bg-white text-[#b90041] px-6 py-2 rounded-xl font-bold text-sm shadow-xl active:scale-95 transition-transform hover:bg-opacity-95 cursor-pointer"
-                  >
-                    Shop Now
-                  </button>
+              {banners.map((banner, idx) => (
+                <div 
+                  key={banner.id || idx}
+                  onClick={() => banner.targetUrl && navigate(banner.targetUrl)}
+                  className="min-w-[85%] md:min-w-[100%] snap-center shrink-0 cursor-pointer"
+                >
+                  <div className="h-48 md:h-80 rounded-3xl bg-gradient-to-br from-[#b90041] via-rose-600 to-[#df2457] relative overflow-hidden flex items-center px-8 text-white shadow-lg shadow-[#b90041]/20">
+                    <div className="relative z-10 max-w-xs md:max-w-md">
+                      {banner.badgeText && (
+                        <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">
+                          {banner.badgeText}
+                        </span>
+                      )}
+                      <h2 className="text-2xl md:text-5xl font-black font-headline leading-tight">
+                        {banner.title}
+                      </h2>
+                      {banner.subtitle && (
+                        <p className="mt-2 text-xs md:text-sm opacity-90 line-clamp-2">
+                          {banner.subtitle}
+                        </p>
+                      )}
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (banner.targetUrl) navigate(banner.targetUrl);
+                        }} 
+                        className="mt-4 md:mt-6 bg-white text-[#b90041] px-5 py-2 rounded-xl font-bold text-xs md:text-sm shadow-xl active:scale-95 transition-transform hover:bg-opacity-95 cursor-pointer"
+                      >
+                        Explore Now
+                      </button>
+                    </div>
+                    {(banner.imageUrl || banner.image) && (
+                      <div className="absolute right-0 bottom-0 h-full w-1/2 opacity-85 md:opacity-100 mix-blend-overlay pointer-events-none">
+                        <img 
+                          className="w-full h-full object-cover rounded-l-full" 
+                          alt={banner.title || "Banner"} 
+                          src={banner.imageUrl || banner.image}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="absolute right-0 bottom-0 h-full w-1/2 opacity-80 md:opacity-100 mix-blend-overlay pointer-events-none">
-                  <img 
-                    className="w-full h-full object-cover rounded-l-full" 
-                    alt="Stylish traditional clothing display" 
-                    src="/banner_img.jpg"
-                    onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80";
-                    }}
-                  />
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Card 2: Become a Reseller (Blue / Purple) */}
-            <div 
-              onClick={() => navigate('/dropshipper-register')}
-              className="min-w-[85%] md:min-w-[100%] snap-center shrink-0 cursor-pointer"
-            >
-              <div className="h-48 md:h-80 rounded-3xl bg-gradient-to-br from-[#4d41df] to-[#675df9] relative overflow-hidden flex items-center px-8 text-white shadow-lg shadow-[#4d41df]/20">
-                <div className="relative z-10 max-w-xs md:max-w-md">
-                  <h2 className="text-3xl md:text-5xl font-black font-headline leading-tight">
-                    BECOME A RESELLER
-                  </h2>
-                  <p className="mt-2 text-sm opacity-90">
-                    Start your business with zero investment.
-                  </p>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/dropshipper-register');
-                    }} 
-                    className="mt-6 bg-white text-[#4d41df] px-6 py-2 rounded-xl font-bold text-sm shadow-xl active:scale-95 transition-transform hover:bg-opacity-95 cursor-pointer"
-                  >
-                    Join Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Carousel Chevrons for Desktop */}
-          {activeSlide > 0 && (
-            <button
-              onClick={() => scrollToSlide(0)}
-              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
-              aria-label="Previous Banner"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-          )}
-          {activeSlide < 1 && (
-            <button
-              onClick={() => scrollToSlide(1)}
-              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
-              aria-label="Next Banner"
-            >
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
-          )}
-
-          {/* Carousel Indicator Dots */}
-          <div className="flex justify-center gap-2 mt-2">
-            <button 
-              onClick={() => scrollToSlide(0)} 
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${activeSlide === 0 ? 'w-6 bg-[#b90041]' : 'w-2 bg-gray-300'}`} 
-              aria-label="Slide 1: Flash Sale"
-            />
-            <button 
-              onClick={() => scrollToSlide(1)} 
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${activeSlide === 1 ? 'w-6 bg-[#4d41df]' : 'w-2 bg-gray-300'}`} 
-              aria-label="Slide 2: Become a Reseller"
-            />
-          </div>
-        </section>
-
-
-        {/* Category Carousel */}
-        <section className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-headline font-bold text-lg text-on-surface">Categories</h3>
-            <button onClick={() => navigate('/explorer')} className="text-[#b90041] text-xs font-bold font-label uppercase tracking-wider cursor-pointer hover:underline">See All</button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {categories.map((cat, idx) => (
-              <div
-                key={idx} 
-                onClick={() => setSelectedCategory(cat.name)}
-                className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"
+            {/* Carousel Chevrons for Desktop */}
+            {banners.length > 1 && activeSlide > 0 && (
+              <button
+                onClick={() => scrollToSlide(activeSlide - 1)}
+                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
+                aria-label="Previous Banner"
               >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
-                  selectedCategory === cat.name 
-                    ? 'bg-[#FF3F6C] text-white shadow-lg shadow-[#FF3F6C]/20 scale-105' 
-                    : 'bg-surface-container-high group-hover:bg-[#ffd9dc] text-on-surface-variant'
-                }`}>
-                  <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
-                </div>
-                <span className={`text-xs font-medium ${selectedCategory === cat.name ? 'font-bold text-[#FF3F6C]' : 'text-on-surface'}`}>{cat.name}</span>
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+            )}
+            {banners.length > 1 && activeSlide < banners.length - 1 && (
+              <button
+                onClick={() => scrollToSlide(activeSlide + 1)}
+                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md hover:bg-white/50 items-center justify-center text-white z-20 transition-all shadow-lg cursor-pointer"
+                aria-label="Next Banner"
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            )}
+
+            {/* Indicators */}
+            {banners.length > 1 && (
+              <div className="flex justify-center gap-2 mt-3">
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => scrollToSlide(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${activeSlide === idx ? 'w-6 bg-[#b90041]' : 'w-2 bg-gray-300'}`}
+                    aria-label={`Slide ${idx + 1}`}
+                  />
+                ))}
               </div>
-            ))}
+            )}
+          </section>
+        )}
+
+        {/* Category Carousel - Dynamic from Database */}
+        <section className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-headline font-bold text-lg text-slate-900 dark:text-slate-100">Categories</h3>
+            <button 
+              onClick={() => navigate('/explorer')} 
+              className="text-[#FF3F6C] text-xs font-bold font-label uppercase tracking-wider cursor-pointer hover:underline"
+            >
+              See All
+            </button>
+          </div>
+          <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
+            {displayCategories.map((cat, idx) => {
+              const isSelected = selectedCategory === cat.name;
+              return (
+                <div
+                  key={idx} 
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className="w-[72px] sm:w-[76px] flex flex-col items-center gap-1.5 cursor-pointer group flex-shrink-0 select-none"
+                >
+                  <div className={`w-14 h-14 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                    isSelected 
+                      ? 'bg-[#FF3F6C] text-white shadow-md shadow-[#FF3F6C]/30 scale-105 ring-2 ring-[#FF3F6C]/20' 
+                      : 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 group-hover:border-[#FF3F6C]/50 group-hover:bg-[#FFF5F7] group-hover:text-[#FF3F6C] shadow-2xs'
+                  }`}>
+                    <span className="material-symbols-outlined text-[26px]">{cat.icon}</span>
+                  </div>
+                  <span 
+                    title={cat.name}
+                    className={`text-[11px] sm:text-xs text-center capitalize truncate w-full transition-colors ${
+                      isSelected ? 'font-bold text-[#FF3F6C]' : 'font-medium text-slate-700 dark:text-slate-300 group-hover:text-[#FF3F6C]'
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
 

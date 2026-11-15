@@ -271,6 +271,9 @@ export const addProduct = async (req, res, next) => {
       categoryName,
       categorySlug: inputCategorySlug,
       sizes,
+      colors,
+      thickness,
+      thicknesses,
       stock,
       isFreeDelivery,
       supplierName = supplierProfile.storeName || supplierProfile.fullName || 'Verified Supplier',
@@ -361,14 +364,49 @@ export const addProduct = async (req, res, next) => {
     let parsedSizes = ['Free Size'];
     if (sizes) {
       if (Array.isArray(sizes)) {
-        parsedSizes = sizes;
+        parsedSizes = sizes.filter(Boolean);
       } else {
         try {
           parsedSizes = JSON.parse(sizes);
         } catch {
-          parsedSizes = sizes.split(',').map((s) => s.trim());
+          parsedSizes = sizes.split(',').map((s) => s.trim()).filter(Boolean);
         }
       }
+    }
+
+    // Parse colors
+    let parsedColors = [];
+    if (colors) {
+      if (Array.isArray(colors)) {
+        parsedColors = colors.filter(Boolean);
+      } else {
+        try {
+          parsedColors = JSON.parse(colors);
+        } catch {
+          parsedColors = colors.split(',').map((c) => c.trim()).filter(Boolean);
+        }
+      }
+    }
+
+    // Parse thickness & thickness variants
+    let parsedThickness = null;
+    if (thickness && typeof thickness === 'string' && thickness.trim()) {
+      parsedThickness = thickness.trim();
+    }
+    let parsedThicknesses = [];
+    if (thicknesses) {
+      if (Array.isArray(thicknesses)) {
+        parsedThicknesses = thicknesses.filter(Boolean);
+      } else {
+        try {
+          parsedThicknesses = JSON.parse(thicknesses);
+        } catch {
+          parsedThicknesses = thicknesses.split(',').map((t) => t.trim()).filter(Boolean);
+        }
+      }
+    }
+    if (parsedThickness && !parsedThicknesses.includes(parsedThickness)) {
+      parsedThicknesses.unshift(parsedThickness);
     }
 
     // Authoritative Database Persistence (Strict - NO FAKE FALLBACKS)
@@ -382,6 +420,9 @@ export const addProduct = async (req, res, next) => {
         categorySlug: finalCategorySlug,
         images: imageUrls,
         sizes: parsedSizes,
+        colors: parsedColors,
+        thickness: parsedThickness,
+        thicknesses: parsedThicknesses,
         stock: stock !== undefined && stock !== null && stock !== '' ? parseInt(stock, 10) : 50,
         isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
@@ -555,6 +596,16 @@ export const updateProduct = async (req, res, next) => {
         updateData.colors = JSON.parse(updateData.colors);
       } catch {
         updateData.colors = updateData.colors.split(',').map((c) => c.trim()).filter(Boolean);
+      }
+    }
+    if (updateData.thickness !== undefined) {
+      updateData.thickness = typeof updateData.thickness === 'string' && updateData.thickness.trim() ? updateData.thickness.trim() : null;
+    }
+    if (updateData.thicknesses && typeof updateData.thicknesses === 'string') {
+      try {
+        updateData.thicknesses = JSON.parse(updateData.thicknesses);
+      } catch {
+        updateData.thicknesses = updateData.thicknesses.split(',').map((t) => t.trim()).filter(Boolean);
       }
     }
     if (typeof updateData.isFreeDelivery === 'string') {

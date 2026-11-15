@@ -30,8 +30,111 @@ import {
   Info,
   ShieldCheck,
   ShieldAlert,
-  Lock
+  Lock,
+  Palette,
+  Ruler,
+  Check,
+  X
 } from 'lucide-react';
+
+// Preset Color Swatches for Multi-Color Selector
+const PRESET_COLORS = [
+  { name: 'Black', hex: '#111827' },
+  { name: 'White', hex: '#FFFFFF', border: true },
+  { name: 'Red', hex: '#EF4444' },
+  { name: 'Maroon', hex: '#800000' },
+  { name: 'Blue', hex: '#2563EB' },
+  { name: 'Navy Blue', hex: '#1E3A8A' },
+  { name: 'Sky Blue', hex: '#38BDF8' },
+  { name: 'Green', hex: '#10B981' },
+  { name: 'Pista Green', hex: '#93C572' },
+  { name: 'Yellow', hex: '#FACC15' },
+  { name: 'Pink', hex: '#EC4899' },
+  { name: 'Baby Pink', hex: '#FBCFE8', border: true },
+  { name: 'Purple', hex: '#A855F7' },
+  { name: 'Orange', hex: '#F97316' },
+  { name: 'Grey', hex: '#6B7280' },
+  { name: 'Beige', hex: '#D2B48C' },
+  { name: 'Gold', hex: '#D4AF37' },
+  { name: 'Multicolor', hex: 'linear-gradient(135deg, #f43f5e, #3b82f6, #10b981, #facc15)' }
+];
+
+// Category Adaptive Sizes
+const CATEGORY_SIZES_MAP = {
+  apparel: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'],
+  footwear: ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11'],
+  home: ['Single', 'Double', 'Queen', 'King', 'Standard', 'Pack of 1', 'Pack of 2', 'Pack of 4'],
+  accessories: ['Adjustable', 'Free Size', 'Small', 'Medium', 'Large'],
+  general: ['Standard', 'Free Size', 'Compact', 'Default'],
+};
+
+const getSizesForCategory = (categorySlug = '') => {
+  const slug = (categorySlug || '').toLowerCase();
+  if (slug.includes('footwear') || slug.includes('shoe') || slug.includes('sandal') || slug.includes('slipper') || slug.includes('heel')) {
+    return CATEGORY_SIZES_MAP.footwear;
+  }
+  if (slug.includes('home') || slug.includes('kitchen') || slug.includes('bed') || slug.includes('curtain') || slug.includes('furnish') || slug.includes('living')) {
+    return CATEGORY_SIZES_MAP.home;
+  }
+  if (slug.includes('jewel') || slug.includes('access') || slug.includes('watch') || slug.includes('bag') || slug.includes('belt')) {
+    return CATEGORY_SIZES_MAP.accessories;
+  }
+  return CATEGORY_SIZES_MAP.apparel;
+};
+
+// Category Adaptive Thickness & Density Configuration
+const CATEGORY_THICKNESS_MAP = {
+  apparel: {
+    unit: 'GSM',
+    label: 'Fabric Thickness / Weight (GSM)',
+    presets: ['140 GSM (Lightweight)', '180 GSM (Regular / Bio-Wash)', '220 GSM (Heavy / Premium)', '260 GSM (Fleece / Winter)', '300 GSM (Super Heavy)'],
+  },
+  home: {
+    unit: 'GSM / mm',
+    label: 'Material Thickness / Cushioning',
+    presets: ['180 GSM (Standard)', '300 GSM (Heavy Cotton)', '400 GSM (Plush Towel)', '4 mm (Anti-Skid Mat)', '6 mm (Floor / Yoga Mat)', '8 mm (Cushioned Rug)'],
+  },
+  footwear: {
+    unit: 'mm',
+    label: 'Sole & Insole Cushion Thickness',
+    presets: ['8 mm (Slim Sole)', '12 mm (Daily Wear)', '15 mm (Comfort Cushion)', '20 mm (Extra Soft Ortho)'],
+  },
+  kitchen: {
+    unit: 'mm / Gauge',
+    label: 'Gauge / Metal Wall Thickness',
+    presets: ['1.2 mm (Standard)', '1.5 mm (Heavy Duty)', '2.0 mm (Tri-ply Base)', '2.5 mm (Commercial Grade)', '3.0 mm (Heavy Cast)'],
+  },
+  accessories: {
+    unit: 'mm',
+    label: 'Thickness / Wire Gauge',
+    presets: ['1.0 mm (Delicate / Sleek)', '1.5 mm (Standard)', '2.0 mm (Medium)', '3.0 mm (Bold / Heavy)'],
+  },
+  general: {
+    unit: 'mm / GSM',
+    label: 'Thickness / Density Specification',
+    presets: ['0.8 mm', '1.2 mm', '1.5 mm', '2.0 mm', '180 GSM', '250 GSM'],
+  }
+};
+
+const getThicknessConfig = (categorySlug = '') => {
+  const slug = (categorySlug || '').toLowerCase();
+  if (slug.includes('footwear') || slug.includes('shoe') || slug.includes('sandal')) {
+    return CATEGORY_THICKNESS_MAP.footwear;
+  }
+  if (slug.includes('kitchen') || slug.includes('cookware') || slug.includes('utensil')) {
+    return CATEGORY_THICKNESS_MAP.kitchen;
+  }
+  if (slug.includes('home') || slug.includes('bed') || slug.includes('curtain') || slug.includes('mat') || slug.includes('rug')) {
+    return CATEGORY_THICKNESS_MAP.home;
+  }
+  if (slug.includes('jewel') || slug.includes('access') || slug.includes('watch') || slug.includes('bangle')) {
+    return CATEGORY_THICKNESS_MAP.accessories;
+  }
+  if (slug.includes('ethnic') || slug.includes('western') || slug.includes('apparel') || slug.includes('kurti') || slug.includes('saree') || slug.includes('shirt') || slug.includes('men') || slug.includes('women') || slug.includes('kid')) {
+    return CATEGORY_THICKNESS_MAP.apparel;
+  }
+  return CATEGORY_THICKNESS_MAP.apparel;
+};
 
 // Client-side image compressor: Resizes device images to max 1280px & 0.75 JPEG quality (~90-150KB)
 const compressImageFile = (file) => {
@@ -104,6 +207,18 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
     sku: '',
   });
 
+  // Category-adaptive Sizes State
+  const [selectedSizes, setSelectedSizes] = useState(['S', 'M', 'L', 'XL']);
+  const [customSizeInput, setCustomSizeInput] = useState('');
+
+  // Available in Different Colors State
+  const [selectedColors, setSelectedColors] = useState(['Black', 'Navy Blue', 'Maroon']);
+  const [customColorInput, setCustomColorInput] = useState('');
+
+  // Thickness State
+  const [selectedThickness, setSelectedThickness] = useState('180 GSM (Regular / Bio-Wash)');
+  const [customThicknessInput, setCustomThicknessInput] = useState('');
+
   // Multiple Images State: array of URLs or base64 strings
   const [images, setImages] = useState(['']);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -122,7 +237,14 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
           const list = Array.isArray(cats.value) ? cats.value : [];
           setCategories(list);
           if (list.length > 0) {
-            setFormData((prev) => ({ ...prev, categorySlug: list[0].slug || list[0].name }));
+            const firstSlug = list[0].slug || list[0].name;
+            setFormData((prev) => ({ ...prev, categorySlug: firstSlug }));
+            const catSizes = getSizesForCategory(firstSlug);
+            setSelectedSizes(catSizes.slice(0, 4));
+            const catThick = getThicknessConfig(firstSlug);
+            if (catThick.presets.length > 0) {
+              setSelectedThickness(catThick.presets[0]);
+            }
           }
         }
 
@@ -143,6 +265,72 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
     };
     init();
   }, []);
+
+  // Handlers for Category Change, Sizes, Colors & Thickness
+  const handleCategoryChange = (e) => {
+    const slug = e.target.value;
+    setFormData((prev) => ({ ...prev, categorySlug: slug }));
+    if (slug !== 'CUSTOM') {
+      const catSizes = getSizesForCategory(slug);
+      setSelectedSizes(catSizes.slice(0, 4));
+      const catThick = getThicknessConfig(slug);
+      if (catThick.presets.length > 0) {
+        setSelectedThickness(catThick.presets[0]);
+      }
+    }
+  };
+
+  const toggleSize = (size) => {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+    );
+  };
+
+  const addCustomSize = () => {
+    const trimmed = customSizeInput.trim();
+    if (trimmed && !selectedSizes.includes(trimmed)) {
+      setSelectedSizes((prev) => [...prev, trimmed]);
+      setCustomSizeInput('');
+    }
+  };
+
+  const selectAllCategorySizes = () => {
+    const available = getSizesForCategory(formData.categorySlug);
+    setSelectedSizes(available);
+  };
+
+  const clearAllSizes = () => {
+    setSelectedSizes([]);
+  };
+
+  const toggleColor = (colorName) => {
+    setSelectedColors((prev) =>
+      prev.includes(colorName) ? prev.filter((c) => c !== colorName) : [...prev, colorName]
+    );
+  };
+
+  const addCustomColor = () => {
+    const trimmed = customColorInput.trim();
+    if (trimmed && !selectedColors.includes(trimmed)) {
+      setSelectedColors((prev) => [...prev, trimmed]);
+      setCustomColorInput('');
+    }
+  };
+
+  const removeColor = (colorName) => {
+    setSelectedColors((prev) => prev.filter((c) => c !== colorName));
+  };
+
+  const selectThicknessPreset = (th) => {
+    setSelectedThickness(th);
+    setCustomThicknessInput('');
+  };
+
+  const handleCustomThicknessChange = (e) => {
+    const val = e.target.value;
+    setCustomThicknessInput(val);
+    setSelectedThickness(val);
+  };
 
   const handleTabChange = (tabId) => {
     if (onNavigateTab) return onNavigateTab(tabId);
@@ -318,6 +506,10 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
         sku: formData.sku.trim() || `MSH-${Date.now().toString().slice(-6)}`,
         categorySlug: selectedCategory.toLowerCase().replace(/\s+/g, '-'),
         categoryName: selectedCategory,
+        sizes: selectedSizes.length > 0 ? selectedSizes : ['Free Size'],
+        colors: selectedColors,
+        thickness: selectedThickness ? selectedThickness.trim() : null,
+        thicknesses: selectedThickness ? [selectedThickness.trim()] : [],
         images: finalImages,
         imageUrl: finalImages[0] || '',
       };
@@ -337,6 +529,9 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               stock: payload.stock,
               images: syncedImages,
               category_slug: payload.categorySlug,
+              sizes: payload.sizes,
+              colors: payload.colors,
+              thickness: payload.thickness,
               supplier_name: supplierDisplayName,
             }
           ]).select().catch(() => {});
@@ -455,7 +650,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                 <select
                   name="categorySlug"
                   value={formData.categorySlug}
-                  onChange={handleChange}
+                  onChange={handleCategoryChange}
                   className="w-full h-11 px-3 text-xs font-semibold rounded-2xl border border-slate-200 bg-white text-slate-700 outline-none cursor-pointer"
                 >
                   {categories.map((c) => (
@@ -553,6 +748,254 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   className="w-full h-11 px-4 text-xs font-bold rounded-2xl border border-slate-200 focus:border-[#d82a62] outline-none"
                   required
                 />
+              </div>
+            </div>
+
+            {/* 4. PRODUCT SIZES (Category-Adaptive) */}
+            <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-[#d82a62]" />
+                    <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                      Available Sizes & Dimensions ({selectedSizes.length} Selected)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Click to select sizes tailored for <span className="font-bold text-slate-700 capitalize">{formData.categorySlug || 'this category'}</span>.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllCategorySizes}
+                    className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  <button
+                    type="button"
+                    onClick={clearAllSizes}
+                    className="text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Size Pills */}
+              <div className="flex flex-wrap gap-2">
+                {getSizesForCategory(formData.categorySlug).map((size) => {
+                  const isSelected = selectedSizes.includes(size);
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSize(size)}
+                      className={`min-w-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
+                        isSelected
+                          ? 'bg-[#d82a62] text-white shadow-xs shadow-pink-600/25 ring-2 ring-pink-300'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
+                      }`}
+                    >
+                      <span>{size}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Add Custom Size Input */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Add custom size (e.g. 4XL, 2.4, 2.6, 750ml, King Plus)..."
+                  value={customSizeInput}
+                  onChange={(e) => setCustomSizeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomSize();
+                    }
+                  }}
+                  className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomSize}
+                  className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
+                >
+                  + Add Size
+                </button>
+              </div>
+
+              {selectedSizes.length === 0 && (
+                <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>No size selected. "Free Size" will be assigned automatically.</span>
+                </p>
+              )}
+            </div>
+
+            {/* 5. PRODUCT COLORS (Available in Different Colors) */}
+            <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-[#d82a62]" />
+                    <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                      Product Available in Different Colors ({selectedColors.length} Selected)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Select all shade options available in your warehouse inventory.
+                  </p>
+                </div>
+              </div>
+
+              {/* Color Swatch Circles */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                {PRESET_COLORS.map((col) => {
+                  const isSelected = selectedColors.includes(col.name);
+                  return (
+                    <button
+                      key={col.name}
+                      type="button"
+                      onClick={() => toggleColor(col.name)}
+                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex items-center gap-2 active:scale-95 ${
+                        isSelected
+                          ? 'border-[#d82a62] bg-pink-50/60 shadow-xs ring-1 ring-pink-200'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <span
+                        className={`w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center ${
+                          col.border ? 'border border-slate-300' : ''
+                        }`}
+                        style={{ background: col.hex }}
+                      >
+                        {isSelected && (
+                          <Check className={`w-2.5 h-2.5 ${col.name === 'White' || col.name === 'Yellow' || col.name === 'Baby Pink' ? 'text-slate-900' : 'text-white'}`} />
+                        )}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-800 truncate">
+                        {col.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Color Input */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Add custom color shade (e.g. Wine Red, Bottle Green, Peach, Mustard)..."
+                  value={customColorInput}
+                  onChange={(e) => setCustomColorInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomColor();
+                    }
+                  }}
+                  className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomColor}
+                  className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
+                >
+                  + Add Color
+                </button>
+              </div>
+
+              {/* Selected Colors Chip Tray */}
+              {selectedColors.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Active Variants:</span>
+                  {selectedColors.map((col) => {
+                    const preset = PRESET_COLORS.find((p) => p.name.toLowerCase() === col.toLowerCase());
+                    return (
+                      <span
+                        key={col}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs"
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
+                          style={{ background: preset?.hex || '#6366f1' }}
+                        />
+                        <span>{col}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeColor(col)}
+                          className="hover:text-rose-600 cursor-pointer ml-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 6. PRODUCT THICKNESS & FABRIC GSM */}
+            <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-[#d82a62]" />
+                    <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                      {getThicknessConfig(formData.categorySlug).label}
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Thickness / GSM helps buyers evaluate premium feel, durability, and fabric weight.
+                  </p>
+                </div>
+              </div>
+
+              {/* Preset Chips */}
+              <div className="flex flex-wrap gap-2">
+                {getThicknessConfig(formData.categorySlug).presets.map((th) => {
+                  const isSelected = selectedThickness === th;
+                  return (
+                    <button
+                      key={th}
+                      type="button"
+                      onClick={() => selectThicknessPreset(th)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+                        isSelected
+                          ? 'bg-[#d82a62] text-white shadow-xs ring-2 ring-pink-300'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
+                      }`}
+                    >
+                      {th}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Thickness Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                    Selected / Custom Thickness
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 180 GSM, 1.5 mm, 2.0 mm, 300 GSM..."
+                    value={selectedThickness}
+                    onChange={handleCustomThicknessChange}
+                    className="w-full h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                  />
+                </div>
+                <div className="flex items-end pb-1 text-[11px] text-slate-500">
+                  <span>Unit: {getThicknessConfig(formData.categorySlug).unit} (Auto-aligned with {formData.categorySlug || 'product'})</span>
+                </div>
               </div>
             </div>
 
@@ -802,15 +1245,24 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   </div>
                 )}
 
-                <div className="p-4 space-y-2">
-                  <span className="text-[10px] font-bold text-[#b7004d] uppercase tracking-wide">
-                    {formData.categorySlug || 'Category'}
-                  </span>
+                <div className="p-4 space-y-2.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-[#b7004d] uppercase tracking-wide bg-pink-50 px-2 py-0.5 rounded-full">
+                      {formData.categorySlug || 'Category'}
+                    </span>
+                    {selectedThickness && (
+                      <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1 border border-slate-200">
+                        <Ruler className="w-2.5 h-2.5 text-slate-500" />
+                        <span>{selectedThickness}</span>
+                      </span>
+                    )}
+                  </div>
+
                   <h4 className="font-bold text-slate-900 text-sm line-clamp-2">
                     {formData.title || 'Product Title Appears Here'}
                   </h4>
 
-                  <div className="flex items-baseline gap-2 pt-1">
+                  <div className="flex items-baseline gap-2 pt-0.5">
                     <span className="text-base font-black text-slate-900">
                       ₹{formData.price ? Number(formData.price).toLocaleString('en-IN') : '0.00'}
                     </span>
@@ -820,6 +1272,54 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                       </span>
                     )}
                   </div>
+
+                  {/* Real-Time Selected Colors Preview */}
+                  {selectedColors.length > 0 && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Available Colors:</span>
+                        <span className="text-[10px] font-semibold text-slate-400">{selectedColors.length} Shade{selectedColors.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {selectedColors.map((col) => {
+                          const preset = PRESET_COLORS.find((p) => p.name.toLowerCase() === col.toLowerCase());
+                          return (
+                            <span
+                              key={col}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full"
+                              title={col}
+                            >
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
+                                style={{ background: preset?.hex || '#6366f1' }}
+                              />
+                              <span>{col}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Real-Time Selected Sizes Preview */}
+                  {selectedSizes.length > 0 && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Sizes:</span>
+                        <span className="text-[10px] font-semibold text-slate-400">{selectedSizes.length} Size{selectedSizes.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {selectedSizes.map((sz) => (
+                          <span
+                            key={sz}
+                            className="text-[10px] font-bold text-[#b7004d] bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-md"
+                          >
+                            {sz}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <p className="text-[11px] text-slate-400 line-clamp-2 pt-1 border-t border-slate-100">
                     {formData.description || 'Product specifications and details will appear here.'}

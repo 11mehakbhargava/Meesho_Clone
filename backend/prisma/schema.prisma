@@ -163,6 +163,8 @@ model Product {
   images             String[]
   sizes              String[] @default(["S", "M", "L", "XL", "Free Size"])
   colors             String[] @default([])
+  thickness          String?
+  thicknesses        String[] @default([])
   stock              Int      @default(50)
   isFreeDelivery     Boolean  @default(true) @map("is_free_delivery")
   supplierName       String   @default("Verified Supplier") @map("supplier_name")
