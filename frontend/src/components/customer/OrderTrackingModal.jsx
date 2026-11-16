@@ -1,6 +1,7 @@
 import { API_BASE, API_V1_BASE } from '../../config/apiConfig';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../../utils/firebase';
 
 export default function OrderTrackingModal({
@@ -13,6 +14,7 @@ export default function OrderTrackingModal({
 }) {
   if (!order) return null;
 
+  const navigate = useNavigate();
   const reduxUser = useSelector((state) => state.user?.currentUser);
 
   const st = (order.orderStatus || order.status || 'ORDERED').toUpperCase();
@@ -175,7 +177,10 @@ export default function OrderTrackingModal({
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onToast && onToast('Dedicated Support available 24x7: support@mshoppy.in 📞')}
+              onClick={() => {
+                if (onClose) onClose();
+                navigate(`/support-center?orderId=${order.id}`);
+              }}
               className="text-xs font-bold text-slate-700 border border-slate-200 px-3 py-1 rounded-full hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Help
