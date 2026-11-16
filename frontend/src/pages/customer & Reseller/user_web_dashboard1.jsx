@@ -3381,53 +3381,107 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     : 'No customer wallet transactions recorded yet. Refund credits from returned/cancelled orders will appear here.'}
                 </div>
               ) : (
-                <div className="overflow-x-auto w-full">
-                  <table className="w-full text-left min-w-[500px]">
-                    <thead>
-                      <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                        <th className="pb-3">Transaction</th>
-                        <th className="pb-3">Reference</th>
-                        <th className="pb-3">Date</th>
-                        <th className="pb-3">Status</th>
-                        <th className="pb-3 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-xs divide-y divide-slate-100">
-                      {walletTransactions.map((tx, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 font-semibold text-slate-900">
-                            <div className="flex items-center gap-2">
-                              {/affiliate|commission|referral|margin/i.test(tx.title) ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                                  💰 Margin
-                                </span>
-                              ) : /refund|cancel/i.test(tx.title) ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-50 text-[#b7004d] border border-pink-200 shrink-0">
-                                  🛍️ Refund
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
-                                  🪙 Credit
-                                </span>
-                              )}
-                              <span className="truncate max-w-xs sm:max-w-md">{tx.title}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 font-mono text-slate-400 text-[11px]">{tx.ref}</td>
-                          <td className="py-3 text-slate-500 text-[11px]">{tx.date}</td>
-                          <td className="py-3">
-                            <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
-                              {tx.status}
-                            </span>
-                          </td>
-                          <td className={`py-3 text-right font-black ${tx.green ? 'text-emerald-600' : 'text-slate-900'}`}>
-                            {tx.amt}
-                          </td>
+                <>
+                  {/* Desktop / Tablet Table View (Spacious, No Overlap) */}
+                  <div className="hidden sm:block overflow-x-auto w-full">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead>
+                        <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                          <th className="pb-3 pr-4">Transaction</th>
+                          <th className="pb-3 px-4">Reference</th>
+                          <th className="pb-3 px-4">Date</th>
+                          <th className="pb-3 px-4">Status</th>
+                          <th className="pb-3 pl-4 text-right">Amount</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="text-xs divide-y divide-slate-100">
+                        {walletTransactions.map((tx, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3.5 pr-4 font-semibold text-slate-900">
+                              <div className="flex items-center gap-2">
+                                {/affiliate|commission|referral|margin/i.test(tx.title) ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                    💰 Margin
+                                  </span>
+                                ) : /refund|cancel/i.test(tx.title) ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-pink-50 text-[#b7004d] border border-pink-200 shrink-0">
+                                    🛍️ Refund
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                                    🪙 Credit
+                                  </span>
+                                )}
+                                <span className="truncate max-w-xs md:max-w-md">{tx.title}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px] whitespace-nowrap">
+                              {tx.ref ? (tx.ref.length > 14 ? `${tx.ref.slice(0, 10)}...` : tx.ref) : 'TXN-REF'}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500 text-[11px] whitespace-nowrap">{tx.date}</td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                {tx.status}
+                              </span>
+                            </td>
+                            <td className={`py-3.5 pl-4 text-right font-black whitespace-nowrap ${tx.green ? 'text-emerald-600' : 'text-slate-900'}`}>
+                              {tx.amt}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card List View (100% Responsive, Zero Clipping, Clean Spacing) */}
+                  <div className="sm:hidden divide-y divide-slate-100">
+                    {walletTransactions.map((tx, idx) => {
+                      const isMargin = /affiliate|commission|referral|margin/i.test(tx.title);
+                      const isRefund = /refund|cancel/i.test(tx.title);
+                      return (
+                        <div key={idx} className="py-3.5 space-y-2">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {isMargin ? (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    💰 Margin
+                                  </span>
+                                ) : isRefund ? (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-pink-50 text-[#b7004d] border border-pink-200">
+                                    🛍️ Refund
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                    🪙 Credit
+                                  </span>
+                                )}
+                                <span className="text-[11px] text-slate-400 font-medium">{tx.date}</span>
+                              </div>
+                              <p className="text-xs font-bold text-slate-900 leading-snug break-words">
+                                {tx.title}
+                              </p>
+                              <p className="text-[10px] font-mono text-slate-400">
+                                Ref: {tx.ref ? (tx.ref.length > 16 ? `${tx.ref.slice(0, 12)}...` : tx.ref) : 'TXN'}
+                              </p>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className={`text-base font-black ${tx.green ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                {tx.amt}
+                              </span>
+                              <div className="mt-1">
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-50 text-emerald-700 border border-emerald-100 inline-block">
+                                  {tx.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           </div>
