@@ -78,6 +78,32 @@ export const uploadProductMedia = multer({
   },
 });
 
+// Generic Asset Storage for Dropshippers (Images + PDFs + CSVs up to 10MB)
+const assetFileFilter = (req, file, cb) => {
+  const allowed = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/jpg',
+    'image/svg+xml',
+    'application/pdf',
+    'text/csv'
+  ];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('File format not supported. Allowed: images, PDF, and CSV.'), false);
+  }
+};
+
+export const uploadAssetMedia = multer({
+  storage,
+  fileFilter: assetFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+});
+
 // Dedicated Avatar Storage (uploads/avatars/)
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {

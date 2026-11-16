@@ -15,7 +15,9 @@ import {
   updateDropshipperOrder,
   cancelDropshipperOrder,
   deleteDropshipperOrder,
-  archiveDropshipperOrder
+  archiveDropshipperOrder,
+  sendOrderTrackingAlert,
+  simulateCourierStatus
 } from '../../controllers/dropshipper/dropshipperOrder.controller.js';
 import { 
   createDropshipperTicket, 
@@ -29,7 +31,8 @@ import {
   saveDropshipperIntegration, 
   getDropshipperWebhookLogs, 
   createTestWebhookPing, 
-  clearDropshipperWebhookLogs 
+  clearDropshipperWebhookLogs,
+  syncProductToChannel
 } from '../../controllers/dropshipper/dropshipperIntegration.controller.js';
 import {
   getDropshipperMarginConfig,
@@ -38,15 +41,28 @@ import {
 } from '../../controllers/dropshipper/dropshipperMargin.controller.js';
 import {
   getDropshipperSettlements,
-  submitSettlementClaim
+  submitSettlementClaim,
+  requestDropshipperWithdrawal,
+  rechargeDropshipperWallet
 } from '../../controllers/dropshipper/dropshipperSettlement.controller.js';
 import {
   getDropshipperRotData,
   updateDropshipperRotPlan,
   submitRotDispute
 } from '../../controllers/dropshipper/dropshipperRot.controller.js';
-import { uploadAvatar } from '../../middlewares/upload.middleware.js';
+import { uploadAvatar, uploadAssetMedia } from '../../middlewares/upload.middleware.js';
+import { uploadDropshipperAsset } from '../../controllers/dropshipper/dropshipperUpload.controller.js';
 import { getDropshipperDashboardOverview } from '../../controllers/dropshipper/dropshipperDashboard.controller.js';
+import { testDropshipperEmail } from '../../controllers/dropshipper/dropshipperEmail.controller.js';
+import {
+  registerDropshipperFcmToken,
+  unregisterDropshipperFcmToken,
+  getDropshipperFcmStatus,
+  sendDropshipperTestPush,
+  getDropshipperNotifications,
+  markNotificationRead,
+  markAllNotificationsRead
+} from '../../controllers/dropshipper/dropshipperFcm.controller.js';
 
 const router = Router();
 
@@ -61,6 +77,7 @@ router.post('/auth/login', loginDropshipper);
 router.get('/profile/:firebaseUid', getDropshipperProfile);
 router.put('/profile', updateDropshipperProfile);
 router.post('/profile/avatar', uploadAvatar.single('avatar'), uploadDropshipperAvatar);
+router.post('/upload/asset', uploadAssetMedia.single('file'), uploadDropshipperAsset);
 router.post('/profile/deactivate', deactivateDropshipperAccount);
 router.post('/profile/restore', restoreDropshipperAccount);
 
@@ -76,6 +93,8 @@ router.put('/orders/:orderId', updateDropshipperOrder);
 router.put('/orders/:orderId/cancel', cancelDropshipperOrder);
 router.put('/orders/:orderId/archive', archiveDropshipperOrder);
 router.delete('/orders/:orderId', deleteDropshipperOrder);
+router.post('/orders/:orderId/send-tracking-alert', sendOrderTrackingAlert);
+router.post('/orders/:orderId/simulate-status', simulateCourierStatus);
 
 // 5. Helpdesk & Support Dispute Endpoints (Database Integrated)
 router.post('/tickets', createDropshipperTicket);
@@ -90,6 +109,7 @@ router.post('/webhook/test-ping', testWebhookPing);
 // 7. Store Channel Integrations & Database Webhook Logs
 router.get('/integrations/:firebaseUid', getDropshipperIntegrations);
 router.post('/integrations/save', saveDropshipperIntegration);
+router.post('/integrations/sync-product', syncProductToChannel);
 router.get('/integrations/logs/:firebaseUid', getDropshipperWebhookLogs);
 router.post('/integrations/test-ping', createTestWebhookPing);
 router.delete('/integrations/logs/:firebaseUid', clearDropshipperWebhookLogs);
@@ -102,10 +122,26 @@ router.delete('/margin-config/:firebaseUid', resetDropshipperMarginConfig);
 // 9. Order Settlement & Logistics Tracking Endpoints (Database Integrated)
 router.get('/settlements/:firebaseUid', getDropshipperSettlements);
 router.post('/settlements/claim', submitSettlementClaim);
+router.post('/settlements/withdraw', requestDropshipperWithdrawal);
+router.post('/settlements/recharge-wallet', rechargeDropshipperWallet);
 
 // 10. ROT Liability & Return Protection Plan Endpoints (Database Integrated)
 router.get('/rot/:firebaseUid', getDropshipperRotData);
 router.post('/rot/plan', updateDropshipperRotPlan);
 router.post('/rot/dispute', submitRotDispute);
+
+// 11. Automated Email Notification & Live Preview Testing
+router.post('/email/test', testDropshipperEmail);
+
+// 12. FCM WebPush & In-App Notification Center Endpoints
+router.post('/fcm/register', registerDropshipperFcmToken);
+router.post('/fcm/unregister', unregisterDropshipperFcmToken);
+router.get('/fcm/status/:firebaseUid', getDropshipperFcmStatus);
+router.post('/fcm/test-push', sendDropshipperTestPush);
+
+// 13. Notification Center (Bell Dropdown) History & Read Status
+router.get('/notifications/:firebaseUid', getDropshipperNotifications);
+router.patch('/notifications/:id/read', markNotificationRead);
+router.post('/notifications/:firebaseUid/read-all', markAllNotificationsRead);
 
 export default router;

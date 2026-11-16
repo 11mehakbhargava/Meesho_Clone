@@ -13,7 +13,8 @@ import {
   updateDropshipperTicketStatusApi,
   getDropshipperOrdersApi,
   getDropshipperProfileApi,
-  isDropshipperAuthenticated
+  isDropshipperAuthenticated,
+  uploadDropshipperAssetApi
 } from '../../services/dropshipperService';
 import { 
   LifeBuoy, 
@@ -41,7 +42,8 @@ import {
   UploadCloud,
   ExternalLink,
   Eye,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,9 +102,10 @@ export default function DropshipperSupportDesk() {
   const [newPriority, setNewPriority] = useState('HIGH');
   const [newSubject, setNewSubject] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [proofImages, setProofImages] = useState([]); // array of base64 data URLs
+  const [proofImages, setProofImages] = useState([]); // array of Supabase CDN URLs
   const [unboxingLink, setUnboxingLink] = useState('');
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   // Lightbox Modal for Full Image Inspection
   const [previewModalImage, setPreviewModalImage] = useState(null);
@@ -226,27 +229,54 @@ export default function DropshipperSupportDesk() {
     }
   };
 
-  // Handle Proof Image File Selection (converts to base64 data url for preview & instant DB storage)
-  const handleProofImageUpload = (e) => {
+  // Handle Proof Image File Selection (direct upload to Supabase Storage)
+  const handleProofImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    files.forEach(file => {
+    const validFiles = [];
+    for (const file of files) {
       if (!file.type.startsWith('image/')) {
-        toast.error("Please upload an image file (PNG, JPG, JPEG).");
-        return;
+        toast.error(`"${file.name}" is not an image file (PNG, JPG, JPEG only).`);
+        continue;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB.");
-        return;
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`"${file.name}" is too large. Image size must be less than 10MB.`);
+        continue;
       }
-      const reader = new FileReader();
-      reader.onload = (loadEvent) => {
-        setProofImages(prev => [...prev, loadEvent.target.result]);
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploadingProof(true);
+    const toastId = toast.loading(`Uploading ${validFiles.length} photo(s) to Supabase Storage CDN...`);
+
+    try {
+      const uploadedUrls = [];
+      for (const file of validFiles) {
+        const res = await uploadDropshipperAssetApi({ file, folder: 'support' });
+        if (res && res.success && res.url) {
+          uploadedUrls.push(res.url);
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        setProofImages(prev => [...prev, ...uploadedUrls]);
+        toast.success(`Successfully uploaded ${uploadedUrls.length} proof photo(s) to Supabase CDN!`, { id: toastId });
+      } else {
+        toast.error("Failed to upload proof photos. Please try again.", { id: toastId });
+      }
+    } catch (err) {
+      console.error("Support proof upload error:", err);
+      toast.error(err.response?.data?.message || "Failed to upload proof photos to storage.", { id: toastId });
+    } finally {
+      setIsUploadingProof(false);
+      e.target.value = '';
+    }
   };
 
   const handleRemoveProofImage = (indexToRemove) => {
@@ -607,10 +637,10 @@ export default function DropshipperSupportDesk() {
         {/* MODAL 1: CREATE NEW TICKET DIALOG (WITH PROOF ATTACHMENT) */}
         {/* ======================================================== */}
         {isNewTicketOpen && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
               
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-pink-50 text-[#b7004d] flex items-center justify-center shrink-0">
                     <LifeBuoy className="w-5 h-5" />
@@ -629,7 +659,8 @@ export default function DropshipperSupportDesk() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateTicket} className="space-y-3.5">
+              <form onSubmit={handleCreateTicket} className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5">
                 
                 {/* Category Dropdown */}
                 <div className="space-y-1">
@@ -681,13 +712,18 @@ export default function DropshipperSupportDesk() {
                   {/* Image Upload Row & Thumbnails */}
                   <div className="mt-2.5 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-[#b7004d] rounded-xl text-xs font-semibold text-slate-700 hover:text-[#b7004d] transition shadow-2xs">
-                        <UploadCloud className="w-3.5 h-3.5 text-[#b7004d]" />
-                        <span>+ Upload Photos</span>
+                      <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-[#b7004d] rounded-xl text-xs font-semibold text-slate-700 hover:text-[#b7004d] transition shadow-2xs ${isUploadingProof ? 'opacity-60 pointer-events-none' : ''}`}>
+                        {isUploadingProof ? (
+                          <Loader2 className="w-3.5 h-3.5 text-[#b7004d] animate-spin" />
+                        ) : (
+                          <UploadCloud className="w-3.5 h-3.5 text-[#b7004d]" />
+                        )}
+                        <span>{isUploadingProof ? 'Uploading to Supabase CDN...' : '+ Upload Photos'}</span>
                         <input
                           type="file"
                           accept="image/*"
                           multiple
+                          disabled={isUploadingProof}
                           onChange={handleProofImageUpload}
                           className="hidden"
                         />
@@ -695,16 +731,28 @@ export default function DropshipperSupportDesk() {
 
                       {/* Thumbnails preview */}
                       {proofImages.map((img, idx) => (
-                        <div key={idx} className="relative group w-11 h-11 rounded-lg overflow-hidden border border-slate-300 bg-white shrink-0 shadow-2xs">
+                        <div key={idx} className="relative group w-12 h-12 rounded-lg overflow-hidden border border-slate-300 bg-white shrink-0 shadow-2xs">
                           <img src={img} alt="Proof" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveProofImage(idx)}
-                            className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold hover:bg-rose-700 cursor-pointer shadow"
-                            title="Remove Photo"
-                          >
-                            ✕
-                          </button>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
+                            <a
+                              href={img}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:text-emerald-300 p-0.5"
+                              title="Open full CDN image"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveProofImage(idx)}
+                              className="text-white hover:text-rose-400 p-0.5 cursor-pointer"
+                              title="Remove Photo"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <span className="absolute bottom-0 right-0 bg-emerald-600 text-[8px] font-bold text-white px-1 rounded-tl">CDN</span>
                         </div>
                       ))}
                     </div>
@@ -808,9 +856,10 @@ export default function DropshipperSupportDesk() {
                     required
                   />
                 </div>
+                </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                {/* Pinned Action Buttons */}
+                <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
                   <Button
                     type="button"
                     variant="outline"
@@ -821,13 +870,18 @@ export default function DropshipperSupportDesk() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmittingTicket}
+                    disabled={isSubmittingTicket || isUploadingProof}
                     className="rounded-xl bg-[#b7004d] hover:bg-[#92003d] text-white text-xs font-bold px-5 cursor-pointer flex items-center gap-1.5"
                   >
                     {isSubmittingTicket ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         <span>Saving to PostgreSQL...</span>
+                      </>
+                    ) : isUploadingProof ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Uploading Proofs...</span>
                       </>
                     ) : (
                       <>
@@ -848,11 +902,11 @@ export default function DropshipperSupportDesk() {
         {/* MODAL 2: TICKET CONVERSATION DRAWER / FULL-SCREEN MOBILE */}
         {/* ======================================================== */}
         {selectedTicket && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-white sm:rounded-3xl w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] p-4 sm:p-6 shadow-2xl flex flex-col justify-between animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 pb-24 sm:pb-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[82vh] sm:max-h-[88vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
               
               {/* Header with Mobile Back Button */}
-              <div className="flex items-start justify-between pb-3 border-b border-slate-100 shrink-0 gap-2">
+              <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-start justify-between gap-2">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <button
@@ -974,8 +1028,8 @@ export default function DropshipperSupportDesk() {
                 <div ref={chatBottomRef} />
               </div>
 
-              {/* Reply Input Bar */}
-              <div className="pt-3 border-t border-slate-100 shrink-0 space-y-2">
+              {/* Pinned Reply Input Bar */}
+              <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 bg-slate-50/95 space-y-2">
                 <div className="flex items-center gap-2">
                   <Input
                     type="text"
@@ -1012,16 +1066,16 @@ export default function DropshipperSupportDesk() {
         {previewModalImage && (
           <div 
             onClick={() => setPreviewModalImage(null)}
-            className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+            className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pb-24 sm:pb-6 animate-in fade-in"
           >
-            <div className="relative max-w-3xl max-h-[85vh] bg-white rounded-2xl overflow-hidden p-2 shadow-2xl">
+            <div className="relative max-w-3xl max-h-[82vh] sm:max-h-[85vh] bg-white rounded-2xl overflow-hidden p-2 shadow-2xl flex items-center justify-center">
               <button
                 onClick={() => setPreviewModalImage(null)}
                 className="absolute top-4 right-4 bg-black/70 hover:bg-black text-white w-8 h-8 rounded-full flex items-center justify-center cursor-pointer z-10"
               >
                 ✕
               </button>
-              <img src={previewModalImage} alt="Full Proof" className="max-h-[80vh] w-auto rounded-xl object-contain" />
+              <img src={previewModalImage} alt="Full Proof" className="max-h-[78vh] w-auto rounded-xl object-contain" />
             </div>
           </div>
         )}

@@ -541,17 +541,18 @@ model CmsPage {
   @@map("cms_pages")
 }
 
-// ── 23. FCM Devices ────────────────────────────────────────────
+// ── 23. FCM Devices (Multi-Device Web / Mobile Push Tokens) ────────
 
 model FcmDevice {
   id         String    @id @default(uuid())
   userId     String    @map("user_id")
   user       Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
   token      String    @unique
-  deviceType String?   @map("device_type")
+  deviceType String?   @default("web") @map("device_type")
   userAgent  String?   @map("user_agent")
-  lastSeen   DateTime? @map("last_seen")
+  lastSeen   DateTime? @default(now()) @map("last_seen")
   createdAt  DateTime  @default(now()) @map("created_at")
 
+  @@index([userId])
   @@map("fcm_devices")
 }

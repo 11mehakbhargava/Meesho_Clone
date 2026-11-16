@@ -6,14 +6,16 @@ import {
   signInWithPhoneNumber 
 } from 'firebase/auth';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBkNsdWIycbJ4GfJnmOZJWSVur_m38UNI4',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'meesho-clone-d1709.firebaseapp.com',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'meesho-clone-d1709',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'meesho-clone-d1709.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '108825967954995756730',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:108825967954995756730:web:abcdef',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'meesho-clone-d1709.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '312973658415',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || 'G-1XVEJNMSN0',
 };
+
+export const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 let app = null;
 let auth = null;

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import supabase from '../../config/supabaseClient.js';
 import prisma from '../../config/prisma.js';
+import { uploadFileToSupabase } from '../../services/supabaseStorage.service.js';
 
 /**
  * 1. GET DROPSHIPPER PROFILE
@@ -234,25 +234,29 @@ export const uploadDropshipperAvatar = async (req, res) => {
       return res.status(404).json({ error: "Dropshipper profile not found in database" });
     }
 
-    // Public URL path relative to static server
-    // Public URL path relative to static server or Supabase Storage
+    // Default local fallback path relative to static server
     let avatarPath = `/uploads/avatars/${req.file.filename}`;
-    if (supabase?.storage && req.file?.path) {
-      try {
+    let storageEngine = 'local';
+
+    // 1. Auto-Upload to Supabase Storage Bucket ('dropshipper-assets/avatars')
+    try {
+      if (req.file?.path && fs.existsSync(req.file.path)) {
         const fileBuffer = fs.readFileSync(req.file.path);
-        const ext = path.extname(req.file.originalname || req.file.filename || '.jpg');
-        const filename = `avatar_${firebaseUid}_${Date.now()}${ext}`;
-        const { data, error } = await supabase.storage.from('uploads').upload(filename, fileBuffer, {
-          contentType: req.file.mimetype || 'image/jpeg',
-          upsert: true
+        const uploadResult = await uploadFileToSupabase({
+          fileBuffer,
+          originalFilename: req.file.originalname || req.file.filename,
+          mimeType: req.file.mimetype || 'image/png',
+          folder: 'avatars',
+          bucket: 'dropshipper-assets'
         });
-        if (!error && data?.path) {
-          const { data: pubData } = supabase.storage.from('uploads').getPublicUrl(data.path);
-          if (pubData?.publicUrl) avatarPath = pubData.publicUrl;
+
+        if (uploadResult?.url) {
+          avatarPath = uploadResult.url;
+          storageEngine = 'supabase';
         }
-      } catch (sbErr) {
-        // Fallback to local/tmp avatarPath
       }
+    } catch (sbErr) {
+      console.warn('[AvatarUpload] Supabase auto-upload failed, using local storage fallback:', sbErr.message);
     }
 
     const updatedProfile = await prisma.profile.update({
@@ -273,8 +277,9 @@ export const uploadDropshipperAvatar = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Profile avatar uploaded successfully",
+      message: `Profile avatar uploaded successfully (${storageEngine === 'supabase' ? 'Cloud CDN' : 'Local Storage'})`,
       avatarUrl: avatarPath,
+      storage: storageEngine,
       profile: updatedProfile
     });
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../utils/firebase';
@@ -13,7 +13,8 @@ import {
   updateDropshipperOrderApi,
   cancelDropshipperOrderApi,
   deleteDropshipperOrderApi,
-  archiveDropshipperOrderApi
+  archiveDropshipperOrderApi,
+  sendOrderTrackingAlertApi
 } from '../../services/dropshipperService';
 import { getProducts } from '../../services/ecommerceService';
 import { 
@@ -27,42 +28,70 @@ import {
   AlertCircle,
   Clock,
   Truck,
-  ArrowRight,
   ShieldCheck,
   Search,
-  Filter,
   Eye,
-  FileText,
   Building2,
   Phone,
   MapPin,
-  Barcode,
-  Layers,
   Sparkles,
-  QrCode,
   Check,
-  ChevronRight,
   RefreshCw,
   Copy,
-  Plus,
-  X,
-  SlidersHorizontal,
   Edit3,
   Trash2,
   Ban,
   Archive,
   ArchiveRestore,
   MessageCircle,
-  ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  FileText
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 
+// Convert number into Indian currency words for official tax invoice
+const numberToWordsInr = (amount) => {
+  let num = Math.round(Number(amount) || 0);
+  if (num === 0) return 'Zero Rupees Only';
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const inWords = (n) => {
+    if (n < 20) return a[n];
+    const digit = n % 10;
+    return b[Math.floor(n / 10)] + (digit ? ' ' + a[digit] : '');
+  };
+
+  let str = '';
+  if (num >= 10000000) {
+    str += inWords(Math.floor(num / 10000000)) + 'Crore ';
+    num %= 10000000;
+  }
+  if (num >= 100000) {
+    str += inWords(Math.floor(num / 100000)) + 'Lakh ';
+    num %= 100000;
+  }
+  if (num >= 1000) {
+    str += inWords(Math.floor(num / 1000)) + 'Thousand ';
+    num %= 1000;
+  }
+  if (num >= 100) {
+    str += inWords(Math.floor(num / 100)) + 'Hundred ';
+    num %= 100;
+  }
+  if (num > 0) {
+    str += (str !== '' ? 'and ' : '') + inWords(num);
+  }
+  return `Rupees ${str.trim()} Only`;
+};
+
 export default function DropshipperOrdersPush() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
 
@@ -75,7 +104,9 @@ export default function DropshipperOrdersPush() {
         const parsed = JSON.parse(sessionStr);
         userUid = parsed.dropshipperId || parsed.uid || '';
       }
-    } catch (e) {}
+    } catch {
+      // ignore
+    }
   }
   const effectiveUid = userUid;
 
@@ -111,6 +142,7 @@ export default function DropshipperOrdersPush() {
   const [isCancellingOrder, setIsCancellingOrder] = useState(false);
 
   const [labelModalOrder, setLabelModalOrder] = useState(null);
+  const [invoiceModalOrder, setInvoiceModalOrder] = useState(null);
 
   // 1. Single Order Form State (Clean Slate: no pre-selected product)
   const [singleOrder, setSingleOrder] = useState({
@@ -128,6 +160,7 @@ export default function DropshipperOrdersPush() {
     productImage: '',
     qty: 1,
     wholesaleCost: 0,
+    unitPrice: 0,
     shippingFee: 60,
     courier: 'Delhivery Express Air',
     customerPrice: '',
@@ -139,7 +172,9 @@ export default function DropshipperOrdersPush() {
     try {
       const saved = localStorage.getItem('meesho_dropshipper_brand_label');
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch {
+      // ignore
+    }
     return {
       storeBrandName: currentUser?.storeName || 'Kunal Retail',
       supportPhone: currentUser?.phone || '+91 90982 96425',
@@ -154,6 +189,7 @@ export default function DropshipperOrdersPush() {
   const [bulkFileName, setBulkFileName] = useState('');
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [isDispatchingBulk, setIsDispatchingBulk] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Fetch Real Catalog Products from Database (Loaded in background for picker, but NOT pre-selected)
   const fetchLiveCatalog = async () => {
@@ -195,27 +231,93 @@ export default function DropshipperOrdersPush() {
   };
 
   useEffect(() => {
-    fetchLiveCatalog();
-    fetchOrdersFromDb();
+    const timer = setTimeout(() => {
+      fetchLiveCatalog();
+      fetchOrdersFromDb();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [effectiveUid]);
+
+  // Auto-fill Product Details when navigated from Wholesale Catalog Push
+  useEffect(() => {
+    let prefilled = location.state?.prefilledProduct;
+    if (!prefilled) {
+      try {
+        const stored = sessionStorage.getItem('meesho_prefilled_order_product');
+        if (stored) {
+          prefilled = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn('Could not read stored prefilled product:', e);
+      }
+    }
+
+    if (prefilled) {
+      const wholesale = Number(prefilled.wholesaleCost ?? prefilled.price ?? 450);
+      const customerPrice = Number(prefilled.customerPrice ?? prefilled.mrp ?? (wholesale + 300));
+      const img = prefilled.image || (Array.isArray(prefilled.images) ? prefilled.images[0] : '');
+      const sku = prefilled.sku || `SKU-${String(prefilled.id || 'ITEM').slice(0, 8).toUpperCase()}`;
+
+      const timer = setTimeout(() => {
+        setSelectedProduct({
+          id: prefilled.id,
+          title: prefilled.title || prefilled.name,
+          price: wholesale,
+          images: img ? [img] : []
+        });
+
+        setSingleOrder((prev) => {
+          const currentQty = Math.max(1, Number(prev.qty) || 1);
+          return {
+            ...prev,
+            productId: prefilled.id || '',
+            selectedSku: sku,
+            productName: prefilled.title || prefilled.name || '',
+            productImage: img,
+            wholesaleCost: wholesale,
+            unitPrice: customerPrice,
+            customerPrice: Math.round(customerPrice * currentQty)
+          };
+        });
+
+        setActiveTab('single');
+
+        toast.success(`Product auto-filled: ${prefilled.title || prefilled.name}`, {
+          description: `Wholesale: ₹${wholesale} • Selling Price: ₹${customerPrice}`
+        });
+
+        try {
+          sessionStorage.removeItem('meesho_prefilled_order_product');
+        } catch (e) {
+          console.warn('Could not clear sessionStorage:', e);
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   // Select a Catalog Item from Database
   const handleSelectCatalogItem = (prod) => {
     setSelectedProduct(prod);
     const wholesale = Number(prod.price) || 450;
-    const suggestedPrice = Math.round(wholesale * 1.35) + singleOrder.shippingFee;
-    setSingleOrder((prev) => ({
-      ...prev,
-      productId: prod.id,
-      selectedSku: `SKU-${prod.id.slice(0, 8).toUpperCase()}`,
-      productName: prod.title,
-      productImage: prod.images?.[0] || '',
-      wholesaleCost: wholesale,
-      customerPrice: suggestedPrice
-    }));
+    const suggestedUnitPrice = Math.round(wholesale * 1.35) + singleOrder.shippingFee;
+    setSingleOrder((prev) => {
+      const currentQty = Math.max(1, Number(prev.qty) || 1);
+      return {
+        ...prev,
+        productId: prod.id,
+        selectedSku: `SKU-${prod.id.slice(0, 8).toUpperCase()}`,
+        productName: prod.title,
+        productImage: prod.images?.[0] || '',
+        wholesaleCost: wholesale,
+        unitPrice: suggestedUnitPrice,
+        customerPrice: Math.round(suggestedUnitPrice * currentQty)
+      };
+    });
     setIsProductPickerOpen(false);
     toast.info(`Selected: ${prod.title}`, {
-      description: `Wholesale cost: ₹${wholesale} • Suggested Customer Price: ₹${suggestedPrice}`
+      description: `Wholesale cost: ₹${wholesale}/pc • Unit Selling Price: ₹${suggestedUnitPrice}/pc`
     });
   };
 
@@ -229,11 +331,45 @@ export default function DropshipperOrdersPush() {
     );
   }, [catalogProducts, catalogSearch]);
 
-  // Single Order Live Margins
-  const totalWholesale = singleOrder.wholesaleCost * singleOrder.qty;
-  const totalCustomerCost = Number(singleOrder.customerPrice) || 0;
+  // Single Order Live Margins & Dynamic Quantity Handlers
+  const qty = Math.max(1, Number(singleOrder.qty) || 1);
+  const unitWholesale = Number(singleOrder.wholesaleCost) || 0;
+  const totalWholesale = unitWholesale * qty;
+  const unitSellingPrice = Number(singleOrder.unitPrice) > 0
+    ? Number(singleOrder.unitPrice)
+    : (singleOrder.customerPrice && qty > 0 ? Math.round(Number(singleOrder.customerPrice) / qty) : 0);
+  const totalCustomerCost = Number(singleOrder.customerPrice) || (unitSellingPrice * qty);
   const netMargin = Math.max(0, totalCustomerCost - totalWholesale - singleOrder.shippingFee);
   const marginPercent = totalCustomerCost > 0 ? ((netMargin / totalCustomerCost) * 100).toFixed(1) : 0;
+
+  // Handle Quantity Change (recalculates total wholesale and total customer price based on unit price)
+  const handleUpdateQty = (newQty) => {
+    const validQty = Math.max(1, Math.min(100, Number(newQty) || 1));
+    setSingleOrder((prev) => {
+      const unit = Number(prev.unitPrice) > 0
+        ? Number(prev.unitPrice)
+        : (prev.customerPrice && Number(prev.qty) > 0 ? Math.round(Number(prev.customerPrice) / Number(prev.qty)) : 0);
+      return {
+        ...prev,
+        qty: validQty,
+        unitPrice: unit,
+        customerPrice: unit > 0 ? Math.round(unit * validQty) : prev.customerPrice
+      };
+    });
+  };
+
+  // Handle Unit Selling Price Change
+  const handleUpdateUnitPrice = (newUnitPrice) => {
+    const unit = Number(newUnitPrice) || 0;
+    setSingleOrder((prev) => {
+      const currentQty = Math.max(1, Number(prev.qty) || 1);
+      return {
+        ...prev,
+        unitPrice: unit,
+        customerPrice: unit > 0 ? Math.round(unit * currentQty) : ''
+      };
+    });
+  };
 
   // Submit Single Order to Database
   const handlePushSingleOrder = async (e) => {
@@ -251,7 +387,7 @@ export default function DropshipperOrdersPush() {
       toast.error("Please enter a valid 6-digit Indian PIN code!");
       return;
     }
-    if (!singleOrder.customerPrice || Number(singleOrder.customerPrice) < totalWholesale + singleOrder.shippingFee) {
+    if (!totalCustomerCost || totalCustomerCost < totalWholesale + singleOrder.shippingFee) {
       toast.error("Customer selling price cannot be lower than Wholesale Cost + Shipping!");
       return;
     }
@@ -278,7 +414,8 @@ export default function DropshipperOrdersPush() {
         productName: singleOrder.productName,
         quantity: Number(singleOrder.qty),
         wholesaleCost: singleOrder.wholesaleCost,
-        customerPrice: Number(singleOrder.customerPrice),
+        baseWholesaleCost: singleOrder.wholesaleCost,
+        customerPrice: totalCustomerCost,
         shippingFee: singleOrder.shippingFee,
         courier: singleOrder.courier || 'Delhivery Express Air',
         paymentMode: singleOrder.paymentMode,
@@ -542,6 +679,88 @@ export default function DropshipperOrdersPush() {
     }, 350);
   };
 
+  // Isolated A4 Customer Tax Invoice Printing
+  const handlePrintTaxInvoice = (elementId) => {
+    const invoiceEl = document.getElementById(elementId);
+    if (!invoiceEl) {
+      toast.error("Invoice element not found for printing.");
+      return;
+    }
+
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(tag => tag.outerHTML)
+      .join('\n');
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Customer_Tax_Invoice_${invoiceModalOrder?.id || 'Order'}</title>
+          <meta charset="utf-8" />
+          ${styleTags}
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 8mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box !important;
+            }
+            html, body {
+              background: #ffffff !important;
+              color: #111827 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              width: 100% !important;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            }
+            .print-invoice-wrapper {
+              max-width: 800px !important;
+              margin: 0 auto !important;
+              background: #ffffff !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-invoice-wrapper">
+            ${invoiceEl.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (err) {
+        console.error("Iframe printing failed, falling back to window.print:", err);
+        window.print();
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 2000);
+      }
+    }, 350);
+  };
+
   // Download Sample CSV Template
   const handleDownloadCsvTemplate = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
@@ -563,58 +782,223 @@ export default function DropshipperOrdersPush() {
     toast.success("Standard Bulk Order CSV Template downloaded!");
   };
 
-  // File Upload parser for Bulk CSV
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBulkFileName(file.name);
+  // RFC-4180 Compliant CSV string to 2D array parser (supports commas in quotes)
+  const parseCsvText = (csvString) => {
+    const rows = [];
+    let currentRow = [];
+    let currentVal = '';
+    let insideQuote = false;
+
+    for (let i = 0; i < csvString.length; i++) {
+      const char = csvString[i];
+      const nextChar = csvString[i + 1];
+
+      if (char === '"') {
+        if (insideQuote && nextChar === '"') {
+          currentVal += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (char === ',' && !insideQuote) {
+        currentRow.push(currentVal.trim());
+        currentVal = '';
+      } else if ((char === '\r' || char === '\n') && !insideQuote) {
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
+        currentRow.push(currentVal.trim());
+        if (currentRow.some(c => c.length > 0)) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentVal = '';
+      } else {
+        currentVal += char;
+      }
+    }
+
+    if (currentVal || currentRow.length > 0) {
+      currentRow.push(currentVal.trim());
+      if (currentRow.some(c => c.length > 0)) {
+        rows.push(currentRow);
+      }
+    }
+
+    return rows;
+  };
+
+  // Industrial Standard CSV/Excel Processor with Flexible Column Mapping & Auto Product Matching
+  const processUploadedCsvText = (csvText, fileName) => {
+    setBulkFileName(fileName || 'orders_batch.csv');
     setIsProcessingBulk(true);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result;
-      const lines = text.split('\n').filter(l => l.trim().length > 0);
-      if (lines.length <= 1) {
+    try {
+      const rawRows = parseCsvText(csvText);
+      if (rawRows.length <= 1) {
         toast.error("CSV file is empty or missing data rows!");
         setIsProcessingBulk(false);
         return;
       }
 
-      const rows = [];
-      for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].split(',').map(p => p.trim());
-        if (parts.length >= 6) {
-          const wholesale = Number(parts[9]) || 500;
-          const selling = Number(parts[10]) || 999;
-          const qty = Number(parts[8]) || 1;
-          const margin = Math.max(0, selling - (wholesale * qty) - 60);
-          const pin = parts[5] || '400001';
-          const valid = pin.length === 6 && selling > wholesale;
+      // Read header row and determine column index mappings
+      const headers = rawRows[0].map(h => (h || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+      
+      const findCol = (regex, fallbackIdx) => {
+        const found = headers.findIndex(h => regex.test(h));
+        return found !== -1 ? found : fallbackIdx;
+      };
 
-          rows.push({
-            id: i,
-            name: parts[0] || `Customer ${i}`,
-            phone: parts[1] || '9800000000',
-            address: parts[2] || 'Customer Address',
-            city: parts[3] || 'City',
-            state: parts[4] || 'India',
-            pin,
-            product: parts[7] || parts[6] || 'Catalog Product',
-            sku: parts[6] || `SKU-BULK-${i}`,
-            qty,
-            wholesale: wholesale * qty,
-            selling,
-            margin,
-            mode: (parts[11] || 'COD').toUpperCase(),
-            valid
-          });
+      const nameIdx = findCol(/name|customer|billing/i, 0);
+      const phoneIdx = findCol(/phone|mobile|contact|tel/i, 1);
+      const addrIdx = findCol(/address|street|addr/i, 2);
+      const cityIdx = findCol(/city/i, 3);
+      const stateIdx = findCol(/state|province/i, 4);
+      const pinIdx = findCol(/pin|zip|postal/i, 5);
+      const skuIdx = findCol(/sku|itemid|code/i, 6);
+      const prodIdx = findCol(/product|title|itemname/i, 7);
+      const qtyIdx = findCol(/qty|quantity|count/i, 8);
+      const wholesaleIdx = findCol(/wholesale|cost|suppliercost/i, 9);
+      const priceIdx = findCol(/price|selling|total|customerprice/i, 10);
+      const modeIdx = findCol(/mode|payment|cod/i, 11);
+
+      const parsedRows = [];
+
+      for (let i = 1; i < rawRows.length; i++) {
+        const parts = rawRows[i];
+        if (!parts || parts.length < 3 || parts.every(p => !p)) continue;
+
+        const custName = parts[nameIdx] || `Customer ${i}`;
+        const rawPhone = parts[phoneIdx] || '';
+        const cleanPhone = rawPhone.replace(/\D/g, '');
+        const addr = parts[addrIdx] || '';
+        const city = parts[cityIdx] || 'City';
+        const state = parts[stateIdx] || 'India';
+        const rawPin = parts[pinIdx] || '';
+        const cleanPin = rawPin.replace(/\D/g, '');
+        const sku = parts[skuIdx] || `SKU-BULK-${i}`;
+        let prodName = parts[prodIdx] || parts[skuIdx] || 'Catalog Product';
+        const qty = Math.max(1, Number(parts[qtyIdx]) || 1);
+
+        // Try to match with catalog products
+        const matchedProd = catalogProducts.find(cp => 
+          (sku && cp.sku && cp.sku.toLowerCase() === sku.toLowerCase()) ||
+          (cp.title && (cp.title.toLowerCase().includes(prodName.toLowerCase()) || prodName.toLowerCase().includes(cp.title.toLowerCase())))
+        );
+
+        if (matchedProd) {
+          prodName = matchedProd.title;
         }
+
+        const baseWholesale = Number(parts[wholesaleIdx]) || (matchedProd ? Number(matchedProd.price) : 500);
+        const selling = Number(parts[priceIdx]) || (baseWholesale + 300);
+
+        const totalWholesale = baseWholesale * qty;
+        const shipping = 60;
+        const margin = Math.max(0, selling - totalWholesale - shipping);
+
+        // Validation Rules
+        let errorMsg = null;
+        if (!custName.trim()) errorMsg = 'Missing Name';
+        else if (cleanPhone.length < 10) errorMsg = 'Invalid Phone';
+        else if (!addr.trim()) errorMsg = 'Missing Address';
+        else if (cleanPin.length !== 6) errorMsg = 'Invalid PIN (6 digits)';
+        else if (selling <= totalWholesale) errorMsg = 'Selling ≤ Cost';
+
+        parsedRows.push({
+          id: i,
+          name: custName,
+          phone: cleanPhone || rawPhone,
+          address: addr,
+          city,
+          state,
+          pin: cleanPin || rawPin,
+          product: prodName,
+          sku,
+          qty,
+          baseWholesale,
+          wholesale: totalWholesale,
+          selling,
+          margin,
+          mode: (parts[modeIdx] || 'COD').toUpperCase(),
+          valid: !errorMsg,
+          errorMsg
+        });
       }
-      setBulkRows(rows);
+
+      setBulkRows(parsedRows);
       setIsProcessingBulk(false);
-      toast.success(`Parsed ${rows.length} rows from CSV! Review and dispatch below.`);
+      toast.success(`Successfully parsed ${parsedRows.length} orders from CSV!`, {
+        description: `${parsedRows.filter(r => r.valid).length} valid and ready for 1-click dispatch.`
+      });
+    } catch (parseErr) {
+      console.error("CSV Parse Error:", parseErr);
+      toast.error("Failed to parse CSV file. Please verify file format.");
+      setIsProcessingBulk(false);
+    }
+  };
+
+  // File Upload parser for Bulk CSV
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      processUploadedCsvText(text, file.name);
     };
     reader.readAsText(file);
+  };
+
+  // Delete a Row from Staging Table
+  const handleDeleteBulkRow = (index) => {
+    setBulkRows(prev => prev.filter((_, idx) => idx !== index));
+    toast.info("Row removed from batch staging.");
+  };
+
+  // WhatsApp & SMS Courier Tracking Notification Generator
+  const [isSendingAlert, setIsSendingAlert] = useState(false);
+
+  const handleSendTrackingWhatsApp = async (order) => {
+    setIsSendingAlert(true);
+    try {
+      const res = await sendOrderTrackingAlertApi(order.id, {
+        channel: 'WHATSAPP',
+        storeBrandName: brandSettings.storeBrandName
+      });
+
+      if (res?.success) {
+        toast.success(`WhatsApp Tracking Alert ready for ${res.customerName}!`, {
+          description: `Dispatched via ${res.courier} (AWB: ${res.awb})`
+        });
+
+        // Update local order tracking info
+        setOrders(prev => prev.map(o => o.id === order.id ? {
+          ...o,
+          lastTrackingAlertSentAt: res.sentAt
+        } : o));
+
+        if (viewModalOrder && viewModalOrder.id === order.id) {
+          setViewModalOrder(prev => ({
+            ...prev,
+            lastTrackingAlertSentAt: res.sentAt
+          }));
+        }
+
+        window.open(res.whatsappWebUrl, '_blank');
+      }
+    } catch (err) {
+      console.error("Tracking alert error:", err);
+      // Fallback direct WhatsApp URL
+      const phone = order.customerPhone || (order.shippingAddress && order.shippingAddress.phone) || '';
+      const cleanPhone = phone.replace(/\D/g, '');
+      const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const awb = order.awb || `DEL-${order.id.slice(0, 8).toUpperCase()}`;
+      const msg = `Hello! Your order #${order.id.slice(0, 8)} from ${brandSettings.storeBrandName} is confirmed & dispatched via Delhivery (AWB: ${awb}). Track live: https://track.mshoppy.in/awb/${awb}`;
+      window.open(`https://api.whatsapp.com/send?phone=${intlPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    } finally {
+      setIsSendingAlert(false);
+    }
   };
 
   // Dispatch All Bulk Orders to Database
@@ -662,7 +1046,7 @@ export default function DropshipperOrdersPush() {
       toast.success("Brand Label & Packaging settings saved!", {
         description: "All upcoming shipping labels and invoices will use this branding."
       });
-    } catch (e) {
+    } catch {
       toast.error("Failed to save settings.");
     }
   };
@@ -690,7 +1074,7 @@ export default function DropshipperOrdersPush() {
       localStorage.removeItem('meesho_dropshipper_session');
       toast.success("Successfully logged out from Dropshipper Portal!");
       navigate('/dropshipper-login');
-    } catch (e) {
+    } catch {
       localStorage.removeItem('meesho_dropshipper_session');
       navigate('/dropshipper-login');
     }
@@ -991,6 +1375,21 @@ export default function DropshipperOrdersPush() {
                   </p>
                 </div>
               </div>
+
+              {/* RTO Safety Cushion Policy Note */}
+              <div className="p-3 rounded-2xl bg-purple-50/60 border border-purple-100 flex items-center justify-between text-xs text-purple-900">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🛡️</span>
+                  <span><strong>Zero Friction Order Push:</strong> No upfront deposit needed to dispatch. Earnings auto-accumulate into your ₹5,000 RTO reserve.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dropshipper-settlement-tracking')}
+                  className="text-purple-700 hover:text-purple-900 font-bold underline text-[11px] shrink-0 ml-2 cursor-pointer"
+                >
+                  View Reserve
+                </button>
+              </div>
             </div>
 
             {/* Right 5 Columns: Product Selection, Pricing & Live Margin */}
@@ -1079,7 +1478,7 @@ export default function DropshipperOrdersPush() {
                     <div className="flex items-center mt-1">
                       <button
                         type="button"
-                        onClick={() => setSingleOrder(prev => ({ ...prev, qty: Math.max(1, Number(prev.qty || 1) - 1) }))}
+                        onClick={() => handleUpdateQty(Number(singleOrder.qty || 1) - 1)}
                         className="w-9 h-9 rounded-l-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center font-bold text-slate-700 cursor-pointer select-none transition"
                         title="Decrease quantity"
                       >
@@ -1090,12 +1489,12 @@ export default function DropshipperOrdersPush() {
                         min={1}
                         max={100}
                         value={singleOrder.qty}
-                        onChange={(e) => setSingleOrder(prev => ({ ...prev, qty: Math.max(1, Number(e.target.value) || 1) }))}
+                        onChange={(e) => handleUpdateQty(e.target.value)}
                         className="h-9 w-full min-w-0 border-y border-x-0 border-slate-200 text-center text-xs sm:text-sm font-black text-slate-900 focus:outline-none bg-white"
                       />
                       <button
                         type="button"
-                        onClick={() => setSingleOrder(prev => ({ ...prev, qty: Math.min(100, Number(prev.qty || 1) + 1) }))}
+                        onClick={() => handleUpdateQty(Number(singleOrder.qty || 1) + 1)}
                         className="w-9 h-9 rounded-r-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center font-bold text-slate-700 cursor-pointer select-none transition"
                         title="Increase quantity"
                       >
@@ -1126,12 +1525,14 @@ export default function DropshipperOrdersPush() {
                   </div>
                 </div>
 
-                {/* Selling Price Input */}
+                {/* Selling Price Input (Auto-multiplies with Quantity) */}
                 <div>
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-slate-700">Customer Selling Price (₹) *</Label>
-                    <span className="text-[11px] text-slate-500">
-                      {selectedProduct ? `Base Cost: ₹${totalWholesale}` : 'Select product first'}
+                    <Label className="text-xs font-semibold text-slate-700">
+                      Customer Selling Price {Number(singleOrder.qty) > 1 ? '(Per Piece)' : ''} (₹) *
+                    </Label>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      {selectedProduct ? `Base: ₹${singleOrder.wholesaleCost}/pc` : 'Select product first'}
                     </span>
                   </div>
                   <div className="relative mt-1">
@@ -1140,13 +1541,23 @@ export default function DropshipperOrdersPush() {
                       required
                       type="number"
                       disabled={!selectedProduct}
-                      placeholder={selectedProduct ? `Min ₹${totalWholesale + singleOrder.shippingFee}` : 'Select a product above first'}
-                      min={selectedProduct ? totalWholesale + singleOrder.shippingFee : 0}
-                      value={singleOrder.customerPrice}
-                      onChange={(e) => setSingleOrder({ ...singleOrder, customerPrice: Number(e.target.value) })}
+                      placeholder={selectedProduct ? `Min ₹${(singleOrder.wholesaleCost || 0) + 1}/pc` : 'Select a product above first'}
+                      min={selectedProduct ? (singleOrder.wholesaleCost || 0) + 1 : 0}
+                      value={singleOrder.unitPrice || (singleOrder.qty > 0 && singleOrder.customerPrice ? Math.round(singleOrder.customerPrice / singleOrder.qty) : '')}
+                      onChange={(e) => handleUpdateUnitPrice(e.target.value)}
                       className="pl-8 rounded-xl border-slate-200 focus:border-[#b7004d] font-black text-sm sm:text-base text-slate-900 disabled:opacity-50"
                     />
                   </div>
+                  {Number(singleOrder.qty) > 1 && (
+                    <div className="mt-1.5 p-2 rounded-xl bg-purple-50/80 border border-purple-200/80 flex items-center justify-between text-xs">
+                      <span className="text-purple-800 font-medium">
+                        Total Invoiced to Customer ({singleOrder.qty} pcs):
+                      </span>
+                      <span className="font-black text-purple-900 text-sm">
+                        ₹{totalCustomerCost.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Payment Mode Selector */}
@@ -1168,7 +1579,7 @@ export default function DropshipperOrdersPush() {
                         {singleOrder.paymentMode === 'COD' && <Check className="w-3.5 h-3.5 text-[#b7004d]" />}
                       </div>
                       <p className="text-[10px] text-slate-500 mt-0.5">
-                        {singleOrder.customerPrice ? `Collect ₹${singleOrder.customerPrice}` : 'Cash on courier delivery'}
+                        {totalCustomerCost > 0 ? `Collect ₹${totalCustomerCost.toLocaleString('en-IN')}` : 'Cash on courier delivery'}
                       </p>
                     </button>
 
@@ -1192,16 +1603,17 @@ export default function DropshipperOrdersPush() {
                 </div>
 
                 {/* Live Margin Calculation Card */}
-                {selectedProduct && singleOrder.customerPrice > 0 ? (
+                {selectedProduct && totalCustomerCost > 0 ? (
                   <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 border border-emerald-200/80 space-y-2">
                     <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Customer Invoiced Total:</span>
-                      <span className="font-semibold text-slate-900">₹{totalCustomerCost}</span>
+                      <span>Customer Invoiced Total ({singleOrder.qty}x):</span>
+                      <span className="font-semibold text-slate-900">₹{totalCustomerCost.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-600">
                       <span>Supplier Wholesale Cost ({singleOrder.qty}x):</span>
-                      <span className="font-semibold text-rose-600">-₹{totalWholesale}</span>
+                      <span className="font-semibold text-rose-600">-₹{totalWholesale.toLocaleString('en-IN')}</span>
                     </div>
+
                     <div className="flex items-center justify-between text-xs text-slate-600">
                       <span>Packaging & Courier Fee:</span>
                       <span className="font-semibold text-rose-600">-₹{singleOrder.shippingFee}</span>
@@ -1263,18 +1675,36 @@ export default function DropshipperOrdersPush() {
               </Button>
             </div>
 
-            {/* Upload Drop Zone */}
-            <div className="border-2 border-dashed border-pink-200 hover:border-[#b7004d] rounded-2xl sm:rounded-3xl p-6 sm:p-10 text-center transition bg-pink-50/20">
+            {/* Upload Drop Zone with Native Drag & Drop */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => processUploadedCsvText(ev.target?.result, file.name);
+                  reader.readAsText(file);
+                }
+              }}
+              className={`border-2 border-dashed rounded-2xl sm:rounded-3xl p-6 sm:p-10 text-center transition ${
+                isDragging
+                  ? 'border-[#b7004d] bg-pink-100/60 scale-[1.01]'
+                  : 'border-pink-200 hover:border-[#b7004d] bg-pink-50/20'
+              }`}
+            >
               <div className="mx-auto w-12 h-12 rounded-2xl bg-pink-100 flex items-center justify-center text-[#b7004d] mb-2.5">
-                <UploadCloud className="w-6 h-6" />
+                {isProcessingBulk ? <Loader2 className="w-6 h-6 animate-spin" /> : <UploadCloud className="w-6 h-6" />}
               </div>
               <h4 className="text-sm font-bold text-slate-900">
-                {bulkFileName ? bulkFileName : "Drag and drop your Orders CSV file here"}
+                {bulkFileName ? bulkFileName : "Drag & Drop Orders CSV File Here"}
               </h4>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Files formatted with Customer Name, Phone, Address, City, State, Pincode, Product SKU, Wholesale Cost, and Customer Selling Price are supported.
+                Directly upload exported CSV/Excel from Shopify, Amazon, WooCommerce, or your CRM.
               </p>
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-center gap-3">
                 <label className="inline-flex items-center gap-2 bg-[#b7004d] hover:bg-[#92003d] text-white text-xs font-bold py-2.5 px-5 rounded-xl cursor-pointer shadow-sm transition">
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>Browse CSV File</span>
@@ -1293,19 +1723,29 @@ export default function DropshipperOrdersPush() {
               <div className="space-y-4 pt-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
                   <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-700">
-                    <span>Parsed: <strong className="text-slate-900">{bulkRows.length}</strong></span>
-                    <span>Valid: <strong className="text-emerald-700">{bulkRows.filter(r => r.valid).length}</strong></span>
-                    <span>Batch Margin: <strong className="text-[#b7004d]">₹{bulkRows.reduce((acc, r) => acc + r.margin, 0).toLocaleString('en-IN')}</strong></span>
+                    <span>Parsed Orders: <strong className="text-slate-900">{bulkRows.length}</strong></span>
+                    <span>Valid Ready: <strong className="text-emerald-700">{bulkRows.filter(r => r.valid).length}</strong></span>
+                    <span>Batch Net Margin: <strong className="text-[#b7004d]">₹{bulkRows.reduce((acc, r) => acc + r.margin, 0).toLocaleString('en-IN')}</strong></span>
                   </div>
 
-                  <Button
-                    onClick={handleDispatchBulkOrders}
-                    disabled={isDispatchingBulk}
-                    className="bg-[#b7004d] hover:bg-[#92003d] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{isDispatchingBulk ? 'Dispatching...' : `Dispatch Valid Orders (${bulkRows.filter(r => r.valid).length})`}</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBulkRows([])}
+                      className="border-slate-200 text-xs text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                    >
+                      Clear Batch
+                    </Button>
+                    <Button
+                      onClick={handleDispatchBulkOrders}
+                      disabled={isDispatchingBulk || bulkRows.filter(r => r.valid).length === 0}
+                      className="bg-[#b7004d] hover:bg-[#92003d] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{isDispatchingBulk ? 'Dispatching Batch...' : `Dispatch Valid Orders (${bulkRows.filter(r => r.valid).length})`}</span>
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto rounded-2xl border border-slate-200">
@@ -1315,12 +1755,13 @@ export default function DropshipperOrdersPush() {
                         <th className="py-2.5 px-3">#</th>
                         <th className="py-2.5 px-3">Customer</th>
                         <th className="py-2.5 px-3">Phone & City</th>
-                        <th className="py-2.5 px-3">Product Name</th>
+                        <th className="py-2.5 px-3">Product Name & SKU</th>
                         <th className="py-2.5 px-3 text-right">Wholesale</th>
-                        <th className="py-2.5 px-3 text-right">Selling</th>
-                        <th className="py-2.5 px-3 text-right">Margin</th>
-                        <th className="py-2.5 px-3">Mode</th>
+                        <th className="py-2.5 px-3 text-right">Selling Price</th>
+                        <th className="py-2.5 px-3 text-right">Net Margin</th>
+                        <th className="py-2.5 px-3">Payment</th>
                         <th className="py-2.5 px-3">Validation</th>
+                        <th className="py-2.5 px-3 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -1329,11 +1770,16 @@ export default function DropshipperOrdersPush() {
                           <td className="py-2.5 px-3 font-mono text-slate-400">{index + 1}</td>
                           <td className="py-2.5 px-3 font-semibold text-slate-900">{r.name}</td>
                           <td className="py-2.5 px-3">
-                            <div>{r.phone}</div>
+                            <div className="font-mono text-[11px]">{r.phone}</div>
                             <span className="text-[10px] text-slate-400">{r.city} ({r.pin})</span>
                           </td>
-                          <td className="py-2.5 px-3 max-w-xs truncate font-medium text-slate-800">{r.product}</td>
-                          <td className="py-2.5 px-3 text-right font-medium">₹{r.wholesale}</td>
+                          <td className="py-2.5 px-3 max-w-xs truncate font-medium text-slate-800">
+                            <div>{r.product}</div>
+                            <span className="text-[10px] text-slate-400 font-mono">Qty: {r.qty} • {r.sku}</span>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-medium">
+                            <div>₹{r.wholesale}</div>
+                          </td>
                           <td className="py-2.5 px-3 text-right font-bold text-slate-900">₹{r.selling}</td>
                           <td className="py-2.5 px-3 text-right font-bold text-emerald-700">+₹{r.margin}</td>
                           <td className="py-2.5 px-3">
@@ -1345,16 +1791,26 @@ export default function DropshipperOrdersPush() {
                           </td>
                           <td className="py-2.5 px-3">
                             {r.valid ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                                 Ready
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700">
-                                <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                                Invalid PIN
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                                {r.errorMsg || 'Invalid'}
                               </span>
                             )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBulkRow(index)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                              title="Delete row from batch"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1431,6 +1887,22 @@ export default function DropshipperOrdersPush() {
                   onChange={(e) => setBrandSettings({ ...brandSettings, showQrCode: e.target.checked })}
                   className="h-4 w-4 rounded text-[#b7004d] accent-[#b7004d]"
                 />
+              </div>
+
+              {/* Automated WhatsApp Tracking Alert Configuration */}
+              <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-emerald-950">Auto WhatsApp Courier Tracking</span>
+                  </div>
+                  <span className="text-[10px] font-black bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
+                    Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-800 leading-relaxed">
+                  When supplier parcels are manifested and AWBs are issued, automated tracking links are generated using your brand name <strong>{brandSettings.storeBrandName}</strong>.
+                </p>
               </div>
 
               <Button
@@ -1773,6 +2245,18 @@ export default function DropshipperOrdersPush() {
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
+                            {/* WhatsApp Tracking Notification Button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendTrackingWhatsApp(order)}
+                              disabled={isSendingAlert}
+                              className="text-emerald-700 hover:bg-emerald-50 text-xs font-semibold h-7 px-2 rounded-lg cursor-pointer"
+                              title="Send WhatsApp Courier Tracking Alert to Customer"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            </Button>
+
                             {/* View Button */}
                             <Button
                               variant="ghost"
@@ -1806,6 +2290,17 @@ export default function DropshipperOrdersPush() {
                               title="Print Thermal Shipping Label"
                             >
                               <Printer className="w-3.5 h-3.5" />
+                            </Button>
+
+                            {/* Customer Tax Invoice Button */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setInvoiceModalOrder(order)}
+                              className="text-indigo-600 hover:bg-indigo-50 text-xs font-semibold h-7 px-2 rounded-lg cursor-pointer"
+                              title="Print White-Label Customer Tax Invoice"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
                             </Button>
 
                             {/* Cancel Button */}
@@ -1928,7 +2423,7 @@ export default function DropshipperOrdersPush() {
                         <span>View Details</span>
                       </Button>
 
-                      {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' ? (
+                      {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                         <Button
                           onClick={() => handleOpenEditModal(order)}
                           variant="outline"
@@ -1937,17 +2432,40 @@ export default function DropshipperOrdersPush() {
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Edit Address</span>
                         </Button>
-                      ) : (
-                        <Button
-                          onClick={() => setLabelModalOrder(order)}
-                          variant="outline"
-                          className="text-xs font-bold text-[#b7004d] border-pink-200 hover:bg-pink-50 rounded-xl py-1.5 flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Thermal Label</span>
-                        </Button>
                       )}
                     </div>
+
+                    {/* Secondary Action Row: Thermal Label & Tax Invoice */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => setLabelModalOrder(order)}
+                        variant="outline"
+                        className="text-xs font-bold text-[#b7004d] border-pink-200 hover:bg-pink-50 rounded-xl py-1.5 flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Thermal Label</span>
+                      </Button>
+
+                      <Button
+                        onClick={() => setInvoiceModalOrder(order)}
+                        variant="outline"
+                        className="text-xs font-bold text-indigo-700 border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 rounded-xl py-1.5 flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Tax Invoice</span>
+                      </Button>
+                    </div>
+
+                    {/* WhatsApp Tracking Notification Button */}
+                    <Button
+                      onClick={() => handleSendTrackingWhatsApp(order)}
+                      disabled={isSendingAlert}
+                      variant="outline"
+                      className="w-full text-xs font-bold text-emerald-800 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-xl py-1.5 flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Send WhatsApp Courier Tracking</span>
+                    </Button>
 
                     {/* Secondary Row for Cancelled / Delivered: Archive or Restore */}
                     {(order.status === 'CANCELLED' || order.status === 'DELIVERED') && (
@@ -1981,11 +2499,11 @@ export default function DropshipperOrdersPush() {
 
       {/* MODAL 1: VIEW FULL ORDER DETAILS & 5-STAGE JOURNEY */}
       {viewModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto space-y-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-slate-900 text-sm sm:text-base font-mono">
@@ -2011,6 +2529,9 @@ export default function DropshipperOrdersPush() {
                 ✕
               </button>
             </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
 
             {/* Customer Contact & Delivery Info */}
             <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 space-y-2">
@@ -2113,8 +2634,41 @@ export default function DropshipperOrdersPush() {
               </div>
             </div>
 
-            {/* Action Footer */}
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            {/* Customer Tracking & WhatsApp Communication Box */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50/50 border border-emerald-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Customer Courier Tracking Alert (WhatsApp)</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  Branded as: {brandSettings.storeBrandName}
+                </span>
+              </div>
+              
+              <div className="text-[11px] text-slate-600 bg-white/80 p-2.5 rounded-xl border border-emerald-100 font-mono">
+                "Hello {viewModalOrder.customerName}! 📦 Great news: Your order for {viewModalOrder.productName} from {brandSettings.storeBrandName} is confirmed & dispatched via {viewModalOrder.courier} (AWB: {viewModalOrder.awb}). Track live: https://track.mshoppy.in/awb/{viewModalOrder.awb}"
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500">
+                  Customer Phone: <strong className="text-slate-800 font-mono">{viewModalOrder.customerPhone}</strong>
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => handleSendTrackingWhatsApp(viewModalOrder)}
+                  disabled={isSendingAlert}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl px-3 py-1.5 cursor-pointer shadow-xs flex items-center gap-1.5"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Send WhatsApp Alert</span>
+                </Button>
+              </div>
+            </div>
+            </div>
+
+            {/* Pinned Action Footer */}
+            <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
               {viewModalOrder.status !== 'CANCELLED' && viewModalOrder.status !== 'DELIVERED' && (
                 <>
                   <Button
@@ -2165,6 +2719,28 @@ export default function DropshipperOrdersPush() {
                 </Button>
               )}
 
+              {(viewModalOrder.status === 'CANCELLED' || viewModalOrder.status === 'DELIVERED') && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleDeleteOrder(viewModalOrder)}
+                  className="text-xs font-semibold rounded-xl text-rose-600 hover:bg-rose-50 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  <span>Delete</span>
+                </Button>
+              )}
+
+              <Button
+                onClick={() => {
+                  setInvoiceModalOrder(viewModalOrder);
+                  setViewModalOrder(null);
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Tax Invoice</span>
+              </Button>
+
               <Button
                 onClick={() => {
                   setLabelModalOrder(viewModalOrder);
@@ -2183,10 +2759,10 @@ export default function DropshipperOrdersPush() {
 
       {/* MODAL 2: EDIT ORDER DETAILS */}
       {editModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto space-y-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
             
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
                   <Edit3 className="w-4 h-4 text-blue-600" />
@@ -2202,7 +2778,8 @@ export default function DropshipperOrdersPush() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveOrderEdit} className="space-y-3">
+            <form onSubmit={handleSaveOrderEdit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs font-semibold text-slate-700">Customer Name *</Label>
@@ -2285,8 +2862,10 @@ export default function DropshipperOrdersPush() {
                   />
                 </div>
               </div>
+              </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -2311,39 +2890,42 @@ export default function DropshipperOrdersPush() {
 
       {/* MODAL 3: CANCEL ORDER CONFIRMATION */}
       {cancelModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 space-y-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
             
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5" />
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                    Cancel Order #{cancelModalOrder.id}?
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Cancelling will halt supplier packaging and release the <strong>+₹{cancelModalOrder.margin}</strong> margin lock from your Escrow balance.
+                  </p>
+                </div>
               </div>
+
               <div>
-                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
-                  Cancel Order #{cancelModalOrder.id}?
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Cancelling will halt supplier packaging and release the <strong>+₹{cancelModalOrder.margin}</strong> margin lock from your Escrow balance.
-                </p>
+                <Label className="text-xs font-semibold text-slate-700">Cancellation Reason *</Label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800 focus:border-rose-500 focus:outline-none"
+                >
+                  <option value="Customer requested cancellation via WhatsApp">Customer requested cancellation via WhatsApp</option>
+                  <option value="Customer refused delivery or uncontactable">Customer refused delivery or uncontactable</option>
+                  <option value="Wrong delivery address provided">Wrong delivery address provided</option>
+                  <option value="Duplicate order created by mistake">Duplicate order created by mistake</option>
+                  <option value="Testing / Trial order cancellation">Testing / Trial order cancellation</option>
+                </select>
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-semibold text-slate-700">Cancellation Reason *</Label>
-              <select
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-800 focus:border-rose-500 focus:outline-none"
-              >
-                <option value="Customer requested cancellation via WhatsApp">Customer requested cancellation via WhatsApp</option>
-                <option value="Customer refused delivery or uncontactable">Customer refused delivery or uncontactable</option>
-                <option value="Wrong delivery address provided">Wrong delivery address provided</option>
-                <option value="Duplicate order created by mistake">Duplicate order created by mistake</option>
-                <option value="Testing / Trial order cancellation">Testing / Trial order cancellation</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            {/* Pinned Footer */}
+            <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCancelModalOrder(null)}
@@ -2366,8 +2948,8 @@ export default function DropshipperOrdersPush() {
 
       {/* MODAL 4: PRODUCT CATALOG PICKER MODAL */}
       {isProductPickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3 shrink-0">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
@@ -2397,7 +2979,12 @@ export default function DropshipperOrdersPush() {
 
             {/* Products List (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
-              {filteredCatalogProducts.length === 0 ? (
+              {isCatalogLoading ? (
+                <div className="py-8 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-[#b7004d]" />
+                  <span>Loading Wholesale Catalog...</span>
+                </div>
+              ) : filteredCatalogProducts.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
                   No matching products found in database catalog.
                 </div>
@@ -2439,9 +3026,9 @@ export default function DropshipperOrdersPush() {
 
       {/* MODAL 5: ORDER WHITE-LABEL THERMAL SHIPPING LABEL PREVIEW */}
       {labelModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
                   <Printer className="w-4 h-4 text-[#b7004d]" />
@@ -2457,11 +3044,13 @@ export default function DropshipperOrdersPush() {
               </button>
             </div>
 
-            {/* Thermal Label Preview Card */}
-            <div 
-              id="thermal-label-modal"
-              className="border-2 border-dashed border-slate-400 p-4 bg-white text-black font-mono shadow-sm rounded-lg text-xs space-y-3"
-            >
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {/* Thermal Label Preview Card */}
+              <div 
+                id="thermal-label-modal"
+                className="border-2 border-dashed border-slate-400 p-4 bg-white text-black font-mono shadow-sm rounded-lg text-xs space-y-3"
+              >
               <div className="flex items-center justify-between border-b-2 border-black pb-2">
                 <div>
                   <span className="text-sm font-black tracking-wider">{labelModalOrder.courier || 'DELHIVERY AIR'}</span>
@@ -2526,8 +3115,10 @@ export default function DropshipperOrdersPush() {
                 </div>
               </div>
             </div>
+            </div>
 
-            <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            {/* Pinned Footer */}
+            <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setLabelModalOrder(null)}
@@ -2546,6 +3137,292 @@ export default function DropshipperOrdersPush() {
           </div>
         </div>
       )}
+
+      {/* MODAL 6: WHITE-LABEL CUSTOMER B2C TAX INVOICE & PACKING SLIP */}
+      {invoiceModalOrder && (() => {
+        const totalAmount = Number(invoiceModalOrder.customerPrice) || 0;
+        const qty = Number(invoiceModalOrder.qty) || 1;
+        const shipping = Number(invoiceModalOrder.shippingFee) || 0;
+        const itemSubtotal = Math.max(0, totalAmount - shipping);
+        const unitPrice = qty > 0 ? Math.round(itemSubtotal / qty) : itemSubtotal;
+        
+        // Indian GST 18% inclusive computation
+        const taxableAmount = Math.round(itemSubtotal / 1.18);
+        const totalTax = Math.max(0, itemSubtotal - taxableAmount);
+        const isInterState = invoiceModalOrder.state && !invoiceModalOrder.state.toLowerCase().includes('gujarat');
+        const cgst = isInterState ? 0 : Math.round(totalTax / 2);
+        const sgst = isInterState ? 0 : (totalTax - cgst);
+        const igst = isInterState ? totalTax : 0;
+        
+        const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invoiceModalOrder.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-6).toUpperCase()}`;
+        const storeName = invoiceModalOrder.whiteLabelStoreName || brandSettings.storeBrandName || 'Kunal Retail Store';
+        const returnAddress = brandSettings.returnAddress || 'Textile Logistics Park, Surat, Gujarat - 395002';
+        const supportPhone = brandSettings.supportPhone || '+91 90982 96425';
+        const isCod = (invoiceModalOrder.paymentMode || 'COD').toUpperCase() === 'COD';
+
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 flex flex-col max-h-[82vh] sm:max-h-[88vh] overflow-hidden">
+              {/* Modal Top Header (Action Controls) */}
+              <div className="shrink-0 p-4 sm:p-5 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between border-b border-indigo-900/40">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black flex items-center gap-2">
+                      <span>Customer Tax Invoice & Packing Slip</span>
+                      <span className="text-[10px] font-mono font-bold bg-indigo-400/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-400/30">
+                        White-Label D2C
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-indigo-200/80">
+                      Invoice #{invoiceNumber} • Ready to print and insert inside courier parcel
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handlePrintTaxInvoice('customer-tax-invoice-printable')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print Invoice (A4 / PDF)</span>
+                  </Button>
+                  <button
+                    onClick={() => setInvoiceModalOrder(null)}
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold cursor-pointer transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Printable Document Area */}
+              <div className="p-4 sm:p-6 overflow-y-auto bg-slate-100/60 flex-1">
+                <div 
+                  id="customer-tax-invoice-printable"
+                  className="bg-white border border-slate-300 rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto shadow-sm text-slate-800 text-xs space-y-5"
+                >
+                  {/* Document Header */}
+                  <div className="flex flex-col sm:row items-start sm:items-center justify-between gap-4 pb-4 border-b-2 border-slate-900">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{storeName}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Verified D2C Store
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 max-w-sm leading-relaxed">
+                        Fulfillment Hub & Return Center: {returnAddress}
+                      </p>
+                      <div className="text-[11px] text-slate-700 font-semibold mt-0.5">
+                        WhatsApp Customer Care: <span className="font-mono text-slate-900">{supportPhone}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-left sm:text-right shrink-0">
+                      <div className="text-sm font-black text-slate-900 uppercase tracking-wider">TAX INVOICE</div>
+                      <div className="text-[10px] text-slate-500 font-medium">(Original for Recipient)</div>
+                      <div className="font-mono text-xs font-bold text-slate-900 mt-1">Invoice: {invoiceNumber}</div>
+                      <div className="text-[11px] text-slate-500">Date: {invoiceModalOrder.date}</div>
+                      <div className="font-mono text-[10px] text-slate-500 mt-0.5">Order Ref: {invoiceModalOrder.id}</div>
+                    </div>
+                  </div>
+
+                  {/* Dispatch & Billing Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bill To / Ship To Recipient</div>
+                      <div className="text-sm font-black text-slate-900 mt-0.5">{invoiceModalOrder.customerName}</div>
+                      <div className="text-xs text-slate-600 mt-0.5 font-mono">TEL: {invoiceModalOrder.customerPhone}</div>
+                      <div className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        {invoiceModalOrder.address || invoiceModalOrder.city}
+                      </div>
+                      <div className="text-xs font-bold text-slate-800 mt-0.5">
+                        {invoiceModalOrder.city}, {invoiceModalOrder.state} - {invoiceModalOrder.pincode}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Place of Supply: {invoiceModalOrder.state || 'India'}</div>
+                    </div>
+
+                    <div className="border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logistics & Courier Delivery</div>
+                      <div className="text-xs font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>{invoiceModalOrder.courier}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5">
+                        Airway Bill (AWB): <strong className="font-mono text-slate-900">{invoiceModalOrder.awb}</strong>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-1">
+                        Shipping Mode: <strong>Express Standard Logistics</strong>
+                      </div>
+                      <div className="mt-2 text-[10px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 font-semibold inline-block">
+                        ✓ Package Inspected & Sanitized for Transit
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Commercial Product Line Items Table */}
+                  <div className="border border-slate-300 rounded-xl overflow-hidden">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-black text-[11px] uppercase tracking-wider">
+                          <th className="py-2.5 px-3 w-8">#</th>
+                          <th className="py-2.5 px-3">Item Description & SKU</th>
+                          <th className="py-2.5 px-3 text-center">HSN</th>
+                          <th className="py-2.5 px-3 text-center w-12">Qty</th>
+                          <th className="py-2.5 px-3 text-right">Unit Rate</th>
+                          <th className="py-2.5 px-3 text-right">Taxable</th>
+                          <th className="py-2.5 px-3 text-right">GST</th>
+                          <th className="py-2.5 px-3 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        <tr>
+                          <td className="py-3 px-3 font-bold text-slate-400">1</td>
+                          <td className="py-3 px-3">
+                            <div className="font-extrabold text-slate-900 text-xs sm:text-sm">{invoiceModalOrder.productName}</div>
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">SKU: {invoiceModalOrder.sku}</div>
+                          </td>
+                          <td className="py-3 px-3 text-center font-mono text-slate-600">6109.10</td>
+                          <td className="py-3 px-3 text-center font-black text-slate-900">{qty}</td>
+                          <td className="py-3 px-3 text-right font-medium text-slate-700">₹{unitPrice}</td>
+                          <td className="py-3 px-3 text-right font-medium text-slate-700">₹{taxableAmount}</td>
+                          <td className="py-3 px-3 text-right text-slate-600 font-mono">
+                            {isInterState ? `IGST ₹${igst}` : `CGST+SGST ₹${totalTax}`}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-slate-900 text-sm">₹{itemSubtotal}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Payment Banner & Summary Calculation Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                    {/* Payment Status Banner */}
+                    <div>
+                      {isCod ? (
+                        <div className="p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-1">
+                          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-900">
+                            <AlertCircle className="w-4 h-4 text-amber-700" />
+                            <span>CASH ON DELIVERY (COD)</span>
+                          </div>
+                          <div className="text-xl font-black text-amber-900">
+                            COLLECT: ₹{totalAmount.toLocaleString('en-IN')} ONLY
+                          </div>
+                          <p className="text-[10px] text-amber-800 leading-tight">
+                            Notice to Delivery Executive: Please collect exact cash of ₹{totalAmount.toLocaleString('en-IN')} from the customer prior to parcel handover.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 space-y-1">
+                          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-900">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                            <span>PREPAID ORDER (PAID IN FULL)</span>
+                          </div>
+                          <div className="text-xl font-black text-emerald-900">
+                            DO NOT COLLECT CASH
+                          </div>
+                          <p className="text-[10px] text-emerald-800 leading-tight">
+                            Notice to Delivery Executive: Payment was captured online via Store UPI / Gateway. Handover parcel directly to recipient.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-[10px] text-slate-500">
+                        <div className="font-bold text-slate-700">7-Day Customer Exchange Guarantee</div>
+                        <p className="leading-relaxed">
+                          For size exchange, replacement, or quality questions, reach our WhatsApp support line at {supportPhone}.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Tax & Financials Summary Table */}
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <div className="flex justify-between text-xs text-slate-600">
+                        <span>Items Taxable Value:</span>
+                        <span className="font-semibold text-slate-800">₹{taxableAmount}</span>
+                      </div>
+                      {!isInterState ? (
+                        <>
+                          <div className="flex justify-between text-xs text-slate-600">
+                            <span>Central GST (CGST 9%):</span>
+                            <span className="font-semibold text-slate-800">₹{cgst}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600">
+                            <span>State GST (SGST 9%):</span>
+                            <span className="font-semibold text-slate-800">₹{sgst}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex justify-between text-xs text-slate-600">
+                          <span>Integrated GST (IGST 18%):</span>
+                          <span className="font-semibold text-slate-800">₹{igst}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-xs text-slate-600">
+                        <span>Packaging & Handling:</span>
+                        <span className="font-semibold text-slate-800">
+                          {shipping > 0 ? `₹${shipping}` : 'FREE'}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t-2 border-slate-300 flex justify-between items-baseline">
+                        <span className="text-xs font-black uppercase text-slate-900">Invoice Total:</span>
+                        <span className="text-xl sm:text-2xl font-black text-slate-900">
+                          ₹{totalAmount.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 italic pt-1 border-t border-slate-200">
+                        {numberToWordsInr(totalAmount)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Signatory & Legal Declaration */}
+                  <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="text-[10px] text-slate-400 max-w-sm leading-relaxed">
+                      This is a computer-generated commercial retail tax invoice issued under the brand authority of {storeName}. Goods are packed and verified for direct consumer delivery.
+                    </div>
+
+                    <div className="text-left sm:text-right">
+                      <div className="font-bold text-xs text-slate-900 font-serif italic">For {storeName}</div>
+                      <div className="mt-1 inline-block border-b border-slate-400 pb-0.5 text-[10px] text-indigo-700 font-bold uppercase tracking-wider">
+                        ✓ Digitally Signed & Manifested
+                      </div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">Authorized Signatory</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pinned Modal Footer Controls */}
+              <div className="shrink-0 p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-500 hidden sm:inline">
+                  Click 'Print Invoice' to open clean A4 browser print dialog or save as PDF.
+                </span>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => setInvoiceModalOrder(null)}
+                    className="text-xs font-semibold rounded-xl cursor-pointer"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => handlePrintTaxInvoice('customer-tax-invoice-printable')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print Invoice (A4 / PDF)</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Print Isolation Stylesheet */}
       <style>{`

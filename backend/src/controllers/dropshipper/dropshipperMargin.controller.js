@@ -8,7 +8,8 @@ export const DEFAULT_MARGIN_CONFIG = {
   smartRounding: true,
   shippingMode: 'FREE_TO_CUSTOMER', // 'FREE_TO_CUSTOMER' | 'SEPARATE'
   estimatedShippingFee: 60,
-  categoryRules: [] // Clean by default: Overrides are optional and dynamic
+  categoryRules: [], // Category / Niche level overrides (Tier 2 Priority)
+  productRules: [] // Product SKU specific custom overrides (Tier 1 Priority)
 };
 
 /**
@@ -42,6 +43,20 @@ export const getDropshipperMarginConfig = async (req, res) => {
       });
     }
 
+    let unpackedCategories = [];
+    let unpackedProducts = [];
+
+    if (Array.isArray(savedConfig.categoryRules)) {
+      unpackedCategories = savedConfig.categoryRules;
+    } else if (savedConfig.categoryRules && typeof savedConfig.categoryRules === 'object') {
+      unpackedCategories = Array.isArray(savedConfig.categoryRules.categories)
+        ? savedConfig.categoryRules.categories
+        : [];
+      unpackedProducts = Array.isArray(savedConfig.categoryRules.products)
+        ? savedConfig.categoryRules.products
+        : [];
+    }
+
     return res.status(200).json({
       success: true,
       isCustom: true,
@@ -52,7 +67,8 @@ export const getDropshipperMarginConfig = async (req, res) => {
         smartRounding: savedConfig.smartRounding,
         shippingMode: savedConfig.shippingMode,
         estimatedShippingFee: savedConfig.estimatedShippingFee,
-        categoryRules: savedConfig.categoryRules || DEFAULT_MARGIN_CONFIG.categoryRules,
+        categoryRules: unpackedCategories,
+        productRules: unpackedProducts,
         updatedAt: savedConfig.updatedAt
       }
     });
@@ -76,7 +92,8 @@ export const saveDropshipperMarginConfig = async (req, res) => {
       smartRounding,
       shippingMode,
       estimatedShippingFee,
-      categoryRules
+      categoryRules,
+      productRules
     } = req.body;
 
     if (!firebaseUid) {
@@ -90,6 +107,18 @@ export const saveDropshipperMarginConfig = async (req, res) => {
       return res.status(404).json({ error: "Dropshipper profile not found in database" });
     }
 
+    // Package categories and products together into categoryRules JSON column
+    let dbCategoryData;
+    if (Array.isArray(productRules)) {
+      const cats = Array.isArray(categoryRules) ? categoryRules : [];
+      dbCategoryData = {
+        categories: cats,
+        products: productRules
+      };
+    } else if (categoryRules !== undefined) {
+      dbCategoryData = categoryRules;
+    }
+
     const saved = await prisma.dropshipperMarginConfig.upsert({
       where: { userId: firebaseUid },
       update: {
@@ -99,7 +128,7 @@ export const saveDropshipperMarginConfig = async (req, res) => {
         smartRounding: typeof smartRounding === 'boolean' ? smartRounding : true,
         shippingMode: shippingMode || 'FREE_TO_CUSTOMER',
         estimatedShippingFee: Number(estimatedShippingFee) >= 0 ? Number(estimatedShippingFee) : 60,
-        categoryRules: categoryRules ?? undefined
+        categoryRules: dbCategoryData ?? undefined
       },
       create: {
         userId: firebaseUid,
@@ -109,14 +138,31 @@ export const saveDropshipperMarginConfig = async (req, res) => {
         smartRounding: typeof smartRounding === 'boolean' ? smartRounding : true,
         shippingMode: shippingMode || 'FREE_TO_CUSTOMER',
         estimatedShippingFee: Number(estimatedShippingFee) >= 0 ? Number(estimatedShippingFee) : 60,
-        categoryRules: categoryRules || DEFAULT_MARGIN_CONFIG.categoryRules
+        categoryRules: dbCategoryData || DEFAULT_MARGIN_CONFIG.categoryRules
       }
     });
+
+    let unpackedCategories = [];
+    let unpackedProducts = [];
+    if (Array.isArray(saved.categoryRules)) {
+      unpackedCategories = saved.categoryRules;
+    } else if (saved.categoryRules && typeof saved.categoryRules === 'object') {
+      unpackedCategories = Array.isArray(saved.categoryRules.categories)
+        ? saved.categoryRules.categories
+        : [];
+      unpackedProducts = Array.isArray(saved.categoryRules.products)
+        ? saved.categoryRules.products
+        : [];
+    }
 
     return res.status(200).json({
       success: true,
       message: "Margin & Pricing rules saved to database",
-      config: saved
+      config: {
+        ...saved,
+        categoryRules: unpackedCategories,
+        productRules: unpackedProducts
+      }
     });
   } catch (error) {
     console.error("Save Margin Config Error:", error);

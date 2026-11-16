@@ -1,4 +1,6 @@
 import prisma from '../../config/prisma.js';
+import { sendRotWaiverAlertEmail } from '../../services/dropshipperEmail.service.js';
+import { sendRotDisputePush } from '../../services/fcm.service.js';
 
 /**
  * 1. GET ALL ROT LIABILITY & RETURN ORDERS FOR DROPSHIPPER
@@ -239,6 +241,39 @@ export const submitRotDispute = async (req, res) => {
     });
 
     const claimId = `CLM-${newTicket.id.slice(0, 6).toUpperCase()}`;
+
+    // Asynchronously dispatch ROT dispute confirmation email & FCM Push (Non-blocking)
+    (async () => {
+      try {
+        const partner = await prisma.profile.findUnique({
+          where: { id: firebaseUid },
+          select: { email: true, fullName: true, storeName: true, bankDetails: true }
+        });
+        if (partner?.email) {
+          const bankDetails = (partner.bankDetails && typeof partner.bankDetails === 'object') ? partner.bankDetails : {};
+          sendRotWaiverAlertEmail({
+            partnerEmail: partner.email,
+            partnerName: partner.fullName || 'Partner',
+            storeName: partner.storeName || 'Kunal Retail',
+            orderId,
+            returnReason: reason || 'Customer Refused / NDR',
+            waivedFreight: 120,
+            tierName: bankDetails.rotPlan || 'Platinum 100% Shield'
+          }).catch(e => console.error('Error sending ROT dispute email:', e.message));
+        }
+
+        // Instant FCM Push Notification
+        sendRotDisputePush({
+          userId: firebaseUid,
+          orderId,
+          claimId,
+          status: 'UNDER REVIEW'
+        }).catch(e => console.error('Error sending ROT dispute FCM push:', e.message));
+
+      } catch (e) {
+        console.warn('Async ROT email/push error:', e.message);
+      }
+    })();
 
     return res.status(201).json({
       success: true,

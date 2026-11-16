@@ -11,7 +11,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronRight, Lock, LogOut, User } from "lucide-react";
 import { toast } from "sonner";
+import { useSelector } from 'react-redux';
 import { getDropshipperKycState } from "../../services/dropshipperService";
+import DropshipperNotificationBell from '../dropshipper/DropshipperNotificationBell';
 
 function DashboardLayoutContent({
   menuItems = [],
@@ -36,6 +38,8 @@ function DashboardLayoutContent({
   const safeRoleName = typeof roleName === 'string' ? roleName : 'PORTAL';
   const isDropshipperRole = safeRoleName.toLowerCase().includes('dropship');
   const { isKycApproved } = isDropshipperRole ? getDropshipperKycState() : { isKycApproved: true };
+  const { currentUser } = useSelector((state) => state.user || {});
+  const currentUserId = currentUser?.uid || currentUser?.id;
 
   const displayedMenuItems = React.useMemo(() => {
     if (!isDropshipperRole) return safeMenuItems;
@@ -203,8 +207,14 @@ function DashboardLayoutContent({
             </div>
           </div>
           
-
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+            {/* Dropshipper In-App Notification Center Bell */}
+            {isDropshipperRole && currentUserId && (
+              <DropshipperNotificationBell 
+                firebaseUid={currentUserId} 
+                onNavigateTab={onTabChange} 
+              />
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-3 outline-none cursor-pointer p-1 rounded-full hover:bg-gray-100">

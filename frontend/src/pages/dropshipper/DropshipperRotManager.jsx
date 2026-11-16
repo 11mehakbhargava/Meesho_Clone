@@ -738,9 +738,9 @@ export default function DropshipperRotManager() {
 
       {/* DISPUTE MODAL (RESPONSIVE) */}
       {disputeModalOpen && selectedReturn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3.5">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 pb-24 sm:pb-6 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[82vh] sm:max-h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 truncate">
                 <Gavel className="w-4 h-4 text-purple-600 shrink-0" />
                 <span className="truncate">Dispute Return: {selectedReturn.orderId}</span>
@@ -753,33 +753,36 @@ export default function DropshipperRotManager() {
               </button>
             </div>
 
-            <form onSubmit={handleDisputeSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Product & Customer Claim
-                </label>
-                <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 space-y-1 border border-slate-100">
-                  <div className="truncate"><strong>Item:</strong> {selectedReturn.productName}</div>
-                  <div><strong>Customer Claimed:</strong> "{selectedReturn.customerReturnReason}"</div>
-                  <div><strong>ROT Debit Applied:</strong> ₹{selectedReturn.rotAmount}.00</div>
+            <form onSubmit={handleDisputeSubmit} className="flex flex-col flex-1 overflow-hidden text-xs">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Product & Customer Claim
+                  </label>
+                  <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 space-y-1 border border-slate-100">
+                    <div className="truncate"><strong>Item:</strong> {selectedReturn.productName}</div>
+                    <div><strong>Customer Claimed:</strong> "{selectedReturn.customerReturnReason}"</div>
+                    <div><strong>ROT Debit Applied:</strong> ₹{selectedReturn.rotAmount}.00</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Dispute Grounds & Evidence
+                  </label>
+                  <textarea
+                    required
+                    rows="3"
+                    value={disputeNote}
+                    onChange={(e) => setDisputeNote(e.target.value)}
+                    placeholder="Explain why customer return reason was inaccurate (e.g. Catalog clearly specified fabric type, WhatsApp chat screenshot attached)."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  ></textarea>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Dispute Grounds & Evidence
-                </label>
-                <textarea
-                  required
-                  rows="3"
-                  value={disputeNote}
-                  onChange={(e) => setDisputeNote(e.target.value)}
-                  placeholder="Explain why customer return reason was inaccurate (e.g. Catalog clearly specified fabric type, WhatsApp chat screenshot attached)."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                ></textarea>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-5 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setDisputeModalOpen(false)}

@@ -1,4 +1,17 @@
 import prisma from '../../config/prisma.js';
+import { 
+  sendDropshipperOrderPushEmail, 
+  sendCustomerWhiteLabelConfirmationEmail,
+  sendOrderDispatchedEmail,
+  sendOrderDeliveredMarginReleasedEmail 
+} from '../../services/dropshipperEmail.service.js';
+import {
+  sendMarginCreditedPush,
+  sendOrderDeliveredPush,
+  sendOrderDispatchedPush
+} from '../../services/fcm.service.js';
+
+
 
 /**
  * 1. Push a Single Dropshipper Customer Order to Suppliers
@@ -81,7 +94,9 @@ export const pushDropshipperOrder = async (req, res) => {
       });
     }
 
-    const calculatedMargin = Math.max(0, Number(customerPrice) - (Number(wholesaleCost) * Number(quantity)) - Number(shippingFee));
+    const baseWholesale = Number(wholesaleCost);
+    const totalWholesaleCost = baseWholesale * Number(quantity);
+    const calculatedMargin = Math.max(0, Number(customerPrice) - totalWholesaleCost - Number(shippingFee));
     const randomAwb = `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
 
     const shippingAddressPayload = {
@@ -97,7 +112,8 @@ export const pushDropshipperOrder = async (req, res) => {
       productName: productName || resolvedProduct?.title || 'Wholesale Sourced Item',
       productSku: productSku || 'SKU-DS-01',
       quantity: Number(quantity),
-      wholesaleCost: Number(wholesaleCost) * Number(quantity),
+      wholesaleCost: totalWholesaleCost,
+      baseWholesaleCost: baseWholesale,
       customerPrice: Number(customerPrice),
       shippingFee: Number(shippingFee),
       dropshipperMargin: calculatedMargin,
@@ -129,6 +145,50 @@ export const pushDropshipperOrder = async (req, res) => {
         items: true
       }
     });
+
+    // Asynchronously trigger automated Order Push email notifications (Non-blocking)
+    (async () => {
+      try {
+        const partnerProfile = await prisma.profile.findUnique({
+          where: { id: firebaseUid },
+          select: { email: true, fullName: true, storeName: true }
+        });
+
+        const storeBrand = whiteLabelStoreName || partnerProfile?.storeName || 'Kunal Retail';
+        const formattedOrderId = `DSP-${newOrder.id.slice(0, 8).toUpperCase()}`;
+
+        if (partnerProfile?.email) {
+          sendDropshipperOrderPushEmail({
+            partnerEmail: partnerProfile.email,
+            partnerName: partnerProfile.fullName || 'Dropship Partner',
+            storeName: storeBrand,
+            orderId: formattedOrderId,
+            productTitle: shippingAddressPayload.productName,
+            quantity: Number(quantity),
+            customerPrice: Number(customerPrice),
+            resellMargin: calculatedMargin,
+            escrowAmount: calculatedMargin,
+            destinationCity: `${city}, ${state}`
+          }).catch(e => console.error('Error dispatching partner email:', e.message));
+        }
+
+        if (req.body.customerEmail) {
+          sendCustomerWhiteLabelConfirmationEmail({
+            customerEmail: req.body.customerEmail,
+            customerName,
+            storeBrandName: storeBrand,
+            orderId: formattedOrderId,
+            productTitle: shippingAddressPayload.productName,
+            quantity: Number(quantity),
+            totalAmount: Number(customerPrice),
+            shippingAddress: `${address}, ${city}, ${state} - ${pincode}`,
+            supportPhone: customerPhone
+          }).catch(e => console.error('Error dispatching customer email:', e.message));
+        }
+      } catch (e) {
+        console.warn('Async email trigger notice:', e.message);
+      }
+    })();
 
     return res.status(201).json({
       success: true,
@@ -212,11 +272,12 @@ export const pushBulkDropshipperOrders = async (req, res) => {
     let totalBatchMargin = 0;
 
     for (const item of orders) {
-      const wholesale = Number(item.wholesaleCost || item.wholesale || 500);
-      const selling = Number(item.customerPrice || item.selling || 999);
+      const baseWholesale = Number(item.wholesaleCost || item.wholesale || 500);
       const qty = Number(item.quantity || item.qty || 1);
+      const totalWholesale = baseWholesale * qty;
+      const selling = Number(item.customerPrice || item.selling || 999);
       const shipping = Number(item.shippingFee || 60);
-      const margin = Math.max(0, selling - (wholesale * qty) - shipping);
+      const margin = Math.max(0, selling - totalWholesale - shipping);
       totalBatchMargin += margin;
 
       const randomAwb = `DEL-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
@@ -232,7 +293,8 @@ export const pushBulkDropshipperOrders = async (req, res) => {
         productName: item.productName || item.product || 'Catalog Product',
         productSku: item.productSku || item.sku || 'SKU-BULK',
         quantity: qty,
-        wholesaleCost: wholesale * qty,
+        wholesaleCost: totalWholesale,
+        baseWholesaleCost: baseWholesale,
         customerPrice: selling,
         shippingFee: shipping,
         dropshipperMargin: margin,
@@ -408,8 +470,12 @@ export const updateDropshipperOrder = async (req, res) => {
       pincode,
       landmark,
       customerPrice,
-      paymentMode
+      paymentMode,
+      orderStatus,
+      status
     } = req.body;
+
+    const requestedStatus = (orderStatus || status || '').toUpperCase();
 
     if (!orderId) {
       return res.status(400).json({ success: false, message: 'orderId param is required' });
@@ -470,11 +536,15 @@ export const updateDropshipperOrder = async (req, res) => {
       ...(paymentMode && { paymentMode: paymentMode.toUpperCase() })
     };
 
+    const validStatuses = ['ORDERED', 'CONFIRMED', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+    const finalStatus = validStatuses.includes(requestedStatus) ? requestedStatus : undefined;
+
     const updatedOrder = await prisma.order.update({
       where: { id: dbOrderId },
       data: {
         totalAmount: updatedPrice,
         shippingAddress: updatedAddressPayload,
+        ...(finalStatus && { orderStatus: finalStatus === 'IN_TRANSIT' ? 'SHIPPED' : finalStatus }),
         ...(paymentMode && {
           paymentMethod: paymentMode.toUpperCase() === 'COD' ? 'COD' : 'UPI',
           paymentStatus: paymentMode.toUpperCase() === 'COD' ? 'PENDING' : 'PAID'
@@ -482,6 +552,69 @@ export const updateDropshipperOrder = async (req, res) => {
       },
       include: { items: { include: { product: true } } }
     });
+
+    // Asynchronously dispatch status transition emails (Non-blocking)
+    (async () => {
+      try {
+        const partner = await prisma.profile.findUnique({
+          where: { id: updatedOrder.userId },
+          select: { email: true, fullName: true, storeName: true, wallet: true }
+        });
+
+        if (partner?.email) {
+          const formattedId = `DSP-${updatedOrder.id.slice(0, 8).toUpperCase()}`;
+          const storeName = partner.storeName || 'Kunal Retail';
+
+          if (finalStatus === 'DELIVERED') {
+            sendOrderDeliveredMarginReleasedEmail({
+              partnerEmail: partner.email,
+              partnerName: partner.fullName || 'Partner',
+              storeName,
+              orderId: formattedId,
+              productTitle: updatedAddressPayload.productName || 'Wholesale Sourced Item',
+              resellMargin: updatedAddressPayload.dropshipperMargin || 0,
+              newWalletBalance: partner.wallet?.balance || 0
+            }).catch(e => console.error('Error dispatching delivery email:', e.message));
+
+            // Instant Push: Margin Credited + Order Delivered
+            sendMarginCreditedPush({
+              userId: updatedOrder.userId,
+              orderId: formattedId,
+              marginAmount: updatedAddressPayload.dropshipperMargin || 0,
+              storeName
+            }).catch(e => console.error('Error dispatching delivery FCM margin push:', e.message));
+
+            sendOrderDeliveredPush({
+              userId: updatedOrder.userId,
+              orderId: formattedId,
+              customerName: updatedAddressPayload.fullName
+            }).catch(e => console.error('Error dispatching delivery FCM push:', e.message));
+
+          } else if (finalStatus === 'SHIPPED' || finalStatus === 'IN_TRANSIT') {
+            sendOrderDispatchedEmail({
+              to: partner.email,
+              recipientName: partner.fullName || 'Partner',
+              storeName,
+              orderId: formattedId,
+              courierName: updatedAddressPayload.courier || 'Delhivery Express',
+              awbNumber: updatedAddressPayload.awb || `DEL-${updatedOrder.id.slice(0, 10)}`,
+              productTitle: updatedAddressPayload.productName || 'Wholesale Sourced Item',
+              destinationCity: `${updatedAddressPayload.city || ''}, ${updatedAddressPayload.state || ''}`
+            }).catch(e => console.error('Error dispatching dispatch email:', e.message));
+
+            // Instant Push: Order Dispatched
+            sendOrderDispatchedPush({
+              userId: updatedOrder.userId,
+              orderId: formattedId,
+              courierName: updatedAddressPayload.courier || 'Delhivery Express',
+              trackingNumber: updatedAddressPayload.awb || `DEL-${updatedOrder.id.slice(0, 10)}`
+            }).catch(e => console.error('Error dispatching dispatch FCM push:', e.message));
+          }
+        }
+      } catch (e) {
+        console.warn('Async order update email notice:', e.message);
+      }
+    })();
 
     return res.status(200).json({
       success: true,
@@ -721,4 +854,292 @@ export const archiveDropshipperOrder = async (req, res) => {
     });
   }
 };
+
+/**
+ * 8. Send Automated WhatsApp / SMS Courier Tracking Alert to Customer
+ * POST /api/v1/dropshipper/orders/:orderId/send-tracking-alert
+ */
+export const sendOrderTrackingAlert = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { channel = 'WHATSAPP', customMessage, storeBrandName } = req.body;
+
+    let dbOrderId = orderId;
+    if (orderId.startsWith('DSP-')) {
+      const allOrders = await prisma.order.findMany({ select: { id: true } });
+      const found = allOrders.find(o => `DSP-${o.id.slice(0, 8).toUpperCase()}` === orderId);
+      if (found) dbOrderId = found.id;
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: dbOrderId }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found in database' });
+    }
+
+    const addr = typeof order.shippingAddress === 'string'
+      ? JSON.parse(order.shippingAddress || '{}')
+      : (order.shippingAddress || {});
+
+    const customerPhone = addr.phone || addr.customerPhone || '9876543210';
+    const customerName = addr.fullName || addr.customerName || 'Customer';
+    const storeName = storeBrandName || addr.whiteLabelStoreName || 'Official Store';
+    const awb = addr.awb || `DEL-${order.id.slice(0, 8).toUpperCase()}`;
+    const courier = addr.courier || 'Delhivery Express';
+    const productName = addr.productName || 'Your Item';
+    const trackingLink = `https://track.mshoppy.in/awb/${awb}`;
+
+    const defaultMsg = `Hello ${customerName}! 📦 Great news: Your order for ${productName} from ${storeName} has been processed & dispatched via ${courier} (AWB: ${awb}). Track live parcel: ${trackingLink} . For assistance, contact support.`;
+
+    const messageText = customMessage || defaultMsg;
+    const cleanPhone = String(customerPhone).replace(/\D/g, '');
+    const intlPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const whatsappWebUrl = `https://api.whatsapp.com/send?phone=${intlPhone}&text=${encodeURIComponent(messageText)}`;
+
+    // Save notification dispatch event into order metadata
+    const updatedAddr = {
+      ...addr,
+      lastTrackingAlertSentAt: new Date().toISOString(),
+      trackingNotificationChannel: channel,
+      trackingAlertCount: (Number(addr.trackingAlertCount) || 0) + 1
+    };
+
+    await prisma.order.update({
+      where: { id: dbOrderId },
+      data: {
+        shippingAddress: updatedAddr
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Tracking alert generated successfully via ${channel}`,
+      channel,
+      customerPhone: intlPhone,
+      customerName,
+      messageText,
+      whatsappWebUrl,
+      awb,
+      courier,
+      trackingLink,
+      sentAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in sendOrderTrackingAlert:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send tracking alert',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * 8. SIMULATE COURIER LIFECYCLE & AUTO-RELEASE ESCROW MARGIN
+ * Route: POST /api/v1/dropshipper/orders/:orderId/simulate-status
+ */
+export const simulateCourierStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, instantSettlement = true, reason } = req.body;
+
+    if (!orderId || !status) {
+      return res.status(400).json({ success: false, message: 'orderId and target status are required' });
+    }
+
+    const cleanId = orderId.startsWith('DSP-') ? orderId.replace('DSP-', '').toLowerCase() : orderId;
+
+    let order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: orderId },
+          { id: { startsWith: cleanId, mode: 'insensitive' } }
+        ]
+      },
+      include: {
+        user: {
+          include: { wallet: true }
+        }
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: `Order #${orderId} not found in database` });
+    }
+
+    const validStatuses = ['ORDERED', 'CONFIRMED', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURNED'];
+    const targetStatus = status.toUpperCase();
+
+    if (!validStatuses.includes(targetStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status: ${targetStatus}. Allowed: ${validStatuses.join(', ')}`
+      });
+    }
+
+    const currentAddr = (order.shippingAddress && typeof order.shippingAddress === 'object') ? { ...order.shippingAddress } : {};
+    const sellingPrice = Number(order.totalAmount || currentAddr.customerPrice || 0);
+    const supplierBase = Number(currentAddr.wholesaleCost || 0);
+    const shippingFee = Number(currentAddr.shippingFee || 60);
+    const tdsDeduction = Math.round(sellingPrice * 0.01);
+    const netMargin = Math.max(0, sellingPrice - supplierBase - shippingFee - tdsDeduction);
+
+    let releasedMargin = 0;
+    let walletUpdated = false;
+    let newBalance = order.user?.wallet?.balance || 0;
+
+    // Handle DELIVERED & Escrow Release
+    if (targetStatus === 'DELIVERED') {
+      currentAddr.deliveredAt = new Date().toISOString();
+      currentAddr.deliveryVerified = true;
+
+      if (instantSettlement && netMargin > 0) {
+        // Double-credit prevention: Check if already credited for this orderId
+        const existingTx = await prisma.walletTransaction.findFirst({
+          where: {
+            OR: [
+              { orderId: order.id },
+              { description: { contains: order.id.slice(0, 8), mode: 'insensitive' } }
+            ],
+            type: 'credit'
+          }
+        });
+
+        if (!existingTx && !currentAddr.isMarginSettled) {
+          // Atomic transaction: Increment balance and record wallet transaction
+          const result = await prisma.$transaction(async (tx) => {
+            let wallet = await tx.wallet.findUnique({
+              where: { userId: order.userId }
+            });
+
+            if (!wallet) {
+              wallet = await tx.wallet.create({
+                data: {
+                  userId: order.userId,
+                  balance: 0,
+                  pending: 0
+                }
+              });
+            }
+
+            const updatedWallet = await tx.wallet.update({
+              where: { id: wallet.id },
+              data: {
+                balance: { increment: netMargin },
+                pending: { decrement: Math.min(wallet.pending || 0, netMargin) }
+              }
+            });
+
+            const transactionRecord = await tx.walletTransaction.create({
+              data: {
+                walletId: wallet.id,
+                orderId: order.id,
+                amount: netMargin,
+                type: 'credit',
+                description: `Auto-Released Escrow Margin for Order #DSP-${order.id.slice(0, 8).toUpperCase()} (${currentAddr.courier || 'Delhivery'} AWB: ${currentAddr.awb || 'DEL-AWB'})`
+              }
+            });
+
+            currentAddr.isMarginSettled = true;
+            currentAddr.settledAt = new Date().toISOString();
+            currentAddr.settledMargin = netMargin;
+
+            const updatedOrder = await tx.order.update({
+              where: { id: order.id },
+              data: {
+                orderStatus: 'DELIVERED',
+                paymentStatus: 'PAID', // Cash collected on delivery
+                shippingAddress: currentAddr
+              }
+            });
+
+            return { updatedWallet, transactionRecord, updatedOrder };
+          });
+
+          releasedMargin = netMargin;
+          walletUpdated = true;
+          newBalance = result.updatedWallet.balance;
+          order = result.updatedOrder;
+        } else {
+          // Margin was already credited previously, only update order status
+          order = await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              orderStatus: 'DELIVERED',
+              paymentStatus: 'PAID',
+              shippingAddress: currentAddr
+            }
+          });
+        }
+      } else {
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            orderStatus: 'DELIVERED',
+            paymentStatus: 'PAID',
+            shippingAddress: currentAddr
+          }
+        });
+      }
+    } else if (targetStatus === 'CANCELLED' || targetStatus === 'RETURNED') {
+      currentAddr.rtoAt = new Date().toISOString();
+      currentAddr.rtoReason = reason || 'Customer rejected doorstep delivery (Simulated RTO)';
+
+      order = await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          orderStatus: targetStatus,
+          shippingAddress: currentAddr
+        }
+      });
+    } else {
+      // SHIPPED, IN_TRANSIT, OUT_FOR_DELIVERY
+      currentAddr.logisticsStatus = targetStatus;
+      const prismaStatus = (targetStatus === 'IN_TRANSIT' || targetStatus === 'OUT_FOR_DELIVERY') ? 'SHIPPED' : targetStatus;
+
+      order = await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          orderStatus: prismaStatus,
+          shippingAddress: currentAddr
+        }
+      });
+    }
+
+    const formattedOrder = {
+      id: `DSP-${order.id.slice(0, 8).toUpperCase()}`,
+      dbId: order.id,
+      status: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      customerName: currentAddr.fullName || 'Customer',
+      netMargin,
+      isMarginSettled: currentAddr.isMarginSettled || false,
+      deliveredAt: currentAddr.deliveredAt || null
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: targetStatus === 'DELIVERED'
+        ? (walletUpdated
+            ? `🎉 Order #${formattedOrder.id} delivered! ₹${releasedMargin} margin auto-released to your wallet balance.`
+            : `Order #${formattedOrder.id} marked as DELIVERED (Margin was already settled).`)
+        : `Order #${formattedOrder.id} status updated to ${targetStatus}`,
+      order: formattedOrder,
+      releasedMargin,
+      newWalletBalance: newBalance,
+      walletUpdated
+    });
+
+  } catch (error) {
+    console.error('Error in simulateCourierStatus:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update courier status and release margin',
+      error: error.message
+    });
+  }
+};
+
 
