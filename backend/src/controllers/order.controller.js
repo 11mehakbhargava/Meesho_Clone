@@ -560,8 +560,8 @@ export const updateOrderStatus = async (req, res) => {
       }
     }
 
-    // Auto-dispatch delivery OTP email as soon as marked OUT_FOR_DELIVERY
-    if (upperStatus === 'OUT_FOR_DELIVERY') {
+    // Auto-dispatch delivery OTP email as soon as marked OUT_FOR_DELIVERY (Prepaid orders only)
+    if (upperStatus === 'OUT_FOR_DELIVERY' && (updated.paymentMethod || '').toUpperCase() !== 'COD') {
       try {
         const otpResult = await dispatchDeliveryOtpEmail({ orderId: id, type: 'DELIVERY' });
         console.log(`🚚 [Order ${id}] OUT_FOR_DELIVERY OTP automatically emailed to: ${otpResult.sentTo}`);
@@ -663,7 +663,7 @@ export const dispatchDeliveryOtpEmail = async ({
     };
   }
 
-  // Strict enforcement: DELIVERY OTP is only emailed when the order is OUT_FOR_DELIVERY
+  // Strict enforcement: DELIVERY OTP is only emailed when the order is OUT_FOR_DELIVERY and is PREPAID
   if (!isPickup && orderDetails) {
     const currentStatus = (orderDetails.orderStatus || '').toUpperCase();
     if (currentStatus !== 'OUT_FOR_DELIVERY') {
@@ -671,6 +671,17 @@ export const dispatchDeliveryOtpEmail = async ({
       return {
         success: false,
         message: `Delivery OTP email is only dispatched when order is OUT_FOR_DELIVERY (current: ${currentStatus}).`,
+        sentTo: null,
+        otp: null
+      };
+    }
+
+    const isCod = (orderDetails.paymentMethod || '').toUpperCase() === 'COD';
+    if (isCod) {
+      console.log(`ℹ️ [OTP Email] Skipping DELIVERY OTP for Order ${orderId}: Order is COD (Cash on Delivery).`);
+      return {
+        success: false,
+        message: `Delivery OTP email is not dispatched for Cash on Delivery (COD) orders.`,
         sentTo: null,
         otp: null
       };
