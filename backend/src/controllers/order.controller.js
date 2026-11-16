@@ -201,12 +201,20 @@ export const createOrder = async (req, res) => {
       return newOrder;
     });
 
-    // 5. Affiliate Referral Attribution & Real Database Commission Credit
+    // 5. Affiliate Referral Attribution & Real Database Custom Margin Credit
     if (referralCode && typeof referralCode === 'string' && referralCode.trim()) {
       try {
         const cleanRef = referralCode.trim().toUpperCase();
-        // 10% commission on final order total (min ?10)
-        const commissionAmount = Math.max(10, Math.round(finalOrderTotal * 0.10));
+
+        // Calculate exact custom profit margin set by the affiliate for items in this order
+        const calculatedMargin = validatedItems.reduce((acc, it) => {
+          const baseP = parseFloat(productMap.get(it.productId)?.price || 0);
+          const diff = Math.max(0, it.price - baseP);
+          return acc + (diff * it.quantity);
+        }, 0);
+
+        const directMargin = parseFloat(req.body.marginAmount) || 0;
+        const commissionAmount = Math.round(Math.max(calculatedMargin, directMargin));
 
         // Find the affiliate partner profile
         const refPrefix = cleanRef.replace(/^AFF-/, '').slice(0, 5).toLowerCase();
@@ -229,7 +237,7 @@ export const createOrder = async (req, res) => {
           });
         }
 
-        if (affiliateProfile && affiliateProfile.id !== userId) {
+        if (affiliateProfile && affiliateProfile.id !== userId && commissionAmount > 0) {
           // Record referral in PostgreSQL referrals table
           await prisma.referral.create({
             data: {
@@ -253,7 +261,7 @@ export const createOrder = async (req, res) => {
             });
           }
 
-          // Credit the commission into the affiliate's real database wallet
+          // Credit the custom margin into the affiliate's real database wallet
           await prisma.wallet.update({
             where: { id: wallet.id },
             data: {
@@ -267,15 +275,15 @@ export const createOrder = async (req, res) => {
               walletId: wallet.id,
               amount: commissionAmount,
               type: 'credit',
-              description: `Affiliate Commission (10%) for Order #${order.id.slice(-6).toUpperCase()}`,
+              description: `Affiliate Custom Margin for Order #${order.id.slice(-6).toUpperCase()}`,
               orderId: order.id
             }
           });
 
-          console.log(`[Affiliate] Credited ?${commissionAmount} commission to ${affiliateProfile.email || affiliateProfile.fullName} for Order ${order.id}`);
+          console.log(`[Affiliate] Credited ₹${commissionAmount} custom margin to ${affiliateProfile.email || affiliateProfile.fullName} for Order ${order.id}`);
         }
       } catch (affiliateErr) {
-        console.warn('Affiliate commission credit note:', affiliateErr.message);
+        console.warn('Affiliate custom margin credit note:', affiliateErr.message);
       }
     }
 

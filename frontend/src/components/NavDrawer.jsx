@@ -36,7 +36,6 @@ const navSections = [
     ]
   }
 ];
-
 const customerNavSections = [
   {
     title: "Shop & Categories",
@@ -99,7 +98,7 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
   return (
     <div className="fixed inset-0 z-[100] flex animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity cursor-pointer"
         onClick={onClose}
         aria-hidden="true"
@@ -110,10 +109,10 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
         {/* Drawer Header */}
         <div className="p-6 bg-gradient-to-br from-[#FF3F6C] to-[#b90041] text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="/mshoppy-logo.png" 
-              alt="MShoppy" 
-              className="w-10 h-10 rounded-2xl object-cover border border-white/30 shadow-inner bg-white" 
+            <img
+              src="/mshoppy-logo.png"
+              alt="MShoppy"
+              className="w-10 h-10 rounded-2xl object-cover border border-white/30 shadow-inner bg-white"
             />
             <div>
               <h2 className="font-['Plus_Jakarta_Sans'] font-extrabold text-lg leading-tight">
@@ -163,17 +162,15 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
                         onClose();
                         navigate(item.path);
                       }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer group ${
-                        isActive
-                          ? 'bg-[#FF3F6C]/10 text-[#FF3F6C] font-bold'
-                          : 'text-gray-700 hover:bg-gray-100/80 hover:text-gray-900'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer group ${isActive
+                        ? 'bg-[#FF3F6C]/10 text-[#FF3F6C] font-bold'
+                        : 'text-gray-700 hover:bg-gray-100/80 hover:text-gray-900'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span 
-                          className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${
-                            isActive ? 'text-[#FF3F6C]' : 'text-gray-500 group-hover:text-gray-800'
-                          }`}
+                        <span
+                          className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${isActive ? 'text-[#FF3F6C]' : 'text-gray-500 group-hover:text-gray-800'
+                            }`}
                           style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
                         >
                           {item.icon}
@@ -182,11 +179,10 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
                       </div>
 
                       {item.badge && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isActive 
-                            ? 'bg-[#FF3F6C] text-white' 
-                            : 'bg-rose-100 text-[#FF3F6C]'
-                        }`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isActive
+                          ? 'bg-[#FF3F6C] text-white'
+                          : 'bg-rose-100 text-[#FF3F6C]'
+                          }`}>
                           {item.badge}
                         </span>
                       )}
@@ -204,10 +200,10 @@ export default function NavDrawer({ isOpen, onClose, role = 'reseller', isCustom
             <span className="material-symbols-outlined text-base">verified_user</span>
             <span>{customerMode ? '100% Genuine Shopping' : '100% Safe Reselling'}</span>
           </div>
-          <button 
+          <button
             onClick={async () => {
               onClose();
-              try { await signOut(auth); } catch (e) {}
+              try { await signOut(auth); } catch (e) { }
               logoutCustomer();
               navigate('/user/login');
             }}

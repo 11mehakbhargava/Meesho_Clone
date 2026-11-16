@@ -245,10 +245,10 @@ export function recordAffiliateClick(referralCode) {
  */
 export function recordAffiliateOrder({ referralCode, orderTotal, orderId, marginAmount }) {
   if (!orderTotal || orderTotal <= 0) return null;
-  // Use custom margin set by affiliate if provided, otherwise default reasonable margin
+  // Use custom margin set by affiliate
   const earnedMargin = (marginAmount && Number(marginAmount) > 0)
     ? Number(marginAmount)
-    : Math.round(Number(orderTotal) * 0.10);
+    : 0;
   const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const currentDay = DAYS[new Date().getDay()];
 
