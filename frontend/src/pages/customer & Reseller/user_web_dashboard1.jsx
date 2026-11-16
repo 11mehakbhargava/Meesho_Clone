@@ -40,6 +40,7 @@ import { buildAffiliateProductUrl } from '../../utils/affiliateLinkHelper';
 import CancelOrderModal from '../../components/customer/CancelOrderModal';
 import OrderTrackingModal from '../../components/customer/OrderTrackingModal';
 import TaxInvoiceModal from '../../components/customer/TaxInvoiceModal';
+import { INDIAN_BANKS } from '../../components/BankAutocompleteSelect';
 
 // Icons from lucide-react (matching admin-panel1 & seller-web-dashboard1 theme)
 import {
@@ -448,6 +449,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Update Settlement Bank Modal States
   const [showBankModal, setShowBankModal] = useState(false);
+  const [isCustomBank, setIsCustomBank] = useState(false);
+  const [customBankInput, setCustomBankInput] = useState('');
   const [bankFormData, setBankFormData] = useState({
     bankName: '',
     holderName: '',
@@ -461,8 +464,31 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   const [bankErrorMsg, setBankErrorMsg] = useState('');
 
   const handleOpenBankModal = () => {
+    const rawBankName = affiliateApp?.bankName || affiliateApp?.bank?.bankName || 'State Bank of India (SBI)';
+    const foundInList = INDIAN_BANKS.some(
+      (b) => b.name.toLowerCase() === rawBankName.toLowerCase() || b.short.toLowerCase() === rawBankName.toLowerCase()
+    );
+
+    let selectedDropdownVal = 'State Bank of India (SBI)';
+    let customVal = '';
+    let isCustom = false;
+
+    if (foundInList) {
+      const match = INDIAN_BANKS.find(
+        (b) => b.name.toLowerCase() === rawBankName.toLowerCase() || b.short.toLowerCase() === rawBankName.toLowerCase()
+      );
+      selectedDropdownVal = match ? match.name : rawBankName;
+    } else if (rawBankName) {
+      selectedDropdownVal = 'OTHER';
+      customVal = rawBankName;
+      isCustom = true;
+    }
+
+    setIsCustomBank(isCustom);
+    setCustomBankInput(customVal);
+
     setBankFormData({
-      bankName: affiliateApp?.bankName || affiliateApp?.bank?.bankName || 'State Bank of India (SBI)',
+      bankName: isCustom ? customVal : selectedDropdownVal,
       holderName: affiliateApp?.accountHolderName || affiliateApp?.bank?.holderName || affiliateApp?.fullName || customerName || '',
       accountNumber: affiliateApp?.accountNumber || affiliateApp?.bank?.accountNumber || affiliateApp?.confirmAccountNumber || '',
       confirmAccountNumber: affiliateApp?.accountNumber || affiliateApp?.bank?.accountNumber || affiliateApp?.confirmAccountNumber || '',
@@ -476,6 +502,11 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   const handleSaveBank = async (e) => {
     e.preventDefault();
+    const finalBankName = isCustomBank ? customBankInput.trim() : bankFormData.bankName.trim();
+    if (!finalBankName) {
+      setBankErrorMsg('Please select or enter your bank name!');
+      return;
+    }
     if (bankFormData.accountNumber !== bankFormData.confirmAccountNumber) {
       setBankErrorMsg('Account numbers do not match!');
       return;
@@ -486,7 +517,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     try {
       const updatedApp = {
         ...(affiliateApp || {}),
-        bankName: bankFormData.bankName.trim(),
+        bankName: finalBankName,
         accountHolderName: bankFormData.holderName.trim(),
         accountNumber: bankFormData.accountNumber.trim(),
         confirmAccountNumber: bankFormData.confirmAccountNumber.trim(),
@@ -494,7 +525,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         upiId: bankFormData.upiId.trim(),
         bank: {
           ...(affiliateApp?.bank || {}),
-          bankName: bankFormData.bankName.trim(),
+          bankName: finalBankName,
           holderName: bankFormData.holderName.trim(),
           accountNumber: bankFormData.accountNumber.trim(),
           ifsc: bankFormData.ifscCode.trim().toUpperCase(),
@@ -516,7 +547,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         body: JSON.stringify({
           userId: customerUser?.id || affiliateApp?.userId || '',
           bankDetails: {
-            bankName: bankFormData.bankName.trim(),
+            bankName: finalBankName,
             holderName: bankFormData.holderName.trim(),
             accountNumber: bankFormData.accountNumber.trim(),
             ifscCode: bankFormData.ifscCode.trim().toUpperCase()
@@ -3730,14 +3761,60 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 <label className="text-xs font-bold text-slate-700 block mb-1">
                   Bank Name <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. State Bank of India, HDFC Bank"
-                  value={bankFormData.bankName}
-                  onChange={(e) => setBankFormData({ ...bankFormData, bankName: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
-                  required
-                />
+                <div className="relative">
+                  <select
+                    value={isCustomBank ? 'OTHER' : bankFormData.bankName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'OTHER') {
+                        setIsCustomBank(true);
+                        setBankFormData({ ...bankFormData, bankName: customBankInput });
+                      } else {
+                        setIsCustomBank(false);
+                        const match = INDIAN_BANKS.find(b => b.name === val);
+                        setBankFormData({
+                          ...bankFormData,
+                          bankName: val,
+                          ifscCode: (!bankFormData.ifscCode || bankFormData.ifscCode.length < 5) && match ? `${match.code}0******` : bankFormData.ifscCode
+                        });
+                      }
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 pr-8 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d] appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="">-- Select Your Bank --</option>
+                    <optgroup label="Popular Banks">
+                      {INDIAN_BANKS.filter(b => b.popular).map(b => (
+                        <option key={b.name} value={b.name}>{b.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Other Indian Banks">
+                      {INDIAN_BANKS.filter(b => !b.popular).map(b => (
+                        <option key={b.name} value={b.name}>{b.name}</option>
+                      ))}
+                    </optgroup>
+                    <option value="OTHER">Other Bank (Type Custom)</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {isCustomBank && (
+                  <input
+                    type="text"
+                    placeholder="Enter your bank name"
+                    value={customBankInput}
+                    onChange={(e) => {
+                      setCustomBankInput(e.target.value);
+                      setBankFormData({ ...bankFormData, bankName: e.target.value });
+                    }}
+                    className="mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                    required
+                  />
+                )}
               </div>
 
               <div>
