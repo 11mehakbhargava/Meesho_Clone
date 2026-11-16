@@ -1,3 +1,5 @@
+const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cpath d='M160 160a20 20 0 1 0 0-40 20 20 0 0 0 0 40zm80 40-50-50-70 70h160l-40-60z' fill='%23cbd5e1'/%3E%3Ctext x='50%25' y='65%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' font-weight='600' fill='%2394a3b8'%3ENo Image Available%3C/text%3E%3C/svg%3E";
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -211,8 +213,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [showSizeChart, setShowSizeChart] = useState(false);
-  const [showImageZoom, setShowImageZoom] = useState(false);
+    const [showImageZoom, setShowImageZoom] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [canReviewProduct, setCanReviewProduct] = useState(false);
   const [userOrderId, setUserOrderId] = useState(null);
@@ -311,10 +312,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         }
       }
       if (pin) {
-        const d = new Date();
-        const daysToAdd = (parseInt(pin.slice(-1), 10) % 3) + 2; // 2 to 4 days
-        d.setDate(d.getDate() + daysToAdd);
-        return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+        return `Available for ${pin}`;
       }
     } catch (e) { }
     return null;
@@ -372,15 +370,11 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
       return;
     }
     setIsPincodeValid(true);
-    const d = new Date();
-    const daysToAdd = (parseInt(cleanPin.slice(-1), 10) % 3) + 2; // 2 to 4 days
-    d.setDate(d.getDate() + daysToAdd);
-    const dateStr = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
-    setDeliveryEstimate(dateStr);
+    setDeliveryEstimate(`Available for ${cleanPin}`);
     try {
       localStorage.setItem('mshoppy_user_pincode', cleanPin);
     } catch (err) { }
-    triggerToast(`✓ Delivery available by ${dateStr}! Free Delivery & COD active.`);
+    triggerToast(`✓ Delivery available for pincode ${cleanPin}! Free Delivery & COD active.`);
   };
 
   // Fetch product & similar items from database (Background SWR if cached)
@@ -392,12 +386,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         let p = null;
         if (productId) {
           p = await getProductById(productId);
-        }
-        if (!p) {
-          const prods = await getProducts({ limit: 1 });
-          if (prods && prods.length > 0) {
-            p = prods[0];
-          }
         }
 
         if (isMounted && p) {
@@ -460,12 +448,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     id: r.id,
                     name: r.user?.fullName || r.userName || 'Verified Buyer',
                     initials: ((r.user?.fullName || r.userName || 'Verified Buyer').trim().slice(0, 2)).toUpperCase(),
-                    rating: r.rating || 5,
+                    rating: Number(r.rating) || 0,
                     verified: true,
-                    time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently',
-                    comment: r.comment || r.title || 'Excellent product! Fabric quality is superb and fit is perfect. Value for money.',
+                    time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
+                    comment: r.comment || r.title || '',
                     photos: Array.isArray(r.images) ? r.images : [],
-                    helpfulCount: r.helpfulCount || 0
+                    helpfulCount: Number(r.helpfulCount) || 0
                   }));
                   setProductReviews(mapped);
                 } else {
@@ -485,7 +473,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               if (isMounted && Array.isArray(allProds)) {
                 const sorted = allProds
                   .filter((item) => item.id !== p.id)
-                  .sort((a, b) => ((b.rating || 4) * (b.reviewsCount || 10)) - ((a.rating || 4) * (a.reviewsCount || 10)))
+                  .sort((a, b) => ((Number(b.rating) || 0) * (Number(b.reviewsCount) || 0)) - ((Number(a.rating) || 0) * (Number(a.reviewsCount) || 0)))
                   .slice(0, 8);
                 setBestSellingProducts(sorted);
               }
@@ -679,7 +667,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   const images = (product.images && product.images.length > 0)
     ? product.images
-    : ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800'];
+    : [PLACEHOLDER_IMAGE];
 
   const catMeta = getCategoryMeta(product.categorySlug);
 
@@ -733,9 +721,9 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     product && (product.isDeleted === true || product.isActive === false)
   );
   const isVariantOutOfStock = Boolean(
-    isProductUnavailable || (activeVariant ? Number(activeVariant.stock) === 0 : (Number(product?.stock) === 0))
+    isProductUnavailable || (activeVariant ? Number(activeVariant.stock) === 0 : (Number(product?.stock ?? 0) === 0))
   );
-  const currentVariantStock = activeVariant ? Number(activeVariant.stock) : Number(product.stock ?? 50);
+  const currentVariantStock = activeVariant ? Number(activeVariant.stock ?? 0) : Number(product?.stock ?? 0);
   const activeSku = activeVariant?.sku || product.sku || null;
 
   // 100% Real Database-Driven Ratings & Reviews (ZERO Hardcoded Values)
@@ -761,19 +749,19 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   // Real breakdown calculated directly from reviews or reviewsBreakdown state
   const count5 = productReviews.length > 0
     ? productReviews.filter((r) => Number(r.rating) === 5).length
-    : (reviewsBreakdown?.[5] || (displayRatingsCount > 0 ? Math.round(displayRatingsCount * 0.67) : 0));
+    : (Number(reviewsBreakdown?.[5]) || 0);
   const count4 = productReviews.length > 0
     ? productReviews.filter((r) => Number(r.rating) === 4).length
-    : (reviewsBreakdown?.[4] || (displayRatingsCount > 0 ? Math.round(displayRatingsCount * 0.33) : 0));
+    : (Number(reviewsBreakdown?.[4]) || 0);
   const count3 = productReviews.length > 0
     ? productReviews.filter((r) => Number(r.rating) === 3).length
-    : (reviewsBreakdown?.[3] || 0);
+    : (Number(reviewsBreakdown?.[3]) || 0);
   const count2 = productReviews.length > 0
     ? productReviews.filter((r) => Number(r.rating) === 2).length
-    : (reviewsBreakdown?.[2] || 0);
+    : (Number(reviewsBreakdown?.[2]) || 0);
   const count1 = productReviews.length > 0
     ? productReviews.filter((r) => Number(r.rating) === 1).length
-    : (reviewsBreakdown?.[1] || 0);
+    : (Number(reviewsBreakdown?.[1]) || 0);
 
   const totalForBars = (count5 + count4 + count3 + count2 + count1) || displayRatingsCount || 1;
 
@@ -916,7 +904,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             onClick={() => navigate(`/search?category=${encodeURIComponent(product?.category?.name || product?.categorySlug || '')}`)}
             className="hover:text-[#FF3F6C] cursor-pointer"
           >
-            {product?.category?.name || 'Category'}
+            {product?.category?.name || product?.categorySlug || ''}
           </button>
           <span>/</span>
           <span className="text-slate-800 font-semibold truncate max-w-xs">{product?.title}</span>
@@ -1017,7 +1005,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       className="w-full h-full max-h-[540px] object-contain rounded-2xl transition-all duration-300 pointer-events-none select-none"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800';
+                        e.currentTarget.src = PLACEHOLDER_IMAGE;
                       }}
                     />
                   </div>
@@ -1059,7 +1047,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         className="w-full h-full object-contain pointer-events-none"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
+                          e.currentTarget.src = PLACEHOLDER_IMAGE;
                         }}
                       />
                     </button>
@@ -1075,14 +1063,18 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               {/* Product Header & Title */}
               <div>
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <span className="text-[#006a34] font-bold text-xs tracking-wider uppercase bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
-                    {product.category?.name || 'Verified Collection'}
-                  </span>
-                  <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
-                    <span className="text-slate-400 font-normal">Sold by:</span>
-                    <span>{(product.supplierName && !product.supplierName.toLowerCase().includes('meesho')) ? product.supplierName : 'Official Store'}</span>
-                    <span className="material-symbols-outlined text-xs text-emerald-600">verified</span>
-                  </div>
+                  {product.category?.name && (
+                    <span className="text-[#006a34] font-bold text-xs tracking-wider uppercase bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+                      {product.category.name}
+                    </span>
+                  )}
+                  {product.supplierName && (
+                    <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
+                      <span className="text-slate-400 font-normal">Sold by:</span>
+                      <span>{product.supplierName}</span>
+                      <span className="material-symbols-outlined text-xs text-emerald-600">verified</span>
+                    </div>
+                  )}
                 </div>
 
                 <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-slate-700 mb-2 leading-snug">
@@ -1431,16 +1423,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         {catMeta.sizeLabel || 'Select Size'}
                       </h3>
                     </div>
-                    {showSizeChartBtn && (
-                      <button
-                        type="button"
-                        onClick={() => setShowSizeChart(true)}
-                        className="text-[#FF3F6C] text-xs font-bold hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <span>Size Chart</span>
-                        <span className="material-symbols-outlined text-sm">help</span>
-                      </button>
-                    )}
+{/* Size chart button removed (no hardcoded measurements) */}
                   </div>
 
                   <div className="flex flex-wrap gap-2.5">
@@ -1486,50 +1469,26 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               )}
 
               {/* Product Description */}
-              <div className="bg-white rounded-3xl p-5 md:p-6 border border-slate-100 shadow-xs mb-5 space-y-3">
-                <h3 className="font-black text-sm text-slate-900">Product Details &amp; Specifications</h3>
+              {(product.description || product.thickness) && (
+                <div className="bg-white rounded-3xl p-5 md:p-6 border border-slate-100 shadow-xs mb-5 space-y-3">
+                  <h3 className="font-black text-sm text-slate-900">Product Details &amp; Specifications</h3>
 
-                {product.thickness && (
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-600">Material Thickness / Fabric Weight:</span>
-                    <span className="text-xs font-black text-[#b7004d] bg-pink-50 px-3 py-1 rounded-xl border border-pink-100">
-                      {product.thickness}
-                    </span>
-                  </div>
-                )}
+                  {product.thickness && (
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-600">Material Thickness / Fabric Weight:</span>
+                      <span className="text-xs font-black text-[#b7004d] bg-pink-50 px-3 py-1 rounded-xl border border-pink-100">
+                        {product.thickness}
+                      </span>
+                    </div>
+                  )}
 
-                <p className="text-xs md:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
-                  {product.description || 'Premium quality verified product directly from manufacturer. Perfect finish, breathable fabric, and durable stitching.'}
-                </p>
-              </div>
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-3 gap-3 bg-white rounded-3xl p-4 md:p-5 shadow-xs border border-slate-100 mb-2">
-                <div className="flex flex-col items-center gap-1.5 text-center">
-                  <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#006a34]">
-                    <span className="material-symbols-outlined text-xl">replay</span>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-slate-700">
-                    7 Days Easy Return
-                  </span>
+                  {product.description && (
+                    <p className="text-xs md:text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+                      {product.description}
+                    </p>
+                  )}
                 </div>
-                <div className="flex flex-col items-center gap-1.5 text-center">
-                  <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#006a34]">
-                    <span className="material-symbols-outlined text-xl">local_shipping</span>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-slate-700">
-                    Free Delivery
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5 text-center">
-                  <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#006a34]">
-                    <span className="material-symbols-outlined text-xl">verified_user</span>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-slate-700">
-                    Quality Assured
-                  </span>
-                </div>
-              </div>
+              )}
             </section>
           </div>
         </div>
@@ -1701,9 +1660,11 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                             </div>
 
                             {/* Review Text */}
-                            <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-normal pt-0.5">
-                              {rev.comment}
-                            </p>
+                            {rev.comment && (
+                              <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-normal pt-0.5">
+                                {rev.comment}
+                              </p>
+                            )}
 
                             {/* Customer Review Photos */}
                             {Array.isArray(rev.photos) && rev.photos.length > 0 && (
@@ -1818,12 +1779,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <div>
                       <div className="w-full aspect-[4/5] bg-white rounded-xl overflow-hidden mb-2 p-1">
                         <img
-                          src={sim.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400'}
+                          src={sim.images?.[0] || PLACEHOLDER_IMAGE}
                           alt={sim.title}
                           className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
+                            e.currentTarget.src = PLACEHOLDER_IMAGE;
                           }}
                         />
                       </div>
@@ -1882,12 +1843,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <div>
                       <div className="w-full aspect-[4/5] bg-white rounded-xl overflow-hidden mb-2 p-1 relative">
                         <img
-                          src={bp.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400'}
+                          src={bp.images?.[0] || PLACEHOLDER_IMAGE}
                           alt={bp.title}
                           className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
+                            e.currentTarget.src = PLACEHOLDER_IMAGE;
                           }}
                         />
                         <span className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
@@ -1960,12 +1921,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <div>
                       <div className="w-full aspect-[4/5] bg-white rounded-xl overflow-hidden mb-2 p-1">
                         <img
-                          src={rec.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400'}
+                          src={rec.images?.[0] || PLACEHOLDER_IMAGE}
                           alt={rec.title}
                           className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
+                            e.currentTarget.src = PLACEHOLDER_IMAGE;
                           }}
                         />
                       </div>
@@ -2179,7 +2140,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                 className="max-w-[92vw] max-h-[70vh] sm:max-h-[78vh] object-contain rounded-2xl shadow-2xl select-none"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000';
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
                 }}
               />
             </div>
@@ -2216,119 +2177,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
 
 
-      {/* Size Chart Modal - Dynamically adapted to Apparel / Footwear */}
-      {showSizeChart && (
-        <div
-          onClick={() => setShowSizeChart(false)}
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-black text-base text-slate-900">
-                  {catMeta.sizeChartTitle || 'Standard Sizing Guide'}
-                </h3>
-                <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
-                  All measurements are in standard Indian / International units
-                </p>
-              </div>
-              <button
-                onClick={() => setShowSizeChart(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer shrink-0"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-
-            {catMeta.sizeChartType === 'footwear' ? (
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="p-2.5">UK / India</th>
-                    <th className="p-2.5">US Size</th>
-                    <th className="p-2.5">EU Size</th>
-                    <th className="p-2.5">Foot Length (cm)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">5 UK</td><td className="p-2.5">6</td><td className="p-2.5">38</td><td className="p-2.5">24.2 cm</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">6 UK</td><td className="p-2.5">7</td><td className="p-2.5">39 / 40</td><td className="p-2.5">25.0 cm</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">7 UK</td><td className="p-2.5">8</td><td className="p-2.5">41</td><td className="p-2.5">25.8 cm</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">8 UK</td><td className="p-2.5">9</td><td className="p-2.5">42</td><td className="p-2.5">26.6 cm</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">9 UK</td><td className="p-2.5">10</td><td className="p-2.5">43</td><td className="p-2.5">27.5 cm</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">10 UK</td><td className="p-2.5">11</td><td className="p-2.5">44</td><td className="p-2.5">28.3 cm</td></tr>
-                </tbody>
-              </table>
-            ) : catMeta.sizeChartType === 'men-apparel' ? (
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="p-2.5">Size</th>
-                    <th className="p-2.5">Chest (Inches)</th>
-                    <th className="p-2.5">Shoulder (Inches)</th>
-                    <th className="p-2.5">Length (Inches)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">S (38)</td><td className="p-2.5">38"</td><td className="p-2.5">16.5"</td><td className="p-2.5">28"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">M (40)</td><td className="p-2.5">40"</td><td className="p-2.5">17.5"</td><td className="p-2.5">29"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">L (42)</td><td className="p-2.5">42"</td><td className="p-2.5">18.5"</td><td className="p-2.5">30"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">XL (44)</td><td className="p-2.5">44"</td><td className="p-2.5">19.5"</td><td className="p-2.5">30.5"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">XXL (46)</td><td className="p-2.5">46"</td><td className="p-2.5">20.5"</td><td className="p-2.5">31"</td></tr>
-                </tbody>
-              </table>
-            ) : catMeta.sizeChartType === 'kids-apparel' ? (
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="p-2.5">Age Group</th>
-                    <th className="p-2.5">Height</th>
-                    <th className="p-2.5">Chest</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">0-6 Months</td><td className="p-2.5">60 - 68 cm</td><td className="p-2.5">18"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">6-12 Months</td><td className="p-2.5">68 - 80 cm</td><td className="p-2.5">20"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">1-2 Years</td><td className="p-2.5">80 - 92 cm</td><td className="p-2.5">21"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">2-3 Years</td><td className="p-2.5">92 - 98 cm</td><td className="p-2.5">22"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">3-4 Years</td><td className="p-2.5">98 - 104 cm</td><td className="p-2.5">23"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">5-6 Years</td><td className="p-2.5">110 - 116 cm</td><td className="p-2.5">24"</td></tr>
-                </tbody>
-              </table>
-            ) : (
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <th className="p-2.5">Size</th>
-                    <th className="p-2.5">Bust (Inches)</th>
-                    <th className="p-2.5">Waist (Inches)</th>
-                    <th className="p-2.5">Length (Inches)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">Free Size</td><td className="p-2.5">38 - 42</td><td className="p-2.5">32 - 38</td><td className="p-2.5">5.5 Meters (Saree)</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">XS</td><td className="p-2.5">32 - 34</td><td className="p-2.5">26 - 28</td><td className="p-2.5">39"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">S</td><td className="p-2.5">34 - 36</td><td className="p-2.5">28 - 30</td><td className="p-2.5">40"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">M</td><td className="p-2.5">36 - 38</td><td className="p-2.5">30 - 32</td><td className="p-2.5">41"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">L</td><td className="p-2.5">38 - 40</td><td className="p-2.5">32 - 34</td><td className="p-2.5">42"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">XL</td><td className="p-2.5">40 - 42</td><td className="p-2.5">34 - 36</td><td className="p-2.5">43"</td></tr>
-                  <tr><td className="p-2.5 font-bold text-[#b90041]">XXL</td><td className="p-2.5">42 - 44</td><td className="p-2.5">36 - 38</td><td className="p-2.5">44"</td></tr>
-                </tbody>
-              </table>
-            )}
-
-            <button
-              onClick={() => setShowSizeChart(false)}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs cursor-pointer transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Size Chart Modal Removed (no hardcoded measurements) */}
 
       {/* Reseller WhatsApp Share & Profit Margin Configuration Modal */}
       {showShareModal && (
@@ -2369,7 +2218,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             {/* Product Summary */}
             <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl">
               <img
-                src={images[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400'}
+                src={images[0] || PLACEHOLDER_IMAGE}
                 alt={product?.title}
                 className="w-14 h-14 rounded-xl object-contain bg-white shrink-0 border border-slate-100"
               />
