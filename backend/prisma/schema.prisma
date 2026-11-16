@@ -165,6 +165,8 @@ model Product {
   colors             String[] @default([])
   thickness          String?
   thicknesses        String[] @default([])
+  sku                String?
+  variants           Json?    @default("[]")
   stock              Int      @default(50)
   isFreeDelivery     Boolean  @default(true) @map("is_free_delivery")
   supplierName       String   @default("Verified Supplier") @map("supplier_name")

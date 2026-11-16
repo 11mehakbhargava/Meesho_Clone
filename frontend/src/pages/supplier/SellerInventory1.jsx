@@ -28,6 +28,8 @@ import {
   Download
 } from 'lucide-react';
 import { exportInventoryToCsv } from '../../utils/csvExport';
+import BulkCatalogUploadModal from '../../components/supplier/catalog/BulkCatalogUploadModal';
+import { resolveColorHex } from '../../components/supplier/catalog/MultiVariantMatrix';
 
 export default function SellerInventory1({ onNavigate, embedded = false, onNavigateTab }) {
   const navigate = useNavigate();
@@ -51,9 +53,14 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
   const [editingProduct, setEditingProduct] = useState(null);
   const [editPrice, setEditPrice] = useState('');
   const [editStock, setEditStock] = useState('');
+  const [editVariants, setEditVariants] = useState([]);
   const [editImages, setEditImages] = useState([]);
   const [editImagePreviews, setEditImagePreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Bulk Upload & Variant View Modal States
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [viewingVariantsProduct, setViewingVariantsProduct] = useState(null);
 
   // Multi-Select & Batch Operation States
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -179,13 +186,20 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
       return;
     }
 
+    const finalStock = editVariants.length > 0
+      ? editVariants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)
+      : stockNum;
+
     setIsSubmitting(true);
     try {
       let updatedProd;
       if (editImages.length > 0) {
         const formData = new FormData();
         formData.append('price', priceNum);
-        formData.append('stock', stockNum);
+        formData.append('stock', finalStock);
+        if (editVariants.length > 0) {
+          formData.append('variants', JSON.stringify(editVariants));
+        }
         editImages.forEach((imgFile) => {
           formData.append('images', imgFile);
         });
@@ -193,7 +207,8 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
       } else {
         updatedProd = await supplierApiService.updateSupplierProduct(editingProduct.id, {
           price: priceNum,
-          stock: stockNum,
+          stock: finalStock,
+          variants: editVariants.length > 0 ? editVariants : undefined,
         });
       }
 
@@ -204,7 +219,8 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
             ? {
                 ...p,
                 price: priceNum,
-                stock: stockNum,
+                stock: finalStock,
+                variants: editVariants.length > 0 ? editVariants : p.variants,
                 images: updatedProd?.images || p.images,
               }
             : p
@@ -213,6 +229,7 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
 
       toast.success(`Updated "${editingProduct.title}" successfully!`);
       setEditingProduct(null);
+      setEditVariants([]);
       setEditImages([]);
       setEditImagePreviews([]);
     } catch (err) {
@@ -475,6 +492,17 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
               <span className="hidden sm:inline">Export CSV</span>
             </button>
 
+            {/* Bulk CSV Import Button */}
+            <button
+              type="button"
+              onClick={() => setBulkUploadOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 text-[#b7004d] hover:bg-pink-100 font-bold text-xs transition active:scale-95 cursor-pointer shadow-xs"
+              title="Bulk upload 50+ products via Excel / CSV template"
+            >
+              <UploadCloud className="w-4 h-4 text-[#b7004d]" />
+              <span>Bulk CSV Import</span>
+            </button>
+
             <button
               type="button"
               onClick={() => handleNav('/supplier-add-product1')}
@@ -728,6 +756,17 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
                                     {prod.colors.length} Color{prod.colors.length > 1 ? 's' : ''}
                                   </span>
                                 )}
+                                {Array.isArray(prod.variants) && prod.variants.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingVariantsProduct(prod)}
+                                    className="text-[9.5px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded border border-indigo-200 transition cursor-pointer inline-flex items-center gap-1"
+                                    title="Click to view full Color × Size Variant Matrix"
+                                  >
+                                    <Layers className="w-2.5 h-2.5" />
+                                    <span>{prod.variants.length} Variants</span>
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -789,6 +828,7 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
                                 setEditingProduct(prod);
                                 setEditPrice(String(prod.price || ''));
                                 setEditStock(String(prod.stock || '0'));
+                                setEditVariants(Array.isArray(prod.variants) ? prod.variants : []);
                                 setEditImages([]);
                                 setEditImagePreviews([]);
                               }}
@@ -920,22 +960,79 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Warehouse Stock Units
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editStock}
-                    onChange={(e) => setEditStock(e.target.value)}
-                    className="w-full h-11 px-4 text-sm font-semibold rounded-2xl border border-slate-200 focus:border-[#d82a62] outline-none"
-                    required
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Products with less than 10 units are automatically marked as "Low Stock".
-                  </p>
-                </div>
+                {editVariants.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-700">
+                        Multi-Variant Warehouse Inventory ({editVariants.length} SKUs)
+                      </label>
+                      <span className="text-[11px] font-bold text-[#b7004d]">
+                        Total Stock: {editVariants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)} units
+                      </span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-slate-50/60 p-1">
+                      {editVariants.map((v, vIdx) => (
+                        <div key={v.id || vIdx} className="p-2 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-black text-slate-800">{v.color}</span>
+                            <span className="text-slate-300">/</span>
+                            <span className="font-bold text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[10px]">
+                              {v.size}
+                            </span>
+                            <span className="font-mono text-[10px] text-slate-400 truncate max-w-[100px]">
+                              ({v.sku})
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <input
+                              type="number"
+                              min="0"
+                              value={v.stock}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                const safeVal = isNaN(val) ? 0 : Math.max(0, val);
+                                setEditVariants((prev) => {
+                                  const next = [...prev];
+                                  next[vIdx] = {
+                                    ...next[vIdx],
+                                    stock: safeVal,
+                                    status: safeVal > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+                                  };
+                                  const newSum = next.reduce((sum, item) => sum + (parseInt(item.stock, 10) || 0), 0);
+                                  setEditStock(String(newSum));
+                                  return next;
+                                });
+                              }}
+                              className={`w-16 px-2 py-1 text-xs font-black rounded-lg border text-center focus:outline-none ${
+                                Number(v.stock) === 0
+                                  ? 'bg-rose-50 border-rose-300 text-rose-700'
+                                  : 'bg-white border-slate-200 text-slate-900 focus:border-[#b7004d]'
+                              }`}
+                            />
+                            <span className="text-[10px] text-slate-400 font-semibold">units</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Warehouse Stock Units
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editStock}
+                      onChange={(e) => setEditStock(e.target.value)}
+                      className="w-full h-11 px-4 text-sm font-semibold rounded-2xl border border-slate-200 focus:border-[#d82a62] outline-none"
+                      required
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Products with less than 10 units are automatically marked as "Low Stock".
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
@@ -1255,6 +1352,107 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
             </div>
           </div>
         )}
+
+        {/* Color × Size Variant Matrix Inspection Modal */}
+        {viewingVariantsProduct && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Multi-Variant Inventory Matrix</h3>
+                    <p className="text-[11px] text-slate-500 truncate max-w-xs">{viewingVariantsProduct.title}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewingVariantsProduct(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto py-3 space-y-2 flex-1">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] sticky top-0">
+                    <tr>
+                      <th className="py-2 px-3">Variant (Color × Size)</th>
+                      <th className="py-2 px-3">SKU</th>
+                      <th className="py-2 px-3">Stock Units</th>
+                      <th className="py-2 px-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(viewingVariantsProduct.variants || []).map((v, idx) => {
+                      const hex = resolveColorHex(v.color);
+                      const isOos = Number(v.stock) === 0;
+                      return (
+                        <tr key={idx} className={isOos ? 'bg-rose-50/20' : ''}>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/10 shrink-0"
+                                style={{ backgroundColor: hex }}
+                              />
+                              <span className="font-bold text-slate-900">{v.color}</span>
+                              <span className="text-slate-300">/</span>
+                              <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+                                {v.size}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500 uppercase">
+                            {v.sku}
+                          </td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">
+                            {v.stock} units
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            {isOos ? (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
+                                Out of Stock
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                In Stock
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+                <span className="text-xs text-slate-500 font-medium">
+                  Total Catalog Units: <strong className="text-slate-900">{viewingVariantsProduct.stock}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setViewingVariantsProduct(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-800 text-white font-bold text-xs hover:bg-slate-900 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Catalog Mass Import Modal */}
+        <BulkCatalogUploadModal
+          isOpen={bulkUploadOpen}
+          onClose={() => setBulkUploadOpen(false)}
+          onSuccess={() => {
+            loadInventory(true);
+          }}
+        />
       </div>
   );
 

@@ -34,8 +34,12 @@ import {
   Palette,
   Ruler,
   Check,
-  X
+  X,
+  UploadCloud,
+  FileSpreadsheet
 } from 'lucide-react';
+import MultiVariantMatrix from '../../components/supplier/catalog/MultiVariantMatrix';
+import BulkCatalogUploadModal from '../../components/supplier/catalog/BulkCatalogUploadModal';
 
 // Preset Color Swatches for Multi-Color Selector
 const PRESET_COLORS = [
@@ -222,6 +226,10 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
   // Multiple Images State: array of URLs or base64 strings
   const [images, setImages] = useState(['']);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+
+  // Multi-Variant Matrix & Bulk Upload States
+  const [variants, setVariants] = useState([]);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   // Fetch real categories, profile, and KYC compliance status
   useEffect(() => {
@@ -485,11 +493,11 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
       toast.error('Please enter a valid selling price');
       return;
     }
-    const stockNum = parseInt(formData.stock, 10);
-    if (isNaN(stockNum) || stockNum < 0) {
-      toast.error('Please enter a valid stock quantity');
-      return;
-    }
+    const variantStockSum = variants.length > 0
+      ? variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)
+      : parseInt(formData.stock, 10);
+
+    const stockNum = !isNaN(variantStockSum) && variantStockSum >= 0 ? variantStockSum : 50;
 
     setIsSubmitting(true);
     try {
@@ -512,6 +520,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
         colors: selectedColors,
         thickness: selectedThickness ? selectedThickness.trim() : null,
         thicknesses: selectedThickness ? [selectedThickness.trim()] : [],
+        variants: variants.length > 0 ? variants : [],
         images: finalImages,
         imageUrl: finalImages[0] || '',
       };
@@ -573,14 +582,26 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleNav('/supplier-inventory1')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Inventory</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setBulkUploadOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 text-[#b7004d] hover:bg-pink-100 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs"
+              title="Bulk upload multiple products via Excel / CSV template"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-[#b7004d]" />
+              <span>Bulk CSV Import</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleNav('/supplier-inventory1')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Inventory</span>
+            </button>
+          </div>
         </div>
 
         {/* Compliance KYC Gating Banner */}
@@ -1001,6 +1022,20 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               </div>
             </div>
 
+            {/* 3b. MULTI-VARIANT INVENTORY MATRIX (Color × Size × SKU per Variant) */}
+            <MultiVariantMatrix
+              selectedColors={selectedColors}
+              selectedSizes={selectedSizes}
+              baseSku={formData.sku || 'MSH'}
+              basePrice={formData.price || 0}
+              variants={variants}
+              onChangeVariants={(newVariants) => {
+                setVariants(newVariants);
+                const sum = newVariants.reduce((acc, v) => acc + (parseInt(v.stock, 10) || 0), 0);
+                setFormData((prev) => ({ ...prev, stock: String(sum) }));
+              }}
+            />
+
             {/* 4. MULTIPLE PRODUCT IMAGES & MEDIA SECTION */}
             <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
@@ -1342,6 +1377,15 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
             </div>
           </div>
         </div>
+
+        {/* Bulk Catalog Mass Import Modal */}
+        <BulkCatalogUploadModal
+          isOpen={bulkUploadOpen}
+          onClose={() => setBulkUploadOpen(false)}
+          onSuccess={() => {
+            handleNav('/supplier-inventory1');
+          }}
+        />
       </div>
   );
 

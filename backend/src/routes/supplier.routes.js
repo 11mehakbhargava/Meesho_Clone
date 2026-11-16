@@ -7,6 +7,7 @@ import {
   deleteProduct,
   bulkUpdateProducts,
   bulkDeleteProducts,
+  bulkUploadProducts,
   getCategories,
   addCategory,
   getSupplierOrders,
@@ -59,6 +60,7 @@ router.get('/analytics', getSupplierAnalytics);
 // Products / Catalog
 router.get('/products', getSupplierProducts);
 router.post('/products', uploadProductMedia.array('images', 8), addProduct);
+router.post('/products/bulk-upload', bulkUploadProducts);
 router.patch('/products/bulk', bulkUpdateProducts);
 router.post('/products/bulk-delete', bulkDeleteProducts);
 router.delete('/products/bulk', bulkDeleteProducts);

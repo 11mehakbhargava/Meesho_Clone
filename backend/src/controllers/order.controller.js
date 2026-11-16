@@ -106,6 +106,13 @@ export const createOrder = async (req, res) => {
         });
       }
 
+      if (product.isDeleted || product.isActive === false) {
+        return res.status(400).json({
+          success: false,
+          message: `Product "${product.title}" has been deleted or discontinued by the supplier and cannot be ordered.`
+        });
+      }
+
       const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
       if (product.stock < qty) {
         return res.status(400).json({

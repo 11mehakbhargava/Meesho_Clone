@@ -367,6 +367,16 @@ export async function bulkDeleteSupplierProducts(productIds) {
   return data;
 }
 
+// Bulk Upload Products (CSV / Excel Mass Import)
+export async function bulkUploadSupplierProducts(products) {
+  const data = await request('/supplier/products/bulk-upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ products }),
+  });
+  return data;
+}
+
 // Get Categories
 export async function fetchCategories() {
   const data = await request('/supplier/categories');
@@ -483,6 +493,7 @@ export default {
   deleteSupplierProduct,
   bulkUpdateSupplierProducts,
   bulkDeleteSupplierProducts,
+  bulkUploadSupplierProducts,
   fetchCategories,
   createCategory,
   fetchSupplierOrders,

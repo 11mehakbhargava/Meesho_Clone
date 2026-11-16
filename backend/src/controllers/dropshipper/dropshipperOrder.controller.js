@@ -70,11 +70,15 @@ export const pushDropshipperOrder = async (req, res) => {
     // 3. Resolve Product ID
     let resolvedProduct = null;
     if (productId) {
-      resolvedProduct = await prisma.product.findUnique({ where: { id: productId } });
+      resolvedProduct = await prisma.product.findFirst({
+        where: { id: productId, isDeleted: false, isActive: true }
+      });
     }
     if (!resolvedProduct) {
-      // Find first existing product in database to link OrderItem
-      resolvedProduct = await prisma.product.findFirst();
+      // Find first existing active product in database to link OrderItem
+      resolvedProduct = await prisma.product.findFirst({
+        where: { isDeleted: false, isActive: true }
+      });
     }
 
     const calculatedMargin = Math.max(0, Number(customerPrice) - (Number(wholesaleCost) * Number(quantity)) - Number(shippingFee));
@@ -201,7 +205,9 @@ export const pushBulkDropshipperOrders = async (req, res) => {
       });
     }
 
-    const fallbackProduct = await prisma.product.findFirst();
+    const fallbackProduct = await prisma.product.findFirst({
+      where: { isDeleted: false, isActive: true }
+    });
     const createdOrders = [];
     let totalBatchMargin = 0;
 
