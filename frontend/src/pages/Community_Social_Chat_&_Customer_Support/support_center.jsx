@@ -43,87 +43,29 @@ const FAQS = [
 ];
 
 
-const SUPPORT_LANGUAGES = [
-  { id: 'en', label: 'English', flag: '🇬🇧' },
-  { id: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
-  { id: 'hinglish', label: 'Hinglish', flag: '🇮🇳' },
-];
-
 const BOT_CONTENT = {
-  en: {
-    title: 'MShoppy Support Assistant',
-    online: '24/7 Smart Automated Desk',
-    greeting: 'Hello! I am your MShoppy Support Assistant. How can I help you today?',
-    chips: [
-      { id: 'track_order', label: '📦 Where is my Order?' },
-      { id: 'return_exchange', label: '🔄 Return / Exchange' },
-      { id: 'refund_status', label: '💰 Refund & Payments' },
-      { id: 'raise_ticket', label: '🎫 Raise Support Ticket' },
-    ],
-    placeholder: 'Type your question or choose an option...',
-    sendBtn: 'Send',
-    ticketBtn: '🎫 Open Support Ticket Form',
-    viewTrackingBtn: '📦 View Full Tracking',
-    myOrdersBtn: '🛍️ Go to My Orders',
-    responses: {
-      hi: 'Hello! How are you doing? Please tell me how I can assist with your orders, returns, or account today.',
-      order_found: (order) => `Here are your latest order details:\n• Item: ${order.productName || order.items?.[0]?.product?.title || 'Catalog Order'}\n• Total: ₹${order.totalAmount || order.price || 0}\n• Status: ${order.orderStatus || order.status || 'ORDERED'}`,
-      order_not_found: 'You do not have any active orders currently. Visit our shop to place your first order!',
-      return_info: 'You can request a Return or Exchange within 7 days of delivery directly from the "My Orders" section. Once approved, our courier partner will collect the item and refund will be credited.',
-      refund_info: '• Prepaid Orders: Refunds are credited within 24-48 hours.\n• COD Orders: Refund is sent to your UPI ID or Bank Account instantly upon doorstep pickup verification.',
-      ticket_prompt: 'Need personalized help from our human operations team? Click below to open an official support ticket.',
-      unknown: "I didn't quite get that. Please select one of the quick options below or submit a support ticket so our team can resolve it."
-    }
-  },
-  hi: {
-    title: 'Mshoppy सहायता सहायक',
-    online: '24/7 सक्रिय स्मार्ट सहायता',
-    greeting: 'नमस्ते! मैं Mshoppy सहायता सहायक हूँ। आज मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे मदद कर सकता हूँ?',
-    chips: [
-      { id: 'track_order', label: '📦 मेरा ऑर्डर कहाँ है?' },
-      { id: 'return_exchange', label: '🔄 रिटर्न या एक्सचेंज' },
-      { id: 'refund_status', label: '💰 रिफंड और पेमेंट' },
-      { id: 'raise_ticket', label: '🎫 शिकायत दर्ज करें' },
-    ],
-    placeholder: 'अपना सवाल लिखें या विकल्प चुनें...',
-    sendBtn: 'भेजें',
-    ticketBtn: '🎫 सपोर्ट टिकट फॉर्म खोलें',
-    viewTrackingBtn: '📦 ऑर्डर ट्रैकिंग देखें',
-    myOrdersBtn: '🛍️ My Orders पर जाएँ',
-    responses: {
-      hi: 'नमस्ते! आप कैसे हैं? कृपया बताएं कि मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे सहायता कर सकता हूँ।',
-      order_found: (order) => `आपके सबसे हालिया ऑर्डर का विवरण:\n• सामान: ${order.productName || order.items?.[0]?.product?.title || 'ऑर्डर आइटम'}\n• राशि: ₹${order.totalAmount || order.price || 0}\n• वर्तमान स्थिति: ${order.orderStatus || order.status || 'ORDERED'}`,
-      order_not_found: 'आपके खाते में अभी कोई एक्टिव ऑर्डर नहीं है। नया ऑर्डर करने के लिए होमपेज देखें!',
-      return_info: 'डिलीवरी के 7 दिनों के भीतर आप "My Orders" पेज से रिटर्न या एक्सचेंज की रिक्वेस्ट कर सकते हैं। पार्सल पिकअप होने के बाद रिफंड तुरंत जारी कर दिया जाता है।',
-      refund_info: '• प्रीपेड ऑर्डर्स: रिफंड 24-48 घंटों में आपके अकाउंट में क्रेडिट हो जाता है।\n• COD ऑर्डर्स: डोरस्टेप पिकअप के समय आपके UPI या बैंक अकाउंट में तुरंत पैसे ट्रांसफर होते हैं।',
-      ticket_prompt: 'क्या आप हमारे कस्टमर केयर अधिकारी को शिकायत भेजना चाहते हैं? नीचे दिए गए बटन पर क्लिक करें।',
-      unknown: 'मुझे यह समझ नहीं आया। आप नीचे दिए गए विकल्पों में से चुन सकते हैं या सपोर्ट टिकट दर्ज कर सकते हैं।'
-    }
-  },
-  hinglish: {
-    title: 'MShoppy Support Assistant',
-    online: '24/7 Active Smart Desk',
-    greeting: 'Namaste! Main MShoppy Support Assistant hoon. Aaj main aapke orders, return ya payment me kya madad kar sakta hoon?',
-    chips: [
-      { id: 'track_order', label: '📦 Mera order kaha hai?' },
-      { id: 'return_exchange', label: '🔄 Return ya Exchange' },
-      { id: 'refund_status', label: '💰 Refund & Payments' },
-      { id: 'raise_ticket', label: '🎫 Support Ticket dalein' },
-    ],
-    placeholder: 'Apna sawal likhein ya option chunein...',
-    sendBtn: 'Send',
-    ticketBtn: '🎫 Open Support Ticket Form',
-    viewTrackingBtn: '📦 View Full Tracking',
-    myOrdersBtn: '🛍️ Go to My Orders',
-    responses: {
-      hi: 'Namaste! Kaise hain aap? Batayein aapko Order, Return, ya Payment me kis cheez me help chahiye?',
-      order_found: (order) => `Aapke latest order ki details:\n• Item: ${order.productName || order.items?.[0]?.product?.title || 'Order Item'}\n• Price: ₹${order.totalAmount || order.price || 0}\n• Status: ${order.orderStatus || order.status || 'ORDERED'}`,
-      order_not_found: 'Aapke account me abhi koi active order nahi hai. Shopping karne ke liye Home page dekhein!',
-      return_info: 'Delivery ke 7 din ke andar aap "My Orders" me jakar Return ya Exchange request kar sakte hain. Item pickup hote hi refund turant credit ho jayega.',
-      refund_info: '• Prepaid orders: 24-48 ghante me refund milta hai.\n• COD orders: Doorstep pickup scan hote hi aapke UPI ya Bank me refund transfer ho jata hai.',
-      ticket_prompt: 'Agar aapko customer support team se baat karni hai, toh niche diye button se direct ticket raise karein.',
-      unknown: 'Mujhe ye samajh nahi aaya. Aap niche diye gaye options me se choose kar sakte hain ya support ticket raise kar sakte hain.'
-    }
+  title: 'MShoppy Support Assistant',
+  online: '24/7 Smart Automated Help Desk',
+  greeting: 'Hello! I am your MShoppy Support Assistant. How can I help you today?',
+  chips: [
+    { id: 'track_order', label: '📦 Where is my Order?' },
+    { id: 'return_exchange', label: '🔄 Return or Exchange' },
+    { id: 'refund_status', label: '💰 Refund & Payments' },
+    { id: 'raise_ticket', label: '🎫 Raise Support Ticket' },
+  ],
+  placeholder: 'Type your support question...',
+  sendBtn: 'Send',
+  ticketBtn: '🎫 Open Support Ticket Form',
+  viewTrackingBtn: '📦 View Full Tracking',
+  myOrdersBtn: '🛍️ Go to My Orders',
+  responses: {
+    hi: 'Hello! How are you doing? Please tell me how I can assist with your orders, returns, or payments today.',
+    order_found: (order) => `Here are your latest order details:\n• Item: ${order.productName || order.items?.[0]?.product?.title || 'Catalog Order'}\n• Total: ₹${order.totalAmount || order.price || 0}\n• Status: ${order.orderStatus || order.status || 'ORDERED'}`,
+    order_not_found: 'You do not have any active orders currently. Visit our shop to place your first order!',
+    return_info: 'You can request a Return or Exchange within 7 days of delivery directly from the "My Orders" section. Once collected by our courier partner, your refund is processed promptly.',
+    refund_info: '• Prepaid Orders: Refunds are credited to original payment source within 24-48 hours.\n• COD Orders: Instant refund is initiated to your UPI ID or Bank Account upon doorstep handover verification.',
+    ticket_prompt: 'Would you like to connect directly with our operations team? Click below to submit an official support ticket.',
+    unknown: "I didn't quite catch that. Please pick one of the quick options below or submit a support ticket so our team can assist you."
   }
 };
 
@@ -160,73 +102,57 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
   }, [orderIdParam]);
 
 
-  // Multilingual Smart Live Chat state
-  const [chatLang, setChatLang] = useState('hi'); // 'en' | 'hi' | 'hinglish'
+  // Smart Live Chat state (English only)
   const [isBotTyping, setIsBotTyping] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     {
       id: '1',
       sender: 'agent',
-      text: 'नमस्ते! मैं Mshoppy सहायता सहायक हूँ। आज मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे मदद कर सकता हूँ?',
+      text: BOT_CONTENT.greeting,
       showChips: true
     },
   ]);
   const [chatInput, setChatInput] = useState('');
 
-  const currentDict = BOT_CONTENT[chatLang] || BOT_CONTENT.hi;
-
-  const handleSwitchLanguage = (newLang) => {
-    setChatLang(newLang);
-    const dict = BOT_CONTENT[newLang] || BOT_CONTENT.hi;
-    const langMsg = {
-      id: `lang-${Date.now()}`,
-      sender: 'agent',
-      text: dict.greeting,
-      showChips: true
-    };
-    setChatMessages((prev) => [...prev, langMsg]);
-  };
-
   const processBotReply = (inputText) => {
     const t = (inputText || '').toLowerCase().trim();
-    const dict = BOT_CONTENT[chatLang] || BOT_CONTENT.hi;
 
-    if (t === 'track_order' || t.includes('order') || t.includes('track') || t.includes('kaha') || t.includes('delivery') || t.includes('status')) {
+    if (t === 'track_order' || t.includes('order') || t.includes('track') || t.includes('status') || t.includes('delivery') || t.includes('where is')) {
       if (latestOrder) {
         return {
-          text: dict.responses.order_found(latestOrder),
+          text: BOT_CONTENT.responses.order_found(latestOrder),
           orderCard: latestOrder,
           actionType: 'orders'
         };
       } else {
         return {
-          text: dict.responses.order_not_found,
+          text: BOT_CONTENT.responses.order_not_found,
           actionType: 'home'
         };
       }
-    } else if (t === 'return_exchange' || t.includes('return') || t.includes('exchange') || t.includes('wapas') || t.includes('badal')) {
+    } else if (t === 'return_exchange' || t.includes('return') || t.includes('exchange') || t.includes('replace') || t.includes('wapas')) {
       return {
-        text: dict.responses.return_info,
+        text: BOT_CONTENT.responses.return_info,
         actionType: 'orders'
       };
-    } else if (t === 'refund_status' || t.includes('refund') || t.includes('payout') || t.includes('paise') || t.includes('payment') || t.includes('margin')) {
+    } else if (t === 'refund_status' || t.includes('refund') || t.includes('payment') || t.includes('payout') || t.includes('margin') || t.includes('money')) {
       return {
-        text: dict.responses.refund_info,
+        text: BOT_CONTENT.responses.refund_info,
         actionType: 'ticket'
       };
-    } else if (t === 'raise_ticket' || t.includes('ticket') || t.includes('shikayat') || t.includes('complaint') || t.includes('help') || t.includes('madad')) {
+    } else if (t === 'raise_ticket' || t.includes('ticket') || t.includes('complaint') || t.includes('help') || t.includes('issue') || t.includes('support')) {
       return {
-        text: dict.responses.ticket_prompt,
+        text: BOT_CONTENT.responses.ticket_prompt,
         actionType: 'ticket'
       };
-    } else if (t.includes('hi') || t.includes('hello') || t.includes('hey') || t.includes('namaste') || t.includes('kaise')) {
+    } else if (t.includes('hi') || t.includes('hello') || t.includes('hey') || t.includes('namaste')) {
       return {
-        text: dict.responses.hi,
+        text: BOT_CONTENT.responses.hi,
         showChips: true
       };
     } else {
       return {
-        text: dict.responses.unknown,
+        text: BOT_CONTENT.responses.unknown,
         actionType: 'ticket',
         showChips: true
       };
@@ -706,54 +632,32 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
         </div>
       )}
 
-      {/* Live Support Chat Drawer Modal (Multilingual Smart Bot) */}
+      {/* Live Support Chat Drawer Modal (Smart English Bot) */}
       {isLiveSupportChatOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-lg w-full h-[84vh] shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
-            {/* Header with Title and Language Switcher */}
-            <div className="px-4 py-3 bg-gradient-to-r from-[#b90041] via-[#df2457] to-[#b90041] text-white flex flex-col gap-2 shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
-                    <span className="material-symbols-outlined text-lg">support_agent</span>
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm leading-tight">{currentDict.title}</h3>
-                    <span className="text-[10px] text-pink-100 font-semibold">{currentDict.online}</span>
+            {/* Header with Title and Online Status */}
+            <div className="px-5 py-4 bg-gradient-to-r from-[#b90041] via-[#df2457] to-[#b90041] text-white flex items-center justify-between shrink-0 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold shadow-inner">
+                  <span className="material-symbols-outlined text-2xl">support_agent</span>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm tracking-wide leading-tight">{BOT_CONTENT.title}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[11px] text-pink-100 font-semibold">{BOT_CONTENT.online}</span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsLiveSupportChatOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full cursor-pointer transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">close</span>
-                </button>
               </div>
-
-              {/* Language Switcher Bar */}
-              <div className="flex items-center justify-between bg-black/20 rounded-xl px-2.5 py-1.5 backdrop-blur-xs">
-                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">translate</span>
-                  <span>Language / भाषा:</span>
-                </span>
-                <div className="flex items-center gap-1">
-                  {SUPPORT_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.id}
-                      type="button"
-                      onClick={() => handleSwitchLanguage(lang.id)}
-                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
-                        chatLang === lang.id
-                          ? 'bg-white text-[#b90041] shadow-xs scale-102'
-                          : 'text-white/80 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsLiveSupportChatOpen(false)}
+                className="w-9 h-9 flex items-center justify-center hover:bg-white/20 rounded-full cursor-pointer transition-colors"
+                aria-label="Close Chat"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
             </div>
 
             {/* Chat Messages Log */}
@@ -778,7 +682,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                     <div className="bg-white rounded-2xl border border-slate-200 p-3 max-w-[85%] shadow-xs space-y-2 text-left">
                       <div className="flex items-center gap-2.5">
                         <img
-                          src={msg.orderCard.image || msg.orderCard.items?.[0]?.product?.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200'}
+                          src={msg.orderCard.image || msg.orderCard.items?.[0]?.product?.images?.[0] || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="1.5"><rect width="20" height="20" x="2" y="2" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'}
                           alt="Order item"
                           className="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-100 shrink-0"
                         />
@@ -803,7 +707,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                           }}
                           className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] py-1.5 rounded-xl cursor-pointer transition-colors text-center"
                         >
-                          {currentDict.viewTrackingBtn}
+                          {BOT_CONTENT.viewTrackingBtn}
                         </button>
                       </div>
                     </div>
@@ -820,7 +724,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                       className="bg-gradient-to-r from-[#b90041] to-[#df2457] hover:opacity-95 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
                     >
                       <span className="material-symbols-outlined text-sm">confirmation_number</span>
-                      <span>{currentDict.ticketBtn}</span>
+                      <span>{BOT_CONTENT.ticketBtn}</span>
                     </button>
                   )}
 
@@ -834,7 +738,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                       }}
                       className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
                     >
-                      <span>{currentDict.myOrdersBtn}</span>
+                      <span>{BOT_CONTENT.myOrdersBtn}</span>
                     </button>
                   )}
                 </div>
@@ -853,7 +757,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
 
             {/* Quick Action Chips Bar */}
             <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              {currentDict.chips.map((chip) => (
+              {BOT_CONTENT.chips.map((chip) => (
                 <button
                   key={chip.id}
                   type="button"
@@ -874,14 +778,14 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder={currentDict.placeholder}
+                placeholder={BOT_CONTENT.placeholder}
                 className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#b90041]"
               />
               <button
                 type="submit"
                 className="px-4 py-2.5 bg-[#b90041] text-white rounded-xl cursor-pointer hover:bg-[#df2457] active:scale-95 shadow-xs flex items-center gap-1 font-bold text-xs"
               >
-                <span>{currentDict.sendBtn}</span>
+                <span>{BOT_CONTENT.sendBtn}</span>
                 <span className="material-symbols-outlined text-sm">send</span>
               </button>
             </form>
