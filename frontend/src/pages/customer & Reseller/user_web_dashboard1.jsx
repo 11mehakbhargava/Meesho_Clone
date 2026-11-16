@@ -391,6 +391,25 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     return [];
   });
 
+  // Dedicated Separate Balances for Affiliate Margin vs Customer Refunds
+  const { affiliateMarginBalance, customerRefundBalance } = useMemo(() => {
+    const affiliateCredits = (walletTransactions || [])
+      .filter((t) => t && /affiliate|commission|referral|margin/i.test(t.title || t.description || ''))
+      .reduce((sum, t) => sum + (t.type === 'credit' ? (Number(t.amount) || 0) : 0), 0);
+
+    const totalDebits = (walletTransactions || [])
+      .filter((t) => t && t.type === 'debit')
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+    const affBalance = Math.max(0, affiliateCredits - totalDebits);
+    const refundBalance = Math.max(0, walletBalance - affBalance);
+
+    return {
+      affiliateMarginBalance: affBalance,
+      customerRefundBalance: refundBalance
+    };
+  }, [walletTransactions, walletBalance]);
+
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
@@ -3037,75 +3056,137 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         ========================================================================= */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2 bg-gradient-to-br from-[#b7004d] via-[#cf125d] to-[#e62973] text-white p-6 rounded-3xl shadow-lg shadow-pink-600/20 flex flex-col justify-between space-y-6">
-                <div>
-                  <h4 className="font-black text-sm tracking-wide">
-                    {isResellerApproved ? 'MShoppy Partner Resale Wallet' : 'MShoppy Customer Shopping Wallet'}
-                  </h4>
-                  <p className="text-xs text-pink-100">
-                    {isResellerApproved ? 'Real Cash & Margin Ledger' : 'Refunds, Store Credits & Promotional Cash'}
-                  </p>
+            {/* 2 Dedicated Wallets: Affiliate Margin Wallet + Customer Refund Balance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Card 1: 💰 Affiliate Margin Wallet (For Bank Withdrawal) */}
+              <div className="bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#b7004d] text-white p-6 rounded-3xl shadow-xl shadow-pink-950/15 flex flex-col justify-between space-y-6 border border-pink-500/20">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold mb-2 border border-emerald-500/30">
+                      <span className="material-symbols-outlined text-xs">payments</span>
+                      <span>Bank Withdrawal Wallet</span>
+                    </div>
+                    <h4 className="font-black text-base tracking-wide text-white">
+                      Affiliate Resale Margin
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      100% custom profit margin earned from customer sales
+                    </p>
+                  </div>
+                  <span className="text-2xl p-2 bg-white/10 rounded-2xl backdrop-blur-xs">💰</span>
                 </div>
+
                 <div>
-                  <p className="text-xs font-bold text-pink-100">
-                    {isResellerApproved ? 'Available For Instant Withdrawal' : 'Usable on Checkout / Refund Balance'}
+                  <p className="text-xs font-bold text-slate-300">
+                    Available For Bank Payout
                   </p>
-                  <h2 className="text-3xl sm:text-4xl font-black mt-1">
+                  <h2 className="text-3xl sm:text-4xl font-black mt-1 text-emerald-400">
                     {isWalletLoading ? (
-                      <span className="inline-block w-32 h-9 bg-white/30 rounded animate-pulse"></span>
+                      <span className="inline-block w-28 h-9 bg-white/20 rounded animate-pulse"></span>
                     ) : (
-                      `₹${walletBalance.toLocaleString('en-IN')}`
+                      `₹${affiliateMarginBalance.toLocaleString('en-IN')}`
                     )}
                   </h2>
                 </div>
+
                 <div>
                   {isResellerApproved ? (
                     <button
                       type="button"
-                      onClick={() => setShowWithdrawModal(true)}
-                      className="px-6 py-2.5 bg-white text-[#b7004d] font-bold text-xs sm:text-sm rounded-xl shadow-md hover:bg-pink-50 cursor-pointer"
+                      onClick={() => {
+                        setWithdrawAmount(String(affiliateMarginBalance));
+                        setShowWithdrawModal(true);
+                      }}
+                      disabled={affiliateMarginBalance <= 0}
+                      className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
                     >
-                      Withdraw to Bank Account 🏦
+                      <span>Withdraw to Bank Account</span>
+                      <span>🏦</span>
                     </button>
                   ) : (
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => handleNav('/explorer')}
-                        className="px-5 py-2.5 bg-white text-[#b7004d] font-bold text-xs sm:text-sm rounded-xl shadow-md hover:bg-pink-50 cursor-pointer"
-                      >
-                        Shop With Balance 🛍️
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('affiliate')}
-                        className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white font-bold text-xs rounded-xl backdrop-blur-sm cursor-pointer"
-                      >
-                        {isKycUnderReview ? 'KYC In Progress ⏳' : 'Enable Bank Payouts (Complete KYC) →'}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('affiliate')}
+                      className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl backdrop-blur-sm cursor-pointer border border-white/20"
+                    >
+                      {isKycUnderReview ? 'KYC In Progress ⏳' : 'Complete KYC for Payouts →'}
+                    </button>
                   )}
                 </div>
               </div>
 
+              {/* Card 2: 🛍️ Customer Refund & Store Credit (For Shopping / Checkout) */}
+              <div className="bg-gradient-to-br from-[#831843] via-[#9d174d] to-[#be185d] text-white p-6 rounded-3xl shadow-xl shadow-pink-950/15 flex flex-col justify-between space-y-6 border border-pink-400/20">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-pink-400/20 text-pink-200 text-[11px] font-bold mb-2 border border-pink-300/30">
+                      <span className="material-symbols-outlined text-xs">shopping_bag</span>
+                      <span>Shopping & Checkout</span>
+                    </div>
+                    <h4 className="font-black text-base tracking-wide text-white">
+                      Customer Refund Balance
+                    </h4>
+                    <p className="text-xs text-pink-100 mt-0.5">
+                      Refunds from cancelled / returned orders & credits
+                    </p>
+                  </div>
+                  <span className="text-2xl p-2 bg-white/10 rounded-2xl backdrop-blur-xs">🛍️</span>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-pink-100">
+                    Instant Usable on Checkout
+                  </p>
+                  <h2 className="text-3xl sm:text-4xl font-black mt-1 text-white">
+                    {isWalletLoading ? (
+                      <span className="inline-block w-28 h-9 bg-white/20 rounded animate-pulse"></span>
+                    ) : (
+                      `₹${customerRefundBalance.toLocaleString('en-IN')}`
+                    )}
+                  </h2>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => handleNav('/explorer')}
+                    className="w-full py-2.5 bg-white text-[#9d174d] hover:bg-pink-50 font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                  >
+                    <span>Shop with Balance</span>
+                    <span>🛍️</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Settlement Bank Account */}
               <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4">
-                <Building className="w-8 h-8 text-[#b7004d]" />
+                <div className="flex items-center justify-between">
+                  <Building className="w-8 h-8 text-[#b7004d]" />
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                    Verified IMPS
+                  </span>
+                </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">Settlement Bank</h4>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  <p className="text-xs text-slate-700 font-mono mt-1 font-bold">
                     {withdrawBank || 'No Bank Account Linked Yet'}
                   </p>
                   {!isResellerApproved && (
                     <p className="text-[11px] text-amber-600 font-medium mt-1">
-                      {isKycUnderReview ? 'Bank verification pending approval' : 'KYC verification required for bank payouts'}
+                      {isKycUnderReview ? 'Bank verification pending approval' : 'KYC verification required for payouts'}
+                    </p>
+                  )}
+                  {isResellerApproved && (
+                    <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">check_circle</span>
+                      <span>Ready for Instant Direct Bank Deposit</span>
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('affiliate')}
-                  className="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold cursor-pointer"
+                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
                   {withdrawBank ? 'Update Bank Account' : 'Link Bank Account'}
                 </button>
@@ -3146,7 +3227,24 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     <tbody className="text-xs divide-y divide-slate-100">
                       {walletTransactions.map((tx, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3 font-semibold text-slate-900">{tx.title}</td>
+                          <td className="py-3 font-semibold text-slate-900">
+                            <div className="flex items-center gap-2">
+                              {/affiliate|commission|referral|margin/i.test(tx.title) ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                  💰 Margin
+                                </span>
+                              ) : /refund|cancel/i.test(tx.title) ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-50 text-[#b7004d] border border-pink-200 shrink-0">
+                                  🛍️ Refund
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                                  🪙 Credit
+                                </span>
+                              )}
+                              <span className="truncate max-w-xs sm:max-w-md">{tx.title}</span>
+                            </div>
+                          </td>
                           <td className="py-3 font-mono text-slate-400 text-[11px]">{tx.ref}</td>
                           <td className="py-3 text-slate-500 text-[11px]">{tx.date}</td>
                           <td className="py-3">
@@ -3453,7 +3551,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     required
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Available: ₹{walletBalance.toLocaleString('en-IN')}</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">
+                  Available Affiliate Margin: <strong className="text-emerald-600">₹{(affiliateMarginBalance > 0 ? affiliateMarginBalance : walletBalance).toLocaleString('en-IN')}</strong>
+                </p>
               </div>
 
               <div className="flex gap-2 pt-2">
