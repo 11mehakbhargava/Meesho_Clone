@@ -229,7 +229,7 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
   const knownOrderIdsRef = useRef(new Set());
   const isFirstLoadRef = useRef(true);
 
-  // Background radar for incoming orders (every 20s) when not on orders tab
+  // Background radar for incoming orders (every 8s) when not on orders tab
   useEffect(() => {
     const radarInterval = setInterval(async () => {
       // If currently on orders tab, SellerOrders1 handles its own real-time radar
@@ -271,10 +271,32 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
           }
         }
       } catch (_) {}
-    }, 20000);
+    }, 8000);
 
     return () => clearInterval(radarInterval);
   }, [activeTab, handleTabChange]);
+
+  // Real-Time Cross-Tab Broadcast listener (0ms latency for orders placed in same browser)
+  useEffect(() => {
+    let bc;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('mshoppy_order_events');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'ORDER_PLACED') {
+            playOrderChime();
+            loadDashboardData(false);
+          }
+        };
+      }
+    } catch (_) {}
+
+    return () => {
+      try {
+        if (bc) bc.close();
+      } catch (_) {}
+    };
+  }, [loadDashboardData]);
 
   // Safe Logout Handler
   const performLogout = async () => {

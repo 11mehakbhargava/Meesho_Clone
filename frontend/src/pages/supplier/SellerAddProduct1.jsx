@@ -67,6 +67,8 @@ const PRESET_COLORS = [
 const CATEGORY_SIZES_MAP = {
   apparel: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'],
   footwear: ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11'],
+  beauty: ['50 ml', '100 ml', '150 ml', '200 ml', '250 ml', '500 ml', '50 gm', '100 gm', 'Pack of 1', 'Pack of 2', 'Pack of 3'],
+  electronics: ['Standard', '64 GB', '128 GB', '256 GB', '512 GB', 'Pack of 1', 'Pack of 2'],
   home: ['Single', 'Double', 'Queen', 'King', 'Standard', 'Pack of 1', 'Pack of 2', 'Pack of 4'],
   accessories: ['Adjustable', 'Free Size', 'Small', 'Medium', 'Large'],
   general: ['Standard', 'Free Size', 'Compact', 'Default'],
@@ -74,8 +76,14 @@ const CATEGORY_SIZES_MAP = {
 
 const getSizesForCategory = (categorySlug = '') => {
   const slug = (categorySlug || '').toLowerCase();
+  if (slug.includes('beauty') || slug.includes('care') || slug.includes('face') || slug.includes('skin') || slug.includes('wash') || slug.includes('lotion') || slug.includes('cream') || slug.includes('oil') || slug.includes('shampoo') || slug.includes('serum') || slug.includes('cosmetic') || slug.includes('perfume')) {
+    return CATEGORY_SIZES_MAP.beauty;
+  }
   if (slug.includes('footwear') || slug.includes('shoe') || slug.includes('sandal') || slug.includes('slipper') || slug.includes('heel')) {
     return CATEGORY_SIZES_MAP.footwear;
+  }
+  if (slug.includes('electronic') || slug.includes('gadget') || slug.includes('mobile')) {
+    return CATEGORY_SIZES_MAP.electronics;
   }
   if (slug.includes('home') || slug.includes('kitchen') || slug.includes('bed') || slug.includes('curtain') || slug.includes('furnish') || slug.includes('living')) {
     return CATEGORY_SIZES_MAP.home;
@@ -83,7 +91,10 @@ const getSizesForCategory = (categorySlug = '') => {
   if (slug.includes('jewel') || slug.includes('access') || slug.includes('watch') || slug.includes('bag') || slug.includes('belt')) {
     return CATEGORY_SIZES_MAP.accessories;
   }
-  return CATEGORY_SIZES_MAP.apparel;
+  if (slug.includes('ethnic') || slug.includes('western') || slug.includes('apparel') || slug.includes('kurti') || slug.includes('saree') || slug.includes('shirt') || slug.includes('men') || slug.includes('women') || slug.includes('kid')) {
+    return CATEGORY_SIZES_MAP.apparel;
+  }
+  return CATEGORY_SIZES_MAP.general;
 };
 
 // Category Adaptive Thickness & Density Configuration
@@ -113,6 +124,11 @@ const CATEGORY_THICKNESS_MAP = {
     label: 'Thickness / Wire Gauge',
     presets: ['1.0 mm (Delicate / Sleek)', '1.5 mm (Standard)', '2.0 mm (Medium)', '3.0 mm (Bold / Heavy)'],
   },
+  none: {
+    unit: '',
+    label: 'Material Thickness / Density',
+    presets: [],
+  },
   general: {
     unit: 'mm / GSM',
     label: 'Thickness / Density Specification',
@@ -122,6 +138,9 @@ const CATEGORY_THICKNESS_MAP = {
 
 const getThicknessConfig = (categorySlug = '') => {
   const slug = (categorySlug || '').toLowerCase();
+  if (slug.includes('beauty') || slug.includes('care') || slug.includes('face') || slug.includes('skin') || slug.includes('wash') || slug.includes('lotion') || slug.includes('cosmetic') || slug.includes('electronic') || slug.includes('grocery')) {
+    return CATEGORY_THICKNESS_MAP.none;
+  }
   if (slug.includes('footwear') || slug.includes('shoe') || slug.includes('sandal')) {
     return CATEGORY_THICKNESS_MAP.footwear;
   }
@@ -137,7 +156,66 @@ const getThicknessConfig = (categorySlug = '') => {
   if (slug.includes('ethnic') || slug.includes('western') || slug.includes('apparel') || slug.includes('kurti') || slug.includes('saree') || slug.includes('shirt') || slug.includes('men') || slug.includes('women') || slug.includes('kid')) {
     return CATEGORY_THICKNESS_MAP.apparel;
   }
-  return CATEGORY_THICKNESS_MAP.apparel;
+  return CATEGORY_THICKNESS_MAP.general;
+};
+
+// Helper: Smart Default Variants Detection by Product Category
+const detectCategoryDefaults = (categorySlug = '') => {
+  const slug = (categorySlug || '').toLowerCase();
+  const isBeauty = slug.includes('beauty') || slug.includes('care') || slug.includes('face') || slug.includes('skin') || slug.includes('wash') || slug.includes('lotion') || slug.includes('cream') || slug.includes('oil') || slug.includes('shampoo') || slug.includes('serum') || slug.includes('perfume') || slug.includes('cosmetic');
+  const isApparel = slug.includes('ethnic') || slug.includes('western') || slug.includes('apparel') || slug.includes('kurti') || slug.includes('saree') || slug.includes('shirt') || slug.includes('men') || slug.includes('women') || slug.includes('kid') || slug.includes('cloth') || slug.includes('dress') || slug.includes('jeans') || slug.includes('pant');
+  const isFootwear = slug.includes('footwear') || slug.includes('shoe') || slug.includes('sandal') || slug.includes('slipper') || slug.includes('heel');
+  const isElectronics = slug.includes('electronic') || slug.includes('gadget') || slug.includes('mobile');
+
+  if (isBeauty) {
+    // For Facewash, Creams, Shampoos: No forced size/color/thickness. Single product quantity applies!
+    return {
+      enableSizes: false,
+      enableColors: false,
+      enableThickness: false,
+      defaultSizes: [],
+      defaultColors: [],
+      defaultThickness: '',
+    };
+  }
+  if (isApparel) {
+    return {
+      enableSizes: true,
+      enableColors: true,
+      enableThickness: true,
+      defaultSizes: ['S', 'M', 'L', 'XL'],
+      defaultColors: ['Black', 'Navy Blue', 'Maroon'],
+      defaultThickness: '180 GSM (Regular / Bio-Wash)',
+    };
+  }
+  if (isFootwear) {
+    return {
+      enableSizes: true,
+      enableColors: true,
+      enableThickness: false,
+      defaultSizes: ['UK 6', 'UK 7', 'UK 8', 'UK 9'],
+      defaultColors: ['Black', 'Brown'],
+      defaultThickness: '',
+    };
+  }
+  if (isElectronics) {
+    return {
+      enableSizes: false,
+      enableColors: true,
+      enableThickness: false,
+      defaultSizes: [],
+      defaultColors: ['Black', 'Silver'],
+      defaultThickness: '',
+    };
+  }
+  return {
+    enableSizes: false,
+    enableColors: false,
+    enableThickness: false,
+    defaultSizes: [],
+    defaultColors: [],
+    defaultThickness: '',
+  };
 };
 
 // Client-side image compressor: Resizes device images to max 1280px & 0.75 JPEG quality (~90-150KB)
@@ -211,16 +289,21 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
     sku: '',
   });
 
+  // Variation Enable/Disable Switches
+  const [enableSizes, setEnableSizes] = useState(false);
+  const [enableColors, setEnableColors] = useState(false);
+  const [enableThickness, setEnableThickness] = useState(false);
+
   // Category-adaptive Sizes State
-  const [selectedSizes, setSelectedSizes] = useState(['S', 'M', 'L', 'XL']);
+  const [selectedSizes, setSelectedSizes] = useState([]);
   const [customSizeInput, setCustomSizeInput] = useState('');
 
   // Available in Different Colors State
-  const [selectedColors, setSelectedColors] = useState(['Black', 'Navy Blue', 'Maroon']);
+  const [selectedColors, setSelectedColors] = useState([]);
   const [customColorInput, setCustomColorInput] = useState('');
 
   // Thickness State
-  const [selectedThickness, setSelectedThickness] = useState('180 GSM (Regular / Bio-Wash)');
+  const [selectedThickness, setSelectedThickness] = useState('');
   const [customThicknessInput, setCustomThicknessInput] = useState('');
 
   // Multiple Images State: array of URLs or base64 strings
@@ -247,12 +330,13 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
           if (list.length > 0) {
             const firstSlug = list[0].slug || list[0].name;
             setFormData((prev) => ({ ...prev, categorySlug: firstSlug }));
-            const catSizes = getSizesForCategory(firstSlug);
-            setSelectedSizes(catSizes.slice(0, 4));
-            const catThick = getThicknessConfig(firstSlug);
-            if (catThick.presets.length > 0) {
-              setSelectedThickness(catThick.presets[0]);
-            }
+            const defaults = detectCategoryDefaults(firstSlug);
+            setEnableSizes(defaults.enableSizes);
+            setEnableColors(defaults.enableColors);
+            setEnableThickness(defaults.enableThickness);
+            setSelectedSizes(defaults.defaultSizes);
+            setSelectedColors(defaults.defaultColors);
+            setSelectedThickness(defaults.defaultThickness);
           }
         }
 
@@ -279,12 +363,46 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
     const slug = e.target.value;
     setFormData((prev) => ({ ...prev, categorySlug: slug }));
     if (slug !== 'CUSTOM') {
-      const catSizes = getSizesForCategory(slug);
-      setSelectedSizes(catSizes.slice(0, 4));
-      const catThick = getThicknessConfig(slug);
-      if (catThick.presets.length > 0) {
-        setSelectedThickness(catThick.presets[0]);
-      }
+      const defaults = detectCategoryDefaults(slug);
+      setEnableSizes(defaults.enableSizes);
+      setEnableColors(defaults.enableColors);
+      setEnableThickness(defaults.enableThickness);
+      setSelectedSizes(defaults.defaultSizes);
+      setSelectedColors(defaults.defaultColors);
+      setSelectedThickness(defaults.defaultThickness);
+    }
+  };
+
+  // Switch Toggle Handlers
+  const handleToggleEnableSizes = () => {
+    const next = !enableSizes;
+    setEnableSizes(next);
+    if (!next) {
+      setSelectedSizes([]);
+    } else {
+      const sizesList = getSizesForCategory(formData.categorySlug);
+      setSelectedSizes(sizesList.slice(0, 3));
+    }
+  };
+
+  const handleToggleEnableColors = () => {
+    const next = !enableColors;
+    setEnableColors(next);
+    if (!next) {
+      setSelectedColors([]);
+    } else {
+      setSelectedColors(['Black', 'Navy Blue', 'Maroon']);
+    }
+  };
+
+  const handleToggleEnableThickness = () => {
+    const next = !enableThickness;
+    setEnableThickness(next);
+    if (!next) {
+      setSelectedThickness('');
+    } else {
+      const cfg = getThicknessConfig(formData.categorySlug);
+      setSelectedThickness(cfg.presets[0] || '180 GSM (Regular / Bio-Wash)');
     }
   };
 
@@ -516,11 +634,11 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
         sku: formData.sku.trim() || `MSH-${Date.now().toString().slice(-6)}`,
         categorySlug: selectedCategory.toLowerCase().replace(/\s+/g, '-'),
         categoryName: selectedCategory,
-        sizes: selectedSizes.length > 0 ? selectedSizes : ['Free Size'],
-        colors: selectedColors,
-        thickness: selectedThickness ? selectedThickness.trim() : null,
-        thicknesses: selectedThickness ? [selectedThickness.trim()] : [],
-        variants: variants.length > 0 ? variants : [],
+        sizes: enableSizes && selectedSizes.length > 0 ? selectedSizes : (enableSizes ? ['Free Size'] : []),
+        colors: enableColors ? selectedColors : [],
+        thickness: enableThickness && selectedThickness ? selectedThickness.trim() : null,
+        thicknesses: enableThickness && selectedThickness ? [selectedThickness.trim()] : [],
+        variants: (enableSizes || enableColors) && variants.length > 0 ? variants : [],
         images: finalImages,
         imageUrl: finalImages[0] || '',
       };
@@ -758,107 +876,166 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-800 block mb-1">
-                  Available Stock Units <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-800">
+                    Available Stock Units (Quantity) <span className="text-rose-500">*</span>
+                  </label>
+                  {variants.length > 0 && (
+                    <span className="text-[10px] font-bold text-[#b7004d] bg-pink-50 px-2 py-0.5 rounded-md border border-pink-100">
+                      Synced from {variants.length} Variants
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   min="0"
                   name="stock"
-                  placeholder="50"
+                  placeholder={variants.length > 0 ? "Calculated from variants" : "e.g. 100"}
                   value={formData.stock}
                   onChange={handleChange}
-                  className="w-full h-11 px-4 text-xs font-bold rounded-2xl border border-slate-200 focus:border-[#d82a62] outline-none"
+                  readOnly={variants.length > 0}
+                  className={`w-full h-11 px-4 text-xs font-bold rounded-2xl border outline-none ${
+                    variants.length > 0
+                      ? 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
+                      : 'border-slate-200 bg-white focus:border-[#d82a62] text-slate-900'
+                  }`}
                   required
                 />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {variants.length > 0
+                    ? 'Total inventory is the sum of all variant stocks configured below.'
+                    : 'Total quantity available in your warehouse for this product (e.g. 100 units of Facewash).'}
+                </p>
               </div>
             </div>
 
-            {/* 4. PRODUCT SIZES (Category-Adaptive) */}
+            {/* 4. PRODUCT SIZES & VOLUME VARIATIONS */}
             <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
                 <div>
                   <div className="flex items-center gap-2">
                     <Ruler className="w-4 h-4 text-[#d82a62]" />
                     <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                      Available Sizes & Dimensions ({selectedSizes.length} Selected)
+                      Sizes & Volume Variations ({enableSizes ? `${selectedSizes.length} Selected` : 'Disabled'})
                     </label>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Click to select sizes tailored for <span className="font-bold text-slate-700 capitalize">{formData.categorySlug || 'this category'}</span>.
+                    Enable if product has multiple size, volume (ml/gm), or pack options.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Toggle Switch */}
+                <div className="flex items-center gap-3">
+                  {enableSizes && (
+                    <div className="flex items-center gap-2 mr-2">
+                      <button
+                        type="button"
+                        onClick={selectAllCategorySizes}
+                        className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button
+                        type="button"
+                        onClick={clearAllSizes}
+                        className="text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
                   <button
                     type="button"
-                    onClick={selectAllCategorySizes}
-                    className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer"
+                    role="switch"
+                    aria-checked={enableSizes}
+                    onClick={handleToggleEnableSizes}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      enableSizes ? 'bg-[#d82a62]' : 'bg-slate-300'
+                    }`}
+                    title={enableSizes ? 'Click to disable size variations' : 'Click to enable size variations'}
                   >
-                    Select All
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        enableSizes ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
                   </button>
-                  <span className="text-slate-300">|</span>
-                  <button
-                    type="button"
-                    onClick={clearAllSizes}
-                    className="text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
-                  >
-                    Clear
-                  </button>
+                  <span className="text-xs font-black text-slate-700 min-w-[50px]">
+                    {enableSizes ? 'Active' : 'Off'}
+                  </span>
                 </div>
               </div>
 
-              {/* Size Pills */}
-              <div className="flex flex-wrap gap-2">
-                {getSizesForCategory(formData.categorySlug).map((size) => {
-                  const isSelected = selectedSizes.includes(size);
-                  return (
+              {enableSizes ? (
+                <>
+                  {/* Size / Volume Pills */}
+                  <div className="flex flex-wrap gap-2">
+                    {getSizesForCategory(formData.categorySlug).map((size) => {
+                      const isSelected = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => toggleSize(size)}
+                          className={`min-w-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
+                            isSelected
+                              ? 'bg-[#d82a62] text-white shadow-xs shadow-pink-600/25 ring-2 ring-pink-300'
+                              : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
+                          }`}
+                        >
+                          <span>{size}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add Custom Size Input */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Add custom size or volume (e.g. 75 ml, 500 gm, 4XL, Pack of 3)..."
+                      value={customSizeInput}
+                      onChange={(e) => setCustomSizeInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCustomSize();
+                        }
+                      }}
+                      className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                    />
                     <button
-                      key={size}
                       type="button"
-                      onClick={() => toggleSize(size)}
-                      className={`min-w-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-                        isSelected
-                          ? 'bg-[#d82a62] text-white shadow-xs shadow-pink-600/25 ring-2 ring-pink-300'
-                          : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
-                      }`}
+                      onClick={addCustomSize}
+                      className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
                     >
-                      <span>{size}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                      + Add Option
                     </button>
-                  );
-                })}
-              </div>
+                  </div>
 
-              {/* Add Custom Size Input */}
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Add custom size (e.g. 4XL, 2.4, 2.6, 750ml, King Plus)..."
-                  value={customSizeInput}
-                  onChange={(e) => setCustomSizeInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomSize();
-                    }
-                  }}
-                  className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomSize}
-                  className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
-                >
-                  + Add Size
-                </button>
-              </div>
-
-              {selectedSizes.length === 0 && (
-                <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>No size selected. "Free Size" will be assigned automatically.</span>
-                </p>
+                  {selectedSizes.length === 0 && (
+                    <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Sizes enabled but none selected. Click sizes above or add a custom size/volume.</span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                    <span>Single standard unit (no size or volume variations). Order quantity will be deducted from Available Stock Units.</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleEnableSizes}
+                    className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer shrink-0"
+                  >
+                    + Enable Sizes / Volume
+                  </button>
+                </div>
               )}
             </div>
 
@@ -869,98 +1046,139 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-[#d82a62]" />
                     <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                      Product Available in Different Colors ({selectedColors.length} Selected)
+                      Color Variations ({enableColors ? `${selectedColors.length} Selected` : 'Disabled'})
                     </label>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Select all shade options available in your warehouse inventory.
+                    Enable if this product is available in multiple shades or color options.
                   </p>
+                </div>
+
+                {/* Toggle Switch */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enableColors}
+                    onClick={handleToggleEnableColors}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      enableColors ? 'bg-[#d82a62]' : 'bg-slate-300'
+                    }`}
+                    title={enableColors ? 'Click to disable color variations' : 'Click to enable color variations'}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        enableColors ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs font-black text-slate-700 min-w-[50px]">
+                    {enableColors ? 'Active' : 'Off'}
+                  </span>
                 </div>
               </div>
 
-              {/* Color Swatch Circles */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-                {PRESET_COLORS.map((col) => {
-                  const isSelected = selectedColors.includes(col.name);
-                  return (
-                    <button
-                      key={col.name}
-                      type="button"
-                      onClick={() => toggleColor(col.name)}
-                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex items-center gap-2 active:scale-95 ${
-                        isSelected
-                          ? 'border-[#d82a62] bg-pink-50/60 shadow-xs ring-1 ring-pink-200'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <span
-                        className={`w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center ${
-                          col.border ? 'border border-slate-300' : ''
-                        }`}
-                        style={{ background: col.hex }}
-                      >
-                        {isSelected && (
-                          <Check className={`w-2.5 h-2.5 ${col.name === 'White' || col.name === 'Yellow' || col.name === 'Baby Pink' ? 'text-slate-900' : 'text-white'}`} />
-                        )}
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-800 truncate">
-                        {col.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom Color Input */}
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Add custom color shade (e.g. Wine Red, Bottle Green, Peach, Mustard)..."
-                  value={customColorInput}
-                  onChange={(e) => setCustomColorInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomColor();
-                    }
-                  }}
-                  className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomColor}
-                  className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
-                >
-                  + Add Color
-                </button>
-              </div>
-
-              {/* Selected Colors Chip Tray */}
-              {selectedColors.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Active Variants:</span>
-                  {selectedColors.map((col) => {
-                    const preset = PRESET_COLORS.find((p) => p.name.toLowerCase() === col.toLowerCase());
-                    return (
-                      <span
-                        key={col}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs"
-                      >
-                        <span
-                          className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
-                          style={{ background: preset?.hex || '#6366f1' }}
-                        />
-                        <span>{col}</span>
+              {enableColors ? (
+                <>
+                  {/* Color Swatch Circles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    {PRESET_COLORS.map((col) => {
+                      const isSelected = selectedColors.includes(col.name);
+                      return (
                         <button
+                          key={col.name}
                           type="button"
-                          onClick={() => removeColor(col)}
-                          className="hover:text-rose-600 cursor-pointer ml-0.5"
+                          onClick={() => toggleColor(col.name)}
+                          className={`p-2 rounded-xl text-left border transition-all cursor-pointer flex items-center gap-2 active:scale-95 ${
+                            isSelected
+                              ? 'border-[#d82a62] bg-pink-50/60 shadow-xs ring-1 ring-pink-200'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}
                         >
-                          <X className="w-3 h-3" />
+                          <span
+                            className={`w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center ${
+                              col.border ? 'border border-slate-300' : ''
+                            }`}
+                            style={{ background: col.hex }}
+                          >
+                            {isSelected && (
+                              <Check className={`w-2.5 h-2.5 ${col.name === 'White' || col.name === 'Yellow' || col.name === 'Baby Pink' ? 'text-slate-900' : 'text-white'}`} />
+                            )}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-800 truncate">
+                            {col.name}
+                          </span>
                         </button>
-                      </span>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom Color Input */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Add custom color shade (e.g. Wine Red, Bottle Green, Peach, Mustard)..."
+                      value={customColorInput}
+                      onChange={(e) => setCustomColorInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCustomColor();
+                        }
+                      }}
+                      className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomColor}
+                      className="px-3.5 h-9 rounded-xl bg-slate-800 hover:bg-black text-white text-xs font-bold transition cursor-pointer shrink-0"
+                    >
+                      + Add Color
+                    </button>
+                  </div>
+
+                  {/* Selected Colors Chip Tray */}
+                  {selectedColors.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Active Variants:</span>
+                      {selectedColors.map((col) => {
+                        const preset = PRESET_COLORS.find((p) => p.name.toLowerCase() === col.toLowerCase());
+                        return (
+                          <span
+                            key={col}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-800 text-xs font-semibold shadow-2xs"
+                          >
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
+                              style={{ background: preset?.hex || '#6366f1' }}
+                            />
+                            <span>{col}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeColor(col)}
+                              className="hover:text-rose-600 cursor-pointer ml-0.5"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                    <span>Disabled for this product (Single standard shade). No color variations.</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleEnableColors}
+                    className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer shrink-0"
+                  >
+                    + Enable Colors
+                  </button>
                 </div>
               )}
             </div>
@@ -972,60 +1190,103 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-[#d82a62]" />
                     <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                      {getThicknessConfig(formData.categorySlug).label}
+                      {getThicknessConfig(formData.categorySlug).label || 'Material Thickness / Density'} ({enableThickness ? 'Active' : 'Disabled'})
                     </label>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Thickness / GSM helps buyers evaluate premium feel, durability, and fabric weight.
+                    Enable for textiles, apparel (GSM), or cookware/mats (mm) to showcase durability & weight.
                   </p>
                 </div>
-              </div>
 
-              {/* Preset Chips */}
-              <div className="flex flex-wrap gap-2">
-                {getThicknessConfig(formData.categorySlug).presets.map((th) => {
-                  const isSelected = selectedThickness === th;
-                  return (
-                    <button
-                      key={th}
-                      type="button"
-                      onClick={() => selectThicknessPreset(th)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 ${
-                        isSelected
-                          ? 'bg-[#d82a62] text-white shadow-xs ring-2 ring-pink-300'
-                          : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
+                {/* Toggle Switch */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enableThickness}
+                    onClick={handleToggleEnableThickness}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      enableThickness ? 'bg-[#d82a62]' : 'bg-slate-300'
+                    }`}
+                    title={enableThickness ? 'Click to disable thickness' : 'Click to enable thickness'}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        enableThickness ? 'translate-x-5' : 'translate-x-0'
                       }`}
-                    >
-                      {th}
-                    </button>
-                  );
-                })}
+                    />
+                  </button>
+                  <span className="text-xs font-black text-slate-700 min-w-[50px]">
+                    {enableThickness ? 'Active' : 'Off'}
+                  </span>
+                </div>
               </div>
 
-              {/* Custom Thickness Input */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                    Selected / Custom Thickness
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 180 GSM, 1.5 mm, 2.0 mm, 300 GSM..."
-                    value={selectedThickness}
-                    onChange={handleCustomThicknessChange}
-                    className="w-full h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
-                  />
+              {enableThickness ? (
+                <>
+                  {/* Preset Chips */}
+                  {getThicknessConfig(formData.categorySlug).presets.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {getThicknessConfig(formData.categorySlug).presets.map((th) => {
+                        const isSelected = selectedThickness === th;
+                        return (
+                          <button
+                            key={th}
+                            type="button"
+                            onClick={() => selectThicknessPreset(th)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 ${
+                              isSelected
+                                ? 'bg-[#d82a62] text-white shadow-xs ring-2 ring-pink-300'
+                                : 'bg-white border border-slate-200 text-slate-700 hover:border-pink-200 hover:bg-pink-50/30'
+                            }`}
+                          >
+                            {th}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Custom Thickness Input */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                        Selected / Custom Thickness
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 180 GSM, 1.5 mm, 2.0 mm, 300 GSM..."
+                        value={selectedThickness}
+                        onChange={handleCustomThicknessChange}
+                        className="w-full h-10 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-white focus:border-[#d82a62] outline-none"
+                      />
+                    </div>
+                    <div className="flex items-end pb-1 text-[11px] text-slate-500">
+                      <span>Unit: {getThicknessConfig(formData.categorySlug).unit || 'GSM / mm'} (Aligned with {formData.categorySlug || 'product'})</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                    <span>Disabled for this product. Material thickness/GSM specification is not applicable.</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleEnableThickness}
+                    className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer shrink-0"
+                  >
+                    + Enable Thickness
+                  </button>
                 </div>
-                <div className="flex items-end pb-1 text-[11px] text-slate-500">
-                  <span>Unit: {getThicknessConfig(formData.categorySlug).unit} (Auto-aligned with {formData.categorySlug || 'product'})</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* 3b. MULTI-VARIANT INVENTORY MATRIX (Color × Size × SKU per Variant) */}
             <MultiVariantMatrix
-              selectedColors={selectedColors}
-              selectedSizes={selectedSizes}
+              selectedColors={enableColors ? selectedColors : []}
+              selectedSizes={enableSizes ? selectedSizes : []}
               baseSku={formData.sku || 'MSH'}
               basePrice={formData.price || 0}
               variants={variants}
@@ -1287,7 +1548,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                     <span className="text-[10px] font-bold text-[#b7004d] uppercase tracking-wide bg-pink-50 px-2 py-0.5 rounded-full">
                       {formData.categorySlug || 'Category'}
                     </span>
-                    {selectedThickness && (
+                    {enableThickness && selectedThickness && (
                       <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1 border border-slate-200">
                         <Ruler className="w-2.5 h-2.5 text-slate-500" />
                         <span>{selectedThickness}</span>
@@ -1311,7 +1572,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   </div>
 
                   {/* Real-Time Selected Colors Preview */}
-                  {selectedColors.length > 0 && (
+                  {enableColors && selectedColors.length > 0 && (
                     <div className="pt-2 border-t border-slate-100">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-bold text-slate-500 uppercase">Available Colors:</span>
@@ -1339,11 +1600,11 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   )}
 
                   {/* Real-Time Selected Sizes Preview */}
-                  {selectedSizes.length > 0 && (
+                  {enableSizes && selectedSizes.length > 0 && (
                     <div className="pt-2 border-t border-slate-100">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Sizes:</span>
-                        <span className="text-[10px] font-semibold text-slate-400">{selectedSizes.length} Size{selectedSizes.length > 1 ? 's' : ''}</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">Sizes / Volume:</span>
+                        <span className="text-[10px] font-semibold text-slate-400">{selectedSizes.length} Option{selectedSizes.length > 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {selectedSizes.map((sz) => (
@@ -1355,6 +1616,16 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                           </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Single Item Stock Preview if variations disabled */}
+                  {!enableSizes && !enableColors && (
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-slate-500">Standard Quantity:</span>
+                      <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                        {formData.stock || 0} Units Available
+                      </span>
                     </div>
                   )}
 

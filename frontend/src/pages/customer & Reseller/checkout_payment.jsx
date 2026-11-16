@@ -318,6 +318,20 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
       localStorage.removeItem('mshoppy_applied_coupon');
       const placedOrderId = (res?.data?.id) || ('ORD-' + Math.floor(100000 + Math.random() * 900000));
 
+      // Instant 0ms Cross-Tab Real-Time Broadcast to Supplier Dashboard / Orders
+      try {
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('mshoppy_order_events');
+          bc.postMessage({
+            type: 'ORDER_PLACED',
+            orderId: placedOrderId,
+            totalAmount: finalAmount,
+            timestamp: Date.now()
+          });
+          bc.close();
+        }
+      } catch (_) {}
+
       if (referralCode) {
         const affiliateMargin = localStorage.getItem('mshoppy_affiliate_margin');
         recordAffiliateOrder({
