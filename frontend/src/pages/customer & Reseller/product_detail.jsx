@@ -1178,19 +1178,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       Hurry
                     </span>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between text-xs font-bold text-emerald-700 py-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>In Stock ({currentVariantStock} units ready for immediate dispatch)</span>
-                    </span>
-                    {activeSku && (
-                      <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 uppercase">
-                        SKU: {activeSku}
-                      </span>
-                    )}
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* Desktop Buy & Cart Action Buttons (Prominent in Buy Box on large screens) */}
