@@ -68,11 +68,20 @@ export default function OrderTrackingModal({
     if (onToast) onToast(msg);
   };
 
-  // Deterministic 4-digit Delivery OTP based on order ID
+  // Deterministic 4-digit Delivery OTP (multiplier 33) & Return Pickup OTP (multiplier 41)
   const deliveryOtp = React.useMemo(() => {
     const seed = (order.id || 'order-sample').split('').reduce((acc, char) => (acc * 33 + char.charCodeAt(0)) % 9000, 1000);
     return Math.abs(seed) + 1000;
   }, [order.id]);
+
+  const returnPickupOtp = React.useMemo(() => {
+    const seed = (order.id || 'order-sample').split('').reduce((acc, char) => (acc * 41 + char.charCodeAt(0)) % 9000, 1000);
+    return Math.abs(seed) + 1000;
+  }, [order.id]);
+
+  const isPickupToday = Boolean(
+    (returnData?.slot || '').toLowerCase().includes('today')
+  );
 
   const customerEmail = React.useMemo(() => {
     // 1. Check logged-in user in Redux
@@ -225,25 +234,33 @@ export default function OrderTrackingModal({
                     Doorstep Return Handover OTP
                   </span>
                   <span className="text-[9px] bg-pink-200 text-[#9f0038] font-extrabold px-2 py-0.5 rounded-full">
-                    Keep Ready for Courier
+                    {isPickupToday ? 'Keep Ready for Courier' : 'Scheduled'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-lg font-black tracking-widest text-[#9f0038] font-mono">
-                    {returnData?.otp || deliveryOtp}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(String(returnData?.otp || deliveryOtp), 'Return OTP copied to clipboard! 📋')}
-                    className="text-[10px] text-[#9f0038] font-bold hover:underline cursor-pointer flex items-center gap-0.5 bg-white border border-rose-200 px-2 py-0.5 rounded-md"
-                  >
-                    <span>Copy</span>
-                  </button>
-                  {customerEmail && (
-                    <span className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
-                      <span>✓</span> Emailed to {customerEmail}
+                {isPickupToday ? (
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-lg font-black tracking-widest text-[#9f0038] font-mono">
+                      {returnData?.otp || returnPickupOtp}
                     </span>
-                  )}
-                </div>
+                    <button
+                      onClick={() => copyToClipboard(String(returnData?.otp || returnPickupOtp), 'Return OTP copied to clipboard! 📋')}
+                      className="text-[10px] text-[#9f0038] font-bold hover:underline cursor-pointer flex items-center gap-0.5 bg-white border border-rose-200 px-2 py-0.5 rounded-md"
+                    >
+                      <span>Copy</span>
+                    </button>
+                    {customerEmail && (
+                      <span className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md">
+                        <span>✓</span> Emailed to {customerEmail}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-1 text-[11px] text-slate-700 font-medium">
+                    <p className="font-bold flex items-center gap-1 text-slate-800">
+                      <span>🔒</span> OTP will be sent on pickup day ({returnData?.slot || 'Scheduled Day'})
+                    </p>
+                  </div>
+                )}
 
                 <p className="text-[10px] text-slate-600 mt-1 leading-snug">
                   🕒 Pickup Slot: <strong className="text-slate-800">{returnData?.slot || 'Today'}</strong> • Courier: Shadowfax Logistics
@@ -368,7 +385,7 @@ export default function OrderTrackingModal({
                 <div className="flex-1 pb-4">
                   <h4 className="font-extrabold text-sm text-slate-700">Doorstep Verification &amp; Handover</h4>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Courier executive will verify the product at doorstep. Share the 4-digit OTP: <strong className="font-mono text-[#9f0038]">{returnData?.otp || deliveryOtp}</strong>.
+                    Courier executive will verify the product at doorstep. Share the 4-digit OTP: <strong className="font-mono text-[#9f0038]">{returnData?.otp || returnPickupOtp}</strong>.
                   </p>
                 </div>
               </div>

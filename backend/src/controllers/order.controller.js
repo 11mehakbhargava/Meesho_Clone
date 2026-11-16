@@ -652,6 +652,17 @@ export const dispatchDeliveryOtpEmail = async ({
 
   const isPickup = (type || '').toUpperCase().includes('PICKUP') || (type || '').toUpperCase().includes('RETURN');
 
+  // Strict enforcement: RETURN PICKUP OTP is only sent if slot is TODAY or driver has arrived
+  if (isPickup && slotLabel && !slotLabel.toLowerCase().includes('today')) {
+    console.log(`ℹ️ [OTP Email] Skipping RETURN OTP for Order ${orderId}: scheduled for "${slotLabel}" (OTP is only sent on pickup day).`);
+    return {
+      success: false,
+      message: `Return pickup OTP email is only dispatched on scheduled pickup day (current: ${slotLabel}).`,
+      sentTo: null,
+      otp: null
+    };
+  }
+
   // Strict enforcement: DELIVERY OTP is only emailed when the order is OUT_FOR_DELIVERY
   if (!isPickup && orderDetails) {
     const currentStatus = (orderDetails.orderStatus || '').toUpperCase();

@@ -99,6 +99,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
     slot_tomorrow_evening: 'Tomorrow, 2:00 PM - 6:00 PM',
   };
   const selectedSlotLabel = pickupSlotLabels[pickupSlot] || 'Tomorrow, 9:00 AM - 1:00 PM';
+  const isPickupToday = selectedSlotLabel.toLowerCase().includes('today');
 
   const reduxUser = useSelector((state) => state.user?.currentUser);
 
@@ -282,7 +283,9 @@ export default function ReturnRequest({ onNavigate, onBack }) {
       }
 
       setCurrentStep(5); // Show success screen
-      handleSendEmailOtp(); // Trigger real email via SMTP
+      if (isPickupToday) {
+        handleSendEmailOtp(); // Only trigger email if pickup is Today
+      }
     } catch (e) {
       console.error('Error submitting return to database:', e);
       showToast(e.message || 'Could not submit return request. Please try again.');
@@ -1127,35 +1130,46 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   <span>🛡️</span> Doorstep Return Pickup OTP
                 </span>
                 <span className="text-[10px] font-black bg-pink-100 text-[#9f0038] px-2.5 py-0.5 rounded-full">
-                  Keep Ready
+                  {isPickupToday ? 'Keep Ready' : 'Scheduled'}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-2xs">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Your 4-Digit Pickup OTP</p>
-                  <p className="text-2xl sm:text-3xl font-black font-mono tracking-widest text-[#9f0038] mt-0.5">
-                    {pickupOtp}
+              {isPickupToday ? (
+                <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-rose-200 shadow-2xs">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Your 4-Digit Pickup OTP</p>
+                    <p className="text-2xl sm:text-3xl font-black font-mono tracking-widest text-[#9f0038] mt-0.5">
+                      {pickupOtp}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(String(pickupOtp));
+                        showToast('Pickup OTP copied to clipboard! 📋');
+                      }}
+                      className="px-3.5 py-2 bg-pink-50 hover:bg-pink-100 active:scale-95 text-[#9f0038] font-black text-xs rounded-xl cursor-pointer transition-colors"
+                    >
+                      Copy OTP
+                    </button>
+                    {customerEmail && (
+                      <span className="text-[11px] text-emerald-800 font-bold flex items-center gap-1 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl">
+                        <span>✓</span> Emailed to {customerEmail}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white p-3.5 rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                  <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <span>🔒</span> OTP will be sent on pickup day
+                  </p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Since pickup is scheduled for <strong className="text-[#9f0038]">{selectedSlotLabel}</strong>, your verification OTP will be generated &amp; emailed on your pickup day when the executive arrives.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (navigator?.clipboard?.writeText) navigator.clipboard.writeText(String(pickupOtp));
-                      showToast('Pickup OTP copied to clipboard! 📋');
-                    }}
-                    className="px-3.5 py-2 bg-pink-50 hover:bg-pink-100 active:scale-95 text-[#9f0038] font-black text-xs rounded-xl cursor-pointer transition-colors"
-                  >
-                    Copy OTP
-                  </button>
-                  {customerEmail && (
-                    <span className="text-[11px] text-emerald-800 font-bold flex items-center gap-1 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl">
-                      <span>✓</span> Emailed to {customerEmail}
-                    </span>
-                  )}
-                </div>
-              </div>
+              )}
 
               <div className="text-[11px] text-slate-600 space-y-1.5 pt-1">
                 <p className="text-slate-800 font-bold flex items-center gap-1">
