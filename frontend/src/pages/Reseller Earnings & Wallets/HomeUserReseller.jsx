@@ -179,8 +179,8 @@ export default function HomeUserReseller() {
 
   const [products, setProducts] = useState(() => {
     try {
-      const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_reseller_prods') || localStorage.getItem('mshoppy_cached_catalog_prods') || '[]');
-      if (Array.isArray(cached) && cached.length > 0) return cached;
+      const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_reseller_prods_v3') || '[]');
+      if (Array.isArray(cached) && cached.length > 24) return cached;
     } catch (_) {}
     return [];
   });
@@ -247,8 +247,8 @@ export default function HomeUserReseller() {
           });
           setProducts(mapped);
           try {
-            sessionStorage.setItem('mshoppy_cached_reseller_prods', JSON.stringify(mapped));
-            localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(mapped));
+            sessionStorage.setItem('mshoppy_cached_reseller_prods_v3', JSON.stringify(mapped));
+            localStorage.setItem('mshoppy_cached_catalog_prods_v3', JSON.stringify(mapped));
           } catch (_) {}
         }
       })

@@ -109,8 +109,8 @@ app.use(errorHandler);
 
 // Start the server (standalone only; in Vercel serverless the exported app is invoked)
 if (!process.env.VERCEL) {
-  app.listen(port, () => {
-    console.log(`🚀 Backend server is running on http://localhost:${port}`);
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Backend server is running on http://0.0.0.0:${port}`);
   });
 }
 
