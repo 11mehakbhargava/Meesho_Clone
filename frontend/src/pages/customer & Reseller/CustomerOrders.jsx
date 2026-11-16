@@ -206,6 +206,7 @@ export default function CustomerOrders({ onNavigate, onBack }) {
 
     const fmtDayDate = (d) => {
       const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
+      const day = d.getDate();
       const month = d.toLocaleDateString('en-IN', { month: 'short' });
       const year = d.toLocaleDateString('en-IN', { year: '2-digit' });
       return `${weekday}, ${day} ${month} '${year}`;
