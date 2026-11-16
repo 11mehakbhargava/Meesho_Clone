@@ -11,6 +11,7 @@ import { useCart } from '../../hooks/useCart';
 import { getAffiliateApp } from '../../services/affiliateSessionStore';
 import { buildAffiliateProductUrl, getAffiliateMarginFromParams } from '../../utils/affiliateLinkHelper';
 import QuickEmailOtpModal from '../../components/auth/QuickEmailOtpModal';
+import { toast } from 'sonner';
 
 // Category-specific variant configuration & labels
 const CATEGORY_META = {
@@ -204,6 +205,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [addingToCart, setAddingToCart] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [showImageZoom, setShowImageZoom] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
   const [canReviewProduct, setCanReviewProduct] = useState(false);
   const [userOrderId, setUserOrderId] = useState(null);
   const [hasUserReviewed, setHasUserReviewed] = useState(false);
@@ -244,12 +246,17 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const handleShareToWhatsApp = (mode = shareMode) => {
     if (!product) return;
     let msg = '';
-    if (mode === 'images-only') {
-      msg = `📸 *${product.title}*\n\n✨ Premium Quality Fabric with Exquisite Craftsmanship.\n👉 Order Online: ${productShareUrl}\n\nReply directly with your address to book!`;
-    } else if (mode === 'desc') {
-      msg = `✨ *${product.title}*\n\nVerified authentic marketplace quality.\nDirect supplier dispatch with Free Shipping!\n\n👉 Order Online: ${productShareUrl}\n\nOr DM directly with your size & address.`;
+    const shareUrl = window.location.href;
+    if (isResellerMode) {
+      if (mode === 'images-only') {
+        msg = `📸 *${product.title}*\n\n✨ Premium Quality Fabric with Exquisite Craftsmanship.\n👉 Order Online: ${productShareUrl}\n\nReply directly with your address to book!`;
+      } else if (mode === 'desc') {
+        msg = `✨ *${product.title}*\n\nVerified authentic marketplace quality.\nDirect supplier dispatch with Free Shipping!\n\n👉 Order Online: ${productShareUrl}\n\nOr DM directly with your size & address.`;
+      } else {
+        msg = `✨ *${product.title}*\n\nSpecial Price: ₹${resellerSellingPrice} only (Free Shipping!)\n\n✅ 7-Day Easy Replacement Guarantee\n✅ Cash on Delivery Available\n\n👉 Order directly online:\n${productShareUrl}\n\nOr reply with your address & size to place order!`;
+      }
     } else {
-      msg = `✨ *${product.title}*\n\nSpecial Price: ₹${resellerSellingPrice} only (Free Shipping!)\n\n✅ 7-Day Easy Replacement Guarantee\n✅ Cash on Delivery Available\n\n👉 Order directly online:\n${productShareUrl}\n\nOr reply with your address & size to place order!`;
+      msg = `🛍️ *${product.title}*\n\nPrice: ₹${product.price} only (Free Delivery & COD)\n\n👉 Check it out on MShoppy:\n${shareUrl}`;
     }
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
@@ -258,9 +265,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   };
 
   const handleCopyProductShareLink = () => {
-    navigator.clipboard.writeText(productShareUrl);
+    const linkToCopy = isResellerMode ? productShareUrl : window.location.href;
+    navigator.clipboard.writeText(linkToCopy);
     setCopiedLink(true);
-    triggerToast('Referral link with margin copied!');
+    triggerToast(isResellerMode ? 'Referral link with margin copied! 📋' : 'Product link copied to clipboard! 📋');
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
@@ -308,9 +316,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [similarProducts, setSimilarProducts] = useState([]);
 
   const triggerToast = (msg) => {
-    setToastMessage(msg);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2500);
+    toast.success(msg);
   };
 
   const handlePincodeCheck = (e) => {
@@ -491,16 +497,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   const handleShareProduct = () => {
     if (!product) return;
-    if (navigator.share) {
-      navigator.share({
-        title: product.title,
-        text: `Check out ${product.title} on MShoppy at ₹${product.price}!`,
-        url: window.location.href,
-      }).catch(() => { });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      triggerToast('Product link copied to clipboard! 📋');
-    }
+    setShowShareModal(true);
   };
 
   const handleWishlistToggle = async () => {
@@ -671,17 +668,26 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                 />
 
                 {/* Floating Top Buttons */}
-                <div className="absolute top-4 right-4 flex items-center gap-2">
+                <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
                   <button
-                    onClick={() => setShowImageZoom(true)}
-                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-slate-700"
-                    title="Zoom Full Photo"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setZoomScale(1.8);
+                      setShowImageZoom(true);
+                    }}
+                    className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-slate-700 hover:text-black border border-slate-100"
+                    title="Zoom Full Photo (+)"
                   >
                     <span className="material-symbols-outlined text-xl">zoom_in</span>
                   </button>
                   <button
-                    onClick={handleShareProduct}
-                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-[#FF3F6C]"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowShareModal(true);
+                    }}
+                    className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-[#FF3F6C] border border-slate-100"
                     title="Share Product"
                   >
                     <span className="material-symbols-outlined text-xl">share</span>
@@ -1311,24 +1317,134 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
       {/* Full-Screen Image Zoom Lightbox Modal */}
       {showImageZoom && (
         <div
-          onClick={() => setShowImageZoom(false)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in"
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in select-none"
+          onClick={() => {
+            setShowImageZoom(false);
+            setZoomScale(1);
+          }}
         >
-          <button
-            onClick={() => setShowImageZoom(false)}
-            className="absolute top-5 right-5 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center cursor-pointer transition-colors"
+          {/* Top Bar with Controls */}
+          <div
+            className="flex items-center justify-between p-3 sm:p-4 z-10 bg-gradient-to-b from-black/80 to-transparent"
+            onClick={(e) => e.stopPropagation()}
           >
-            <span className="material-symbols-outlined text-2xl">close</span>
-          </button>
-          <img
-            src={images[selectedImageIndex] || images[0]}
-            alt={product.title}
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000';
+            <div className="flex items-center gap-2 sm:gap-3 text-white min-w-0">
+              <span className="text-xs sm:text-sm font-bold bg-white/20 px-2.5 sm:px-3 py-1 rounded-full backdrop-blur-xs shrink-0">
+                {selectedImageIndex + 1} / {images.length}
+              </span>
+              <span className="text-xs text-white/70 hidden sm:inline truncate max-w-sm">
+                {product?.title}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Zoom Out Button */}
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => Math.max(1, Number((prev - 0.4).toFixed(1))))}
+                disabled={zoomScale <= 1}
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white rounded-full flex items-center justify-center cursor-pointer transition-all"
+                title="Zoom Out (-)"
+              >
+                <span className="material-symbols-outlined text-lg sm:text-xl">zoom_out</span>
+              </button>
+
+              {/* Zoom In Button */}
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => Math.min(3.5, Number((prev + 0.4).toFixed(1))))}
+                disabled={zoomScale >= 3.5}
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 disabled:opacity-30 text-white rounded-full flex items-center justify-center cursor-pointer transition-all"
+                title="Zoom In (+)"
+              >
+                <span className="material-symbols-outlined text-lg sm:text-xl">zoom_in</span>
+              </button>
+
+              {/* Reset Zoom */}
+              {zoomScale > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setZoomScale(1)}
+                  className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-white/20 hover:bg-white/30 text-white text-[11px] sm:text-xs font-bold rounded-full transition-all cursor-pointer"
+                >
+                  Reset ({Math.round(zoomScale * 100)}%)
+                </button>
+              )}
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowImageZoom(false);
+                  setZoomScale(1);
+                }}
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-white/25 hover:bg-red-500/80 text-white rounded-full flex items-center justify-center cursor-pointer transition-colors ml-1 sm:ml-2"
+                title="Close (Esc)"
+              >
+                <span className="material-symbols-outlined text-xl sm:text-2xl">close</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Central Zoomable Image View */}
+          <div
+            className="flex-1 overflow-auto flex items-center justify-center p-2 sm:p-6"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowImageZoom(false);
+                setZoomScale(1);
+              }
             }}
-          />
+          >
+            <div className="relative max-w-full max-h-full flex items-center justify-center overflow-hidden">
+              <img
+                src={images[selectedImageIndex] || images[0]}
+                alt={product?.title}
+                style={{
+                  transform: `scale(${zoomScale})`,
+                  transition: 'transform 0.25s ease-out',
+                  cursor: zoomScale > 1 ? 'zoom-out' : 'zoom-in'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomScale((prev) => (prev > 1.2 ? 1 : 2));
+                }}
+                className="max-w-[92vw] max-h-[70vh] sm:max-h-[78vh] object-contain rounded-2xl shadow-2xl select-none"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000';
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Bottom Thumbnail Bar & Navigation */}
+          <div
+            className="p-2.5 sm:p-4 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-center gap-2 sm:gap-3 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {images.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto max-w-md py-1 px-2 no-scrollbar">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSelectedImageIndex(idx);
+                      setZoomScale(1);
+                    }}
+                    className={`w-12 h-14 sm:w-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                      selectedImageIndex === idx
+                        ? 'border-[#FF3F6C] ring-2 ring-[#FF3F6C]/50 scale-105'
+                        : 'border-white/30 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1467,8 +1583,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   </svg>
                 </span>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Share on WhatsApp</h3>
-                  <p className="text-[11px] text-slate-400">Set margin and share to your customers</p>
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    {isResellerMode ? 'Share on WhatsApp & Earn' : 'Share Product'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {isResellerMode ? 'Set margin and share to your customers' : 'Share this deal with friends & family'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1489,108 +1609,166 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               />
               <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-xs text-slate-900 line-clamp-1">{product?.title}</h4>
-                <p className="text-[11px] text-slate-500 mt-0.5">Supplier Price: <span className="font-bold text-slate-800">₹{product?.price}</span></p>
-                <span className="inline-block text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-md font-bold mt-1">Free Delivery Included</span>
+                <p className="text-[11px] text-slate-500 mt-0.5">Price: <span className="font-bold text-slate-800">₹{product?.price}</span></p>
+                <span className="inline-block text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-bold mt-1">Free Delivery Included</span>
               </div>
             </div>
 
-            {/* Profit Margin Control */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-slate-700">Your Profit Margin</label>
-                <span className="text-xs font-black text-emerald-600">+₹{selectedResellerMargin} Profit</span>
-              </div>
-              <div className="flex gap-2">
-                {[50, 100, 150, 200, 300].map(m => (
+            {isResellerMode ? (
+              <>
+                {/* Profit Margin Control */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-bold text-slate-700">Your Profit Margin</label>
+                    <span className="text-xs font-black text-emerald-600">+₹{selectedResellerMargin} Profit</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {[50, 100, 150, 200, 300].map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setSelectedResellerMargin(m)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${selectedResellerMargin === m
+                            ? 'bg-[#25D366] text-white shadow-md'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                      >
+                        +₹{m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Price Preview */}
+                <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl p-4 text-white flex items-center justify-between shadow-lg shadow-emerald-500/20">
+                  <div>
+                    <span className="text-[11px] uppercase tracking-wider font-bold opacity-90 block">Customer Selling Price</span>
+                    <span className="text-2xl font-black">₹{resellerSellingPrice}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] opacity-80 block">Your Direct Earning</span>
+                    <span className="text-base font-extrabold bg-white/20 px-2.5 py-0.5 rounded-lg inline-block mt-0.5">₹{selectedResellerMargin}</span>
+                  </div>
+                </div>
+
+                {/* Share Mode Selection */}
+                <div>
+                  <label className="text-xs font-bold text-slate-600 block mb-1.5">What to share:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'with-price', label: 'With Price' },
+                      { id: 'desc', label: 'Description' },
+                      { id: 'images-only', label: 'Only Images' }
+                    ].map((mode) => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setShareMode(mode.id)}
+                        className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${shareMode === mode.id
+                            ? 'bg-[#b90041] text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2 pt-1">
                   <button
-                    key={m}
                     type="button"
-                    onClick={() => setSelectedResellerMargin(m)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${selectedResellerMargin === m
-                        ? 'bg-[#25D366] text-white shadow-md'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      }`}
+                    onClick={() => {
+                      handleShareToWhatsApp(shareMode);
+                      setShowShareModal(false);
+                    }}
+                    className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
                   >
-                    +₹{m}
+                    <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.937 3.659 1.432 5.628 1.433h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    <span>Share to WhatsApp Now</span>
                   </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Live Price Preview */}
-            <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl p-4 text-white flex items-center justify-between shadow-lg shadow-emerald-500/20">
-              <div>
-                <span className="text-[11px] uppercase tracking-wider font-bold opacity-90 block">Customer Selling Price</span>
-                <span className="text-2xl font-black">₹{resellerSellingPrice}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] opacity-80 block">Your Direct Earning</span>
-                <span className="text-base font-extrabold bg-white/20 px-2.5 py-0.5 rounded-lg inline-block mt-0.5">₹{selectedResellerMargin}</span>
-              </div>
-            </div>
-
-            {/* Share Mode Selection */}
-            <div>
-              <label className="text-xs font-bold text-slate-600 block mb-1.5">What to share:</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'with-price', label: 'With Price' },
-                  { id: 'desc', label: 'Description' },
-                  { id: 'images-only', label: 'Only Images' }
-                ].map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => setShareMode(mode.id)}
-                    className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${shareMode === mode.id
-                        ? 'bg-[#b90041] text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  handleShareToWhatsApp(shareMode);
-                  setShowShareModal(false);
-                }}
-                className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
-              >
-                <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.937 3.659 1.432 5.628 1.433h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                <span>Share to WhatsApp Now</span>
-              </button>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopyProductShareLink}
-                  className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-base">{copiedLink ? 'check' : 'content_copy'}</span>
-                  <span>{copiedLink ? 'Copied!' : 'Copy Referral Link'}</span>
-                </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyProductShareLink}
+                      className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-base">{copiedLink ? 'check' : 'content_copy'}</span>
+                      <span>{copiedLink ? 'Copied!' : 'Copy Referral Link'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowShareModal(false);
+                        navigate(`/share-earn-config?id=${product?.id || productId}`);
+                      }}
+                      className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[#b90041] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-base">tune</span>
+                      <span>Studio Options</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Regular Customer Share Options */
+              <div className="space-y-3 pt-1">
                 <button
                   type="button"
                   onClick={() => {
+                    handleShareToWhatsApp();
                     setShowShareModal(false);
-                    navigate(`/share-earn-config?id=${product?.id || productId}`);
                   }}
-                  className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[#b90041] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-base">tune</span>
-                  <span>Studio Options</span>
+                  <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.937 3.659 1.432 5.628 1.433h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  <span>Share on WhatsApp</span>
                 </button>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyProductShareLink}
+                    className="flex-1 py-3 px-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-base">{copiedLink ? 'check' : 'content_copy'}</span>
+                    <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: product?.title,
+                            text: `Check out ${product?.title} on MShoppy for ₹${product?.price}!`,
+                            url: window.location.href,
+                          });
+                        } catch (err) {
+                          if (err.name !== 'AbortError') {
+                            handleCopyProductShareLink();
+                          }
+                        }
+                      } else {
+                        handleCopyProductShareLink();
+                      }
+                      setShowShareModal(false);
+                    }}
+                    className="flex-1 py-3 px-3 rounded-2xl border border-pink-200 bg-pink-50 hover:bg-pink-100 text-[#FF3F6C] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-base">ios_share</span>
+                    <span>More Options</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
