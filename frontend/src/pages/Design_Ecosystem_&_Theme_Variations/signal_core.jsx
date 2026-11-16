@@ -90,14 +90,6 @@ export default function SignalCore({ onNavigate }) {
 
   return (
     <div className="bg-[#fff4ef] font-['Plus_Jakarta_Sans'] text-[#492604] min-h-screen pb-32 selection:bg-[#fe8534]/30 antialiased">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#492604]/95 backdrop-blur-md text-[#ffd5b5] px-5 py-2.5 rounded-full shadow-2xl text-xs font-bold flex items-center gap-2 animate-bounce border border-[#fe8534]/30">
-          <span className="material-symbols-outlined text-sm text-[#fe8534]">verified</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* TopAppBar (Tactile Velocity Header) */}
       <header className="bg-[#fff4ef] shadow-[0_20px_40px_rgba(73,38,4,0.06)] rounded-b-[24px] flex justify-between items-center px-4 sm:px-6 py-4 w-full sticky top-0 z-40 border-b border-[#ffdcc2]/50">
         <div className="flex items-center gap-2 sm:gap-3">

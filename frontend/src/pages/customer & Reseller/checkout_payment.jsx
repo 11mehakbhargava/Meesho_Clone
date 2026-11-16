@@ -575,37 +575,29 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] font-sans antialiased min-h-screen pb-36 selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs">
+        <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 min-h-14 sm:h-16 py-2 sm:py-0 max-w-7xl mx-auto w-full gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => (onBack ? onBack() : handleNav(`/address${addressQuery}`))}
-              className="p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#FF3F6C] cursor-pointer transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#FF3F6C] cursor-pointer transition-colors shrink-0"
               title="Back"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
-            <div>
-              <h1 className="font-extrabold text-base sm:text-lg text-[#191C1E] leading-none">
+            <div className="min-w-0">
+              <h1 className="font-black text-sm sm:text-base md:text-lg text-[#191C1E] leading-tight truncate">
                 Payment &amp; Final Review
               </h1>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider block truncate mt-0.5">
                 Step 3 of 3 • 100% Secure Checkout
               </span>
             </div>
           </div>
 
           {/* Stepper (Desktop) */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-400">
+          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-400 shrink-0 mx-4">
             <span
               onClick={() => handleNav(isBuyNow ? '/user-home' : '/cart')}
               className="text-[#008644] font-extrabold flex items-center gap-1 cursor-pointer hover:underline"
@@ -634,9 +626,10 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-            <span className="material-symbols-outlined text-sm">lock</span>
-            <span>256-Bit Encrypted</span>
+          <div className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-emerald-100 shrink-0">
+            <span className="material-symbols-outlined text-sm sm:text-base">lock</span>
+            <span className="hidden sm:inline">256-Bit Encrypted</span>
+            <span className="sm:hidden text-[10px]">Secure</span>
           </div>
         </div>
       </header>

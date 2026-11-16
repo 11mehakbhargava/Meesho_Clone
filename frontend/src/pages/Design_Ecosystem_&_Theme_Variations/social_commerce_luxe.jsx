@@ -140,14 +140,6 @@ export default function SocialCommerceLuxe({ onNavigate }) {
 
   return (
     <div className="bg-[#F8F9FB] font-['Inter'] text-[#191c1e] min-h-screen antialiased selection:bg-[#b90041]/20 selection:text-[#b90041] relative">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#191c1e]/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-sm text-[#FF3F6C]">check_circle</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* TopAppBar */}
       <nav className="fixed top-0 left-0 w-full z-40 bg-[#F8F9FB]/85 backdrop-blur-md flex justify-between items-center px-4 sm:px-6 py-3.5 border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-3">

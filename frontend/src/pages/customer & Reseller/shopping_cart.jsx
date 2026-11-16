@@ -457,14 +457,6 @@ export default function ShoppingCart({ onNavigate, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] font-sans antialiased min-h-screen pb-32 selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="sticky top-0 w-full z-40 bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-100">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto w-full">

@@ -104,8 +104,6 @@ export default function QuickEmailOtpModal({
           localStorage.setItem('mshoppy_customer_token', verifiedUser.id || 'cust_token_' + Date.now());
         } catch (e) {}
 
-        toast.success('Login Successful! Proceeding to checkout... 🛍️');
-
         if (onSuccess) {
           onSuccess(verifiedUser);
         }

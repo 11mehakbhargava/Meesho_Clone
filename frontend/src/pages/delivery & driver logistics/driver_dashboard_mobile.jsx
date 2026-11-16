@@ -100,14 +100,6 @@ export default function DriverDashboardMobile({ onNavigate = () => {}, onBack })
 
   return (
     <div className="bg-[#fcf9f8] text-[#1c1b1b] font-sans antialiased min-h-screen pb-32 selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto gap-4">

@@ -78,14 +78,6 @@ export default function PetalCollective({ onNavigate, onLoginSuccess }) {
 
   return (
     <div className="bg-[#fff4f6] text-[#4a2135] min-h-screen flex flex-col items-center overflow-x-hidden font-['Plus_Jakarta_Sans'] selection:bg-[#ff7293]/20 selection:text-[#b7004d] pb-16">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[9999] bg-[#4a2135]/95 backdrop-blur-md text-white px-5 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 animate-bounce border border-white/10">
-          <span className="material-symbols-outlined text-sm text-[#ff7293]">verified</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* Top Section (Atelier Hero with Curved Oval Clip) */}
       <div className="relative w-full h-[330px] sm:h-[360px] overflow-hidden [clip-path:ellipse(110%_100%_at_50%_0%)] bg-[#ff7293]/20 shadow-sm">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#fff4f6]/30 to-[#fff4f6]/95 z-10"></div>

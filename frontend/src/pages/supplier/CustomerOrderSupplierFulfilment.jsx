@@ -557,14 +557,6 @@ export default function CustomerOrderSupplierFulfilment({ onNavigate, onBack }) 
 
   return (
     <div className="min-h-screen bg-[#F6F8FB] text-slate-800 pb-28 font-sans antialiased">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400 text-2xl">sync_saved_locally</span>
-          <p className="text-xs md:text-sm font-medium leading-snug">{toastMessage}</p>
-        </div>
-      )}
-
       {/* ===================== Mobile Top Bar with Hamburger Menu ===================== */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="flex items-center gap-2.5">

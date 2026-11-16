@@ -182,13 +182,6 @@ export default function ResellerWallet() {
         </div>
       </header>
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-bold text-xs py-2.5 px-6 rounded-full shadow-lg z-50 animate-bounce">
-          {toastMessage}
-        </div>
-      )}
-
       {/* 2. Main Content - Full Width Desktop & Mobile Responsive (Strict Vertical Flow) */}
       <main className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 md:px-10 pt-6 pb-24 space-y-8">
         {/* Return Margin Reversals Alert Banner (Only when reversals exist) */}

@@ -460,14 +460,6 @@ export default function AffiliateKYC({ onNavigate, onBack }) {
 
   return (
     <div className="min-h-screen bg-[#f8f9fb] text-slate-800 pb-28 font-['Inter',sans-serif]">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#1c1724] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-white/10 animate-bounce text-xs font-bold">
-          <span className="material-symbols-outlined text-rose-400 text-base">info</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top App Bar */}
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">

@@ -123,14 +123,6 @@ export default function RatingsReviews({ onNavigate = () => {}, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] font-sans text-[#191c1e] min-h-screen antialiased selection:bg-pink-100 selection:text-pink-600 pb-32">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 h-16 shadow-sm border-b border-gray-100">
         <div className="flex items-center gap-3">

@@ -22,14 +22,6 @@ export default function RiderExpressDashboard({ onNavigate = () => {}, onBack })
 
   return (
     <div className="bg-[#fff4ef] font-sans text-[#492604] min-h-screen pb-32 antialiased selection:bg-orange-100 selection:text-orange-700">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="bg-white/85 backdrop-blur-md shadow-sm rounded-b-3xl flex justify-between items-center px-5 py-3.5 w-full sticky top-0 z-40 border-b border-orange-100">
         <div className="flex items-center gap-3">

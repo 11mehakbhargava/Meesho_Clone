@@ -201,14 +201,6 @@ export default function TheDigitalCuratorEcosystem({ onNavigate }) {
 
   return (
     <div className="bg-[#f8f9fb] font-['Inter'] text-[#191c1e] min-h-screen relative antialiased selection:bg-[#FF3F6C]/20 selection:text-[#b90041]">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] bg-[#191c1e]/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-sm text-[#FF3F6C]">check_circle</span>
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* TopAppBar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3.5 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
         <div 

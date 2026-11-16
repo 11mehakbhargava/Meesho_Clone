@@ -297,14 +297,6 @@ export default function FlashSaleLandingPage({ onNavigate = () => { }, onBack })
 
   return (
     <div className="bg-[#f8f9fb] min-h-screen font-sans text-[#191c1e] antialiased selection:bg-pink-100 selection:text-pink-700">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#b90041] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">bolt</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header */}
       <header className="bg-white/95 backdrop-blur-md sticky top-0 w-full z-50 border-b border-gray-100 shadow-xs">
         <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16 w-full max-w-7xl mx-auto gap-2 sm:gap-4">

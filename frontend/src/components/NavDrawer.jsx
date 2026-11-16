@@ -43,7 +43,7 @@ const customerNavSections = [
     items: [
       { name: "Home & Deals", path: "/", icon: "home" },
       { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
-      { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" },
+      // { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" }, // temporarily hidden as requested
     ]
   },
   {

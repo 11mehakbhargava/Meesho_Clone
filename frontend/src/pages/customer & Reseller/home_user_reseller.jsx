@@ -106,14 +106,6 @@ export default function HomeUserReseller({ onNavigate = () => {} }) {
 
   return (
     <div className="bg-[#f8f9fb] min-h-screen font-sans text-[#191c1e] selection:bg-pink-100 selection:text-pink-700">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* TopAppBar */}
       <header className="relative flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 w-full bg-white border-b border-gray-100 shadow-2xs gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">

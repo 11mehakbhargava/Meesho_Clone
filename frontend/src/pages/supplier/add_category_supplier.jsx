@@ -80,14 +80,6 @@ export function AddCategorySupplier({ onBack, onSaveCategory }) {
 
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] min-h-screen flex flex-col font-sans antialiased pb-36 selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#006a34] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-xl">check_circle</span>
-          <span className="text-sm font-semibold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 shadow-xs">
         <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 w-full max-w-7xl mx-auto gap-4">

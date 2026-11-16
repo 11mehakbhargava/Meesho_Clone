@@ -71,14 +71,6 @@ export default function AvailableTasks({ onNavigate = () => {}, onBack }) {
 
   return (
     <div className="bg-[#fcf9f8] text-[#1c1b1b] overflow-hidden h-screen flex flex-col font-sans antialiased selection:bg-pink-100 selection:text-pink-600">
-      {/* Toast Alert */}
-      {showToast && (
-        <div className="fixed top-16 right-4 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header Bar */}
       <header className="fixed top-0 w-full z-40 flex items-center justify-between px-4 h-16 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="flex items-center gap-3">

@@ -135,14 +135,6 @@ export default function NotificationCenter() {
 
   return (
     <div className="bg-[#f8f9fb] text-slate-900 min-h-screen pb-32 font-['Inter',sans-serif] selection:bg-[#FF3F6C]/20 antialiased">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#1c1724] text-white px-5 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border border-white/10 animate-bounce text-xs font-bold">
-          <span className="material-symbols-outlined text-emerald-400 text-base">check_circle</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Top Header */}
       <header className="fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-10 lg:px-16 py-3.5 w-full max-w-4xl mx-auto">

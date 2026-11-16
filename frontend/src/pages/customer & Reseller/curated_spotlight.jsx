@@ -101,14 +101,6 @@ export default function CuratedSpotlight({ onNavigate = () => {}, onBack }) {
 
   return (
     <div className="bg-[#f8f9fb] min-h-screen font-sans text-[#191c1e] antialiased selection:bg-pink-100 selection:text-pink-700">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#008644] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          <span className="text-xs font-bold">{toastMessage}</span>
-        </div>
-      )}
-
       {/* TopAppBar */}
       <header className="fixed top-0 w-full z-50 bg-[#F8F9FB]/90 backdrop-blur-xl flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
