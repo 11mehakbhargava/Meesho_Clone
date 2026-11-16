@@ -740,10 +740,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   // 100% Real Database-Driven Ratings & Reviews (ZERO Hardcoded Values)
   const totalReviewsInDb = productReviews.length;
-  const dbRatingSum = productReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
-  const displayRating = totalReviewsInDb > 0
-    ? (dbRatingSum / totalReviewsInDb).toFixed(1)
-    : (product?.rating && Number(product.rating) > 0 ? Number(product.rating).toFixed(1) : '4.7');
+  const dbRatingSum = productReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
 
   const displayRatingsCount = totalReviewsInDb > 0
     ? totalReviewsInDb
@@ -752,6 +749,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const displayReviewsCount = totalReviewsInDb > 0
     ? totalReviewsInDb
     : (product?.reviewsCount || 0);
+
+  const displayRating = displayRatingsCount > 0
+    ? (totalReviewsInDb > 0
+        ? (dbRatingSum / totalReviewsInDb).toFixed(1)
+        : (product?.rating && Number(product.rating) > 0 ? Number(product.rating).toFixed(1) : '0.0'))
+    : '0.0';
 
   // Real breakdown calculated directly from reviews or reviewsBreakdown state
   const count5 = productReviews.length > 0
@@ -1115,7 +1118,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   className="flex items-center gap-2 cursor-pointer group select-none pt-0.5"
                   title="Click to view ratings and reviews"
                 >
-                  <span className="inline-flex items-center gap-1 bg-[#038d63] text-white font-bold text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                  <span className={`inline-flex items-center gap-1 ${Number(displayRating) > 0 ? 'bg-[#038d63]' : 'bg-slate-400'} text-white font-bold text-xs px-2.5 py-0.5 rounded-full shadow-xs`}>
                     <span>{displayRating}</span>
                     <span className="text-[10px]">★</span>
                   </span>
@@ -1573,11 +1576,11 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-2 border-b border-slate-100">
               {/* Left: Big Score & Count (Image 1: 4.2 ★, 2992 Ratings, 1122 Reviews) */}
               <div className="space-y-1 shrink-0">
-                <div className="flex items-center gap-1.5 text-[#038d63]">
+                <div className={`flex items-center gap-1.5 ${Number(displayRating) > 0 ? 'text-[#038d63]' : 'text-slate-400'}`}>
                   <span className="text-4xl sm:text-5xl font-black tracking-tight">
                     {displayRating}
                   </span>
-                  <span className="text-3xl text-[#038d63]">★</span>
+                  <span className={`text-3xl ${Number(displayRating) > 0 ? 'text-[#038d63]' : 'text-slate-400'}`}>★</span>
                 </div>
                 <div className="text-xs text-slate-500 font-semibold leading-relaxed">
                   <p>{displayRatingsCount} Ratings,</p>
