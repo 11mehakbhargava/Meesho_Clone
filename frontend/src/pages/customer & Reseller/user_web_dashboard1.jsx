@@ -101,18 +101,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     }
   }, [onNavigate, navigate]);
 
-  const validTabs = ['overview', 'affiliate', 'orders', 'wishlist', 'wallet', 'addresses', 'profile'];
+  const validTabs = ['overview', 'affiliate', 'orders', 'wishlist', 'resale', 'wallet', 'addresses', 'profile'];
 
   const getInitialTab = () => {
     try {
       const params = new URLSearchParams(location.search);
       const tabParam = params.get('tab');
-      const viewParam = params.get('view');
-      if (tabParam === 'resale') return 'affiliate';
-      if (tabParam === 'affiliate_dashboard' || viewParam === 'dashboard') {
-        setPartnerSubTab('dashboard');
-        return 'affiliate';
-      }
       if (tabParam && validTabs.includes(tabParam)) return tabParam;
     } catch (e) {}
     return 'overview';
@@ -132,16 +126,11 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     try {
       const params = new URLSearchParams(location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'resale') {
-        setActiveTab('affiliate');
-        navigate('/user-dashboard1?tab=affiliate', { replace: true });
-        return;
-      }
       if (tabParam && validTabs.includes(tabParam)) {
         setActiveTab(tabParam);
       }
     } catch (e) {}
-  }, [location.search, navigate]);
+  }, [location.search]);
 
   // Real Authentication & User State (No dummy fallback credentials)
   const dispatch = useDispatch();
@@ -617,14 +606,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   const [partnerVisibleCount, setPartnerVisibleCount] = useState(24);
   const [resaleVisibleCount, setResaleVisibleCount] = useState(24);
 
-  // Silent inline copy indicator states (No annoying popups)
-  const [copiedProdId, setCopiedProdId] = useState(null);
-  const [copiedReferral, setCopiedReferral] = useState(false);
-  const [copiedCatSlug, setCopiedCatSlug] = useState(null);
-
-  // Partner Hub Internal Sub-Tab: 'catalog' | 'dashboard'
-  const [partnerSubTab, setPartnerSubTab] = useState('catalog');
-
   // Dynamic Custom Margins Per Product for Resell & Earn Tab
   const [resaleMargins, setResaleMargins] = useState({});
 
@@ -934,17 +915,19 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     return { weeklyEarnings: bars, totalResaleMargin: totalMargin };
   }, [realOrders]);
 
-  // Handle Share Real Product with Custom Margin (Silent clipboard copy, no popups)
+  // Handle Share Real Product with Custom Margin (Obfuscated parameter protecting margin)
   const handleShareProductWithMargin = (prod, customMargin) => {
     const margin = customMargin !== undefined ? customMargin : getProductMargin(prod?.id);
+    const finalPrice = Number(prod?.price || 0) + Number(margin || 0);
     const refCode = affiliateApp?.applicationId || customerUser?.id || 'aff_verified';
     const link = buildAffiliateProductUrl({ productId: prod?.id || '', refCode, margin });
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(link);
-    }
-    if (prod?.id) {
-      setCopiedProdId(prod.id);
-      setTimeout(() => setCopiedProdId(null), 1800);
+      toast.success('Custom product link copied!', {
+        description: `Customer Price: ₹${finalPrice} • Your Profit Margin: +₹${margin}`
+      });
+    } else {
+      toast.info(`Link ready with ₹${margin} margin`);
     }
   };
 
@@ -957,14 +940,15 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  // Copy Affiliate Referral Link (Silent inline feedback, no popup)
+  // Copy Affiliate Referral Link
   const handleCopyAffiliateLink = () => {
     const affLink = `${window.location.origin}/?ref=${affiliateApp?.applicationId || customerUser?.id || 'aff_member'}`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(affLink);
+      toast.success('Affiliate Referral Link Copied!', {
+        description: 'Earn your custom profit margin on all orders placed via this link!'
+      });
     }
-    setCopiedReferral(true);
-    setTimeout(() => setCopiedReferral(false), 1800);
   };
 
   // Custom Product Margin Handlers (Apni marzi ka margin)
@@ -996,13 +980,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       refCode: affiliateApp?.applicationId || 'aff_verified',
       margin: margin || customMarginVal || 0
     });
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(link);
-    }
-    if (targetProd?.id) {
-      setCopiedProdId(targetProd.id);
-      setTimeout(() => setCopiedProdId(null), 1800);
-    }
+    navigator.clipboard?.writeText(link);
+    toast.success(`Custom product link copied with ₹${margin || customMarginVal || 0} margin!`);
   };
 
   // Filtered Catalog for Partner Hub
@@ -1261,17 +1240,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       badge: affiliateNavBadge,
       badgeClass: affiliateNavBadgeClass
     },
-    ...(isResellerApproved
-      ? [
-          {
-            id: 'affiliate_dashboard',
-            label: 'Affiliate Dashboard 📊',
-            icon: TrendingUp,
-            badge: 'STATS',
-            badgeClass: 'bg-indigo-600 text-white'
-          },
-        ]
-      : []),
     {
       id: 'orders',
       label: 'My Orders 🛍️',
@@ -1286,9 +1254,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       badge: wishlistItems.length > 0 ? String(wishlistItems.length) : null,
       badgeClass: 'bg-rose-100 text-rose-700'
     },
-    // Wallet Payouts ONLY unlocked if Reseller KYC is approved
+    // Resell & Earn and Wallet Payouts ONLY unlocked if Reseller KYC is approved
     ...(isResellerApproved
       ? [
+          { id: 'resale', label: 'Resell & Earn 🚀', icon: Sparkles },
           { id: 'wallet', label: 'Wallet & Payouts 💳', icon: Wallet },
         ]
       : []),
@@ -1298,18 +1267,6 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Tab switch handler with route intercept for external shopping pages
   const handleTabChange = (tabId) => {
-    if (tabId === 'affiliate_dashboard') {
-      setActiveTab('affiliate');
-      setPartnerSubTab('dashboard');
-      navigate('/user-dashboard1?tab=affiliate&view=dashboard', { replace: true });
-      return;
-    }
-    if (tabId === 'affiliate') {
-      setActiveTab('affiliate');
-      setPartnerSubTab('catalog');
-      navigate('/user-dashboard1?tab=affiliate', { replace: true });
-      return;
-    }
     if (tabId === 'cat-products') {
       handleNav('/explorer');
       return;
@@ -1340,8 +1297,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         };
       case 'affiliate':
         return {
-          title: affiliateApp?.status === 'Approved' ? 'Partner Hub 🤝' : 'Become an Affiliate Partner 🤝',
-          subtitle: 'Set custom profit margins, share product links directly, and track weekly direct bank settlements.',
+          title: affiliateApp?.status === 'Approved' ? 'Affiliate Partner Hub 🎉' : 'Become an Affiliate Partner 🤝',
+          subtitle: 'Set your own custom profit margin on any product and earn on every referral with weekly bank payouts.',
         };
       case 'orders':
         return {
@@ -1355,8 +1312,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         };
       case 'resale':
         return {
-          title: 'Partner Hub 🤝',
-          subtitle: 'Set custom profit margins, share product links directly, and track weekly direct bank settlements.',
+          title: 'Resell & Earn Margin Hub',
+          subtitle: 'Share live catalog collections with your network and earn resale profit margins.',
         };
       case 'wallet':
         return {
@@ -1448,11 +1405,11 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('affiliate')}
+                    onClick={() => setActiveTab('resale')}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#b7004d] hover:bg-[#96003f] text-white text-xs font-bold rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Open Partner Hub 🤝</span>
+                    <span>Open Resell Hub 🚀</span>
                   </button>
                 </div>
               </div>
@@ -1789,10 +1746,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setActiveTab('affiliate')}
+                        onClick={() => setActiveTab('resale')}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#b7004d] hover:bg-[#96003f] text-white text-xs font-bold rounded-xl shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
                       >
-                        <span>Explore Partner Catalog</span>
+                        <span>Explore Resell Catalog</span>
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     </div>
@@ -1999,10 +1956,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => (isResellerApproved ? setActiveTab('affiliate') : handleNav('/explorer'))}
+                  onClick={() => (isResellerApproved ? setActiveTab('resale') : handleNav('/explorer'))}
                   className="text-xs font-bold text-[#b7004d] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>{isResellerApproved ? 'Explore Partner Hub' : 'Explore All Products'}</span>
+                  <span>{isResellerApproved ? 'Explore Resale Hub' : 'Explore All Products'}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -2114,11 +2071,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setPartnerSubTab((prev) => (prev === 'dashboard' ? 'catalog' : 'dashboard'))}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                      onClick={() => handleNav('/affiliate-panel')}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
                     >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>{partnerSubTab === 'dashboard' ? 'Switch to Reseller Catalog 🛍️' : 'Switch to Affiliate Dashboard 📊'}</span>
+                      Open Full Affiliate Dashboard ➔
                     </button>
                   </div>
 
@@ -2145,17 +2101,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                         onClick={handleCopyAffiliateLink}
                         className="px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm rounded-2xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                       >
-                        {copiedReferral ? (
-                          <>
-                            <Check className="w-4 h-4 text-emerald-950" />
-                            <span>Copied! ✓</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            <span>Copy Link</span>
-                          </>
-                        )}
+                        <Copy className="w-4 h-4" />
+                        <span>Copy Link</span>
                       </button>
                     </div>
                   </div>
@@ -2190,484 +2137,375 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 </div>
 
                 {/* =========================================================================
-                    PARTNER HUB SUB-TAB SWITCHER (CATALOG VS AFFILIATE DASHBOARD)
+                    REAL-TIME PRODUCT CUSTOM MARGIN MANAGER (APNI MARZI KA PROFIT)
                 ========================================================================= */}
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPartnerSubTab('catalog')}
-                      className={`px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                        partnerSubTab === 'catalog'
-                          ? 'bg-[#b7004d] text-white shadow-md shadow-pink-600/20'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Products & Margins (Resell)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPartnerSubTab('dashboard')}
-                      className={`px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
-                        partnerSubTab === 'dashboard'
-                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/20'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Affiliate Dashboard 📊</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleNav('/affiliate-panel')}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition-colors cursor-pointer"
-                    title="Open standalone full screen affiliate portal"
-                  >
-                    <span>Full Screen Portal</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {/* VIEW 1: CATALOG PRODUCTS & CUSTOM MARGINS */}
-                {partnerSubTab === 'catalog' && (
-                <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs space-y-6 min-w-0 w-full max-w-full overflow-hidden">
+                <div className="bg-white p-3.5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs space-y-5 min-w-0 w-full max-w-full overflow-hidden">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 text-[#b7004d] text-xs font-bold mb-1">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Zero Capital Reseller Hub • Apni Marzi Ka Profit</span>
+                        <span>Custom Profit Margin Manager</span>
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
-                        Partner Hub Catalog Products 💼
+                      <h3 className="text-xl font-black text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+                        Set Your Custom Profit Margin Per Product 💰
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
-                        Adjust your custom profit margin on any product below (e.g. +₹100, +₹150, +₹200). 
-                        Click <strong>Copy Link</strong> to copy your unique referral link with your margin applied, or <strong>WhatsApp</strong> to share directly!
+                      <p className="text-xs text-slate-500">
+                        No fixed commission rates! Add your preferred profit margin above the supplier base price on any product. 100% of your chosen margin is credited directly to your bank account upon order delivery.
                       </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => navigate('/reseller-home')}
-                      className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0"
-                    >
-                      <span>Browse Full Store Catalog</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
                   </div>
 
-                  {/* Search Bar & Category Filter Toolbar */}
-                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="Search products by title, category, brand (e.g. Saree, Kurti, Shoes, Dungaree)..."
-                        value={partnerSearchQuery}
-                        onChange={(e) => setPartnerSearchQuery(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
-                      />
-                      {partnerSearchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setPartnerSearchQuery('')}
-                          className="w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
+                  {/* Active Product Margin Customizer Box */}
+                  {activeMarginProd && (
+                    <div className="p-3 sm:p-5 md:p-6 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-200/70 space-y-4 min-w-0 w-full max-w-full overflow-hidden">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <img
+                          src={activeMarginProd.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'}
+                          alt={activeMarginProd.title}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="w-20 h-20 rounded-2xl object-cover border border-slate-200 shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80';
+                          }}
+                        />
+                        <div className="flex-1 space-y-1">
+                          <h4 className="font-bold text-sm sm:text-base text-slate-900 line-clamp-1">
+                            {activeMarginProd.title}
+                          </h4>
+                          <p className="text-xs text-slate-500">
+                            Supplier Base Price: <strong className="text-slate-800">₹{basePrice}</strong>
+                          </p>
+                          <div className="flex flex-col xs:flex-row xs:items-center gap-1.5 pt-1 w-full max-w-full min-w-0">
+                            <span className="text-xs font-semibold text-slate-600 shrink-0">Switch Product:</span>
+                            <select
+                              value={activeMarginProd.id}
+                              onChange={(e) => setSelectedMarginProductId(e.target.value)}
+                              className="text-xs bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#b7004d] w-full sm:w-auto max-w-full truncate"
+                            >
+                              {catalogProducts.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.title.slice(0, 35)}... (₹{p.price})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
 
-                    {/* Category Filter Pills */}
-                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                      {['All', 'Women Ethnic', 'Women Western', 'Men', 'Kids', 'Beauty & Health', 'Footwear', 'Home & Kitchen', 'Electronics', 'Jewellery', 'Accessories'].map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => setPartnerSelectedCat(cat)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                            partnerSelectedCat === cat
-                              ? 'bg-[#b7004d] text-white shadow-xs'
-                              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Filtered Products Grid */}
-                  {partnerCatalogFiltered.length === 0 ? (
-                    <div className="bg-slate-50 p-10 rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 space-y-2">
-                      <Package className="w-10 h-10 mx-auto text-slate-300 mb-1" />
-                      <p className="text-xs font-semibold">No catalog products found matching "{partnerSearchQuery || partnerSelectedCat}".</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPartnerSearchQuery('');
-                          setPartnerSelectedCat('All');
-                        }}
-                        className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
-                      >
-                        Clear filters &amp; show all products
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {partnerCatalogFiltered.slice(0, partnerVisibleCount).map((p) => {
-                        const title = p.title || p.name || 'Catalog Product';
-                        const img = p.images?.[0] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400';
-                        const price = Number(p.price || 0);
-                        const currentMargin = getProductMargin(p.id);
-                        const finalSellingPrice = price + currentMargin;
-                        const refCode = affiliateApp?.applicationId || customerUser?.id || 'aff_verified';
-
-                        return (
-                          <div
-                            key={p.id}
-                            className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                          >
-                            {/* Product Image + Wholesale Badge */}
-                            <div className="relative h-48 bg-slate-100 overflow-hidden group">
-                              <img
-                                src={img}
-                                alt={title}
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                onError={(e) => {
-                                  const nextImg = p.images?.find((u) => u && u !== e.currentTarget.src);
-                                  if (nextImg && !e.currentTarget.dataset.fallbackTried) {
-                                    e.currentTarget.dataset.fallbackTried = '1';
-                                    e.currentTarget.src = nextImg;
-                                    return;
-                                  }
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400';
-                                }}
+                      {/* Margin Controls */}
+                      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <span>Set Your Profit Margin (₹):</span>
+                            <span className="text-[10px] text-slate-400 font-normal">(Adjust profit margin higher or lower)</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="2000"
+                                step="10"
+                                value={customMarginVal}
+                                onChange={(e) => setCustomMarginVal(Math.max(0, Number(e.target.value)))}
+                                className="w-28 pl-6 pr-3 py-1.5 text-sm font-black text-emerald-600 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
                               />
-                              <span className="absolute top-2.5 left-2.5 text-[10px] font-extrabold bg-slate-900/85 backdrop-blur-md text-white px-2.5 py-1 rounded-full shadow-sm">
-                                Wholesale ₹{price}
-                              </span>
-                            </div>
-
-                            {/* Product Info & Margin Customizer */}
-                            <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                              <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
-                                  {typeof p.category === 'object' ? p.category?.name : (p.categorySlug || p.category || 'Apparel')}
-                                </p>
-                                <h4 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug" title={title}>
-                                  {title}
-                                </h4>
-                              </div>
-
-                              {/* Interactive Custom Margin Box */}
-                              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70 space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-[11px] font-bold text-slate-600">Your Margin:</span>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs font-black text-emerald-600">+₹</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="3000"
-                                      step="10"
-                                      value={currentMargin}
-                                      onChange={(e) => setProductMargin(p.id, e.target.value)}
-                                      className="w-16 px-1.5 py-0.5 text-xs font-black text-emerald-600 bg-white border border-slate-200 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Quick Margin Chips */}
-                                <div className="flex items-center gap-1 pt-0.5 overflow-x-auto no-scrollbar">
-                                  {[50, 100, 150, 200, 300].map((preset) => (
-                                    <button
-                                      key={preset}
-                                      type="button"
-                                      onClick={() => setProductMargin(p.id, preset)}
-                                      className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-colors cursor-pointer ${
-                                        currentMargin === preset
-                                          ? 'bg-emerald-600 text-white shadow-xs'
-                                          : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
-                                      }`}
-                                    >
-                                      +₹{preset}
-                                    </button>
-                                  ))}
-                                </div>
-
-                                {/* Final Buyer Price Breakdown */}
-                                <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60">
-                                  <span className="text-slate-500 font-medium">Customer Price:</span>
-                                  <span className="font-black text-[#b7004d]">₹{finalSellingPrice}</span>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons: WhatsApp + Copy Link + Preview */}
-                              <div className="space-y-1.5 pt-1">
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleShareWhatsAppWithMargin(p, currentMargin)}
-                                    className="flex-1 py-2 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                                    title="Share on WhatsApp with your profit margin"
-                                  >
-                                    <Share2 className="w-3.5 h-3.5" />
-                                    <span>WhatsApp</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleShareProductWithMargin(p, currentMargin)}
-                                    className={`flex-1 py-2 active:scale-95 text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                                      copiedProdId === p.id 
-                                        ? 'bg-emerald-600 text-white' 
-                                        : 'bg-slate-900 hover:bg-slate-800 text-white'
-                                    }`}
-                                    title="Copy affiliate product link with your custom margin"
-                                  >
-                                    {copiedProdId === p.id ? (
-                                      <>
-                                        <Check className="w-3.5 h-3.5" />
-                                        <span>Copied! ✓</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-3.5 h-3.5" />
-                                        <span>Copy Link</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const liveUrl = buildAffiliateProductUrl({
-                                      productId: p.id,
-                                      refCode,
-                                      margin: currentMargin
-                                    });
-                                    window.open(liveUrl, '_blank');
-                                  }}
-                                  className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                >
-                                  <ExternalLink className="w-3 h-3 text-slate-400" />
-                                  <span>Preview Product (₹{finalSellingPrice})</span>
-                                </button>
-                              </div>
                             </div>
                           </div>
-                        );
-                      })}
+                        </div>
+
+                        {/* Margin Slider */}
+                        <div className="space-y-1.5">
+                          <input
+                            type="range"
+                            min="0"
+                            max="1000"
+                            step="25"
+                            value={customMarginVal}
+                            onChange={(e) => setCustomMarginVal(Number(e.target.value))}
+                            className="w-full accent-emerald-600 cursor-pointer"
+                          />
+                          <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                            <span>₹0 (Base)</span>
+                            <span className="hidden xs:inline">+₹250</span>
+                            <span>+₹500</span>
+                            <span className="hidden xs:inline">+₹750</span>
+                            <span>+₹1,000 (Max)</span>
+                          </div>
+                        </div>
+
+                        {/* Preset Quick Chips */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Quick Add:</span>
+                          {[50, 100, 150, 200, 300, 500].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setCustomMarginVal(preset)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                customMarginVal === preset
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}
+                            >
+                              +₹{preset}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Breakdown Summary */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-center">
+                          <div className="p-2.5 bg-slate-50 rounded-xl">
+                            <span className="text-[10px] text-slate-400 font-bold block">Supplier Base Price</span>
+                            <span className="text-sm font-bold text-slate-700">₹{basePrice}</span>
+                          </div>
+                          <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100">
+                            <span className="text-[10px] text-emerald-700 font-bold block">Your Profit Margin</span>
+                            <span className="text-sm font-black text-emerald-600">+₹{customMarginVal}</span>
+                          </div>
+                          <div className="p-2.5 bg-[#b7004d]/10 rounded-xl border border-[#b7004d]/20">
+                            <span className="text-[10px] text-[#b7004d] font-bold block">Customer Final Selling Price</span>
+                            <span className="text-sm font-black text-[#b7004d]">₹{affiliateSellingPrice}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const refCode = affiliateApp?.applicationId || 'aff_verified';
+                              const liveUrl = buildAffiliateProductUrl({
+                                productId: activeMarginProd.id,
+                                refCode,
+                                margin: customMarginVal
+                              });
+                              window.open(liveUrl, '_blank');
+                            }}
+                            className="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shrink-0"
+                            title="Open live product page with your custom margin applied"
+                          >
+                            <ExternalLink className="w-4 h-4 text-emerald-400" />
+                            <span>View Live Product (₹{affiliateSellingPrice})</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleShareCustomMarginWhatsApp()}
+                            className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-102 active:scale-95"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            <span>Share on WhatsApp</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCustomMarginLink()}
+                            className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Link</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* Dynamic Pagination Controls */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 border-t border-slate-100">
-                    <p className="text-xs text-slate-500 font-medium">
-                      Showing <strong className="text-slate-800">{Math.min(partnerVisibleCount, partnerCatalogFiltered.length)}</strong> of <strong className="text-slate-800">{partnerCatalogFiltered.length}</strong> products
-                    </p>
-
-                    <div className="flex items-center gap-2">
-                      {partnerCatalogFiltered.length > partnerVisibleCount && (
-                        <button
-                          type="button"
-                          onClick={() => setPartnerVisibleCount((prev) => prev + 24)}
-                          className="py-2 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
-                        >
-                          Load More Products ⬇️
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => navigate('/reseller-home')}
-                        className="py-2 px-4 bg-[#FF3F6C] hover:bg-[#e0355f] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
-                      >
-                        <span>Browse All Products</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                )}
-
-                {/* VIEW 2: FULL AFFILIATE DASHBOARD & ANALYTICS */}
-                {partnerSubTab === 'dashboard' && (
-                  <div className="space-y-6">
-                    {/* Key Affiliate Conversion Analytics Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-slate-400">Total Commissions</p>
-                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">₹</div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900">
-                          ₹{Number(affiliateStats?.totalCommission || 0).toLocaleString('en-IN')}
-                        </h3>
-                        <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          <span>Real Profit Credited</span>
-                        </p>
-                      </div>
-
-                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-slate-400">Referred Orders</p>
-                          <div className="w-8 h-8 rounded-full bg-pink-50 text-[#b7004d] flex items-center justify-center font-bold text-xs">
-                            <ShoppingBag className="w-4 h-4" />
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900">{affiliateStats?.totalOrders || 0}</h3>
-                        <p className="text-[11px] text-slate-500 font-medium">Customer Conversions</p>
-                      </div>
-
-                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-slate-400">Total Link Clicks</p>
-                          <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                            <Globe className="w-4 h-4" />
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900">
-                          {Math.max(affiliateStats?.clicks || 0, (affiliateStats?.totalOrders || 0) * 3)}
-                        </h3>
-                        <p className="text-[11px] text-blue-600 font-bold">Traffic Generated</p>
-                      </div>
-
-                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold text-slate-400">Conversion Rate</p>
-                          <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
-                            %
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900">
-                          {affiliateStats?.totalOrders > 0
-                            ? ((affiliateStats.totalOrders / Math.max(1, affiliateStats?.clicks || affiliateStats.totalOrders * 3)) * 100).toFixed(1)
-                            : '0.0'}%
-                        </h3>
-                        <p className="text-[11px] text-purple-600 font-bold">Click-to-Sale Ratio</p>
-                      </div>
-                    </div>
-
-                    {/* Category Marketing Links with Copy and WhatsApp */}
-                    <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                  {/* Catalog Explorer with 1-Click Margin Customizer & Full Catalog Access */}
+                  {catalogProducts && catalogProducts.length > 0 && (
+                    <div className="space-y-4 pt-3 border-t border-slate-200/80">
+                      {/* Section Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-1">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Instant Marketing Channels</span>
-                          </div>
-                          <h4 className="text-xl font-black text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
-                            Direct Category Referral Links 🎯
+                          <h4 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                            <span>Catalog Products</span>
+                            <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">
+                              Dynamic Live Catalog
+                            </span>
                           </h4>
-                          <p className="text-xs sm:text-sm text-slate-500">
-                            Share specific departments directly with your followers. Every purchase made earns direct commission!
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Set your custom profit margin on any product and share directly to WhatsApp
                           </p>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => navigate('/reseller-home')}
+                          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-semibold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0"
+                          title="Open complete reseller catalog"
+                        >
+                          <span>Explore Full Reseller Catalog</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                        {[
-                          { name: "Women's Ethnic & Sarees", slug: 'women-ethnic', icon: '👗', bg: 'from-pink-500/10 to-rose-500/10 border-pink-200' },
-                          { name: "Western Wear & Tops", slug: 'women-western', icon: '👚', bg: 'from-purple-500/10 to-indigo-500/10 border-purple-200' },
-                          { name: "Men's Fashion & Shirts", slug: 'men-clothing', icon: '👔', bg: 'from-blue-500/10 to-cyan-500/10 border-blue-200' },
-                          { name: 'Jewellery & Bangles', slug: 'jewellery', icon: '💎', bg: 'from-amber-500/10 to-yellow-500/10 border-amber-200' },
-                          { name: 'Home & Kitchen Decor', slug: 'home-kitchen', icon: '🍳', bg: 'from-emerald-500/10 to-teal-500/10 border-emerald-200' },
-                          { name: 'Footwear & Casual Shoes', slug: 'footwear', icon: '👟', bg: 'from-orange-500/10 to-amber-500/10 border-orange-200' }
-                        ].map((cat) => {
-                          const catLink = `${window.location.origin}/explorer?ref=${affiliateApp?.applicationId || customerUser?.id || 'aff_verified'}&category=${encodeURIComponent(cat.slug)}`;
-                          const isCopied = copiedCatSlug === cat.slug;
+                      {/* Search Bar & Category Filter Toolbar */}
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Search catalog by title, brand or category (e.g. Saree, Kurti, Shoes, Watch)..."
+                            value={partnerSearchQuery}
+                            onChange={(e) => setPartnerSearchQuery(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-2 text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                          />
+                          {partnerSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setPartnerSearchQuery('')}
+                              className="w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
 
-                          return (
-                            <div key={cat.slug} className={`p-4 rounded-2xl border bg-gradient-to-br ${cat.bg} flex flex-col justify-between gap-3`}>
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-2xl">{cat.icon}</span>
-                                <div className="min-w-0">
-                                  <h5 className="font-bold text-xs sm:text-sm text-slate-900 truncate">{cat.name}</h5>
-                                  <p className="text-[10px] text-slate-500 font-mono truncate">{catLink}</p>
+                        {/* Category Filter Pills */}
+                        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                          {['All', 'Women', 'Men', 'Kids', 'Beauty', 'Footwear', 'Home', 'Gadgets', 'Jewelry'].map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setPartnerSelectedCat(cat)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                                partnerSelectedCat === cat
+                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Filtered Products Grid */}
+                      {partnerCatalogFiltered.length === 0 ? (
+                        <div className="bg-white p-8 rounded-2xl border border-slate-200/80 text-center text-slate-400 space-y-2">
+                          <p className="text-xs font-semibold">No products found matching "{partnerSearchQuery || partnerSelectedCat}".</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPartnerSearchQuery('');
+                              setPartnerSelectedCat('All');
+                            }}
+                            className="text-xs font-bold text-[#b7004d] hover:underline cursor-pointer"
+                          >
+                            Clear search filters
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {partnerCatalogFiltered.slice(0, partnerVisibleCount).map((prod) => (
+                            <div
+                              key={prod.id}
+                              className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-3 hover:border-slate-300 transition-colors"
+                            >
+                              <div className="flex gap-3">
+                                <img
+                                  src={prod.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'}
+                                  alt={prod.title}
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer"
+                                  className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-100"
+                                  onError={(e) => {
+                                    const nextImg = prod.images?.find(url => url && url !== e.currentTarget.src);
+                                    if (nextImg && !e.currentTarget.dataset.fallbackTried) {
+                                      e.currentTarget.dataset.fallbackTried = '1';
+                                      e.currentTarget.src = nextImg;
+                                      return;
+                                    }
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80';
+                                  }}
+                                />
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <h5 className="font-bold text-xs text-slate-900 line-clamp-2" title={prod.title}>
+                                    {prod.title}
+                                  </h5>
+                                  <p className="text-[11px] text-slate-500">
+                                    Base: <strong className="text-slate-800">₹{prod.price}</strong>
+                                  </p>
+                                  <p className="text-[11px] text-emerald-600 font-bold">
+                                    Suggested: ₹{prod.price + 150} (+₹150 Margin)
+                                  </p>
                                 </div>
                               </div>
-
-                              <div className="flex items-center gap-2 pt-1">
+                              <div className="flex gap-2 pt-2 border-t border-slate-100">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (navigator?.clipboard?.writeText) {
-                                      navigator.clipboard.writeText(catLink);
-                                    }
-                                    setCopiedCatSlug(cat.slug);
-                                    setTimeout(() => setCopiedCatSlug(null), 1800);
+                                    setSelectedMarginProductId(prod.id);
+                                    window.scrollTo({ top: 400, behavior: 'smooth' });
                                   }}
-                                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                    isCopied
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-xs'
-                                  }`}
+                                  className="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg cursor-pointer transition-colors text-center"
+                                  title="Load into custom margin slider"
                                 >
-                                  {isCopied ? (
-                                    <>
-                                      <Check className="w-3.5 h-3.5" />
-                                      <span>Copied! ✓</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy className="w-3.5 h-3.5" />
-                                      <span>Copy Link</span>
-                                    </>
-                                  )}
+                                  Customize
                                 </button>
-
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const msg = `🛍️ Explore the latest collection of *${cat.name}* at wholesale prices!\n\nShop directly with free delivery & COD:\n${catLink}`;
-                                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                                    const refCode = affiliateApp?.applicationId || 'aff_verified';
+                                    const liveUrl = buildAffiliateProductUrl({
+                                      productId: prod.id,
+                                      refCode,
+                                      margin: 150
+                                    });
+                                    window.open(liveUrl, '_blank');
                                   }}
-                                  className="py-1.5 px-3 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shadow-xs"
-                                  title="Share on WhatsApp"
+                                  className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-1"
+                                  title="View live product with +₹150 margin"
                                 >
-                                  <Share2 className="w-3.5 h-3.5" />
-                                  <span className="hidden sm:inline">WhatsApp</span>
+                                  <ExternalLink className="w-3 h-3 text-slate-500" />
+                                  <span>View (₹{prod.price + 150})</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleShareCustomMarginWhatsApp(prod, 150)}
+                                  className="py-1.5 px-3 bg-[#25D366] hover:bg-[#20ba59] text-white text-[11px] font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-1 shrink-0"
+                                  title="Quick share with ₹150 margin"
+                                >
+                                  <Share2 className="w-3 h-3" />
+                                  <span>Share</span>
                                 </button>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Standalone Fullscreen Portal CTA Banner */}
-                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 sm:p-8 rounded-3xl border border-indigo-900/50 shadow-md text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="space-y-1.5 text-center sm:text-left">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Advanced Affiliate Pro Suite</span>
+                          ))}
                         </div>
-                        <h4 className="text-xl font-black">Want deeper analytics, custom banners & affiliate settings?</h4>
-                        <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-                          Launch the full-screen Affiliate Program Panel for standalone traffic logs, payout history and campaign tracking.
-                        </p>
-                      </div>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => handleNav('/affiliate-panel')}
-                        className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-indigo-500/25 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0"
-                      >
-                        <span>Open Standalone Panel</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
+                      {/* Professional Dynamic Pagination & Explore Footer */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-5 mt-2 border-t border-slate-100">
+                        <p className="text-xs text-slate-500 font-medium">
+                          Showing <strong className="text-slate-800">{Math.min(partnerVisibleCount, partnerCatalogFiltered.length)}</strong> of <strong className="text-slate-800">{partnerCatalogFiltered.length}</strong> products
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                          {partnerCatalogFiltered.length > partnerVisibleCount && (
+                            <button
+                              type="button"
+                              onClick={() => setPartnerVisibleCount(prev => prev + 12)}
+                              className="py-2 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+                            >
+                              Load More Products ↓
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => navigate('/reseller-home')}
+                            className="py-2 px-4 bg-[#FF3F6C] hover:bg-[#e0355f] active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>Browse All Products</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : isKycUnderReview ? (
               /* If Under Review */
@@ -3237,6 +3075,167 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
           </div>
         )}
 
+        {/* =========================================================================
+            TAB 6: RESELL & EARN (Real Catalog Only - Unlocked only after KYC Approval)
+        ========================================================================= */}
+        {activeTab === 'resale' && (
+          !isResellerApproved ? (
+            <div className="bg-white p-8 sm:p-14 rounded-3xl border border-slate-200 text-center space-y-4 max-w-xl mx-auto my-8 shadow-xs">
+              <div className="w-14 h-14 rounded-3xl bg-pink-50 text-[#b7004d] flex items-center justify-center mx-auto">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">Reseller Hub Locked 🔒</h3>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                {isKycUnderReview
+                  ? 'Your Reseller / Partner KYC application is currently being verified. Once verified, wholesale catalog access and margin links will unlock automatically.'
+                  : 'Your account is currently a standard Customer account. Complete Partner KYC to unlock wholesale catalog access and start earning margins on product links.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab('affiliate')}
+                className="px-6 py-2.5 bg-[#b7004d] hover:bg-[#96003f] text-white text-xs font-bold rounded-2xl shadow-sm cursor-pointer"
+              >
+                {isKycUnderReview ? 'Track KYC Status' : 'Complete Partner KYC Now 📄'}
+              </button>
+            </div>
+          ) : (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-6 rounded-3xl shadow-md space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[10px] font-black uppercase text-purple-200">
+                <Sparkles className="w-3 h-3 text-purple-300" />
+                <span>Zero Capital Reseller Network</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black">Set Your Custom Profit Margin &amp; Share Links</h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+                No fixed commission rates! Adjust your preferred profit margin on any product below (e.g. +₹100, +₹150, +₹200). Whenever anyone buys through your link, 100% of your profit margin is credited directly to your bank account.
+              </p>
+            </div>
+
+            {catalogProducts.length === 0 ? (
+              <div className="bg-white p-12 rounded-3xl border border-slate-200/80 text-center text-slate-400">
+                <Package className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                <p className="text-sm font-semibold">No live catalog products to display right now.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {catalogProducts.slice(0, resaleVisibleCount).map((p) => {
+                  const title = p.title || p.name || 'Catalog Product';
+                  const img = p.images?.[0] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400';
+                  const price = Number(p.price || 0);
+                  const currentMargin = getProductMargin(p.id);
+                  const finalSellingPrice = price + currentMargin;
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div className="relative h-48 bg-slate-100">
+                        <img src={img} alt={title} className="w-full h-full object-cover" />
+                        <span className="absolute top-2.5 left-2.5 text-[10px] font-bold bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-full">
+                          Wholesale ₹{price}
+                        </span>
+                      </div>
+
+                      <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{p.category?.name || 'Category'}</p>
+                          <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{title}</h4>
+                        </div>
+
+                        {/* Interactive Custom Margin Box */}
+                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/70 space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-[11px] font-semibold text-slate-600">Your Margin:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-bold text-emerald-600">+₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="2000"
+                                step="10"
+                                value={currentMargin}
+                                onChange={(e) => setProductMargin(p.id, e.target.value)}
+                                className="w-16 px-1.5 py-0.5 text-xs font-black text-emerald-600 bg-white border border-slate-200 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quick Margin Chips */}
+                          <div className="flex items-center gap-1 pt-0.5 overflow-x-auto no-scrollbar">
+                            {[50, 100, 150, 200, 300].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setProductMargin(p.id, preset)}
+                                className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-colors cursor-pointer ${
+                                  currentMargin === preset
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-white hover:bg-slate-200 text-slate-600 border border-slate-200'
+                                }`}
+                              >
+                                +₹{preset}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Final Buyer Price Breakdown */}
+                          <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60">
+                            <span className="text-slate-400">Customer Price:</span>
+                            <span className="font-black text-[#b7004d]">₹{finalSellingPrice}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleShareWhatsAppWithMargin(p, currentMargin)}
+                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            title="Share on WhatsApp with your margin"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>WhatsApp</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleShareProductWithMargin(p, currentMargin)}
+                            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            title="Copy link with your margin"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Dynamic Reseller Catalog Pagination Controls */}
+              {catalogProducts.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 font-medium">
+                    Showing <strong className="text-slate-800">{Math.min(resaleVisibleCount, catalogProducts.length)}</strong> of <strong className="text-slate-800">{catalogProducts.length}</strong> products
+                  </p>
+                  {catalogProducts.length > resaleVisibleCount && (
+                    <button
+                      type="button"
+                      onClick={() => setResaleVisibleCount((prev) => prev + 24)}
+                      className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-2xl text-xs font-bold shadow-xs cursor-pointer transition-colors"
+                    >
+                      Load More Products ⬇️
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        )
+      )}
 
         {/* =========================================================================
             TAB 7: WALLET & PAYOUTS (Real Balance & Ledger Only)

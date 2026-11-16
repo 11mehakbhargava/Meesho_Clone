@@ -765,7 +765,7 @@ function AppRoutes() {
         <Route path="/dropshipper-products" element={<SupplierProductAccess onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/supplier-product" element={<SupplierProductAccess onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/share-earn-config" element={<ShareEarnConfig />} />
-        <Route path="/resell-earn" element={<Navigate to="/user-dashboard1?tab=affiliate" replace />} />
+        <Route path="/resell-earn" element={<ResellEarn />} />
         <Route path="/earnings" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/earnings-dashboard-1" element={<EarningsDashboard1 onNavigate={handleNav} onBack={handleBack} />} />
