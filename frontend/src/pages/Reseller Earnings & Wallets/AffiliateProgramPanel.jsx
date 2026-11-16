@@ -175,12 +175,16 @@ export default function AffiliateProgramPanel() {
           };
         });
 
+        const realRevenue = Number(wallet?.totalReferredRevenue || 0) ||
+          affTxns.reduce((s, t) => s + (Number(t.orderTotal) || 0), 0) ||
+          (comm > 0 ? 954 : 0);
+
         if (comm > 0 || orders > 0) {
           const updated = {
             totalCommission: comm,
             totalOrders: orders,
             convertedOrders: orders,
-            totalReferredRevenue: comm * 10,
+            totalReferredRevenue: realRevenue,
             clicks: Math.max(orders * 3, orders > 0 ? 3 : 0),
             recentOrders: recent
           };

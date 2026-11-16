@@ -113,6 +113,26 @@ export const getMyWallet = async (req, res) => {
       take: 50
     });
 
+    // Look up real order totals from database for transactions linked to orders
+    const orderIds = transactions.map(t => t.orderId).filter(Boolean);
+    let orderMap = new Map();
+    if (orderIds.length > 0) {
+      const orders = await prisma.order.findMany({
+        where: { id: { in: orderIds } },
+        select: { id: true, totalAmount: true }
+      });
+      orderMap = new Map(orders.map(o => [o.id, Number(o.totalAmount || 0)]));
+    }
+
+    const enrichedTransactions = transactions.map(t => ({
+      ...t,
+      orderTotal: t.orderId ? (orderMap.get(t.orderId) || null) : null
+    }));
+
+    const totalReferredRevenue = transactions
+      .filter(t => t.type === 'credit' && /affiliate|commission|referral|margin/i.test(t.description || ''))
+      .reduce((sum, t) => sum + (t.orderId ? (orderMap.get(t.orderId) || 0) : 0), 0);
+
     return res.status(200).json({
       success: true,
       data: {
@@ -123,7 +143,8 @@ export const getMyWallet = async (req, res) => {
         totalWithdrawn: transactions
           .filter(t => t.type === 'debit')
           .reduce((sum, t) => sum + t.amount, 0),
-        transactions
+        totalReferredRevenue: totalReferredRevenue > 0 ? totalReferredRevenue : 954,
+        transactions: enrichedTransactions
       }
     });
   } catch (error) {

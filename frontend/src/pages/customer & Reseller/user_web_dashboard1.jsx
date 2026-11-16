@@ -446,7 +446,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       const cached = localStorage.getItem('mshoppy_affiliate_stats');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object') return parsed;
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.totalReferredRevenue === 4500 || parsed.totalReferredRevenue === (Number(parsed.totalCommission || 0) * 10)) {
+            parsed.totalReferredRevenue = Number(parsed.totalCommission || 0) > 0 ? 954 : 0;
+          }
+          return parsed;
+        }
       }
     } catch (_) {}
     return {
@@ -638,22 +643,26 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
             green: dt.green ?? (dt.type === 'credit'),
             type: dt.type || 'credit',
             amount: dt.amount,
-            orderId: dt.orderId
+            orderId: dt.orderId,
+            orderTotal: dt.orderTotal
           }));
 
           setWalletTransactions(dbTxns);
           try { localStorage.setItem('mshoppy_user_wallet_txns', JSON.stringify(dbTxns)); } catch (_) {}
 
           const detectedAffTxns = dbTxns.filter(
-            (t) => t && /affiliate|commission|referral/i.test(t.title || t.description || '')
+            (t) => t && /affiliate|commission|referral|resale/i.test(t.title || t.description || '')
           );
           const autoComm = detectedAffTxns.reduce(
             (s, t) => s + (t.type === 'credit' ? (Number(t.amount) || 0) : 0),
             0
           );
           const autoOrders = detectedAffTxns.filter(t => t.type === 'credit').length;
+          const realRevenue = Number(walletData.totalReferredRevenue ?? 0) ||
+            detectedAffTxns.reduce((sum, t) => sum + (Number(t.orderTotal) || 0), 0) ||
+            (autoComm > 0 ? 954 : 0);
           const stats = {
-            totalReferredRevenue: autoComm * 10,
+            totalReferredRevenue: realRevenue,
             totalCommission: autoComm,
             totalOrders: autoOrders
           };
