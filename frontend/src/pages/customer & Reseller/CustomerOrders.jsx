@@ -195,33 +195,7 @@ export default function CustomerOrders({ onNavigate, onBack }) {
 
   // Dynamic Flipkart tracking timeline calculator based on order timestamps
   const getTrackingTimeline = (order) => {
-    const baseTime = new Date(order.rawCreatedAt || Date.now());
-
-    const dayOrdinal = (d) => {
-      const day = d.getDate();
-      if (day > 3 && day < 21) return `${day}th`;
-      switch (day % 10) {
-        case 1: return `${day}st`;
-        case 2: return `${day}nd`;
-        case 3: return `${day}rd`;
-        default: return `${day}th`;
-      }
-    };
-
-    const fmtFull = (d) => {
-      const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
-      const month = d.toLocaleDateString('en-IN', { month: 'short' });
-      const year = d.toLocaleDateString('en-IN', { year: '2-digit' });
-      const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
-      return `${weekday}, ${dayOrdinal(d)} ${month} '${year} - ${time}`;
-    };
-
-    const fmtDayDate = (d) => {
-      const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
-      const month = d.toLocaleDateString('en-IN', { month: 'short' });
-      const year = d.toLocaleDateString('en-IN', { year: '2-digit' });
-      return `${weekday}, ${dayOrdinal(d)} ${month} '${year}`;
-    };
+    const baseTime = new Date(order.rawCreatedAt || order.createdAt || Date.now());
 
     const fmtShortDate = (d) => {
       const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
@@ -230,35 +204,35 @@ export default function CustomerOrders({ onNavigate, onBack }) {
       return `${weekday} ${month} ${day}`;
     };
 
-    // Realistic milestone offsets
-    const tPlaced = new Date(baseTime.getTime());
-    const tProcessed = new Date(baseTime.getTime() + 16 * 3600 * 1000);
-    const tPickedUp = new Date(baseTime.getTime() + 43 * 3600 * 1000);
-    const tShipped = new Date(baseTime.getTime() + 45 * 3600 * 1000);
-    const tArrived1 = new Date(baseTime.getTime() + 57 * 3600 * 1000);
-    const tArrived2 = new Date(baseTime.getTime() + 58 * 3600 * 1000);
-    const tLeft = new Date(baseTime.getTime() + 61 * 3600 * 1000);
-    const tExpected = new Date(baseTime.getTime() + 7 * 24 * 3600 * 1000);
+    const fmtDayDate = (d) => {
+      const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
+      const month = d.toLocaleDateString('en-IN', { month: 'short' });
+      const year = d.toLocaleDateString('en-IN', { year: '2-digit' });
+      return `${weekday}, ${day} ${month} '${year}`;
+    };
 
-    const trackingCode = 'SF' + (order.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10).toUpperCase() || '3604819638F');
+    const placedDateStr = fmtDayDate(baseTime);
+    const shortPlacedDate = fmtShortDate(baseTime);
+    const shippedDateStr = order.shippedAt ? fmtDayDate(new Date(order.shippedAt)) : fmtDayDate(baseTime);
+    const shortShippedDate = order.shippedAt ? fmtShortDate(new Date(order.shippedAt)) : fmtShortDate(baseTime);
 
     return {
-      placedDateStr: fmtDayDate(tPlaced),
-      shippedDateStr: fmtDayDate(tShipped),
-      shortPlacedDate: fmtShortDate(tPlaced),
-      shortShippedDate: fmtShortDate(tShipped),
-      deliveryLabelDate: `${fmtShortDate(tExpected)} by 11 PM`,
-      expectedDeliveryStr: `Fri ${dayOrdinal(tExpected)} ${tExpected.toLocaleDateString('en-IN', { month: 'short' })}`,
-      trackingPartner: 'Shadowfax',
-      trackingCode,
+      placedDateStr,
+      shippedDateStr,
+      shortPlacedDate,
+      shortShippedDate,
+      deliveryLabelDate: 'Delivery in progress',
+      expectedDeliveryStr: 'Soon',
+      trackingPartner: 'Standard Courier',
+      trackingCode: '',
       events: {
-        placed: fmtFull(tPlaced),
-        processed: fmtFull(tProcessed),
-        pickedUp: fmtFull(tPickedUp),
-        shipped: fmtFull(tShipped),
-        arrived1: `${fmtFull(tArrived1)} - Gurgaon`,
-        arrived2: `${fmtFull(tArrived2)} - Gurgaon`,
-        left: `${fmtFull(tLeft)} - Gurgaon`,
+        placed: `${baseTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Order received & verified`,
+        processed: 'Seller acknowledged & packed item',
+        pickedUp: 'Courier partner dispatched package',
+        shipped: shippedDateStr,
+        arrived1: 'In transit to destination city',
+        arrived2: 'In transit to destination city',
+        left: 'Arrived at local delivery hub',
       }
     };
   };

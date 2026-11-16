@@ -42,21 +42,21 @@ export default function OrderTrackingModal({
     ? order.shippingAddress
     : {};
 
-  const realCourier = addr.courier || addr.courierPartner || 'Delhivery Express';
-  const realAwb = addr.awb || addr.trackingNumber || ('DEL' + (order.id?.slice(0, 8).toUpperCase() || '1029384'));
+  const realCourier = addr.courier || addr.courierPartner || '';
+  const realAwb = addr.awb || addr.trackingNumber || '';
   const realTrackingUrl = addr.trackingUrl || '';
 
   const defaultTimeline = {
-    trackingPartner: `${realCourier} (AWB: ${realAwb})`,
+    trackingPartner: realCourier ? `${realCourier} ${realAwb ? `(AWB: ${realAwb})` : ''}` : 'Standard Delivery',
     placedDateStr: orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-    shippedDateStr: addr.shippedAt ? new Date(addr.shippedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : new Date(orderDate.getTime() + 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
-    expectedDeliveryStr: addr.estimatedDelivery ? new Date(addr.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date(orderDate.getTime() + 4 * 86400000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    shippedDateStr: addr.shippedAt ? new Date(addr.shippedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : orderDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    expectedDeliveryStr: addr.estimatedDelivery ? new Date(addr.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Soon',
     events: {
-      placed: `${orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Order received & verified`,
-      processed: 'Seller acknowledged & packed item',
-      pickedUp: `Courier partner (${realCourier}) picked up package from warehouse`,
-      arrived1: 'Arrived at nearest sorting hub facility',
-      left: 'In transit to destination city hub',
+      placed: `${orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Order placed & confirmed`,
+      processed: 'Seller processed item',
+      pickedUp: realCourier ? `Picked up by ${realCourier}` : 'Dispatched by seller',
+      arrived1: 'In transit to delivery hub',
+      left: 'In transit to doorstep',
     }
   };
   const track = (getTrackingTimeline ? getTrackingTimeline(order) : null) || defaultTimeline;
@@ -454,50 +454,40 @@ export default function OrderTrackingModal({
                   <span className="text-slate-500 font-semibold">{track?.shippedDateStr}</span>
                 </div>
 
-                {/* Real Courier & AWB Tracking Card */}
-                <div className="mt-2.5 bg-slate-50 border border-slate-200/90 rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between flex-wrap gap-1">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      🚚 {realCourier}
-                    </span>
-                    {realTrackingUrl && (
-                      <a
-                        href={realTrackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 bg-white border border-emerald-200 px-2 py-0.5 rounded-md shadow-xs"
+                {/* Only show Courier & AWB Card if real courier info exists */}
+                {realCourier && realAwb && (
+                  <div className="mt-2.5 bg-slate-50 border border-slate-200/90 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        🚚 {realCourier}
+                      </span>
+                      {realTrackingUrl && (
+                        <a
+                          href={realTrackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 bg-white border border-emerald-200 px-2 py-0.5 rounded-md shadow-xs"
+                        >
+                          Track on Portal ↗
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-600 font-mono">
+                      <span>AWB: <strong className="text-slate-900">{realAwb}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(realAwb, 'AWB Copied to clipboard!')}
+                        className="text-[10px] text-blue-600 font-sans font-semibold hover:underline cursor-pointer"
                       >
-                        Track on Portal ↗
-                      </a>
-                    )}
+                        Copy AWB
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-600 font-mono">
-                    <span>AWB: <strong className="text-slate-900">{realAwb}</strong></span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(realAwb, 'AWB Copied to clipboard!')}
-                      className="text-[10px] text-blue-600 font-sans font-semibold hover:underline cursor-pointer"
-                    >
-                      Copy AWB
-                    </button>
-                  </div>
-                </div>
+                )}
 
-                <div className="mt-2.5 space-y-2.5 pl-1 text-slate-600 font-medium">
-                  <div>
-                    <p className="text-slate-800 font-semibold">
-                      Courier partner ({realCourier}) has dispatched your item.
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{track?.events?.pickedUp}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-800 font-semibold">Your item has arrived at a hub facility</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{track?.events?.arrived1}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-800 font-semibold">Your item has left a delivery partner facility</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{track?.events?.left}</p>
-                  </div>
+                <div className="mt-2.5 pl-1 text-slate-600 font-medium text-xs">
+                  <p className="text-slate-800 font-semibold">Your package has been dispatched by the seller.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">In transit to destination city</p>
                 </div>
               </div>
             </div>
@@ -516,7 +506,7 @@ export default function OrderTrackingModal({
                 <div className="mt-2.5 space-y-2 pl-1 text-slate-500 font-medium">
                   <p className="text-slate-700 font-semibold">Package is being prepared by the seller.</p>
                   <p className="text-[11px] text-slate-400">
-                    Courier partner (Shadowfax) will pick up the package once packing is done.
+                    Courier partner will pick up package once packed.
                   </p>
                 </div>
               </div>
@@ -577,7 +567,7 @@ export default function OrderTrackingModal({
 
               <div className="flex-1">
                 <h4 className={`font-extrabold text-sm ${isDelivered ? 'text-emerald-700' : 'text-slate-500'}`}>
-                  {isDelivered ? 'Delivered' : `Delivery Expected By ${track?.expectedDeliveryStr}`}
+                  {isDelivered ? 'Delivered' : 'Delivery Expected Soon'}
                 </h4>
                 <div className="mt-1 pl-1 text-[11px] text-slate-400 space-y-0.5 font-medium">
                   <p>{isDelivered ? 'Delivered to your doorstep.' : 'Item yet to be delivered.'}</p>
