@@ -75,11 +75,101 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
   }, [orderIdParam]);
 
 
-  // Live Chat state
+  // Multilingual Smart Live Chat state
+  const [chatLang, setChatLang] = useState('hi'); // 'en' | 'hi' | 'hinglish'
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { id: '1', sender: 'agent', text: 'Hello! I am MShoppy Support Bot. How can I help with your reseller account or order today?' },
+    {
+      id: '1',
+      sender: 'agent',
+      text: 'नमस्ते! मैं Mshoppy सहायता सहायक हूँ। आज मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे मदद कर सकता हूँ?',
+      showChips: true
+    },
   ]);
   const [chatInput, setChatInput] = useState('');
+
+  const currentDict = BOT_CONTENT[chatLang] || BOT_CONTENT.hi;
+
+  const handleSwitchLanguage = (newLang) => {
+    setChatLang(newLang);
+    const dict = BOT_CONTENT[newLang] || BOT_CONTENT.hi;
+    const langMsg = {
+      id: `lang-${Date.now()}`,
+      sender: 'agent',
+      text: dict.greeting,
+      showChips: true
+    };
+    setChatMessages((prev) => [...prev, langMsg]);
+  };
+
+  const processBotReply = (inputText) => {
+    const t = (inputText || '').toLowerCase().trim();
+    const dict = BOT_CONTENT[chatLang] || BOT_CONTENT.hi;
+
+    if (t === 'track_order' || t.includes('order') || t.includes('track') || t.includes('kaha') || t.includes('delivery') || t.includes('status')) {
+      if (latestOrder) {
+        return {
+          text: dict.responses.order_found(latestOrder),
+          orderCard: latestOrder,
+          actionType: 'orders'
+        };
+      } else {
+        return {
+          text: dict.responses.order_not_found,
+          actionType: 'home'
+        };
+      }
+    } else if (t === 'return_exchange' || t.includes('return') || t.includes('exchange') || t.includes('wapas') || t.includes('badal')) {
+      return {
+        text: dict.responses.return_info,
+        actionType: 'orders'
+      };
+    } else if (t === 'refund_status' || t.includes('refund') || t.includes('payout') || t.includes('paise') || t.includes('payment') || t.includes('margin')) {
+      return {
+        text: dict.responses.refund_info,
+        actionType: 'ticket'
+      };
+    } else if (t === 'raise_ticket' || t.includes('ticket') || t.includes('shikayat') || t.includes('complaint') || t.includes('help') || t.includes('madad')) {
+      return {
+        text: dict.responses.ticket_prompt,
+        actionType: 'ticket'
+      };
+    } else if (t.includes('hi') || t.includes('hello') || t.includes('hey') || t.includes('namaste') || t.includes('kaise')) {
+      return {
+        text: dict.responses.hi,
+        showChips: true
+      };
+    } else {
+      return {
+        text: dict.responses.unknown,
+        actionType: 'ticket',
+        showChips: true
+      };
+    }
+  };
+
+  const executeSend = (textToSend, intentKey = null) => {
+    if (!textToSend.trim()) return;
+
+    const userMsg = { id: `m-${Date.now()}`, sender: 'user', text: textToSend.trim() };
+    setChatMessages((prev) => [...prev, userMsg]);
+    setChatInput('');
+    setIsBotTyping(true);
+
+    setTimeout(() => {
+      const replyData = processBotReply(intentKey || textToSend);
+      const agentReply = {
+        id: `r-${Date.now()}`,
+        sender: 'agent',
+        text: replyData.text,
+        orderCard: replyData.orderCard || null,
+        actionType: replyData.actionType || null,
+        showChips: replyData.showChips || false
+      };
+      setChatMessages((prev) => [...prev, agentReply]);
+      setIsBotTyping(false);
+    }, 600);
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -123,20 +213,7 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
 
   const handleSendChatMessage = (e) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
-
-    const userMsg = { id: `m-${Date.now()}`, sender: 'user', text: chatInput.trim() };
-    setChatMessages((prev) => [...prev, userMsg]);
-    setChatInput('');
-
-    setTimeout(() => {
-      const agentReply = {
-        id: `r-${Date.now()}`,
-        sender: 'agent',
-        text: 'Thank you for explaining. I have verified your account and notified the operations desk. You will receive an SMS update in 15 minutes.',
-      };
-      setChatMessages((prev) => [...prev, agentReply]);
-    }, 1200);
+    executeSend(chatInput);
   };
 
   const filteredFaqs = FAQS.filter((faq) => {
@@ -544,48 +621,166 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
         </div>
       )}
 
-      {/* Live Support Chat Drawer Modal */}
+      {/* Live Support Chat Drawer Modal (Multilingual Smart Bot) */}
       {isLiveSupportChatOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full h-[80vh] shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
-            <div className="px-5 py-3.5 bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
-                  <span className="material-symbols-outlined text-lg">support_agent</span>
+          <div className="bg-white rounded-3xl max-w-lg w-full h-[84vh] shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
+            {/* Header with Title and Language Switcher */}
+            <div className="px-4 py-3 bg-gradient-to-r from-[#b90041] via-[#df2457] to-[#b90041] text-white flex flex-col gap-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-lg">support_agent</span>
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm leading-tight">{currentDict.title}</h3>
+                    <span className="text-[10px] text-pink-100 font-semibold">{currentDict.online}</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-sm leading-none">MShoppy Reseller Happiness</h3>
-                  <span className="text-[10px] text-pink-100 font-semibold">Active Specialist Online</span>
+                <button
+                  type="button"
+                  onClick={() => setIsLiveSupportChatOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+
+              {/* Language Switcher Bar */}
+              <div className="flex items-center justify-between bg-black/20 rounded-xl px-2.5 py-1.5 backdrop-blur-xs">
+                <span className="text-[11px] font-bold text-white/90 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">translate</span>
+                  <span>Language / भाषा:</span>
+                </span>
+                <div className="flex items-center gap-1">
+                  {SUPPORT_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.id}
+                      type="button"
+                      onClick={() => handleSwitchLanguage(lang.id)}
+                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                        chatLang === lang.id
+                          ? 'bg-white text-[#b90041] shadow-xs scale-102'
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsLiveSupportChatOpen(false)}
-                className="p-1 hover:bg-white/20 rounded-full cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
             </div>
 
+            {/* Chat Messages Log */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8f9fb]">
               {chatMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} space-y-2`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium shadow-2xs ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs font-medium shadow-2xs whitespace-pre-line leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-[#FF3F6C] text-white rounded-br-xs'
+                        ? 'bg-[#b90041] text-white rounded-br-xs'
                         : 'bg-white text-slate-800 border border-slate-100 rounded-bl-xs'
                     }`}
                   >
                     {msg.text}
                   </div>
+
+                  {/* Interactive Order Mini-Card if present */}
+                  {msg.orderCard && (
+                    <div className="bg-white rounded-2xl border border-slate-200 p-3 max-w-[85%] shadow-xs space-y-2 text-left">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={msg.orderCard.image || msg.orderCard.items?.[0]?.product?.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200'}
+                          alt="Order item"
+                          className="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-100 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs text-slate-800 truncate">
+                            {msg.orderCard.productName || msg.orderCard.items?.[0]?.product?.title || 'Ordered Product'}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-semibold">
+                            Total: <strong className="text-slate-800">₹{msg.orderCard.totalAmount || msg.orderCard.price || 0}</strong>
+                          </p>
+                          <span className="inline-block mt-0.5 text-[10px] font-black px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800">
+                            {msg.orderCard.orderStatus || msg.orderCard.status || 'ORDERED'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="pt-1 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsLiveSupportChatOpen(false);
+                            onNavigate(`/user-dashboard1?tab=orders&orderId=${msg.orderCard.id}`);
+                          }}
+                          className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] py-1.5 rounded-xl cursor-pointer transition-colors text-center"
+                        >
+                          {currentDict.viewTrackingBtn}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ticket Action Button if suggested */}
+                  {msg.actionType === 'ticket' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLiveSupportChatOpen(false);
+                        setIsTicketModalOpen(true);
+                      }}
+                      className="bg-gradient-to-r from-[#b90041] to-[#df2457] hover:opacity-95 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-sm">confirmation_number</span>
+                      <span>{currentDict.ticketBtn}</span>
+                    </button>
+                  )}
+
+                  {/* Orders redirect if suggested */}
+                  {msg.actionType === 'orders' && !msg.orderCard && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLiveSupportChatOpen(false);
+                        onNavigate('/user-dashboard1?tab=orders');
+                      }}
+                      className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-transform active:scale-95"
+                    >
+                      <span>{currentDict.myOrdersBtn}</span>
+                    </button>
+                  )}
                 </div>
+              ))}
+
+              {/* Bot Typing Indicator */}
+              {isBotTyping && (
+                <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
+                  <div className="w-2 h-2 rounded-full bg-[#b90041] animate-bounce" />
+                  <div className="w-2 h-2 rounded-full bg-[#b90041] animate-bounce [animation-delay:0.2s]" />
+                  <div className="w-2 h-2 rounded-full bg-[#b90041] animate-bounce [animation-delay:0.4s]" />
+                  <span className="text-[11px] font-semibold text-slate-500">Typing...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Action Chips Bar */}
+            <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              {currentDict.chips.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => executeSend(chip.label, chip.id)}
+                  className="bg-white hover:bg-pink-50 border border-slate-200 hover:border-pink-300 text-slate-700 hover:text-[#b90041] text-[11px] font-bold px-3 py-1.5 rounded-full cursor-pointer whitespace-nowrap transition-colors shadow-2xs shrink-0 active:scale-95"
+                >
+                  {chip.label}
+                </button>
               ))}
             </div>
 
+            {/* Chat Input Form */}
             <form
               onSubmit={handleSendChatMessage}
               className="p-3 bg-white border-t border-slate-100 flex items-center gap-2"
@@ -594,14 +789,15 @@ export function SupportCenter({ onNavigate, onOpenChat }) {
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type your support question..."
-                className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#FF3F6C]"
+                placeholder={currentDict.placeholder}
+                className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#b90041]"
               />
               <button
                 type="submit"
-                className="p-2.5 bg-[#FF3F6C] text-white rounded-xl cursor-pointer hover:bg-[#df2457] active:scale-95 shadow-xs"
+                className="px-4 py-2.5 bg-[#b90041] text-white rounded-xl cursor-pointer hover:bg-[#df2457] active:scale-95 shadow-xs flex items-center gap-1 font-bold text-xs"
               >
-                <span className="material-symbols-outlined text-lg">send</span>
+                <span>{currentDict.sendBtn}</span>
+                <span className="material-symbols-outlined text-sm">send</span>
               </button>
             </form>
           </div>
