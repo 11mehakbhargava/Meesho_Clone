@@ -397,12 +397,16 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       .filter((t) => t && /affiliate|commission|referral|margin/i.test(t.title || t.description || ''))
       .reduce((sum, t) => sum + (t.type === 'credit' ? (Number(t.amount) || 0) : 0), 0);
 
+    const refundCredits = (walletTransactions || [])
+      .filter((t) => t && /refund|cancel/i.test(t.title || t.description || ''))
+      .reduce((sum, t) => sum + (t.type === 'credit' ? (Number(t.amount) || 0) : 0), 0);
+
     const totalDebits = (walletTransactions || [])
       .filter((t) => t && t.type === 'debit')
       .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
     const affBalance = Math.max(0, affiliateCredits - totalDebits);
-    const refundBalance = Math.max(0, walletBalance - affBalance);
+    const refundBalance = refundCredits > 0 ? refundCredits : Math.max(0, walletBalance - affBalance);
 
     return {
       affiliateMarginBalance: affBalance,
