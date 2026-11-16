@@ -603,7 +603,8 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   // Partner Hub Catalog Filter, Search & Pagination States
   const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
   const [partnerSelectedCat, setPartnerSelectedCat] = useState('All');
-  const [partnerVisibleCount, setPartnerVisibleCount] = useState(12);
+  const [partnerVisibleCount, setPartnerVisibleCount] = useState(24);
+  const [resaleVisibleCount, setResaleVisibleCount] = useState(24);
 
   // Dynamic Custom Margins Per Product for Resell & Earn Tab
   const [resaleMargins, setResaleMargins] = useState({});
@@ -805,13 +806,13 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         setIsWalletLoading(false);
       });
 
-    // 5. Fetch Catalog Products asynchronously in background
-    getProducts({ limit: 48 })
+    // 5. Fetch ALL Catalog Products asynchronously in background (Entire DB Catalog)
+    getProducts({ all: true })
       .then((prods) => {
         if (Array.isArray(prods) && prods.length > 0) {
           setCatalogProducts(prods);
           try {
-            localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prods.slice(0, 24)));
+            localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(prods.slice(0, 48)));
           } catch (e) {}
         }
       })
@@ -3098,8 +3099,9 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 <p className="text-sm font-semibold">No live catalog products to display right now.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {catalogProducts.map((p) => {
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {catalogProducts.slice(0, resaleVisibleCount).map((p) => {
                   const title = p.title || p.name || 'Catalog Product';
                   const img = p.images?.[0] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400';
                   const price = Number(p.price || 0);
@@ -3193,10 +3195,29 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                   );
                 })}
               </div>
-            )}
-          </div>
-          )
-        )}
+
+              {/* Dynamic Reseller Catalog Pagination Controls */}
+              {catalogProducts.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 font-medium">
+                    Showing <strong className="text-slate-800">{Math.min(resaleVisibleCount, catalogProducts.length)}</strong> of <strong className="text-slate-800">{catalogProducts.length}</strong> products
+                  </p>
+                  {catalogProducts.length > resaleVisibleCount && (
+                    <button
+                      type="button"
+                      onClick={() => setResaleVisibleCount((prev) => prev + 24)}
+                      className="px-6 py-2.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-2xl text-xs font-bold shadow-xs cursor-pointer transition-colors"
+                    >
+                      Load More Products ⬇️
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        )
+      )}
 
         {/* =========================================================================
             TAB 7: WALLET & PAYOUTS (Real Balance & Ledger Only)
