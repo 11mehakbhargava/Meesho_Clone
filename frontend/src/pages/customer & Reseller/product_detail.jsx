@@ -744,17 +744,19 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   const displayRatingsCount = totalReviewsInDb > 0
     ? totalReviewsInDb
-    : (product?.reviewsCount || 0);
+    : (product?.reviewsCount && Number(product.reviewsCount) > 0 ? Number(product.reviewsCount) : 0);
 
   const displayReviewsCount = totalReviewsInDb > 0
     ? totalReviewsInDb
-    : (product?.reviewsCount || 0);
+    : (product?.reviewsCount && Number(product.reviewsCount) > 0 ? Number(product.reviewsCount) : 0);
 
   const displayRating = displayRatingsCount > 0
     ? (totalReviewsInDb > 0
         ? (dbRatingSum / totalReviewsInDb).toFixed(1)
-        : (product?.rating && Number(product.rating) > 0 ? Number(product.rating).toFixed(1) : '0.0'))
-    : '0.0';
+        : (product?.rating && Number(product.rating) > 0 ? Number(product.rating).toFixed(1) : null))
+    : null;
+
+  const hasRatings = Boolean(displayRatingsCount > 0 && displayRating && Number(displayRating) > 0);
 
   // Real breakdown calculated directly from reviews or reviewsBreakdown state
   const count5 = productReviews.length > 0
@@ -1109,23 +1111,25 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   </span>
                 </div>
 
-                {/* Rating Pill & Reviews Count (Exact Meesho format: [ 4.2 ★ ] 2992 Ratings, 1122 Reviews •) */}
-                <div
-                  onClick={() => {
-                    const el = document.getElementById('product-reviews-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="flex items-center gap-2 cursor-pointer group select-none pt-0.5"
-                  title="Click to view ratings and reviews"
-                >
-                  <span className={`inline-flex items-center gap-1 ${Number(displayRating) > 0 ? 'bg-[#038d63]' : 'bg-slate-400'} text-white font-bold text-xs px-2.5 py-0.5 rounded-full shadow-xs`}>
-                    <span>{displayRating}</span>
-                    <span className="text-[10px]">★</span>
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium group-hover:underline">
-                    {displayRatingsCount} Ratings, {displayReviewsCount} Reviews •
-                  </span>
-                </div>
+                {/* Rating Pill & Reviews Count (Only shown when product has real ratings) */}
+                {hasRatings && (
+                  <div
+                    onClick={() => {
+                      const el = document.getElementById('product-reviews-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex items-center gap-2 cursor-pointer group select-none pt-0.5"
+                    title="Click to view ratings and reviews"
+                  >
+                    <span className="inline-flex items-center gap-1 bg-[#038d63] text-white font-bold text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                      <span>{displayRating}</span>
+                      <span className="text-[10px]">★</span>
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium group-hover:underline">
+                      {displayRatingsCount} Ratings, {displayReviewsCount} Reviews •
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 pt-2.5 border-t border-slate-100 text-xs text-slate-600 flex-wrap">
                   <span className="flex items-center gap-1 text-emerald-700 font-semibold">
@@ -1572,55 +1576,65 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               )}
             </div>
 
-            {/* Ratings Summary & Breakdown (Exact Meesho Layout matching Image 1) */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-2 border-b border-slate-100">
-              {/* Left: Big Score & Count (Image 1: 4.2 ★, 2992 Ratings, 1122 Reviews) */}
-              <div className="space-y-1 shrink-0">
-                <div className={`flex items-center gap-1.5 ${Number(displayRating) > 0 ? 'text-[#038d63]' : 'text-slate-400'}`}>
-                  <span className="text-4xl sm:text-5xl font-black tracking-tight">
-                    {displayRating}
-                  </span>
-                  <span className={`text-3xl ${Number(displayRating) > 0 ? 'text-[#038d63]' : 'text-slate-400'}`}>★</span>
-                </div>
-                <div className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  <p>{displayRatingsCount} Ratings,</p>
-                  <p>{displayReviewsCount} Reviews</p>
-                </div>
-              </div>
-
-              {/* Right: Breakdown Bars (Image 1: Excellent 1753, Very Good 544, Good 320, Average 132, Poor 243) */}
-              <div className="w-full sm:max-w-md space-y-2.5">
-                {breakdownRows.map((b) => (
-                  <div key={b.label} className="flex items-center gap-3 text-xs">
-                    <span className="w-16 sm:w-20 text-slate-600 font-medium text-[11px] sm:text-xs shrink-0">{b.label}</span>
-                    <div className="flex-1 h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className={`h-full ${b.color} rounded-full`} style={{ width: `${b.pct}%` }} />
+            {/* Ratings Summary & Breakdown (Only shown when product has real ratings) */}
+            {hasRatings ? (
+              <>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-2 border-b border-slate-100">
+                  {/* Left: Big Score & Count (Image 1: 4.2 ★, 2992 Ratings, 1122 Reviews) */}
+                  <div className="space-y-1 shrink-0">
+                    <div className="flex items-center gap-1.5 text-[#038d63]">
+                      <span className="text-4xl sm:text-5xl font-black tracking-tight">
+                        {displayRating}
+                      </span>
+                      <span className="text-3xl text-[#038d63]">★</span>
                     </div>
-                    <span className="w-10 text-right text-slate-500 text-[11px] font-mono shrink-0">{b.count}</span>
+                    <div className="text-xs text-slate-500 font-semibold leading-relaxed">
+                      <p>{displayRatingsCount} Ratings,</p>
+                      <p>{displayReviewsCount} Reviews</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              {['All', 'With Photos', 'Verified Purchases', '5 Stars', '4 Stars'].map((flt) => (
-                <button
-                  key={flt}
-                  type="button"
-                  onClick={() => setReviewFilter(flt)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${reviewFilter === flt
-                    ? 'bg-[#b90041] text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                >
-                  {flt}
-                </button>
-              ))}
-            </div>
+                  {/* Right: Breakdown Bars (Image 1: Excellent 1753, Very Good 544, Good 320, Average 132, Poor 243) */}
+                  <div className="w-full sm:max-w-md space-y-2.5">
+                    {breakdownRows.map((b) => (
+                      <div key={b.label} className="flex items-center gap-3 text-xs">
+                        <span className="w-16 sm:w-20 text-slate-600 font-medium text-[11px] sm:text-xs shrink-0">{b.label}</span>
+                        <div className="flex-1 h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${b.color} rounded-full`} style={{ width: `${b.pct}%` }} />
+                        </div>
+                        <span className="w-10 text-right text-slate-500 text-[11px] font-mono shrink-0">{b.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {['All', 'With Photos', 'Verified Purchases', '5 Stars', '4 Stars'].map((flt) => (
+                    <button
+                      key={flt}
+                      type="button"
+                      onClick={() => setReviewFilter(flt)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${reviewFilter === flt
+                        ? 'bg-[#b90041] text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        }`}
+                    >
+                      {flt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="py-10 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-500 text-xs space-y-2">
+                <span className="material-symbols-outlined text-3xl text-slate-400">rate_review</span>
+                <p className="font-bold text-sm text-slate-700">No ratings or reviews yet</p>
+                <p className="text-slate-400">Be the first to review this product after your order is delivered!</p>
+              </div>
+            )}
 
             {/* Customer Review Photos Strip (if any) */}
-            {productReviews.some((r) => Array.isArray(r.photos) && r.photos.length > 0) && (
+            {hasRatings && productReviews.some((r) => Array.isArray(r.photos) && r.photos.length > 0) && (
               <div className="space-y-2 pb-2 border-b border-slate-100">
                 <p className="text-xs font-bold text-slate-700">Customer Photos &amp; Real Unboxings</p>
                 <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
@@ -1647,38 +1661,33 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             )}
 
             {/* Customer Reviews List (Divider Style matching Meesho Video) */}
-            <div className="pt-1">
-              {(() => {
-                const filtered = productReviews.filter((r) => {
-                  if (reviewFilter === 'With Photos') return Array.isArray(r.photos) && r.photos.length > 0;
-                  if (reviewFilter === '5 Stars') return r.rating === 5;
-                  if (reviewFilter === '4 Stars') return r.rating === 4;
-                  if (reviewFilter === 'Verified Purchases') return r.verified;
-                  return true;
-                });
+            {hasRatings && (
+              <div className="pt-1">
+                {(() => {
+                  const filtered = productReviews.filter((r) => {
+                    if (reviewFilter === 'With Photos') return Array.isArray(r.photos) && r.photos.length > 0;
+                    if (reviewFilter === '5 Stars') return r.rating === 5;
+                    if (reviewFilter === '4 Stars') return r.rating === 4;
+                    if (reviewFilter === 'Verified Purchases') return r.verified;
+                    return true;
+                  });
 
-                if (filtered.length === 0) {
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-10 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-500 text-xs space-y-2">
+                        <span className="material-symbols-outlined text-3xl text-slate-400">rate_review</span>
+                        <p className="font-bold text-sm text-slate-700">No reviews found matching the selected filter</p>
+                        <p className="text-slate-400">Try switching your review filter back to "All".</p>
+                      </div>
+                    );
+                  }
+
+                  const displayed = filtered.slice(0, visibleReviewsCount);
+
                   return (
-                    <div className="py-10 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-500 text-xs space-y-2">
-                      <span className="material-symbols-outlined text-3xl text-slate-400">rate_review</span>
-                      <p className="font-bold text-sm text-slate-700">
-                        {productReviews.length === 0 ? 'No customer reviews yet' : 'No reviews found matching the selected filter'}
-                      </p>
-                      <p className="text-slate-400">
-                        {productReviews.length === 0
-                          ? 'Be the first to review this product after your order is delivered!'
-                          : 'Try switching your review filter back to "All".'}
-                      </p>
-                    </div>
-                  );
-                }
-
-                const displayed = filtered.slice(0, visibleReviewsCount);
-
-                return (
-                  <>
-                    <div className="divide-y divide-slate-100">
-                      {displayed.map((rev) => {
+                    <>
+                      <div className="divide-y divide-slate-100">
+                        {displayed.map((rev) => {
                         const isHelpful = helpfulClicked.has(rev.id);
                         const count = (helpfulCounts[rev.id] !== undefined ? helpfulCounts[rev.id] : rev.helpfulCount) || 0;
 
@@ -1782,6 +1791,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                 );
               })()}
             </div>
+            )}
           </div>
 
           {/* =========================================================================
