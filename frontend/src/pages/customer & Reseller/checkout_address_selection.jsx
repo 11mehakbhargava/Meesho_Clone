@@ -280,9 +280,9 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] min-h-screen font-sans antialiased selection:bg-pink-100 selection:text-pink-600 pb-36">
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-xs">
-        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 max-w-7xl mx-auto w-full">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs">
+        <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 min-h-14 sm:h-16 py-2 sm:py-0 max-w-7xl mx-auto w-full gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button
               onClick={() => {
                 if (onBack) return onBack();
@@ -292,23 +292,23 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                   handleNav('/cart');
                 }
               }}
-              className="p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#FF3F6C] cursor-pointer transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 active:scale-95 text-[#FF3F6C] cursor-pointer transition-colors shrink-0"
               title="Back"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
-            <div>
-              <h1 className="text-[#191C1E] font-extrabold tracking-tight text-base sm:text-lg leading-none">
+            <div className="min-w-0">
+              <h1 className="text-[#191C1E] font-black tracking-tight text-sm sm:text-base md:text-lg leading-tight truncate">
                 Select Delivery Address
               </h1>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider block truncate mt-0.5">
                 Step 2 of 3 • Fast Dispatch
               </span>
             </div>
           </div>
 
           {/* Stepper (Desktop) */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-400">
+          <div className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-400 shrink-0 mx-4">
             <span
               onClick={() => handleNav(isBuyNow ? '/user-home' : '/cart')}
               className="text-[#008644] font-extrabold flex items-center gap-1 cursor-pointer hover:underline"
@@ -334,21 +334,22 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-            <span className="material-symbols-outlined text-sm">shield</span>
-            <span>Verified Delivery</span>
+          <div className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-emerald-100 shrink-0">
+            <span className="material-symbols-outlined text-sm sm:text-base">verified_user</span>
+            <span className="hidden sm:inline">Verified Delivery</span>
+            <span className="sm:hidden text-[10px]">Verified</span>
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-base font-extrabold text-[#191c1e]">Saved Addresses</h2>
+          <div className="flex justify-between items-center gap-2">
+            <h2 className="text-sm sm:text-base font-extrabold text-[#191c1e]">Saved Addresses</h2>
             <button
               onClick={() => setShowAddAddressModal(true)}
-              className="text-xs font-bold text-[#FF3F6C] bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-xl cursor-pointer transition-colors flex items-center gap-1"
+              className="text-xs font-bold text-[#FF3F6C] bg-pink-50 hover:bg-pink-100 px-2.5 sm:px-3 py-1.5 rounded-xl cursor-pointer transition-colors flex items-center gap-1 shrink-0"
             >
               <span className="material-symbols-outlined text-sm">add</span>
               Add New Address
@@ -377,13 +378,13 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                   <div
                     key={addr.id}
                     onClick={() => handleSelectAddress(addr)}
-                    className={`bg-white rounded-3xl p-5 border-2 transition-all cursor-pointer flex items-start gap-4 ${
+                    className={`bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-2 transition-all cursor-pointer flex items-start gap-3 sm:gap-4 ${
                       isSelected
-                        ? 'border-[#FF3F6C] shadow-md shadow-pink-500/10'
+                        ? 'border-[#FF3F6C] shadow-md shadow-pink-500/10 ring-1 ring-pink-500/20'
                         : 'border-slate-100 hover:border-slate-200'
                     }`}
                   >
-                    <div className="mt-1">
+                    <div className="mt-0.5 sm:mt-1 shrink-0">
                       <div
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           isSelected ? 'border-[#FF3F6C] bg-[#FF3F6C]' : 'border-slate-300'
@@ -393,16 +394,16 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                       </div>
                     </div>
 
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-extrabold text-sm text-[#191c1e]">{addr.fullName}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-extrabold text-sm sm:text-base text-[#191c1e]">{addr.fullName}</span>
                         {addr.isDefault && (
                           <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-md">
                             DEFAULT
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-1">
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-1">
                         {addr.addressLine}, {addr.city}, {addr.state} - <strong>{addr.pincode}</strong>
                       </p>
                       <p className="text-xs text-slate-400">Phone: {addr.phone}</p>
@@ -414,10 +415,10 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
           )}
 
           {/* Proceed Button */}
-          <div className="pt-6">
+          <div className="pt-4 sm:pt-6">
             <button
               onClick={handleProceedToPayment}
-              className="w-full py-4 bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] text-white font-black text-base rounded-2xl shadow-xl shadow-pink-500/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] text-white font-black text-sm sm:text-base rounded-2xl shadow-xl shadow-pink-500/30 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               <span>Continue to Payment</span>
               <span className="material-symbols-outlined text-lg">arrow_forward</span>
