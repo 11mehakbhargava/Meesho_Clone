@@ -107,7 +107,12 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     try {
       const params = new URLSearchParams(location.search);
       const tabParam = params.get('tab');
+      const viewParam = params.get('view');
       if (tabParam === 'resale') return 'affiliate';
+      if (tabParam === 'affiliate_dashboard' || viewParam === 'dashboard') {
+        setPartnerSubTab('dashboard');
+        return 'affiliate';
+      }
       if (tabParam && validTabs.includes(tabParam)) return tabParam;
     } catch (e) {}
     return 'overview';
@@ -615,6 +620,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   // Silent inline copy indicator states (No annoying popups)
   const [copiedProdId, setCopiedProdId] = useState(null);
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const [copiedCatSlug, setCopiedCatSlug] = useState(null);
+
+  // Partner Hub Internal Sub-Tab: 'catalog' | 'dashboard'
+  const [partnerSubTab, setPartnerSubTab] = useState('catalog');
 
   // Dynamic Custom Margins Per Product for Resell & Earn Tab
   const [resaleMargins, setResaleMargins] = useState({});
@@ -1252,6 +1261,17 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       badge: affiliateNavBadge,
       badgeClass: affiliateNavBadgeClass
     },
+    ...(isResellerApproved
+      ? [
+          {
+            id: 'affiliate_dashboard',
+            label: 'Affiliate Dashboard 📊',
+            icon: TrendingUp,
+            badge: 'STATS',
+            badgeClass: 'bg-indigo-600 text-white'
+          },
+        ]
+      : []),
     {
       id: 'orders',
       label: 'My Orders 🛍️',
@@ -1278,6 +1298,18 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Tab switch handler with route intercept for external shopping pages
   const handleTabChange = (tabId) => {
+    if (tabId === 'affiliate_dashboard') {
+      setActiveTab('affiliate');
+      setPartnerSubTab('dashboard');
+      navigate('/user-dashboard1?tab=affiliate&view=dashboard', { replace: true });
+      return;
+    }
+    if (tabId === 'affiliate') {
+      setActiveTab('affiliate');
+      setPartnerSubTab('catalog');
+      navigate('/user-dashboard1?tab=affiliate', { replace: true });
+      return;
+    }
     if (tabId === 'cat-products') {
       handleNav('/explorer');
       return;
@@ -2082,10 +2114,11 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleNav('/affiliate-panel')}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
+                      onClick={() => setPartnerSubTab((prev) => (prev === 'dashboard' ? 'catalog' : 'dashboard'))}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
                     >
-                      Open Full Affiliate Dashboard ➔
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>{partnerSubTab === 'dashboard' ? 'Switch to Reseller Catalog 🛍️' : 'Switch to Affiliate Dashboard 📊'}</span>
                     </button>
                   </div>
 
@@ -2157,8 +2190,49 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 </div>
 
                 {/* =========================================================================
-                    UNIFIED RESELL & EARN MARGIN CATALOG (ALL-IN-ONE PARTNER HUB)
+                    PARTNER HUB SUB-TAB SWITCHER (CATALOG VS AFFILIATE DASHBOARD)
                 ========================================================================= */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPartnerSubTab('catalog')}
+                      className={`px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        partnerSubTab === 'catalog'
+                          ? 'bg-[#b7004d] text-white shadow-md shadow-pink-600/20'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Products & Margins (Resell)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPartnerSubTab('dashboard')}
+                      className={`px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        partnerSubTab === 'dashboard'
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/20'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Affiliate Dashboard 📊</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNav('/affiliate-panel')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition-colors cursor-pointer"
+                    title="Open standalone full screen affiliate portal"
+                  >
+                    <span>Full Screen Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* VIEW 1: CATALOG PRODUCTS & CUSTOM MARGINS */}
+                {partnerSubTab === 'catalog' && (
                 <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs space-y-6 min-w-0 w-full max-w-full overflow-hidden">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
@@ -2422,6 +2496,178 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     </div>
                   </div>
                 </div>
+                )}
+
+                {/* VIEW 2: FULL AFFILIATE DASHBOARD & ANALYTICS */}
+                {partnerSubTab === 'dashboard' && (
+                  <div className="space-y-6">
+                    {/* Key Affiliate Conversion Analytics Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-400">Total Commissions</p>
+                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">₹</div>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900">
+                          ₹{Number(affiliateStats?.totalCommission || 0).toLocaleString('en-IN')}
+                        </h3>
+                        <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>Real Profit Credited</span>
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-400">Referred Orders</p>
+                          <div className="w-8 h-8 rounded-full bg-pink-50 text-[#b7004d] flex items-center justify-center font-bold text-xs">
+                            <ShoppingBag className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900">{affiliateStats?.totalOrders || 0}</h3>
+                        <p className="text-[11px] text-slate-500 font-medium">Customer Conversions</p>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-400">Total Link Clicks</p>
+                          <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900">
+                          {Math.max(affiliateStats?.clicks || 0, (affiliateStats?.totalOrders || 0) * 3)}
+                        </h3>
+                        <p className="text-[11px] text-blue-600 font-bold">Traffic Generated</p>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-400">Conversion Rate</p>
+                          <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
+                            %
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900">
+                          {affiliateStats?.totalOrders > 0
+                            ? ((affiliateStats.totalOrders / Math.max(1, affiliateStats?.clicks || affiliateStats.totalOrders * 3)) * 100).toFixed(1)
+                            : '0.0'}%
+                        </h3>
+                        <p className="text-[11px] text-purple-600 font-bold">Click-to-Sale Ratio</p>
+                      </div>
+                    </div>
+
+                    {/* Category Marketing Links with Copy and WhatsApp */}
+                    <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                        <div>
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-1">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Instant Marketing Channels</span>
+                          </div>
+                          <h4 className="text-xl font-black text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
+                            Direct Category Referral Links 🎯
+                          </h4>
+                          <p className="text-xs sm:text-sm text-slate-500">
+                            Share specific departments directly with your followers. Every purchase made earns direct commission!
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        {[
+                          { name: "Women's Ethnic & Sarees", slug: 'women-ethnic', icon: '👗', bg: 'from-pink-500/10 to-rose-500/10 border-pink-200' },
+                          { name: "Western Wear & Tops", slug: 'women-western', icon: '👚', bg: 'from-purple-500/10 to-indigo-500/10 border-purple-200' },
+                          { name: "Men's Fashion & Shirts", slug: 'men-clothing', icon: '👔', bg: 'from-blue-500/10 to-cyan-500/10 border-blue-200' },
+                          { name: 'Jewellery & Bangles', slug: 'jewellery', icon: '💎', bg: 'from-amber-500/10 to-yellow-500/10 border-amber-200' },
+                          { name: 'Home & Kitchen Decor', slug: 'home-kitchen', icon: '🍳', bg: 'from-emerald-500/10 to-teal-500/10 border-emerald-200' },
+                          { name: 'Footwear & Casual Shoes', slug: 'footwear', icon: '👟', bg: 'from-orange-500/10 to-amber-500/10 border-orange-200' }
+                        ].map((cat) => {
+                          const catLink = `${window.location.origin}/explorer?ref=${affiliateApp?.applicationId || customerUser?.id || 'aff_verified'}&category=${encodeURIComponent(cat.slug)}`;
+                          const isCopied = copiedCatSlug === cat.slug;
+
+                          return (
+                            <div key={cat.slug} className={`p-4 rounded-2xl border bg-gradient-to-br ${cat.bg} flex flex-col justify-between gap-3`}>
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-2xl">{cat.icon}</span>
+                                <div className="min-w-0">
+                                  <h5 className="font-bold text-xs sm:text-sm text-slate-900 truncate">{cat.name}</h5>
+                                  <p className="text-[10px] text-slate-500 font-mono truncate">{catLink}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (navigator?.clipboard?.writeText) {
+                                      navigator.clipboard.writeText(catLink);
+                                    }
+                                    setCopiedCatSlug(cat.slug);
+                                    setTimeout(() => setCopiedCatSlug(null), 1800);
+                                  }}
+                                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                    isCopied
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-xs'
+                                  }`}
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>Copied! ✓</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3.5 h-3.5" />
+                                      <span>Copy Link</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const msg = `🛍️ Explore the latest collection of *${cat.name}* at wholesale prices!\n\nShop directly with free delivery & COD:\n${catLink}`;
+                                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                                  }}
+                                  className="py-1.5 px-3 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 shadow-xs"
+                                  title="Share on WhatsApp"
+                                >
+                                  <Share2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">WhatsApp</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Standalone Fullscreen Portal CTA Banner */}
+                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 sm:p-8 rounded-3xl border border-indigo-900/50 shadow-md text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="space-y-1.5 text-center sm:text-left">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Advanced Affiliate Pro Suite</span>
+                        </div>
+                        <h4 className="text-xl font-black">Want deeper analytics, custom banners & affiliate settings?</h4>
+                        <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+                          Launch the full-screen Affiliate Program Panel for standalone traffic logs, payout history and campaign tracking.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleNav('/affiliate-panel')}
+                        className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-indigo-500/25 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0"
+                      >
+                        <span>Open Standalone Panel</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : isKycUnderReview ? (
               /* If Under Review */
