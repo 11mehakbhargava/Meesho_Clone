@@ -21,5 +21,5 @@ COPY . .
 # Expose backend API port
 EXPOSE 5000
 
-# Push schema changes safely and start the Express server
-CMD ["sh", "-c", "npx prisma db push --skip-generate || true; node index.js"]
+# Start the Express server
+CMD ["node", "index.js"]
