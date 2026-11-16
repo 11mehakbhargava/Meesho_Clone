@@ -1077,15 +1077,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   <span className="text-2xl sm:text-3xl font-black text-slate-900">
                     ₹{effectivePrice}
                   </span>
-                  <span className="text-sm font-medium text-slate-500">
-                    onwards
-                  </span>
-                  <span
-                    className="material-symbols-outlined text-sm text-slate-400 cursor-pointer"
-                    title="Price Information"
-                  >
-                    info
-                  </span>
                   {product.originalPrice && (product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)) > effectivePrice && (
                     <span className="text-sm sm:text-base text-slate-400 line-through ml-1">
                       ₹{product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)}
