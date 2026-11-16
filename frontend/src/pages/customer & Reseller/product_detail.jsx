@@ -1013,9 +1013,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       key={idx}
                       type="button"
                       onClick={() => handleSelectImage(idx)}
-                      className={`h-2 rounded-full transition-all cursor-pointer ${
-                        selectedImageIndex === idx ? 'w-5 bg-[#FF3F6C]' : 'w-2 bg-white/70'
-                      }`}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${selectedImageIndex === idx ? 'w-5 bg-[#FF3F6C]' : 'w-2 bg-white/70'
+                        }`}
                       aria-label={`Go to image ${idx + 1}`}
                     />
                   ))}
@@ -1030,11 +1029,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       key={idx}
                       type="button"
                       onClick={() => handleSelectImage(idx)}
-                      className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-white p-0.5 ${
-                        selectedImageIndex === idx
-                          ? 'border-[#FF3F6C] shadow-md scale-102 ring-1 ring-[#FF3F6C]'
-                          : 'border-slate-200 opacity-70 hover:opacity-100'
-                      }`}
+                      className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-white p-0.5 ${selectedImageIndex === idx
+                        ? 'border-[#FF3F6C] shadow-md scale-102 ring-1 ring-[#FF3F6C]'
+                        : 'border-slate-200 opacity-70 hover:opacity-100'
+                        }`}
                     >
                       <img
                         src={img}
@@ -1202,11 +1200,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={addingToCart || isVariantOutOfStock}
-                  className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs ${
-                    isVariantOutOfStock
-                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                      : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs ${isVariantOutOfStock
+                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                    : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
+                    }`}
                 >
                   <span className="material-symbols-outlined text-lg">shopping_bag</span>
                   <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
@@ -1215,11 +1212,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={isVariantOutOfStock}
-                  className={`flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${
-                    isVariantOutOfStock
-                      ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
-                      : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
-                  }`}
+                  className={`flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
+                    ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
+                    }`}
                 >
                   <span className="material-symbols-outlined text-lg">bolt</span>
                   <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
@@ -1259,8 +1255,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                             type="button"
                             onClick={() => setSelectedResellerMargin(m)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${selectedResellerMargin === m
-                                ? 'bg-[#25D366] text-white shadow-sm scale-105'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              ? 'bg-[#25D366] text-white shadow-sm scale-105'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                               }`}
                           >
                             +₹{m}
@@ -1406,8 +1402,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                             setSelectedColor(c.name);
                           }}
                           className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${isSelected
-                              ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/25 scale-102'
-                              : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'
+                            ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/25 scale-102'
+                            : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'
                             }`}
                         >
                           <span
@@ -1465,21 +1461,19 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                           onClick={() => {
                             setSelectedSize(size);
                           }}
-                          className={`min-w-[54px] px-4 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${
-                            isSelected
-                              ? isSizeOutOfStock
-                                ? 'bg-rose-600 text-white shadow-md shadow-rose-500/25 scale-102'
-                                : 'bg-[#4d41df] text-white shadow-md shadow-indigo-500/25 scale-102'
-                              : isSizeOutOfStock
+                          className={`min-w-[54px] px-4 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 relative ${isSelected
+                            ? isSizeOutOfStock
+                              ? 'bg-rose-600 text-white shadow-md shadow-rose-500/25 scale-102'
+                              : 'bg-[#4d41df] text-white shadow-md shadow-indigo-500/25 scale-102'
+                            : isSizeOutOfStock
                               ? 'bg-rose-50/70 border border-rose-200 text-rose-700 opacity-70 hover:opacity-100'
                               : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <span className={isSizeOutOfStock && !isSelected ? 'line-through text-slate-400' : ''}>{size}</span>
                           {isSizeOutOfStock && (
-                            <span className={`text-[9px] font-bold px-1 py-0.2 rounded leading-none ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
-                            }`}>
+                            <span className={`text-[9px] font-bold px-1 py-0.2 rounded leading-none ${isSelected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                              }`}>
                               OOS
                             </span>
                           )}
@@ -1607,11 +1601,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   key={flt}
                   type="button"
                   onClick={() => setReviewFilter(flt)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    reviewFilter === flt
-                      ? 'bg-[#b90041] text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  }`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${reviewFilter === flt
+                    ? 'bg-[#b90041] text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
                 >
                   {flt}
                 </button>
@@ -1737,9 +1730,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                               <button
                                 type="button"
                                 onClick={() => handleToggleHelpful(rev.id)}
-                                className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                                  isHelpful ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-800'
-                                }`}
+                                className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${isHelpful ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-800'
+                                  }`}
                               >
                                 <span className="material-symbols-outlined text-sm">thumb_up</span>
                                 <span>Helpful ({count})</span>
@@ -2016,11 +2008,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             type="button"
             onClick={handleAddToCart}
             disabled={addingToCart || isVariantOutOfStock}
-            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all ${
-              isVariantOutOfStock
-                ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all ${isVariantOutOfStock
+              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+              : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
+              }`}
           >
             <span className="material-symbols-outlined text-lg">shopping_bag</span>
             <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
@@ -2030,11 +2021,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             type="button"
             onClick={handleBuyNow}
             disabled={isVariantOutOfStock}
-            className={`flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${
-              isVariantOutOfStock
-                ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
-                : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
-            }`}
+            className={`flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
+              ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
+              : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
+              }`}
           >
             <span className="material-symbols-outlined text-lg">bolt</span>
             <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
@@ -2204,11 +2194,10 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       handleSelectImage(idx);
                       setZoomScale(1);
                     }}
-                    className={`w-12 h-14 sm:w-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                      selectedImageIndex === idx
-                        ? 'border-[#FF3F6C] ring-2 ring-[#FF3F6C]/50 scale-105'
-                        : 'border-white/30 opacity-60 hover:opacity-100'
-                    }`}
+                    className={`w-12 h-14 sm:w-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${selectedImageIndex === idx
+                      ? 'border-[#FF3F6C] ring-2 ring-[#FF3F6C]/50 scale-105'
+                      : 'border-white/30 opacity-60 hover:opacity-100'
+                      }`}
                   >
                     <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
                   </button>
@@ -2400,8 +2389,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         type="button"
                         onClick={() => setSelectedResellerMargin(m)}
                         className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${selectedResellerMargin === m
-                            ? 'bg-[#25D366] text-white shadow-md'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[#25D366] text-white shadow-md'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                       >
                         +₹{m}
@@ -2436,8 +2425,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         type="button"
                         onClick={() => setShareMode(mode.id)}
                         className={`py-2 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${shareMode === mode.id
-                            ? 'bg-[#b90041] text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-[#b90041] text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                       >
                         {mode.label}
