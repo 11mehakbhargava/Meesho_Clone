@@ -2162,7 +2162,13 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                         <img
                           src={activeMarginProd.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'}
                           alt={activeMarginProd.title}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
                           className="w-20 h-20 rounded-2xl object-cover border border-slate-200 shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80';
+                          }}
                         />
                         <div className="flex-1 space-y-1">
                           <h4 className="font-bold text-sm sm:text-base text-slate-900 line-clamp-1">
@@ -2401,7 +2407,19 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                                 <img
                                   src={prod.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80'}
                                   alt={prod.title}
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer"
                                   className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-100"
+                                  onError={(e) => {
+                                    const nextImg = prod.images?.find(url => url && url !== e.currentTarget.src);
+                                    if (nextImg && !e.currentTarget.dataset.fallbackTried) {
+                                      e.currentTarget.dataset.fallbackTried = '1';
+                                      e.currentTarget.src = nextImg;
+                                      return;
+                                    }
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80';
+                                  }}
                                 />
                                 <div className="space-y-0.5 min-w-0 flex-1">
                                   <h5 className="font-bold text-xs text-slate-900 line-clamp-2" title={prod.title}>
