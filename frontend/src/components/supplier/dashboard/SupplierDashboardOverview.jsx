@@ -46,16 +46,17 @@ export default function SupplierDashboardOverview({
     (typeof profile?.tierLabel === 'string' && profile.tierLabel) || 'MShoppy Supplier';
 
   // Robust multi-source KYC status resolution
-  const rawKycStatus = (kycData?.status || kycData?.kyc?.status || '').toUpperCase();
+  const extractedStatus = (kycData?.status || kycData?.kyc?.status || profile?.kycStatus || '').toUpperCase();
+  const rawKycStatus = (extractedStatus === 'UNDEFINED' || extractedStatus === 'NULL') ? '' : extractedStatus;
   const isKycApproved = Boolean(
     rawKycStatus === 'APPROVED' ||
     kycData?.isVerified === true ||
+    profile?.isVerified === true ||
     profile?.tierLabel?.toLowerCase().includes('verified') ||
     (profile?.gstin && profile?.bankDetails)
   );
   const currentKycStatus = (
-    rawKycStatus ||
-    (isKycApproved ? 'APPROVED' : null) ||
+    (isKycApproved ? 'APPROVED' : rawKycStatus) ||
     'PENDING'
   ).toUpperCase();
 

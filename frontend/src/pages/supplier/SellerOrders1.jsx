@@ -37,8 +37,10 @@ import OrderPrintSlipModal from '../../components/admin/orders/OrderPrintSlipMod
 import {
   playOrderChime,
   playTestChime,
+  stopOrderChime,
   isSoundAlertEnabled,
-  setSoundAlertEnabled
+  setSoundAlertEnabled,
+  subscribeChimeState,
 } from '../../utils/orderSoundChime';
 import { exportOrdersToCsv } from '../../utils/csvExport';
 
@@ -74,11 +76,19 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
 
   // Real-Time Radar & Sound Chime Alert States
   const [soundEnabled, setSoundEnabled] = useState(isSoundAlertEnabled);
+  const [isChimeRinging, setIsChimeRinging] = useState(false);
   const [radarActive, setRadarActive] = useState(true);
   const [lastRadarPing, setLastRadarPing] = useState(null);
   const [newlyArrivedIds, setNewlyArrivedIds] = useState(new Set());
   const knownOrderIdsRef = useRef(new Set());
   const isFirstLoadRef = useRef(true);
+
+  // Subscribe to chime ringing state (turns ON on order receive, auto-shuts OFF in 3-4s)
+  useEffect(() => {
+    return subscribeChimeState((state) => {
+      setIsChimeRinging(state);
+    });
+  }, []);
 
   // Load real orders from backend (supports manual refresh & silent radar polling)
   const loadOrders = useCallback(async (isRefresh = false, isSilentRadar = false) => {
@@ -168,24 +178,51 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
     loadOrders();
   }, [loadOrders]);
 
-  // Real-Time Background Radar Polling (Every 15 seconds)
+  // Real-Time Background Radar Polling (Every 8 seconds)
   useEffect(() => {
     if (!radarActive) return;
 
     const interval = setInterval(() => {
       loadOrders(false, true); // silent radar ping
-    }, 15000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [radarActive, loadOrders]);
 
+  // Real-Time 0ms Cross-Tab Broadcast for Orders Placed in Same Browser
+  useEffect(() => {
+    let bc;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bc = new BroadcastChannel('mshoppy_order_events');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'ORDER_PLACED') {
+            playOrderChime();
+            toast.info(`🔔 New incoming order placed! (#${event.data?.orderId || 'Live'})`);
+            loadOrders(false, true);
+          }
+        };
+      }
+    } catch (_) {}
+
+    return () => {
+      try {
+        if (bc) bc.close();
+      } catch (_) {}
+    };
+  }, [loadOrders]);
+
   const toggleSoundAlert = () => {
+    if (isChimeRinging) {
+      stopOrderChime();
+      return;
+    }
     const nextState = !soundEnabled;
     setSoundEnabled(nextState);
     setSoundAlertEnabled(nextState);
     if (nextState) {
       playTestChime();
-      toast.success('🔔 Order Sound Chime Enabled! Test chime played.');
+      toast.success('🔔 Order Sound Chime Enabled! Test chime playing (turns off in 3.5s).');
     } else {
       toast.info('🔕 Order Sound Chime Muted');
     }
@@ -354,7 +391,7 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
                 ></span>
               </span>
               <Radio className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{radarActive ? 'Live Radar (15s)' : 'Radar Paused'}</span>
+              <span className="hidden sm:inline">{radarActive ? 'Live Radar (8s)' : 'Radar Paused'}</span>
               <span className="sm:hidden">{radarActive ? 'Radar' : 'Off'}</span>
             </button>
 
@@ -363,23 +400,38 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
               type="button"
               onClick={toggleSoundAlert}
               className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition active:scale-95 cursor-pointer ${
-                soundEnabled
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                isChimeRinging
+                  ? 'bg-rose-500 border-rose-600 text-white animate-pulse shadow-md shadow-rose-500/30'
+                  : soundEnabled
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
                   : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
               }`}
               title={
-                soundEnabled
+                isChimeRinging
+                  ? 'Chime Ringing Now! (Click to stop immediately, or auto-stops in 3-4s)'
+                  : soundEnabled
                   ? 'Sound Chime is ON: Melodic bell rings on incoming orders (Click to test/mute)'
                   : 'Sound Chime is MUTED (Click to enable)'
               }
             >
-              {soundEnabled ? (
-                <Volume2 className="w-4 h-4 text-indigo-600 animate-pulse" />
+              {isChimeRinging ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-white animate-bounce" />
+                  <span className="font-extrabold">Ringing (3s)... Stop</span>
+                </>
+              ) : soundEnabled ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-indigo-600" />
+                  <span className="hidden sm:inline">Chime ON (3.5s)</span>
+                  <span className="sm:hidden">Chime ON</span>
+                </>
               ) : (
-                <VolumeX className="w-4 h-4 text-slate-400" />
+                <>
+                  <VolumeX className="w-4 h-4 text-slate-400" />
+                  <span className="hidden sm:inline">Chime Muted</span>
+                  <span className="sm:hidden">Muted</span>
+                </>
               )}
-              <span className="hidden sm:inline">{soundEnabled ? 'Chime ON' : 'Chime Off'}</span>
-              <span className="sm:hidden">{soundEnabled ? 'Sound' : 'Muted'}</span>
             </button>
 
             {/* Export CSV Button */}
