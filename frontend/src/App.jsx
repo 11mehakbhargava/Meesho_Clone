@@ -147,7 +147,7 @@ const screenCatalog = [
   { path: '/search', name: 'Search Results', icon: '🔍', group: 'Shopping' },
   { path: '/sarees', name: 'Sarees Listing', icon: '🥻', group: 'Shopping' },
   { path: '/western', name: 'Women Western', icon: '👗', group: 'Shopping' },
-  { path: '/spotlight', name: 'Curated Spotlight', icon: '🌟', group: 'Shopping' },
+  // { path: '/spotlight', name: 'Curated Spotlight', icon: '🌟', group: 'Shopping' },
   { path: '/flash', name: 'Flash Sale Landing', icon: '⚡', group: 'Shopping' },
   { path: '/luxe', name: 'Flutter Luxe Theme', icon: '✨', group: 'Shopping' },
   { path: '/reviews', name: 'Ratings & Reviews', icon: '⭐', group: 'Shopping' },
@@ -936,7 +936,8 @@ function AppRoutes() {
         <Route path="/category/:categorySlug" element={<SearchResults onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/sarees" element={<SareesCategoryListing onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/western" element={<WomenWesternCategory onNavigate={handleNav} onBack={handleBack} />} />
-        <Route path="/spotlight" element={<CuratedSpotlight onNavigate={handleNav} onBack={handleBack} />} />
+        {/* Curated Spotlight - hidden and redirected to /user-home */}
+        <Route path="/spotlight" element={<Navigate to="/user-home" replace />} />
         <Route path="/flash" element={<Navigate to="/user-home" replace />} />
         <Route path="/luxe" element={<Navigate to="/user-home" replace />} />
         <Route path="/reviews" element={<RatingsReviews onNavigate={handleNav} onBack={handleBack} />} />
