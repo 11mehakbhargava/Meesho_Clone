@@ -51,7 +51,7 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
           try {
             const parsed = JSON.parse(storedAddr);
             selected = data.find(a => a.id === parsed.id || a.phone === parsed.phone);
-          } catch (e) {}
+          } catch (e) { }
         }
         if (!selected) {
           selected = data.find(a => a.isDefault) || data[0];
@@ -192,7 +192,7 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
     try {
       const res = await saveAddress(payload);
       const savedData = res?.data || payload;
-      
+
       setAddresses(prev => [savedData, ...prev.filter(a => a.id !== savedData.id)]);
       setSelectedAddressId(savedData.id || 'addr_' + Date.now());
       localStorage.setItem('mshoppy_selected_address', JSON.stringify({
@@ -386,9 +386,8 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                   >
                     <div className="mt-0.5 sm:mt-1 shrink-0">
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? 'border-[#FF3F6C] bg-[#FF3F6C]' : 'border-slate-300'
-                        }`}
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#FF3F6C] bg-[#FF3F6C]' : 'border-slate-300'
+                          }`}
                       >
                         {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
                       </div>
@@ -683,11 +682,10 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                         key={type.id}
                         type="button"
                         onClick={() => setNewAddress({ ...newAddress, addressType: type.id })}
-                        className={`py-2.5 px-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                          isSelected
-                            ? 'bg-pink-50 border-[#FF3F6C] text-[#FF3F6C] shadow-xs'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
+                        className={`py-2.5 px-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${isSelected
+                          ? 'bg-pink-50 border-[#FF3F6C] text-[#FF3F6C] shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
                       >
                         <span className="material-symbols-outlined text-lg">{type.icon}</span>
                         <span className="text-xs font-extrabold">{type.label}</span>
@@ -723,9 +721,8 @@ export default function CheckoutAddressSelection({ onNavigate, onBack }) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e02659] hover:to-[#c41b49] text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                    isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:scale-98'
-                  }`}
+                  className={`flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e02659] hover:to-[#c41b49] text-white font-extrabold text-xs shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:scale-98'
+                    }`}
                 >
                   {isSubmitting ? (
                     <>

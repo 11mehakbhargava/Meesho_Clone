@@ -25,6 +25,19 @@ function getCategoryIcon(slug = '', name = '') {
   return 'grid_view';
 }
 
+function formatCategoryDisplayName(name = '') {
+  if (!name) return '';
+  return name
+    .trim()
+    .split(/\s+/)
+    .map(word => {
+      if (!word) return '';
+      if (word.toLowerCase() === '&') return '&';
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
 const CATEGORY_GRADIENTS = {
   'women-ethnic': 'bg-gradient-to-r from-[#831843] via-[#9d174d] to-[#be185d]',
   'women-western': 'bg-gradient-to-r from-[#4c1d95] via-[#5b21b6] to-[#7c3aed]',
@@ -35,6 +48,7 @@ const CATEGORY_GRADIENTS = {
   'jewellery': 'bg-gradient-to-r from-[#78350f] via-[#b45309] to-[#d97706]',
   'footwear': 'bg-gradient-to-r from-[#1e1b4b] via-[#312e81] to-[#4338ca]',
   'electronics': 'bg-gradient-to-r from-[#0f172a] via-[#0c4a6e] to-[#0284c7]',
+  'accessories': 'bg-gradient-to-r from-[#9d174d] via-[#be185d] to-[#e11d48]',
   'default': 'bg-gradient-to-r from-[#831843] via-[#be185d] to-[#db2777]'
 };
 
@@ -192,10 +206,17 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
     });
   }, [products, selectedSubcat]);
 
-  const currentCategory = categories.find(c => c.slug === activeSlug) || categoryData || {
+  const rawCategory = categories.find(c => c.slug === activeSlug) || categoryData || {
     name: 'Categories',
     slug: activeSlug
   };
+
+  const currentCategory = useMemo(() => {
+    return {
+      ...rawCategory,
+      name: formatCategoryDisplayName(rawCategory.name || 'Categories')
+    };
+  }, [rawCategory]);
 
   const bannerImage =
     currentCategory?.imageUrl ||
@@ -226,27 +247,27 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
   const bannerTag = 'Factory Direct';
 
   return (
-    <div className="bg-[#f8f9fb] font-sans text-[#191c1e] h-screen max-h-screen overflow-hidden flex flex-col antialiased selection:bg-pink-100 selection:text-pink-700">
-      {/* Top Header */}
-      <header className="shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <div className="bg-[#f8f9fb] font-sans text-[#191c1e] fixed inset-0 h-[100dvh] max-h-[100dvh] h-screen w-full overflow-hidden flex flex-col antialiased selection:bg-pink-100 selection:text-pink-700">
+      {/* Top Header - Always Sticky at the top on all devices */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-xs shrink-0">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Logo & Back button */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => (onBack ? onBack() : navigate('/user-home'))}
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-all cursor-pointer flex items-center justify-center shrink-0"
               title="Back"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
             <div 
               onClick={() => navigate('/user-home')}
-              className="flex items-center gap-1.5 cursor-pointer group"
+              className="flex items-center gap-1.5 cursor-pointer group shrink-0"
             >
               <img 
                 src="/mshoppy-logo.png" 
                 alt="MShoppy" 
-                className="w-8 h-8 object-contain rounded-xl shadow-xs transition-transform group-hover:scale-105" 
+                className="w-7 h-7 sm:w-8 sm:h-8 object-contain rounded-xl shadow-xs transition-transform group-hover:scale-105" 
               />
               <span className="text-xl font-black text-[#FF3F6C] font-headline tracking-tight hidden sm:inline">
                 MShoppy
@@ -257,7 +278,7 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
           {/* Search input */}
           <div className="flex-1 min-w-0 max-w-2xl">
             <form onSubmit={handleSearchSubmit} className="w-full">
-              <div className="bg-[#f2f4f6] hover:bg-slate-200/60 focus-within:bg-white flex items-center px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full gap-2 border border-slate-200/60 focus-within:border-pink-400 focus-within:ring-2 focus-within:ring-[#FF3F6C]/20 transition-all shadow-inner h-9 sm:h-10">
+              <div className="bg-[#f2f4f6] hover:bg-slate-200/60 focus-within:bg-white flex items-center px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full gap-1.5 sm:gap-2 border border-slate-200/60 focus-within:border-pink-400 focus-within:ring-2 focus-within:ring-[#FF3F6C]/20 transition-all shadow-inner h-9 sm:h-10">
                 <button
                   type="submit"
                   className="text-slate-400 hover:text-[#FF3F6C] flex items-center shrink-0 cursor-pointer transition-colors"
@@ -270,7 +291,7 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search in all categories..."
-                  className="w-full bg-transparent text-xs sm:text-sm font-medium text-[#191c1e] focus:outline-none placeholder:text-slate-400"
+                  className="w-full bg-transparent text-xs sm:text-sm font-medium text-[#191c1e] focus:outline-none placeholder:text-slate-400 min-w-0"
                 />
                 {searchQuery && (
                   <button
@@ -287,22 +308,22 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
           </div>
 
           {/* Cart & Wishlist */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             <button
               onClick={() => navigate('/wishlist')}
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-all cursor-pointer hidden sm:flex"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 text-slate-700 active:scale-95 transition-all cursor-pointer hidden sm:flex"
               title="Wishlist"
             >
               <span className="material-symbols-outlined text-2xl">favorite</span>
             </button>
             <button
               onClick={() => navigate('/cart')}
-              className="p-2 rounded-full hover:bg-pink-50 text-[#FF3F6C] active:scale-95 transition-all cursor-pointer relative"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-pink-50 text-[#FF3F6C] active:scale-95 transition-all cursor-pointer relative shrink-0"
               title="Shopping Bag"
             >
               <span className="material-symbols-outlined text-2xl">shopping_bag</span>
               {cartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[#FF3F6C] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                <span className="absolute top-0.5 right-0.5 bg-[#FF3F6C] text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                   {cartCount}
                 </span>
               )}
@@ -312,9 +333,9 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
       </header>
 
       {/* Main Split Layout */}
-      <main className="max-w-7xl w-full mx-auto flex-1 min-h-0 flex overflow-hidden px-0 sm:px-4 lg:px-8 py-1 sm:py-3">
+      <main className="max-w-7xl w-full mx-auto flex-1 min-h-0 flex overflow-hidden px-0 sm:px-4 lg:px-8 py-0 sm:py-3">
         {/* Category Navigation Sidebar */}
-        <aside className="h-full w-20 sm:w-52 md:w-60 lg:w-64 flex flex-col bg-[#F2F4F6] sm:rounded-2xl border-r sm:border border-slate-200/60 overflow-y-auto overscroll-contain shrink-0 select-none shadow-sm pb-20 md:pb-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent">
+        <aside className="h-full w-[84px] sm:w-52 md:w-60 lg:w-64 flex flex-col bg-[#F2F4F6] sm:rounded-2xl border-r sm:border border-slate-200/60 overflow-y-auto overscroll-contain shrink-0 select-none shadow-sm pb-24 md:pb-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-track]:bg-transparent">
           <div className="p-3 hidden sm:block border-b border-slate-200/50">
             <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500">
               Categories
@@ -331,12 +352,13 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
               categories.map((cat) => {
                 const isActive = activeSlug === cat.slug;
                 const iconName = getCategoryIcon(cat.slug, cat.name);
+                const displayName = formatCategoryDisplayName(cat.name);
 
                 return (
                   <button
                     key={cat.id || cat.slug}
                     onClick={() => setActiveSlug(cat.slug)}
-                    className={`py-2.5 px-1 sm:px-4 flex sm:flex-row flex-col items-center sm:gap-3 gap-1 transition-all cursor-pointer relative text-left rounded-xl mx-1 sm:mx-1.5 w-[calc(100%-8px)] sm:w-[calc(100%-12px)] ${
+                    className={`py-2 px-1 sm:px-3.5 flex sm:flex-row flex-col items-center sm:gap-3 gap-1 transition-all cursor-pointer relative text-left rounded-xl mx-0.5 sm:mx-1.5 w-[calc(100%-4px)] sm:w-[calc(100%-12px)] ${
                       isActive
                         ? 'bg-white text-[#FF3F6C] font-extrabold shadow-sm'
                         : 'text-slate-600 opacity-80 hover:opacity-100 hover:bg-white/50'
@@ -352,8 +374,8 @@ export default function SearchCategoriesExplorer({ onNavigate = () => {}, onBack
                       {iconName}
                     </span>
                     <div className="w-full min-w-0 text-center sm:text-left px-0.5">
-                      <span className="text-[10px] sm:text-xs leading-[13px] sm:leading-tight font-bold block break-words line-clamp-2">
-                        {cat.name}
+                      <span className="text-[9.5px] sm:text-xs leading-[12px] sm:leading-tight font-bold block whitespace-normal break-normal [overflow-wrap:normal]">
+                        {displayName}
                       </span>
                     </div>
                   </button>
