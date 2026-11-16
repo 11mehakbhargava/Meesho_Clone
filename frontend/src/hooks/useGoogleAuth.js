@@ -57,17 +57,14 @@ export const useGoogleAuth = (role = 'USER', customRedirect = null) => {
         const currentKycStatus = existingKyc?.status || existingKyc?.kycStatus || backendUserData.kycStatus;
 
         if (currentKycStatus === 'Approved' || currentKycStatus === 'APPROVED') {
-          toast.success(`Welcome back, ${backendUserData.fullName || 'Partner'}! Accessing Affiliate Hub.`);
           navigate(customRedirect || '/affiliate-panel');
         } else if (currentKycStatus === 'Under Review' || currentKycStatus === 'Pending' || currentKycStatus === 'PENDING') {
-          toast.info('Your Affiliate KYC is Under Review by Compliance Desk ⏳');
           navigate('/affiliate-kyc-status');
         } else if (currentKycStatus === 'Rejected' || currentKycStatus === 'REJECTED') {
           toast.error('Your previous KYC submission needs revision.');
           navigate('/affiliate-kyc-status');
         } else {
           // New User - Has NOT filled KYC form yet! Redirect to /affiliate-kyc
-          toast.info(`Welcome, ${backendUserData.fullName || 'Partner'}! Please complete your KYC registration.`);
           navigate('/affiliate-kyc');
         }
       } else {
@@ -76,7 +73,6 @@ export const useGoogleAuth = (role = 'USER', customRedirect = null) => {
           fullName: backendUserData.fullName,
         }).catch(() => {});
 
-        toast.success(`Welcome, ${backendUserData.fullName || 'User'}! Logged in with Google.`);
         const destination = customRedirect || '/user-home';
         navigate(destination);
       }
