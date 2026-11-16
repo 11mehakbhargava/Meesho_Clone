@@ -42,6 +42,91 @@ const FAQS = [
   },
 ];
 
+
+const SUPPORT_LANGUAGES = [
+  { id: 'en', label: 'English', flag: '🇬🇧' },
+  { id: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { id: 'hinglish', label: 'Hinglish', flag: '🇮🇳' },
+];
+
+const BOT_CONTENT = {
+  en: {
+    title: 'MShoppy Support Assistant',
+    online: '24/7 Smart Automated Desk',
+    greeting: 'Hello! I am your MShoppy Support Assistant. How can I help you today?',
+    chips: [
+      { id: 'track_order', label: '📦 Where is my Order?' },
+      { id: 'return_exchange', label: '🔄 Return / Exchange' },
+      { id: 'refund_status', label: '💰 Refund & Payments' },
+      { id: 'raise_ticket', label: '🎫 Raise Support Ticket' },
+    ],
+    placeholder: 'Type your question or choose an option...',
+    sendBtn: 'Send',
+    ticketBtn: '🎫 Open Support Ticket Form',
+    viewTrackingBtn: '📦 View Full Tracking',
+    myOrdersBtn: '🛍️ Go to My Orders',
+    responses: {
+      hi: 'Hello! How are you doing? Please tell me how I can assist with your orders, returns, or account today.',
+      order_found: (order) => `Here are your latest order details:\n• Item: ${order.productName || order.items?.[0]?.product?.title || 'Catalog Order'}\n• Total: ₹${order.totalAmount || order.price || 0}\n• Status: ${order.orderStatus || order.status || 'ORDERED'}`,
+      order_not_found: 'You do not have any active orders currently. Visit our shop to place your first order!',
+      return_info: 'You can request a Return or Exchange within 7 days of delivery directly from the "My Orders" section. Once approved, our courier partner will collect the item and refund will be credited.',
+      refund_info: '• Prepaid Orders: Refunds are credited within 24-48 hours.\n• COD Orders: Refund is sent to your UPI ID or Bank Account instantly upon doorstep pickup verification.',
+      ticket_prompt: 'Need personalized help from our human operations team? Click below to open an official support ticket.',
+      unknown: "I didn't quite get that. Please select one of the quick options below or submit a support ticket so our team can resolve it."
+    }
+  },
+  hi: {
+    title: 'Mshoppy सहायता सहायक',
+    online: '24/7 सक्रिय स्मार्ट सहायता',
+    greeting: 'नमस्ते! मैं Mshoppy सहायता सहायक हूँ। आज मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे मदद कर सकता हूँ?',
+    chips: [
+      { id: 'track_order', label: '📦 मेरा ऑर्डर कहाँ है?' },
+      { id: 'return_exchange', label: '🔄 रिटर्न या एक्सचेंज' },
+      { id: 'refund_status', label: '💰 रिफंड और पेमेंट' },
+      { id: 'raise_ticket', label: '🎫 शिकायत दर्ज करें' },
+    ],
+    placeholder: 'अपना सवाल लिखें या विकल्प चुनें...',
+    sendBtn: 'भेजें',
+    ticketBtn: '🎫 सपोर्ट टिकट फॉर्म खोलें',
+    viewTrackingBtn: '📦 ऑर्डर ट्रैकिंग देखें',
+    myOrdersBtn: '🛍️ My Orders पर जाएँ',
+    responses: {
+      hi: 'नमस्ते! आप कैसे हैं? कृपया बताएं कि मैं आपके ऑर्डर, रिटर्न या पेमेंट में कैसे सहायता कर सकता हूँ।',
+      order_found: (order) => `आपके सबसे हालिया ऑर्डर का विवरण:\n• सामान: ${order.productName || order.items?.[0]?.product?.title || 'ऑर्डर आइटम'}\n• राशि: ₹${order.totalAmount || order.price || 0}\n• वर्तमान स्थिति: ${order.orderStatus || order.status || 'ORDERED'}`,
+      order_not_found: 'आपके खाते में अभी कोई एक्टिव ऑर्डर नहीं है। नया ऑर्डर करने के लिए होमपेज देखें!',
+      return_info: 'डिलीवरी के 7 दिनों के भीतर आप "My Orders" पेज से रिटर्न या एक्सचेंज की रिक्वेस्ट कर सकते हैं। पार्सल पिकअप होने के बाद रिफंड तुरंत जारी कर दिया जाता है।',
+      refund_info: '• प्रीपेड ऑर्डर्स: रिफंड 24-48 घंटों में आपके अकाउंट में क्रेडिट हो जाता है।\n• COD ऑर्डर्स: डोरस्टेप पिकअप के समय आपके UPI या बैंक अकाउंट में तुरंत पैसे ट्रांसफर होते हैं।',
+      ticket_prompt: 'क्या आप हमारे कस्टमर केयर अधिकारी को शिकायत भेजना चाहते हैं? नीचे दिए गए बटन पर क्लिक करें।',
+      unknown: 'मुझे यह समझ नहीं आया। आप नीचे दिए गए विकल्पों में से चुन सकते हैं या सपोर्ट टिकट दर्ज कर सकते हैं।'
+    }
+  },
+  hinglish: {
+    title: 'MShoppy Support Assistant',
+    online: '24/7 Active Smart Desk',
+    greeting: 'Namaste! Main MShoppy Support Assistant hoon. Aaj main aapke orders, return ya payment me kya madad kar sakta hoon?',
+    chips: [
+      { id: 'track_order', label: '📦 Mera order kaha hai?' },
+      { id: 'return_exchange', label: '🔄 Return ya Exchange' },
+      { id: 'refund_status', label: '💰 Refund & Payments' },
+      { id: 'raise_ticket', label: '🎫 Support Ticket dalein' },
+    ],
+    placeholder: 'Apna sawal likhein ya option chunein...',
+    sendBtn: 'Send',
+    ticketBtn: '🎫 Open Support Ticket Form',
+    viewTrackingBtn: '📦 View Full Tracking',
+    myOrdersBtn: '🛍️ Go to My Orders',
+    responses: {
+      hi: 'Namaste! Kaise hain aap? Batayein aapko Order, Return, ya Payment me kis cheez me help chahiye?',
+      order_found: (order) => `Aapke latest order ki details:\n• Item: ${order.productName || order.items?.[0]?.product?.title || 'Order Item'}\n• Price: ₹${order.totalAmount || order.price || 0}\n• Status: ${order.orderStatus || order.status || 'ORDERED'}`,
+      order_not_found: 'Aapke account me abhi koi active order nahi hai. Shopping karne ke liye Home page dekhein!',
+      return_info: 'Delivery ke 7 din ke andar aap "My Orders" me jakar Return ya Exchange request kar sakte hain. Item pickup hote hi refund turant credit ho jayega.',
+      refund_info: '• Prepaid orders: 24-48 ghante me refund milta hai.\n• COD orders: Doorstep pickup scan hote hi aapke UPI ya Bank me refund transfer ho jata hai.',
+      ticket_prompt: 'Agar aapko customer support team se baat karni hai, toh niche diye button se direct ticket raise karein.',
+      unknown: 'Mujhe ye samajh nahi aaya. Aap niche diye gaye options me se choose kar sakte hain ya support ticket raise kar sakte hain.'
+    }
+  }
+};
+
 export function SupportCenter({ onNavigate, onOpenChat }) {
   const [searchParams] = useSearchParams();
   const orderIdParam = searchParams.get('orderId');
