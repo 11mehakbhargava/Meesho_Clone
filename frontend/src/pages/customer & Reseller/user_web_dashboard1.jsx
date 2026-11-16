@@ -612,6 +612,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   const [partnerVisibleCount, setPartnerVisibleCount] = useState(24);
   const [resaleVisibleCount, setResaleVisibleCount] = useState(24);
 
+  // Silent inline copy indicator states (No annoying popups)
+  const [copiedProdId, setCopiedProdId] = useState(null);
+  const [copiedReferral, setCopiedReferral] = useState(false);
+
   // Dynamic Custom Margins Per Product for Resell & Earn Tab
   const [resaleMargins, setResaleMargins] = useState({});
 
@@ -921,19 +925,17 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     return { weeklyEarnings: bars, totalResaleMargin: totalMargin };
   }, [realOrders]);
 
-  // Handle Share Real Product with Custom Margin (Obfuscated parameter protecting margin)
+  // Handle Share Real Product with Custom Margin (Silent clipboard copy, no popups)
   const handleShareProductWithMargin = (prod, customMargin) => {
     const margin = customMargin !== undefined ? customMargin : getProductMargin(prod?.id);
-    const finalPrice = Number(prod?.price || 0) + Number(margin || 0);
     const refCode = affiliateApp?.applicationId || customerUser?.id || 'aff_verified';
     const link = buildAffiliateProductUrl({ productId: prod?.id || '', refCode, margin });
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(link);
-      toast.success('Custom product link copied!', {
-        description: `Customer Price: ₹${finalPrice} • Your Profit Margin: +₹${margin}`
-      });
-    } else {
-      toast.info(`Link ready with ₹${margin} margin`);
+    }
+    if (prod?.id) {
+      setCopiedProdId(prod.id);
+      setTimeout(() => setCopiedProdId(null), 1800);
     }
   };
 
@@ -946,15 +948,14 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  // Copy Affiliate Referral Link
+  // Copy Affiliate Referral Link (Silent inline feedback, no popup)
   const handleCopyAffiliateLink = () => {
     const affLink = `${window.location.origin}/?ref=${affiliateApp?.applicationId || customerUser?.id || 'aff_member'}`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(affLink);
-      toast.success('Affiliate Referral Link Copied!', {
-        description: 'Earn your custom profit margin on all orders placed via this link!'
-      });
     }
+    setCopiedReferral(true);
+    setTimeout(() => setCopiedReferral(false), 1800);
   };
 
   // Custom Product Margin Handlers (Apni marzi ka margin)
@@ -986,8 +987,13 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       refCode: affiliateApp?.applicationId || 'aff_verified',
       margin: margin || customMarginVal || 0
     });
-    navigator.clipboard?.writeText(link);
-    toast.success(`Custom product link copied with ₹${margin || customMarginVal || 0} margin!`);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(link);
+    }
+    if (targetProd?.id) {
+      setCopiedProdId(targetProd.id);
+      setTimeout(() => setCopiedProdId(null), 1800);
+    }
   };
 
   // Filtered Catalog for Partner Hub
@@ -1221,7 +1227,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   let affiliateNavBadgeClass = 'bg-[#b7004d] text-white';
 
   if (isResellerApproved) {
-    affiliateNavTitle = 'Partner & Resell Hub 🚀';
+    affiliateNavTitle = 'Partner Hub 🤝';
     affiliateNavBadge = 'ACTIVE';
     affiliateNavBadgeClass = 'bg-emerald-600 text-white';
   } else if (affiliateApp) {
@@ -1302,7 +1308,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         };
       case 'affiliate':
         return {
-          title: affiliateApp?.status === 'Approved' ? 'Partner & Resell Hub 🚀' : 'Become an Affiliate Partner 🤝',
+          title: affiliateApp?.status === 'Approved' ? 'Partner Hub 🤝' : 'Become an Affiliate Partner 🤝',
           subtitle: 'Set custom profit margins, share product links directly, and track weekly direct bank settlements.',
         };
       case 'orders':
@@ -1317,7 +1323,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
         };
       case 'resale':
         return {
-          title: 'Partner & Resell Hub 🚀',
+          title: 'Partner Hub 🤝',
           subtitle: 'Set custom profit margins, share product links directly, and track weekly direct bank settlements.',
         };
       case 'wallet':
@@ -1414,7 +1420,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#b7004d] hover:bg-[#96003f] text-white text-xs font-bold rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Open Partner & Resell Hub 🚀</span>
+                    <span>Open Partner Hub 🤝</span>
                   </button>
                 </div>
               </div>
@@ -2106,8 +2112,17 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                         onClick={handleCopyAffiliateLink}
                         className="px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs sm:text-sm rounded-2xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                       >
-                        <Copy className="w-4 h-4" />
-                        <span>Copy Link</span>
+                        {copiedReferral ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-950" />
+                            <span>Copied! ✓</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -2152,7 +2167,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                         <span>Zero Capital Reseller Hub • Apni Marzi Ka Profit</span>
                       </div>
                       <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-['Plus_Jakarta_Sans',sans-serif]">
-                        Resell &amp; Earn Catalog Products 💰
+                        Partner Hub Catalog Products 💼
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-500 max-w-2xl">
                         Adjust your custom profit margin on any product below (e.g. +₹100, +₹150, +₹200). 
@@ -2336,11 +2351,24 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                                   <button
                                     type="button"
                                     onClick={() => handleShareProductWithMargin(p, currentMargin)}
-                                    className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                                    className={`flex-1 py-2 active:scale-95 text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                                      copiedProdId === p.id 
+                                        ? 'bg-emerald-600 text-white' 
+                                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                                    }`}
                                     title="Copy affiliate product link with your custom margin"
                                   >
-                                    <Copy className="w-3.5 h-3.5" />
-                                    <span>Copy Link</span>
+                                    {copiedProdId === p.id ? (
+                                      <>
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Copied! ✓</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3.5 h-3.5" />
+                                        <span>Copy Link</span>
+                                      </>
+                                    )}
                                   </button>
                                 </div>
 

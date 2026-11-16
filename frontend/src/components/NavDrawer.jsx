@@ -9,7 +9,7 @@ const navSections = [
     title: "Shop & Catalog",
     items: [
       { name: "Home & Curated Catalog", path: "/reseller-home", icon: "home" },
-      { name: "Partner & Resell Hub", path: "/user-dashboard1?tab=affiliate", icon: "storefront", badge: "Popular" },
+      { name: "Partner Hub", path: "/user-dashboard1?tab=affiliate", icon: "storefront", badge: "Popular" },
       { name: "Profit Margin & Sharing", path: "/share-earn-config", icon: "share" },
     ]
   },
