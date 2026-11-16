@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import {
   getProductById,
@@ -193,6 +193,11 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   });
   const [loading, setLoading] = useState(() => !product);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const galleryScrollRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const hasMovedRef = useRef(false);
   const [selectedSize, setSelectedSize] = useState(() => {
     return Array.isArray(product?.sizes) && product.sizes.length > 0 ? product.sizes[0] : '';
   });
@@ -564,6 +569,59 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     !sizes.every((s) => s.toLowerCase().includes('pack') || s.toLowerCase().includes('ml'))
   );
 
+  const handleSelectImage = (index) => {
+    if (index < 0 || index >= images.length) return;
+    setSelectedImageIndex(index);
+    if (galleryScrollRef.current) {
+      const width = galleryScrollRef.current.clientWidth;
+      galleryScrollRef.current.scrollTo({
+        left: index * width,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleGalleryScroll = (e) => {
+    const container = e.currentTarget;
+    const width = container.clientWidth;
+    if (!width) return;
+    const newIndex = Math.round(container.scrollLeft / width);
+    if (newIndex >= 0 && newIndex < images.length && newIndex !== selectedImageIndex) {
+      setSelectedImageIndex(newIndex);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (!galleryScrollRef.current) return;
+    isDraggingRef.current = true;
+    hasMovedRef.current = false;
+    startXRef.current = e.pageX - galleryScrollRef.current.offsetLeft;
+    scrollLeftRef.current = galleryScrollRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDraggingRef.current || !galleryScrollRef.current) return;
+    const x = e.pageX - galleryScrollRef.current.offsetLeft;
+    const walk = (x - startXRef.current);
+    if (Math.abs(walk) > 5) {
+      hasMovedRef.current = true;
+    }
+    galleryScrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    if (hasMovedRef.current && galleryScrollRef.current) {
+      const container = galleryScrollRef.current;
+      const width = container.clientWidth;
+      if (width) {
+        const snapIndex = Math.round(container.scrollLeft / width);
+        handleSelectImage(snapIndex);
+      }
+    }
+  };
+
   return (
     <div className="bg-[#f8f9fb] text-[#191c1e] min-h-screen font-sans antialiased selection:bg-pink-100 selection:text-pink-600">
       {/* Top Header Bar */}
@@ -652,62 +710,119 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
           {/* LEFT COLUMN: Gallery & Photos (lg:col-span-6 xl:col-span-7 lg:sticky lg:top-24) */}
           <div className="lg:col-span-6 xl:col-span-7 lg:sticky lg:top-24 space-y-4">
             {/* Full Uncropped Image Presentation */}
-            <section className="relative bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
-              {/* Main Photo Container - Full view with object-contain to avoid any cropping */}
-              <div className="relative w-full aspect-[4/5] max-h-[560px] bg-white flex items-center justify-center p-2 sm:p-4 select-none">
-                <img
-                  src={images[selectedImageIndex] || images[0]}
-                  alt={product.title}
-                  className="w-full h-full max-h-[540px] object-contain rounded-2xl transition-all duration-300 cursor-zoom-in"
-                  onClick={() => setShowImageZoom(true)}
-                  title="Click to Zoom Full Photo"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800';
+            <section className="relative bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden group">
+              {/* Floating Top Buttons */}
+              <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomScale(1.8);
+                    setShowImageZoom(true);
                   }}
-                />
-
-                {/* Floating Top Buttons */}
-                <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setZoomScale(1.8);
-                      setShowImageZoom(true);
-                    }}
-                    className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-slate-700 hover:text-black border border-slate-100"
-                    title="Zoom Full Photo (+)"
-                  >
-                    <span className="material-symbols-outlined text-xl">zoom_in</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowShareModal(true);
-                    }}
-                    className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-[#FF3F6C] border border-slate-100"
-                    title="Share Product"
-                  >
-                    <span className="material-symbols-outlined text-xl">share</span>
-                  </button>
-                </div>
-
-                {/* Dots indicator */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full z-10">
-                    {images.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedImageIndex(idx)}
-                        className={`h-2 rounded-full transition-all cursor-pointer ${selectedImageIndex === idx ? 'w-5 bg-[#FF3F6C]' : 'w-2 bg-white/70'
-                          }`}
-                      />
-                    ))}
-                  </div>
-                )}
+                  className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-slate-700 hover:text-black border border-slate-100"
+                  title="Zoom Full Photo (+)"
+                >
+                  <span className="material-symbols-outlined text-xl">zoom_in</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowShareModal(true);
+                  }}
+                  className="w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer hover:bg-white text-[#FF3F6C] border border-slate-100"
+                  title="Share Product"
+                >
+                  <span className="material-symbols-outlined text-xl">share</span>
+                </button>
               </div>
+
+              {/* Prev / Next navigation arrows on main gallery (Desktop & Tablets) */}
+              {images.length > 1 && (
+                <>
+                  {selectedImageIndex > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectImage(selectedImageIndex - 1);
+                      }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-slate-800 hover:bg-white shadow-lg flex items-center justify-center transition-all cursor-pointer border border-slate-200/70 active:scale-90 hover:scale-105"
+                      title="Previous Image"
+                      aria-label="Previous image"
+                    >
+                      <span className="material-symbols-outlined text-2xl">chevron_left</span>
+                    </button>
+                  )}
+                  {selectedImageIndex < images.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectImage(selectedImageIndex + 1);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-slate-800 hover:bg-white shadow-lg flex items-center justify-center transition-all cursor-pointer border border-slate-200/70 active:scale-90 hover:scale-105"
+                      title="Next Image"
+                      aria-label="Next image"
+                    >
+                      <span className="material-symbols-outlined text-2xl">chevron_right</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Swipeable Main Photo Container - Horizontal swipe & scroll snap on mobile & mouse drag */}
+              <div
+                ref={galleryScrollRef}
+                onScroll={handleGalleryScroll}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUpOrLeave}
+                onMouseLeave={handleMouseUpOrLeave}
+                className="relative w-full aspect-[4/5] max-h-[560px] bg-white flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar select-none touch-pan-x cursor-grab active:cursor-grabbing"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="w-full min-w-full h-full shrink-0 snap-center snap-always flex items-center justify-center p-2 sm:p-4 cursor-zoom-in"
+                    onClick={() => {
+                      if (!hasMovedRef.current) {
+                        setSelectedImageIndex(idx);
+                        setShowImageZoom(true);
+                      }
+                    }}
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.title} view ${idx + 1}`}
+                      className="w-full h-full max-h-[540px] object-contain rounded-2xl transition-all duration-300 pointer-events-none select-none"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800';
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Dots indicator */}
+              {images.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full z-10 pointer-events-auto">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectImage(idx)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        selectedImageIndex === idx ? 'w-5 bg-[#FF3F6C]' : 'w-2 bg-white/70'
+                      }`}
+                      aria-label={`Go to image ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Thumbnail Preview Bar */}
               {images.length > 1 && (
@@ -715,16 +830,18 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   {images.map((img, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setSelectedImageIndex(idx)}
-                      className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-white p-0.5 ${selectedImageIndex === idx
+                      type="button"
+                      onClick={() => handleSelectImage(idx)}
+                      className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-white p-0.5 ${
+                        selectedImageIndex === idx
                           ? 'border-[#FF3F6C] shadow-md scale-102 ring-1 ring-[#FF3F6C]'
                           : 'border-slate-200 opacity-70 hover:opacity-100'
-                        }`}
+                      }`}
                     >
                       <img
                         src={img}
                         alt={`${product.title} view ${idx + 1}`}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain pointer-events-none"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
@@ -1023,7 +1140,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                           type="button"
                           onClick={() => {
                             setSelectedColor(c.name);
-                            triggerToast(`${catMeta.colorLabel || 'Selected Color'}: ${c.name}`);
                           }}
                           className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${isSelected
                               ? 'bg-[#b90041] text-white shadow-md shadow-pink-500/25 scale-102'
@@ -1076,7 +1192,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                           type="button"
                           onClick={() => {
                             setSelectedSize(size);
-                            triggerToast(`${catMeta.sizeLabel || 'Selected Size'}: ${size}`);
                           }}
                           className={`min-w-[54px] px-4 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1 ${isSelected
                               ? 'bg-[#4d41df] text-white shadow-md shadow-indigo-500/25 scale-102'
@@ -1386,9 +1501,9 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             </div>
           </div>
 
-          {/* Central Zoomable Image View */}
+          {/* Central Zoomable Image View with Left/Right Navigation */}
           <div
-            className="flex-1 overflow-auto flex items-center justify-center p-2 sm:p-6"
+            className="flex-1 overflow-auto flex items-center justify-center p-2 sm:p-6 relative"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowImageZoom(false);
@@ -1396,6 +1511,38 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               }
             }}
           >
+            {/* Prev Image in Lightbox */}
+            {images.length > 1 && selectedImageIndex > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectImage(selectedImageIndex - 1);
+                  setZoomScale(1);
+                }}
+                className="absolute left-2 sm:left-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center cursor-pointer backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                title="Previous Image"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_left</span>
+              </button>
+            )}
+
+            {/* Next Image in Lightbox */}
+            {images.length > 1 && selectedImageIndex < images.length - 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectImage(selectedImageIndex + 1);
+                  setZoomScale(1);
+                }}
+                className="absolute right-2 sm:right-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center cursor-pointer backdrop-blur-md transition-all active:scale-95 shadow-lg"
+                title="Next Image"
+              >
+                <span className="material-symbols-outlined text-2xl">chevron_right</span>
+              </button>
+            )}
+
             <div className="relative max-w-full max-h-full flex items-center justify-center overflow-hidden">
               <img
                 src={images[selectedImageIndex] || images[0]}
@@ -1430,7 +1577,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     key={idx}
                     type="button"
                     onClick={() => {
-                      setSelectedImageIndex(idx);
+                      handleSelectImage(idx);
                       setZoomScale(1);
                     }}
                     className={`w-12 h-14 sm:w-14 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
