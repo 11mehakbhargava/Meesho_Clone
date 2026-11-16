@@ -1017,6 +1017,40 @@ export const updatePayoutSettings = async (req, res) => {
       data: { bankDetails: updatedBankDetails }
     });
 
+    // Also sync with latest affiliate KYC application documents if present
+    try {
+      const latestKyc = await prisma.kYCApplication.findFirst({
+        where: { userId: profile.id, type: 'affiliate' },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (latestKyc) {
+        const existingDocs = (latestKyc.documents && typeof latestKyc.documents === 'object') ? latestKyc.documents : {};
+        const newBank = req.body.bankDetails || {};
+        const updatedDocs = {
+          ...existingDocs,
+          bankName: newBank.bankName || existingDocs.bankName || '',
+          accountNumber: newBank.accountNumber || existingDocs.accountNumber || '',
+          accountHolderName: newBank.holderName || newBank.accountHolderName || existingDocs.accountHolderName || '',
+          ifscCode: (newBank.ifscCode || newBank.ifsc || existingDocs.ifscCode || '').toUpperCase(),
+          confirmAccountNumber: newBank.accountNumber || existingDocs.confirmAccountNumber || '',
+          bank: {
+            ...(existingDocs.bank || {}),
+            bankName: newBank.bankName || existingDocs.bank?.bankName || '',
+            accountNumber: newBank.accountNumber || existingDocs.bank?.accountNumber || '',
+            holderName: newBank.holderName || existingDocs.bank?.holderName || '',
+            ifsc: (newBank.ifscCode || newBank.ifsc || existingDocs.bank?.ifsc || '').toUpperCase(),
+            upiId: req.body.upiId || existingDocs.bank?.upiId || ''
+          }
+        };
+        await prisma.kYCApplication.update({
+          where: { id: latestKyc.id },
+          data: { documents: updatedDocs }
+        });
+      }
+    } catch (syncKycErr) {
+      console.warn('KYC bank details sync notice:', syncKycErr.message);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Payout settings updated in database',

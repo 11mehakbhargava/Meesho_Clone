@@ -440,9 +440,103 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
   const [savingAddress, setSavingAddress] = useState(false);
 
   // Real Linked Bank (Derived from submitted affiliate/KYC data, NOT dummy ICICI Bank)
-  const withdrawBank = affiliateApp?.bankName
-    ? `${affiliateApp.bankName} (•••• ${affiliateApp.accountNumber ? affiliateApp.accountNumber.slice(-4) : 'XXXX'})`
+  const bankNameVal = affiliateApp?.bankName || affiliateApp?.bank?.bankName || '';
+  const accNumVal = affiliateApp?.accountNumber || affiliateApp?.bank?.accountNumber || affiliateApp?.confirmAccountNumber || '';
+  const withdrawBank = bankNameVal
+    ? `${bankNameVal} (•••• ${accNumVal ? String(accNumVal).slice(-4) : 'XXXX'})`
     : '';
+
+  // Update Settlement Bank Modal States
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankFormData, setBankFormData] = useState({
+    bankName: '',
+    holderName: '',
+    accountNumber: '',
+    confirmAccountNumber: '',
+    ifscCode: '',
+    upiId: ''
+  });
+  const [savingBank, setSavingBank] = useState(false);
+  const [bankSuccessMsg, setBankSuccessMsg] = useState('');
+  const [bankErrorMsg, setBankErrorMsg] = useState('');
+
+  const handleOpenBankModal = () => {
+    setBankFormData({
+      bankName: affiliateApp?.bankName || affiliateApp?.bank?.bankName || 'State Bank of India (SBI)',
+      holderName: affiliateApp?.accountHolderName || affiliateApp?.bank?.holderName || affiliateApp?.fullName || customerName || '',
+      accountNumber: affiliateApp?.accountNumber || affiliateApp?.bank?.accountNumber || affiliateApp?.confirmAccountNumber || '',
+      confirmAccountNumber: affiliateApp?.accountNumber || affiliateApp?.bank?.accountNumber || affiliateApp?.confirmAccountNumber || '',
+      ifscCode: affiliateApp?.ifscCode || affiliateApp?.bank?.ifsc || '',
+      upiId: affiliateApp?.upiId || affiliateApp?.bank?.upiId || ''
+    });
+    setBankErrorMsg('');
+    setBankSuccessMsg('');
+    setShowBankModal(true);
+  };
+
+  const handleSaveBank = async (e) => {
+    e.preventDefault();
+    if (bankFormData.accountNumber !== bankFormData.confirmAccountNumber) {
+      setBankErrorMsg('Account numbers do not match!');
+      return;
+    }
+    setSavingBank(true);
+    setBankErrorMsg('');
+
+    try {
+      const updatedApp = {
+        ...(affiliateApp || {}),
+        bankName: bankFormData.bankName.trim(),
+        accountHolderName: bankFormData.holderName.trim(),
+        accountNumber: bankFormData.accountNumber.trim(),
+        confirmAccountNumber: bankFormData.confirmAccountNumber.trim(),
+        ifscCode: bankFormData.ifscCode.trim().toUpperCase(),
+        upiId: bankFormData.upiId.trim(),
+        bank: {
+          ...(affiliateApp?.bank || {}),
+          bankName: bankFormData.bankName.trim(),
+          holderName: bankFormData.holderName.trim(),
+          accountNumber: bankFormData.accountNumber.trim(),
+          ifsc: bankFormData.ifscCode.trim().toUpperCase(),
+          upiId: bankFormData.upiId.trim()
+        }
+      };
+
+      saveAffiliateApp(updatedApp);
+      setAffiliateApp(updatedApp);
+
+      const token = localStorage.getItem('firebase_token') || localStorage.getItem('mshoppy_auth_token');
+      await fetch(`${API_V1_BASE}/auth/payout-settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          'x-user-id': customerUser?.id || affiliateApp?.userId || ''
+        },
+        body: JSON.stringify({
+          userId: customerUser?.id || affiliateApp?.userId || '',
+          bankDetails: {
+            bankName: bankFormData.bankName.trim(),
+            holderName: bankFormData.holderName.trim(),
+            accountNumber: bankFormData.accountNumber.trim(),
+            ifscCode: bankFormData.ifscCode.trim().toUpperCase()
+          },
+          upiId: bankFormData.upiId.trim()
+        })
+      });
+
+      setBankSuccessMsg('Bank account updated successfully! ✨');
+      setTimeout(() => {
+        setShowBankModal(false);
+        setBankSuccessMsg('');
+      }, 1400);
+    } catch (err) {
+      console.warn('Bank save error:', err);
+      setBankErrorMsg('Failed to update bank details. Please try again.');
+    } finally {
+      setSavingBank(false);
+    }
+  };
 
   // Real Dynamic Affiliate Tracking Data (Instant cache-first load, updated live from DB)
   const [affiliateStats, setAffiliateStats] = useState(() => {
@@ -1995,7 +2089,16 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                     <p className="text-[11px] text-slate-500">Custom Margin per Product</p>
                   </div>
                   <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
-                    <p className="text-xs font-semibold text-slate-400">Settlement Bank</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-slate-400">Settlement Bank</p>
+                      <button
+                        type="button"
+                        onClick={handleOpenBankModal}
+                        className="text-[11px] font-bold text-[#b7004d] hover:underline cursor-pointer"
+                      >
+                        Change / Update
+                      </button>
+                    </div>
                     <h3 className="text-base font-bold text-slate-900 truncate">{withdrawBank || 'Bank Not Linked'}</h3>
                     <p className="text-[11px] text-indigo-600 font-bold">Weekly Direct IMPS</p>
                   </div>
@@ -3198,7 +3301,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('affiliate')}
+                  onClick={handleOpenBankModal}
                   className="w-full py-2.5 bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
                 >
                   {withdrawBank ? 'Update Bank Account' : 'Link Bank Account'}
@@ -3583,6 +3686,145 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
                   className="flex-1 py-2.5 rounded-2xl bg-[#b7004d] hover:bg-[#96003f] text-white font-bold text-xs shadow-md shadow-pink-500/25 cursor-pointer disabled:opacity-50"
                 >
                   Confirm Transfer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Update Settlement Bank Modal */}
+      {showBankModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-pink-50 text-[#b7004d] rounded-xl text-base">🏦</span>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Update Settlement Bank</h3>
+                  <p className="text-[11px] text-slate-500">For direct weekly IMPS margin payouts</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBankModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {bankErrorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
+                {bankErrorMsg}
+              </div>
+            )}
+            {bankSuccessMsg && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold">
+                {bankSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveBank} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Bank Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. State Bank of India, HDFC Bank"
+                  value={bankFormData.bankName}
+                  onChange={(e) => setBankFormData({ ...bankFormData, bankName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Account Holder Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Name as in bank passbook"
+                  value={bankFormData.holderName}
+                  onChange={(e) => setBankFormData({ ...bankFormData, holderName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Account Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Enter account number"
+                    value={bankFormData.accountNumber}
+                    onChange={(e) => setBankFormData({ ...bankFormData, accountNumber: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Confirm Account <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Re-enter account"
+                    value={bankFormData.confirmAccountNumber}
+                    onChange={(e) => setBankFormData({ ...bankFormData, confirmAccountNumber: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    IFSC Code <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SBIN0001234"
+                    value={bankFormData.ifscCode}
+                    onChange={(e) => setBankFormData({ ...bankFormData, ifscCode: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    UPI ID <span className="text-slate-400">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. name@upi"
+                    value={bankFormData.upiId}
+                    onChange={(e) => setBankFormData({ ...bankFormData, upiId: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#b7004d]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBankModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 cursor-pointer hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingBank}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#b7004d] to-[#d81b60] hover:from-[#9f0038] hover:to-[#c2185b] text-white font-bold text-xs shadow-md shadow-pink-500/20 cursor-pointer disabled:opacity-50 transition-all"
+                >
+                  {savingBank ? 'Saving...' : 'Save Bank Details'}
                 </button>
               </div>
             </form>
