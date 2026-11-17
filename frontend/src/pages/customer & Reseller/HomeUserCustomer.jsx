@@ -116,6 +116,48 @@ const ORIGINAL_BRAND_CATEGORIES = [
     image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Home & Kitchen',
   },
+  {
+    id: 'smart_watches',
+    name: 'Smart Watches',
+    image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Electronics & Gadgets',
+  },
+  {
+    id: 'jewellery',
+    name: 'Jewellery',
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Jewellery & Accessories',
+  },
+  {
+    id: 'kitchen_appliances',
+    name: 'Kitchen',
+    image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Home & Kitchen',
+  },
+  {
+    id: 'home_decor',
+    name: 'Home Decor',
+    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Home & Kitchen',
+  },
+  {
+    id: 'kids_wear',
+    name: 'Kids Wear',
+    image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Kids',
+  },
+  {
+    id: 'women_western',
+    name: 'Women Western',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Women Western',
+  },
+  {
+    id: 'sports_fitness',
+    name: 'Sports & Fitness',
+    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Men',
+  },
 ];
 
 const FEATURED_BRAND_LOGOS = [
@@ -223,13 +265,30 @@ export default function HomeUserCustomer() {
   };
 
   const brandCategoriesRef = useRef(null);
+  const [canScrollBrandLeft, setCanScrollBrandLeft] = useState(false);
+  const [canScrollBrandRight, setCanScrollBrandRight] = useState(true);
+
+  const checkBrandScroll = useCallback(() => {
+    if (brandCategoriesRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = brandCategoriesRef.current;
+      setCanScrollBrandLeft(scrollLeft > 20);
+      setCanScrollBrandRight(scrollLeft < scrollWidth - clientWidth - 20);
+    }
+  }, []);
 
   const scrollBrandCategories = (direction) => {
     if (brandCategoriesRef.current) {
-      brandCategoriesRef.current.scrollBy({
-        left: direction === 'left' ? -260 : 260,
-        behavior: 'smooth',
-      });
+      const { scrollLeft, scrollWidth, clientWidth } = brandCategoriesRef.current;
+      if (direction === 'right') {
+        if (scrollLeft >= scrollWidth - clientWidth - 25) {
+          // If at the end, smoothly loop back to start
+          brandCategoriesRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          brandCategoriesRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+        }
+      } else {
+        brandCategoriesRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+      }
     }
   };
 
@@ -1171,10 +1230,23 @@ export default function HomeUserCustomer() {
             </button>
           </div>
 
-          {/* 2. Original Brands Category Carousel with Next Arrow */}
+          {/* 2. Original Brands Category Carousel with Left & Right Arrows */}
           <div className="relative group">
+            {/* Left Arrow Button on carousel */}
+            {canScrollBrandLeft && (
+              <button
+                type="button"
+                onClick={() => scrollBrandCategories('left')}
+                className="absolute -left-2 sm:-left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all cursor-pointer z-10 hover:scale-105 active:scale-95"
+                aria-label="Previous categories"
+              >
+                <span className="material-symbols-outlined text-base font-bold">chevron_left</span>
+              </button>
+            )}
+
             <div
               ref={brandCategoriesRef}
+              onScroll={checkBrandScroll}
               className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
             >
               {ORIGINAL_BRAND_CATEGORIES.map((cat) => (
@@ -1208,10 +1280,10 @@ export default function HomeUserCustomer() {
             <button
               type="button"
               onClick={() => scrollBrandCategories('right')}
-              className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all cursor-pointer z-10"
+              className="absolute -right-2 sm:-right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all cursor-pointer z-10 hover:scale-105 active:scale-95"
               aria-label="Next categories"
             >
-              <span className="material-symbols-outlined text-base">chevron_right</span>
+              <span className="material-symbols-outlined text-base font-bold">chevron_right</span>
             </button>
           </div>
 
