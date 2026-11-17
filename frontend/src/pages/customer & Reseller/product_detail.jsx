@@ -220,7 +220,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [hasUserReviewed, setHasUserReviewed] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showLicensingModal, setShowLicensingModal] = useState(false);
 
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
@@ -1134,16 +1133,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <span className="material-symbols-outlined text-sm">schedule</span>
                     Easy 7 Days Return / Exchange
                   </span>
-                  <span className="text-slate-300">•</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowLicensingModal(true)}
-                    className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2 py-0.5 rounded-full cursor-pointer transition-colors shadow-2xs text-[11px]"
-                    title="View Image Ownership & Licensing Policy"
-                  >
-                    <span className="material-symbols-outlined text-sm text-emerald-600">verified</span>
-                    <span>100% Licensed &amp; Verified Imagery</span>
-                  </button>
                 </div>
               </div>
 
@@ -2456,91 +2445,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               )}
             </div>
           )}
-        </div>
-      )}
-      {/* Image Ownership & Licensing Policy Modal */}
-      {showLicensingModal && (
-        <div
-          onClick={() => setShowLicensingModal(false)}
-          className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in select-none"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-600 text-2xl">verified_user</span>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                    Image Ownership &amp; Licensing Policy
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">MShoppy Sovereign Media &amp; IP Standards</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowLicensingModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center cursor-pointer transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-1">
-                <p className="font-bold text-emerald-950 flex items-center gap-1.5 text-xs">
-                  <span>☁️</span> Self-Hosted &amp; Independent Infrastructure
-                </p>
-                <p className="text-emerald-800 text-[11px]">
-                  All catalog imagery and media representations displayed on MShoppy are securely hosted on MShoppy's sovereign cloud storage infrastructure (Supabase Storage), avoiding any third-party hotlinking or external dependencies.
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                  <div>
-                    <strong className="text-slate-800">Commercial Royalty-Free Licenses:</strong>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Visual catalog assets are sourced from verified royalty-free commercial photography (CC0, Unsplash &amp; Pexels Commercial Terms) or authentic supplier-authorized shoots.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                  <div>
-                    <strong className="text-slate-800">AI-Assisted &amp; Proprietary Imagery:</strong>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Where applicable, high-fidelity AI-generated product photography is utilized to represent apparel, fit, and accessories accurately without infringing on third-party trademarks.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                  <div>
-                    <strong className="text-slate-800">Reseller &amp; Customer Fair Usage:</strong>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Registered MShoppy resellers and customers are granted full commercial rights to showcase, download, and share these product images across social networks (WhatsApp, Instagram, Facebook) for commerce.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Compliance: Intellectual Property &amp; Copyright Guidelines</span>
-                <button
-                  type="button"
-                  onClick={() => setShowLicensingModal(false)}
-                  className="px-4 py-2 bg-[#b90041] hover:bg-[#990035] text-white font-bold rounded-xl text-xs transition cursor-pointer"
-                >
-                  Understood
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
