@@ -34,6 +34,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import OrderPrintSlipModal from '../../components/admin/orders/OrderPrintSlipModal';
+import SupplierPickupManifestModal from '../../components/supplier/orders/SupplierPickupManifestModal';
 import {
   playOrderChime,
   playTestChime,
@@ -72,6 +73,7 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
   // Selected Order for Detail Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
+  const [manifestModalOpen, setManifestModalOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Real-Time Radar & Sound Chime Alert States
@@ -317,6 +319,18 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
     }
   };
 
+  // Batch Handover Handler (Marks all ready orders in manifest as SHIPPED)
+  const handleBatchHandover = async (orderIds = []) => {
+    try {
+      await Promise.all(
+        orderIds.map((id) => supplierApiService.updateOrderStatus(id, 'SHIPPED').catch(() => {}))
+      );
+      loadOrders(true);
+    } catch (err) {
+      console.warn('Batch handover error:', err);
+    }
+  };
+
   // Filter orders dynamically
   const filteredOrders = orders.filter((order) => {
     const status = (order.orderStatus || order.status || '').toUpperCase();
@@ -443,6 +457,17 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
             >
               <Download className="w-4 h-4 text-indigo-600" />
               <span className="hidden sm:inline">Export CSV</span>
+            </button>
+
+            {/* Logistics Pickup Manifest (Step 4 Handover) */}
+            <button
+              type="button"
+              onClick={() => setManifestModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 font-bold text-xs transition active:scale-95 cursor-pointer shadow-2xs"
+              title="Generate and print logistics courier pickup manifest handover sheet"
+            >
+              <Truck className="w-4 h-4 text-emerald-600" />
+              <span>Pickup Manifest</span>
             </button>
 
             {/* Manual Sync Button */}
@@ -846,13 +871,22 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
           </div>
         )}
 
-        {/* Printable Shipping Label & Barcode Modal */}
+        {/* Printable Shipping Label & Barcode Modal (Step 3) */}
         {printOrder && (
           <OrderPrintSlipModal
             order={printOrder}
             onClose={() => setPrintOrder(null)}
           />
         )}
+
+        {/* Logistics Pickup Manifest Handover Modal (Step 4) */}
+        <SupplierPickupManifestModal
+          isOpen={manifestModalOpen}
+          onClose={() => setManifestModalOpen(false)}
+          orders={orders}
+          supplierProfile={profile}
+          onConfirmHandover={handleBatchHandover}
+        />
       </div>
   );
 
