@@ -61,6 +61,13 @@ const customerNavSections = [
       { name: "Help Center", path: "/support-center", icon: "support_agent" },
       { name: "Raise a Ticket", path: "/raise-ticket", icon: "confirmation_number" },
     ]
+  },
+  {
+    title: "Partner & Earn Programs",
+    items: [
+      { name: "Become a Supplier", path: "/supplier", icon: "storefront", badge: "0% Comm" },
+      { name: "Join as Dropshipper", path: "/dropshipper-register", icon: "hub", badge: "High Margin" },
+    ]
   }
 ];
 

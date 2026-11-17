@@ -111,11 +111,17 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   // ==========================================
   // --- REGISTRATION STATE & LOGIC ---
   // ==========================================
-  const [regData, setRegData] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    password: '',
+  const [regData, setRegData] = useState(() => {
+    let prefillPhone = '';
+    try {
+      prefillPhone = sessionStorage.getItem('mshoppy_supplier_prefill_phone') || '';
+    } catch (_) {}
+    return {
+      fullName: '',
+      phone: prefillPhone,
+      email: '',
+      password: '',
+    };
   });
 
   const [agreeTerms, setAgreeTerms] = useState(true);
@@ -260,11 +266,10 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
             <button
               type="button"
               onClick={() => handleTabToggle('login')}
-              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${
-                activeTab === 'login'
-                  ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
-                  : 'text-[#6e3950] hover:text-[#d82a62]'
-              }`}
+              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${activeTab === 'login'
+                ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
+                : 'text-[#6e3950] hover:text-[#d82a62]'
+                }`}
             >
               Login
             </button>
@@ -272,11 +277,10 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
             <button
               type="button"
               onClick={() => handleTabToggle('register')}
-              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${
-                activeTab === 'register'
-                  ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
-                  : 'text-[#6e3950] hover:text-[#d82a62]'
-              }`}
+              className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all cursor-pointer text-center ${activeTab === 'register'
+                ? 'bg-gradient-to-r from-[#d82a62] to-[#eb3678] text-white shadow-md shadow-pink-600/30'
+                : 'text-[#6e3950] hover:text-[#d82a62]'
+                }`}
             >
               Register
             </button>
@@ -374,7 +378,7 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
           {/* ============================================================ */}
           {activeTab === 'register' && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4 animate-in fade-in duration-200">
-              
+
               {/* Full Name */}
               <div className="space-y-1.5">
                 <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">

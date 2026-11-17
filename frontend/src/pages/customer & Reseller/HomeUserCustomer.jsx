@@ -1115,6 +1115,29 @@ export default function HomeUserCustomer() {
             )}
           </div>
 
+          {/* Partner & Merchant Program CTAs (Meesho Style) */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigate('/supplier')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#b7004d] hover:bg-pink-50 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 transition-all cursor-pointer active:scale-95"
+              title="Sell Online at 0% Commission on MShoppy"
+            >
+              <span className="material-symbols-outlined text-[17px] text-[#b7004d]">storefront</span>
+              <span>Become a Supplier</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/dropshipper-register')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 transition-all cursor-pointer active:scale-95"
+              title="Resell products with zero investment and earn margins"
+            >
+              <span className="material-symbols-outlined text-[17px] text-indigo-600">hub</span>
+              <span>Join as Dropshipper</span>
+            </button>
+          </div>
+
           {/* Action Icons */}
           <div className="flex items-center gap-0.5 sm:gap-2.5 shrink-0">
             <button 
