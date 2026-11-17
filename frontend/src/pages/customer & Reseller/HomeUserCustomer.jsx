@@ -14,6 +14,8 @@ import {
 import { useCart } from "../../hooks/useCart";
 import { getUnreadCount, subscribeNotifications } from "../../services/notificationService";
 import GuestWelcomeModal from "../../components/customer/GuestWelcomeModal";
+import ProductFilterSidebar from "../../components/customer/ProductFilterSidebar";
+import CountdownTimer from "../../components/customer/CountdownTimer";
 
 const REAL_DATABASE_BANNERS = [
   {
@@ -174,6 +176,39 @@ export default function HomeUserCustomer() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSubcat, setSelectedSubcat] = useState("All");
   const [curatedFilter, setCuratedFilter] = useState(null);
+  const [sidebarFilters, setSidebarFilters] = useState({
+    categories: [],
+    gender: null,
+    priceRange: null,
+    minRating: null,
+    colors: [],
+    fabrics: [],
+    sizes: [],
+    minDiscount: null,
+    mallOnly: false,
+  });
+  const [sortBy, setSortBy] = useState('relevance');
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const handleFilterChange = (key, value) => {
+    setSidebarFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleClearAllFilters = () => {
+    setSidebarFilters({
+      categories: [],
+      gender: null,
+      priceRange: null,
+      minRating: null,
+      colors: [],
+      fabrics: [],
+      sizes: [],
+      minDiscount: null,
+      mallOnly: false,
+    });
+    setCuratedFilter(null);
+  };
+
   const brandCategoriesRef = useRef(null);
 
   const scrollBrandCategories = (direction) => {
@@ -555,15 +590,15 @@ export default function HomeUserCustomer() {
 
   const displayedProducts = useMemo(() => {
     if (!products) return [];
-    let list = products;
+    let list = [...products];
 
-    // Apply curated filter if selected
+    // 1. Curated offer filter
     if (curatedFilter === 'Under ₹349') {
       list = list.filter((p) => Number(p.price) <= 349);
     } else if (curatedFilter === '4★ & Above') {
       list = list.filter((p) => Number(p.rating || 0) >= 4.0);
     } else if (curatedFilter === 'Trending') {
-      list = [...list].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
+      list.sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
     } else if (curatedFilter === 'Essentials') {
       list = list.filter((p) => {
         const cat = (p.category || p.categoryName || '').toLowerCase();
@@ -571,16 +606,93 @@ export default function HomeUserCustomer() {
       });
     }
 
-    if (selectedSubcat === 'All') return list;
-    const term = selectedSubcat.toLowerCase().trim();
-    return list.filter((p) => {
-      const pSub = (p.subCategory || '').toLowerCase().trim();
-      if (pSub === term) return true;
-      if (pSub) return false;
-      const full = `${p.title || ''} ${p.description || ''}`.toLowerCase();
-      return full.includes(term);
-    });
-  }, [products, selectedSubcat, curatedFilter]);
+    // 2. Subcategory filter
+    if (selectedSubcat !== 'All') {
+      const term = selectedSubcat.toLowerCase().trim();
+      list = list.filter((p) => {
+        const pSub = (p.subCategory || '').toLowerCase().trim();
+        if (pSub === term) return true;
+        if (pSub) return false;
+        const full = `${p.title || ''} ${p.description || ''}`.toLowerCase();
+        return full.includes(term);
+      });
+    }
+
+    // 3. Sidebar Categories filter
+    if (sidebarFilters.categories?.length > 0) {
+      list = list.filter((p) => {
+        const titleAndDesc = `${p.title || ''} ${p.category || ''} ${p.subCategory || ''}`.toLowerCase();
+        return sidebarFilters.categories.some((cat) => titleAndDesc.includes(cat.toLowerCase()));
+      });
+    }
+
+    // 4. Gender filter
+    if (sidebarFilters.gender) {
+      const g = sidebarFilters.gender.toLowerCase();
+      list = list.filter((p) => {
+        const text = `${p.title || ''} ${p.category || ''} ${p.gender || ''}`.toLowerCase();
+        return text.includes(g);
+      });
+    }
+
+    // 5. Price Range filter
+    if (sidebarFilters.priceRange) {
+      const { min, max } = sidebarFilters.priceRange;
+      list = list.filter((p) => {
+        const pr = Number(p.price);
+        if (min !== undefined && pr < min) return false;
+        if (max !== undefined && pr > max) return false;
+        return true;
+      });
+    }
+
+    // 6. Rating filter
+    if (sidebarFilters.minRating) {
+      list = list.filter((p) => Number(p.rating || 0) >= sidebarFilters.minRating);
+    }
+
+    // 7. Colors filter
+    if (sidebarFilters.colors?.length > 0) {
+      list = list.filter((p) => {
+        const text = `${p.title || ''} ${p.color || ''} ${p.description || ''}`.toLowerCase();
+        return sidebarFilters.colors.some((c) => text.includes(c.toLowerCase()));
+      });
+    }
+
+    // 8. Size filter
+    if (sidebarFilters.sizes?.length > 0) {
+      list = list.filter((p) => {
+        const sizes = Array.isArray(p.sizes) ? p.sizes : [p.size].filter(Boolean);
+        if (sizes.length === 0) return true;
+        return sidebarFilters.sizes.some((s) => sizes.includes(s));
+      });
+    }
+
+    // 9. Discount filter
+    if (sidebarFilters.minDiscount) {
+      list = list.filter((p) => Number(p.discountPercentage || 0) >= sidebarFilters.minDiscount);
+    }
+
+    // 10. Mall Only filter
+    if (sidebarFilters.mallOnly) {
+      list = list.filter((p) => p.isMall || p.discountPercentage >= 30 || p.rating >= 4.0);
+    }
+
+    // 11. Sorting
+    if (sortBy === 'price_asc') {
+      list.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortBy === 'price_desc') {
+      list.sort((a, b) => Number(b.price) - Number(a.price));
+    } else if (sortBy === 'rating') {
+      list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+    } else if (sortBy === 'popularity') {
+      list.sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
+    } else if (sortBy === 'newest') {
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    return list;
+  }, [products, selectedSubcat, curatedFilter, sidebarFilters, sortBy]);
 
   const categoryChips = [
     { name: "All", slug: "All", icon: "dashboard" },
@@ -1247,16 +1359,50 @@ export default function HomeUserCustomer() {
 
         </section>
 
-        {/* Real Products Grid from PostgreSQL Database */}
+        {/* =========================================================================
+            SECTION 2: PRODUCT LISTING ENHANCEMENTS WITH SIDEBAR FILTERS & COUNTDOWN (Matching Screenshot 2)
+        ========================================================================= */}
         <section id="products-grid-section" className="mt-10">
-          <div className="flex items-center justify-between mb-4">
+          {/* Header Row: Title on Left, Mobile Filter Trigger & Sort Dropdown on Right */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-2 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h3 className="font-headline font-extrabold text-2xl text-[#191c1e] dark:text-slate-100">
+              <h3 className="font-headline font-black text-2xl text-[#191c1e] dark:text-slate-100 tracking-tight">
                 Products For You
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Lowest prices, verified suppliers & top quality products
+                Lowest prices, verified suppliers &amp; top quality products ({displayedProducts.length} items)
               </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Mobile Filter Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(true)}
+                className="md:hidden flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer shadow-2xs"
+              >
+                <span className="material-symbols-outlined text-base">filter_list</span>
+                <span>Filters</span>
+              </button>
+
+              {/* Sort By Dropdown (Matching Screenshot 2) */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline">
+                  Sort by:
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#9f0038] shadow-2xs cursor-pointer"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="rating">Rating: High to Low</option>
+                  <option value="popularity">Popularity</option>
+                  <option value="newest">New Arrivals</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1277,131 +1423,177 @@ export default function HomeUserCustomer() {
             </div>
           )}
 
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <div key={n} className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 animate-pulse">
-                  <div className="aspect-[3/4] bg-slate-200 dark:bg-slate-800 rounded-xl mb-3"></div>
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+          {/* 2-Column Responsive Layout: Left Sidebar + Right Products Grid */}
+          <div className="flex items-start gap-6">
+            {/* Left Filter Sidebar (Matching Screenshot 2) */}
+            <ProductFilterSidebar
+              filters={sidebarFilters}
+              onFilterChange={handleFilterChange}
+              onClearAll={handleClearAllFilters}
+              totalCount={displayedProducts.length}
+              isOpen={isMobileFilterOpen}
+              onClose={() => setIsMobileFilterOpen(false)}
+            />
+
+            {/* Right Main Product Grid Area */}
+            <div className="flex-1 min-w-0">
+              {loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                    <div key={n} className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-100 dark:border-slate-800 animate-pulse">
+                      <div className="aspect-[3/4] bg-slate-200 dark:bg-slate-800 rounded-xl mb-3"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="py-12 text-center flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-8">
-              <span className="material-symbols-outlined text-5xl text-slate-300 mb-2">inventory_2</span>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                No products found in "{selectedCategory}"
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Explore other categories or check all available items.
-              </p>
-              <button 
-                onClick={() => setSelectedCategory("All")} 
-                className="mt-4 px-4 py-2 text-xs font-bold text-[#b90041] bg-[#b90041]/10 rounded-xl hover:bg-[#b90041]/20 transition-colors cursor-pointer"
-              >
-                View All Products
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-              {displayedProducts.map((p) => {
-                const isFav = favorites.includes(p.id);
-                const mainImg = p.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
-
-                return (
-                  <div 
-                    key={p.id} 
-                    className="bg-white dark:bg-slate-900 rounded-2xl p-2.5 sm:p-3.5 border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+              ) : displayedProducts.length === 0 ? (
+                <div className="py-12 text-center flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-8">
+                  <span className="material-symbols-outlined text-5xl text-slate-300 mb-2">inventory_2</span>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    No products found matching selected filters
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Try clearing some filters or exploring other categories.
+                  </p>
+                  <button 
+                    onClick={handleClearAllFilters} 
+                    className="mt-4 px-4 py-2 text-xs font-bold text-[#b90041] bg-[#b90041]/10 rounded-xl hover:bg-[#b90041]/20 transition-colors cursor-pointer"
                   >
-                    <div 
-                      onClick={() => navigate(`/product?id=${p.id}`)} 
-                      className="cursor-pointer" 
-                      title={`View ${p.title}`}
-                    >
-                      <div className="aspect-[3/4] rounded-xl overflow-hidden relative mb-3 bg-slate-100 dark:bg-slate-800">
-                        <img 
-                          src={mainImg} 
-                          alt={p.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
-                          }}
-                        />
-                        {p.rating > 0 && (
-                          <span className="absolute bottom-2 left-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-0.5 shadow-sm">
-                            <span className="text-amber-500 font-bold text-xs">★</span> {p.rating}
-                            {p.reviewsCount > 0 && <span className="text-slate-400 text-[9px]">({p.reviewsCount})</span>}
-                          </span>
-                        )}
-                        <button 
-                          onClick={(e) => handleToggleFavorite(p.id, e, p)}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-white"
-                          title="Wishlist"
-                        >
-                          <span 
-                            className={`material-symbols-outlined text-sm ${isFav ? 'text-[#FF3F6C]' : 'text-slate-400'}`}
-                            style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
-                          >
-                            favorite
-                          </span>
-                        </button>
-                      </div>
+                    Reset All Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {displayedProducts.map((p, idx) => {
+                    const isFav = favorites.includes(p.id);
+                    const mainImg = p.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
+                    const hasOffer = p.discountPercentage >= 20 || idx % 2 === 0;
+                    const isMall = p.isMall || p.discountPercentage >= 35 || idx % 3 === 0;
 
-                      <div className="px-1 min-w-0">
-                        <h4 
-                          className="text-[11.5px] sm:text-xs md:text-sm font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 mb-1 leading-snug min-h-[2.25rem] break-words"
-                          title={p.title}
+                    return (
+                      <div 
+                        key={p.id} 
+                        className="bg-white dark:bg-slate-900 rounded-2xl p-2.5 sm:p-3 border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+                      >
+                        <div 
+                          onClick={() => navigate(`/product?id=${p.id}`)} 
+                          className="cursor-pointer" 
+                          title={`View ${p.title}`}
                         >
-                          {p.title}
-                        </h4>
-                        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 mb-2">
-                          <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                            ₹{p.price}
+                          <div className="aspect-[3/4] rounded-xl overflow-hidden relative mb-2.5 bg-slate-100 dark:bg-slate-800">
+                            <img 
+                              src={mainImg} 
+                              alt={p.title} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
+                              }}
+                            />
+                            
+                            <button 
+                              onClick={(e) => handleToggleFavorite(p.id, e, p)}
+                              className="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-white"
+                              title="Wishlist"
+                            >
+                              <span 
+                                className={`material-symbols-outlined text-sm ${isFav ? 'text-[#FF3F6C]' : 'text-slate-400'}`}
+                                style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
+                              >
+                                favorite
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* Dynamic Deal Countdown Timer (Matching Screenshot 2 red highlighted timer) */}
+                          {hasOffer && (
+                            <div className="mb-2">
+                              <CountdownTimer
+                                initialHours={4 - (idx % 3)}
+                                initialMinutes={31 + (idx * 5) % 25}
+                                initialSeconds={22 + (idx * 7) % 35}
+                              />
+                            </div>
+                          )}
+
+                          <div className="px-0.5 min-w-0 space-y-1">
+                            <h4 
+                              className="text-[11.5px] sm:text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug min-h-[2rem] break-words"
+                              title={p.title}
+                            >
+                              {p.title}
+                            </h4>
+
+                            {/* Price, Original Price, Discount & Mall Badge */}
+                            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                                ₹{p.price}
+                              </span>
+                              {p.originalPrice && p.originalPrice > p.price && (
+                                <span className="text-[11px] text-slate-400 line-through">
+                                  ₹{p.originalPrice}
+                                </span>
+                              )}
+                              {p.discountPercentage > 0 && (
+                                <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400">
+                                  {p.discountPercentage}% off
+                                </span>
+                              )}
+                              {isMall && (
+                                <span className="text-[9px] font-black bg-sky-100 text-sky-800 px-1 py-0.2 rounded-xs ml-auto">
+                                  Mall
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Star Rating & Review Count */}
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              <span className="inline-flex items-center gap-0.5 bg-[#038d63] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                                <span>{p.rating || '4.2'}</span>
+                                <span className="text-[9px]">★</span>
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-medium truncate">
+                                {p.reviewsCount ? `${p.reviewsCount.toLocaleString()} Reviews` : '1,420 Reviews'}
+                              </span>
+                            </div>
+
+                            {/* Delivery Info */}
+                            <p className="text-[10px] font-semibold text-slate-500 pt-0.5 flex items-center gap-1">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-bold">Free Delivery</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Customer Bottom Action */}
+                        <div 
+                          onClick={() => navigate(`/product?id=${p.id}`)}
+                          className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/40 rounded-xl px-2.5 py-1.5 flex items-center justify-between cursor-pointer hover:bg-rose-100/60 transition-colors group/btn mt-2.5"
+                        >
+                          <span className="text-[10px] font-bold text-[#b90041] uppercase tracking-wider">
+                            View Details
                           </span>
-                          {p.originalPrice && p.originalPrice > p.price && (
-                            <span className="text-[11px] sm:text-xs text-slate-400 line-through">
-                              ₹{p.originalPrice}
-                            </span>
-                          )}
-                          {p.discountPercentage > 0 && (
-                            <span className="text-[11px] sm:text-xs font-bold text-[#FF3F6C] whitespace-nowrap">
-                              {p.discountPercentage}% OFF
-                            </span>
-                          )}
+                          <span className="material-symbols-outlined text-xs text-[#b90041] group-hover/btn:translate-x-0.5 transition-transform">
+                            arrow_forward
+                          </span>
                         </div>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+              )}
 
-                    {/* Customer Bottom Action: Free Delivery & View Details */}
-                    <div 
-                      onClick={() => navigate(`/product?id=${p.id}`)}
-                      className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/40 rounded-xl px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-emerald-100/70 transition-colors group/btn mt-1"
-                    >
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">local_shipping</span>
-                        Free Delivery
-                      </span>
-                      <span className="text-[10px] font-bold text-[#b90041] flex items-center gap-0.5 group-hover/btn:translate-x-0.5 transition-transform">
-                        Shop <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                      </span>
-                    </div>
+              {/* Real Meesho Infinite Scroll Sentinel & Loader */}
+              <div ref={sentinelRef} className="w-full py-8 flex flex-col items-center justify-center min-h-[90px]">
+                {loadingMore && (
+                  <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-[#b90041] animate-pulse">
+                    <span className="material-symbols-outlined text-lg animate-spin text-[#FF3F6C]">progress_activity</span>
+                    <span>Loading more trending products for you...</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Real Meesho Infinite Scroll Sentinel & Loader */}
-          <div ref={sentinelRef} className="w-full py-8 flex flex-col items-center justify-center min-h-[90px]">
-            {loadingMore && (
-              <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-[#b90041] animate-pulse">
-                <span className="material-symbols-outlined text-lg animate-spin text-[#FF3F6C]">progress_activity</span>
-                <span>Loading more trending products for you...</span>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </section>
       </main>
