@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { auth } from '../../utils/firebase';
 import AppBottomNav from '../../components/AppBottomNav';
-import { submitReturnRequest } from '../../services/ecommerceService';
+import { submitReturnRequest, getOrderById } from '../../services/ecommerceService';
+import { uploadImageToSupabase } from '../../services/uploadService';
 import { API_V1_BASE } from '../../config/apiConfig';
 
 const RETURN_REASONS = [
@@ -48,6 +49,21 @@ export default function ReturnRequest({ onNavigate, onBack }) {
   const imageParam = searchParams.get('image') || '';
   const sizeParam = searchParams.get('size') || 'Free Size';
   const deliveredDateParam = searchParams.get('deliveredDate') || 'Recently Delivered';
+
+  const [orderData, setOrderData] = useState(null);
+
+  useEffect(() => {
+    if (orderIdParam) {
+      getOrderById(orderIdParam).then((ord) => {
+        if (ord) setOrderData(ord);
+      }).catch(() => {});
+    }
+  }, [orderIdParam]);
+
+  const displayItemName = orderData?.productName || orderData?.items?.[0]?.product?.title || (itemParam !== 'Delivered Product' ? itemParam : 'Delivered Item');
+  const displayImage = orderData?.image || orderData?.items?.[0]?.product?.images?.[0] || imageParam || '';
+  const displayPrice = orderData?.totalAmount || orderData?.price || priceParam;
+  const displaySize = orderData?.size || orderData?.items?.[0]?.size || sizeParam;
 
   // Step state (1: Mode & Reason, 2: Proof & Photos, 3: Refund/Exchange, 4: Pickup Slot, 5: Success)
   const [currentStep, setCurrentStep] = useState(() => {
@@ -157,12 +173,11 @@ export default function ReturnRequest({ onNavigate, onBack }) {
     }
   };
 
-  // Handle actual file upload from user device / gallery
-  const handleRealFileUpload = (e) => {
+  // Handle actual file upload from user device / gallery to cloud storage
+  const handleRealFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const newProofs = [];
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         showToast(`"${file.name}" is not an image! Please select JPG, PNG, or WebP images.`);
@@ -173,36 +188,56 @@ export default function ReturnRequest({ onNavigate, onBack }) {
         continue;
       }
 
+      const tempId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const localUrl = URL.createObjectURL(file);
       const sizeInKb = Math.round(file.size / 1024);
       const formattedSize = sizeInKb > 1024 ? `${(sizeInKb / 1024).toFixed(1)} MB` : `${sizeInKb} KB`;
 
-      newProofs.push({
-        id: `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      // 1. Add immediately with local preview and isUploading: true
+      const newEntry = {
+        id: tempId,
         name: file.name,
         url: localUrl,
+        localUrl,
+        remoteUrl: null,
         size: formattedSize,
-        type: proofs.length === 0 && newProofs.length === 0 ? 'Product Photo' : 'Tag / Defect Detail',
-        isLocal: true,
-      });
-    }
+        type: 'Defect Proof',
+        isUploading: true,
+        file,
+      };
+      setProofs((prev) => [...prev, newEntry]);
 
-    if (newProofs.length > 0) {
-      setProofs((prev) => [...prev, ...newProofs]);
-      showToast(`${newProofs.length} photo(s) selected from your gallery! 📸`);
+      // 2. Concurrently upload to Supabase Cloud Storage
+      try {
+        const cloudUrl = await uploadImageToSupabase(file, 'returns');
+        setProofs((prev) =>
+          prev.map((p) => (p.id === tempId ? { ...p, url: cloudUrl, remoteUrl: cloudUrl, isUploading: false } : p))
+        );
+        showToast('Photo uploaded securely to cloud! ☁️');
+      } catch (err) {
+        console.warn('Cloud upload failed, encoding as permanent Base64 data URL:', err);
+        // Fallback: convert file to Base64 data URL so it's a permanent self-contained string, NOT a dead blob URL!
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Url = reader.result;
+          setProofs((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, url: base64Url, remoteUrl: base64Url, isUploading: false } : p))
+          );
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     // Reset input so same file can be chosen again if needed
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   const handleRemovePhoto = (id) => {
     setProofs((prev) => {
       const target = prev.find((p) => p.id === id);
-      if (target && target.isLocal && target.url) {
-        URL.revokeObjectURL(target.url);
+      if (target && target.localUrl) {
+        URL.revokeObjectURL(target.localUrl);
       }
       return prev.filter((p) => p.id !== id);
     });
@@ -257,11 +292,18 @@ export default function ReturnRequest({ onNavigate, onBack }) {
       return;
     }
 
+    if (proofs.some((p) => p.isUploading)) {
+      showToast('Please wait, uploading your defect proof photos to cloud storage... ⏳');
+      return;
+    }
+
     try {
       // 1. Submit to real backend database (inserts in Prisma ReturnRequest and updates Order status)
       if (orderIdParam) {
         const imageStrings = Array.isArray(proofs)
-          ? proofs.map((p) => (typeof p === 'string' ? p : p?.url || p?.name || '')).filter(Boolean)
+          ? proofs
+              .map((p) => (typeof p === 'string' ? p : p?.remoteUrl || p?.url || ''))
+              .filter((u) => u && !u.startsWith('blob:'))
           : [];
 
         const result = await submitReturnRequest({
@@ -388,22 +430,22 @@ export default function ReturnRequest({ onNavigate, onBack }) {
         {currentStep < 5 && (
           <section className="bg-white p-3 sm:p-5 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 flex items-center gap-3 sm:gap-4">
             <img
-              src={imageParam || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&auto=format&fit=crop&q=80'}
-              alt={itemParam}
-              className="w-14 h-18 sm:w-20 sm:h-24 object-cover rounded-xl sm:rounded-2xl border border-slate-200 shrink-0"
+              src={displayImage || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'><rect width='20' height='20' x='2' y='2' rx='4'/><circle cx='8.5' cy='8.5' r='1.5'/><path d='m21 15-5-5L5 21'/></svg>"}
+              alt={displayItemName}
+              className="w-14 h-18 sm:w-20 sm:h-24 object-cover rounded-xl sm:rounded-2xl border border-slate-200 shrink-0 bg-slate-50"
               onError={(e) => {
                 e.currentTarget.onerror = null;
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400';
+                e.currentTarget.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'><rect width='20' height='20' x='2' y='2' rx='4'/><circle cx='8.5' cy='8.5' r='1.5'/><path d='m21 15-5-5L5 21'/></svg>";
               }}
             />
             <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
                 Delivered on {deliveredDateParam}
               </span>
-              <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">{itemParam}</h2>
+              <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">{displayItemName}</h2>
               <p className="text-[11px] sm:text-xs text-slate-500 leading-tight">
-                Size: <strong className="text-slate-800">{sizeParam}</strong> • Qty: <strong>1</strong> • Refund:{' '}
-                <strong className="text-[#9f0038] font-black">₹{priceParam}</strong>
+                Size: <strong className="text-slate-800">{displaySize}</strong> • Qty: <strong>1</strong> • Refund:{' '}
+                <strong className="text-[#9f0038] font-black">₹{displayPrice}</strong>
               </p>
             </div>
           </section>
@@ -680,10 +722,16 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     >
                       <div className="w-full h-32 sm:h-36 overflow-hidden bg-slate-100 relative">
                         <img src={p.url} alt={p.name} className="w-full h-full object-cover object-center" />
+                        {p.isUploading && (
+                          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white text-[11px] font-bold gap-1.5 z-10">
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Uploading to cloud...</span>
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(p.id)}
-                          className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white w-6 h-6 rounded-full shadow-md flex items-center justify-center text-xs font-black cursor-pointer transition-transform active:scale-90"
+                          className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white w-6 h-6 rounded-full shadow-md flex items-center justify-center text-xs font-black cursor-pointer transition-transform active:scale-90 z-20"
                           title="Remove Photo"
                         >
                           ✕
@@ -695,7 +743,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                         </p>
                         <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
                           <span className="text-[#9f0038] font-bold">{p.type}</span>
-                          <span>{p.size || 'Attached'}</span>
+                          <span>{p.isUploading ? 'Uploading...' : p.size || 'Attached'}</span>
                         </div>
                       </div>
                     </div>

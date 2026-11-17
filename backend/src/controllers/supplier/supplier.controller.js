@@ -1896,6 +1896,9 @@ export const getSupplierReturns = async (req, res, next) => {
           proofImages = retReq.images.split(',').map((s) => s.trim()).filter(Boolean);
         }
       }
+      proofImages = (Array.isArray(proofImages) ? proofImages : [])
+        .map((img) => (typeof img === 'string' ? img.trim() : ''))
+        .filter((img) => img && !img.startsWith('blob:'));
 
       return {
         id: retReq?.id || `ret_${item.id}`,

@@ -811,14 +811,15 @@ export const submitReturnRequest = async (req, res) => {
     const finalReason = reasonParts.join(' | ') || 'Customer Return Request';
 
     // Sanitize image URLs/filenames to pure string array (Prisma requires String[])
+    // Disallow local browser blob: URLs as they cannot be viewed across sessions/devices
     const cleanImages = Array.isArray(images)
       ? images
           .map((img) => {
-            if (typeof img === 'string') return img;
-            if (img && typeof img === 'object') return img.url || img.name || '';
+            if (typeof img === 'string') return img.trim();
+            if (img && typeof img === 'object') return (img.url || img.remoteUrl || img.name || '').trim();
             return '';
           })
-          .filter(Boolean)
+          .filter((img) => img && !img.startsWith('blob:'))
       : [];
 
     // Upsert return request in PostgreSQL database
