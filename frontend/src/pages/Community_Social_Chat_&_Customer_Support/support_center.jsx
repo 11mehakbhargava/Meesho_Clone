@@ -40,6 +40,13 @@ const FAQS = [
     answer:
       'For COD returns, once the supplier verifies the returned parcel, you will receive an instant UPI transfer or bank transfer within 24 hours to your linked account.',
   },
+  {
+    id: 'faq-5',
+    category: 'licensing',
+    question: "What is MShoppy's Product Image Ownership & Licensing Policy?",
+    answer:
+      'All product photographs and media assets on MShoppy are self-hosted on our sovereign cloud infrastructure (Supabase Storage). Visual assets are sourced under Royalty-Free Commercial Licenses (CC0 / Pexels / Unsplash Commercial Terms) or authentic supplier/AI photography. Resellers have full commercial rights to share them across social platforms without third-party copyright concerns.',
+  },
 ];
 
 

@@ -60,6 +60,7 @@ const customerNavSections = [
     items: [
       { name: "Help Center", path: "/support-center", icon: "support_agent" },
       { name: "Raise a Ticket", path: "/raise-ticket", icon: "confirmation_number" },
+      { name: "Image Ownership & IP Policy", path: "/support-center", icon: "verified_user" },
     ]
   }
 ];
