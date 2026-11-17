@@ -273,6 +273,33 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     return Math.round(effectivePrice * 1.25);
   }, [product?.originalPrice, product?.price, product?.discountPercentage, affiliateMargin, effectivePrice]);
 
+  // Parse multi-variant matrix if available (must be at top level before any conditional returns)
+  const variants = useMemo(() => {
+    if (!product?.variants) return [];
+    if (Array.isArray(product.variants)) return product.variants;
+    try {
+      return JSON.parse(product.variants);
+    } catch {
+      return [];
+    }
+  }, [product?.variants]);
+
+  // Match active variant based on selected color and size
+  const activeVariant = useMemo(() => {
+    if (!variants.length) return null;
+    let match = variants.find((v) => {
+      const vColor = (v.color || '').trim().toLowerCase();
+      const vSize = (v.size || '').trim().toLowerCase();
+      const sColor = (selectedColor || '').trim().toLowerCase();
+      const sSize = (selectedSize || '').trim().toLowerCase();
+      return vColor === sColor && vSize === sSize;
+    });
+    if (!match && selectedSize) {
+      match = variants.find((v) => (v.size || '').trim().toLowerCase() === (selectedSize || '').trim().toLowerCase());
+    }
+    return match;
+  }, [variants, selectedColor, selectedSize]);
+
   // Reseller WhatsApp Sharing & Custom Margin State (ONLY active when explicitly visiting in reseller mode from Reseller Hub)
   const isResellerMode = searchParams.get('source') === 'reseller';
   const [selectedResellerMargin, setSelectedResellerMargin] = useState(100);
@@ -747,33 +774,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     sizes.length > 0 &&
     !sizes.every((s) => s.toLowerCase().includes('pack') || s.toLowerCase().includes('ml'))
   );
-
-  // Parse multi-variant matrix if available
-  const variants = useMemo(() => {
-    if (!product?.variants) return [];
-    if (Array.isArray(product.variants)) return product.variants;
-    try {
-      return JSON.parse(product.variants);
-    } catch {
-      return [];
-    }
-  }, [product?.variants]);
-
-  // Match active variant based on selected color and size
-  const activeVariant = useMemo(() => {
-    if (!variants.length) return null;
-    let match = variants.find((v) => {
-      const vColor = (v.color || '').trim().toLowerCase();
-      const vSize = (v.size || '').trim().toLowerCase();
-      const sColor = (selectedColor || '').trim().toLowerCase();
-      const sSize = (selectedSize || '').trim().toLowerCase();
-      return vColor === sColor && vSize === sSize;
-    });
-    if (!match && selectedSize) {
-      match = variants.find((v) => (v.size || '').trim().toLowerCase() === (selectedSize || '').trim().toLowerCase());
-    }
-    return match;
-  }, [variants, selectedColor, selectedSize]);
 
   const isProductUnavailable = Boolean(
     product && (product.isDeleted === true || product.isActive === false)
