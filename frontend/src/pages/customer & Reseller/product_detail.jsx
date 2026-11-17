@@ -300,6 +300,82 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     return match;
   }, [variants, selectedColor, selectedSize]);
 
+  // Dynamic category-specific product specifications (replacing dummy clothing hardcodes)
+  const productSpecs = useMemo(() => {
+    if (!product) return [];
+    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
+    const sub = (product.subCategory || '').toLowerCase();
+
+    if (slug === 'beauty-health') {
+      return [
+        { label: 'Type / Finish', value: sub.includes('lipstick') ? 'Matte / Long-Lasting' : (product.subCategory || 'Personal Care') },
+        { label: 'Net Quantity', value: '1 Unit' },
+        { label: 'Ideal For', value: 'Men & Women' },
+        { label: 'Skin / Usage Type', value: 'All Skin Types' },
+      ];
+    }
+
+    if (slug === 'footwear') {
+      return [
+        { label: 'Material', value: product.material || 'Synthetic / Mesh' },
+        { label: 'Fastening', value: 'Slip-On / Lace-Ups' },
+        { label: 'Toe Shape', value: 'Round Toe' },
+        { label: 'Sole Material', value: 'Airmix / Rubber' },
+      ];
+    }
+
+    if (slug === 'electronics') {
+      return [
+        { label: 'Connectivity', value: 'Wireless / Bluetooth' },
+        { label: 'Compatibility', value: 'Android & iOS' },
+        { label: 'Warranty', value: '6 Months Brand Warranty' },
+        { label: 'Net Quantity', value: '1 Unit' },
+      ];
+    }
+
+    if (slug === 'jewellery' || slug === 'accessories') {
+      return [
+        { label: 'Base Metal', value: 'Alloy / Brass' },
+        { label: 'Plating', value: 'Gold / Silver Plated' },
+        { label: 'Occasion', value: 'Ethnic / Festive / Daily' },
+        { label: 'Trend', value: 'Handcrafted Designer' },
+      ];
+    }
+
+    if (slug === 'home-kitchen') {
+      return [
+        { label: 'Material', value: product.material || 'Cotton / Microfiber' },
+        { label: 'Pattern', value: 'Printed / Geometric / Solid' },
+        { label: 'Care', value: 'Machine Wash / Wipe Clean' },
+        { label: 'Country of Origin', value: 'India' },
+      ];
+    }
+
+    // Default Clothing (women-ethnic, women-western, men, kids)
+    return [
+      { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
+      { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
+      { label: 'Pattern', value: 'Embroidered / Printed / Solid' },
+      { label: 'Stitch Type', value: product.stitchType || 'Stitched' },
+    ];
+  }, [product, selectedColor]);
+
+  const packageContains = useMemo(() => {
+    if (!product) return '1 Unit';
+    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
+    const titleLower = (product.title || '').toLowerCase();
+    if (slug === 'beauty-health') return `1 x ${product.title}`;
+    if (slug === 'footwear') return '1 Pair of Footwear';
+    if (slug === 'electronics') return '1 Device, Charging Cable, User Manual';
+    if (slug === 'jewellery') return '1 Jewellery Set / Piece';
+    if (slug === 'home-kitchen') return `1 x ${product.title}`;
+    if (slug.includes('ethnic')) {
+      if (titleLower.includes('saree')) return '1 Saree with Unstitched Blouse Piece';
+      if (titleLower.includes('kurta') || titleLower.includes('kurti')) return '1 Kurti / Kurta Set';
+    }
+    return `1 x ${product.title}`;
+  }, [product]);
+
   // Reseller WhatsApp Sharing & Custom Margin State (ONLY active when explicitly visiting in reseller mode from Reseller Hub)
   const isResellerMode = searchParams.get('source') === 'reseller';
   const [selectedResellerMargin, setSelectedResellerMargin] = useState(100);
@@ -408,9 +484,16 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [copiedHighlights, setCopiedHighlights] = useState(false);
 
   const handleCopyHighlights = () => {
-    const text = `Product: ${product?.title}\nPrice: ₹${effectivePrice}\nFabric: ${product?.fabric || 'Khadi Cotton'}\nColor: ${selectedColor || product?.color || 'Cream'}\nStitch Type: ${product?.stitchType || 'Stitched'}`;
+    if (!product) return;
+    const lines = [
+      `Product: ${product.title}`,
+      `Price: ₹${effectivePrice}`,
+      ...productSpecs.map((s) => `${s.label}: ${s.value}`),
+      `Package Contains: ${packageContains}`,
+      `Country of Origin: India`
+    ];
     try {
-      navigator.clipboard?.writeText(text);
+      navigator.clipboard?.writeText(lines.join('\n'));
     } catch (_) {}
     setCopiedHighlights(true);
     setTimeout(() => setCopiedHighlights(false), 2500);
@@ -1601,22 +1684,12 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 text-xs">
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Bottomwear Fabric</span>
-                    <strong className="text-slate-800 font-bold">{product.fabric || product.material || 'Khadi Cotton'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Kurta Color</span>
-                    <strong className="text-slate-800 font-bold">{selectedColor || product.color || 'Cream'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Stitch Type</span>
-                    <strong className="text-slate-800 font-bold">{product.stitchType || 'Stitched'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 text-[11px] block">Bottomwear Color</span>
-                    <strong className="text-slate-800 font-bold">{selectedColor || 'Cream'}</strong>
-                  </div>
+                  {productSpecs.map((spec, i) => (
+                    <div key={i}>
+                      <span className="text-slate-400 text-[11px] block">{spec.label}</span>
+                      <strong className="text-slate-800 font-bold">{spec.value}</strong>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="pt-1">
@@ -1633,8 +1706,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
                   {showAdditionalDetails && (
                     <div className="mt-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs text-slate-600 space-y-1.5 animate-in fade-in">
-                      <p><strong>Package Contains:</strong> 1 Kurta, 1 Pant, 1 Dupatta</p>
-                      <p><strong>Care Instructions:</strong> Hand Wash / Gentle Machine Wash</p>
+                      <p><strong>Package Contains:</strong> {packageContains}</p>
+                      <p><strong>Supplier:</strong> {product.supplierName || 'Verified Supplier'}</p>
                       <p><strong>Country of Origin:</strong> India</p>
                       {product.description && (
                         <p className="pt-1 border-t border-slate-200/80 text-[11.5px] leading-relaxed">
