@@ -370,7 +370,7 @@ export const getProductById = async (req, res) => {
     let supplierStats = {
       productCount: 1,
       rating: product.rating || 4.2,
-      totalRatings: product.reviewsCount || 150,
+      totalRatings: product.reviewsCount || 0,
       isVerified: true
     };
 
@@ -390,7 +390,7 @@ export const getProductById = async (req, res) => {
         supplierStats = {
           productCount: supCount || 1,
           rating: Number(supAgg._avg.rating ? supAgg._avg.rating.toFixed(1) : (product.rating || 4.2)),
-          totalRatings: Number(supAgg._sum.reviewsCount || (product.reviewsCount ? product.reviewsCount * 3 : 240)),
+          totalRatings: Number(supAgg._sum.reviewsCount !== null && supAgg._sum.reviewsCount !== undefined ? supAgg._sum.reviewsCount : (product.reviewsCount || 0)),
           isVerified: true
         };
       } catch (e) {

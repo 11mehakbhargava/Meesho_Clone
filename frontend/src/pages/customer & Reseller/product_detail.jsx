@@ -1863,7 +1863,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         <span>★</span>
                       </span>
                       <span className="text-slate-500 font-semibold">
-                        {(product.supplierStats?.totalRatings || (product.reviewsCount ? product.reviewsCount * 3 : 240)).toLocaleString()} Ratings
+                        {((product.supplierStats?.totalRatings !== undefined && product.supplierStats?.totalRatings !== null) ? Number(product.supplierStats.totalRatings) : (product.reviewsCount || 0)).toLocaleString()} Ratings
                       </span>
                     </div>
                     <div className="text-slate-300">•</div>

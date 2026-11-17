@@ -161,7 +161,9 @@ export async function getProductById(id) {
   if (!id) return null;
   const cacheKey = `prod_${id}`;
   const cached = getCachedData(cacheKey);
-  if (cached) {
+
+  // If we already have cached product with full supplierStats, return immediately & revalidate in background
+  if (cached && cached.supplierStats) {
     fetch(`${API_BASE_URL}/products/${id}`)
       .then(r => r.json())
       .then(data => { if (data?.data) setCachedData(cacheKey, data.data); })
@@ -169,28 +171,17 @@ export async function getProductById(id) {
     return cached;
   }
 
-  // Pre-search within already loaded products memory cache for instant render (< 1ms)
-  for (const [k, val] of apiMemoryCache.entries()) {
-    if (k.startsWith('prods_')) {
-      const items = Array.isArray(val?.data) ? val.data : (val?.data?.products || []);
-      const match = items.find(p => p.id === id);
-      if (match) {
-        setCachedData(cacheKey, match);
-        return match;
-      }
-    }
-  }
-
   try {
     const res = await fetch(`${API_BASE_URL}/products/${id}`);
     const data = await res.json();
     if (data?.data) {
       setCachedData(cacheKey, data.data);
+      return data.data;
     }
-    return data?.data || null;
+    return cached || null;
   } catch (error) {
     console.error(`Failed to fetch product ${id}:`, error);
-    return null;
+    return cached || null;
   }
 }
 
