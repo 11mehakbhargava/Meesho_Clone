@@ -189,6 +189,7 @@ export default function HomeUserCustomer() {
   });
   const [sortBy, setSortBy] = useState('relevance');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [showAppDownloadModal, setShowAppDownloadModal] = useState(false);
 
   const handleFilterChange = (key, value) => {
     setSidebarFilters((prev) => ({ ...prev, [key]: value }));
@@ -1264,7 +1265,7 @@ export default function HomeUserCustomer() {
               <div className="pt-4 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => setShowGuestModal(true)}
+                  onClick={() => setShowAppDownloadModal(true)}
                   className="bg-white hover:bg-slate-50 text-slate-900 px-5 py-2.5 rounded-full font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   Download Now
@@ -1608,6 +1609,58 @@ export default function HomeUserCustomer() {
         onContinueAsGuest={handleContinueAsGuest}
         onLogin={handleModalLogin}
       />
+
+      {/* App Download Modal for 35% OFF First Order */}
+      {showAppDownloadModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center space-y-4 shadow-2xl relative border border-slate-100 dark:border-slate-800 animate-in zoom-in-95">
+            <button
+              type="button"
+              onClick={() => setShowAppDownloadModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
+              📱
+            </div>
+
+            <div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full">
+                App Exclusive Offer
+              </span>
+              <h4 className="text-xl font-black text-slate-900 dark:text-white mt-2">
+                Download MShoppy App
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Get flat <strong>35% OFF on your first order</strong>, daily flash deals &amp; free doorstep delivery!
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              <a
+                href="https://play.google.com/store/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+              >
+                <span className="text-base">🤖</span>
+                <span>Get it on Google Play</span>
+              </a>
+              <a
+                href="https://www.apple.com/app-store/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <span className="text-base">🍎</span>
+                <span>Download on App Store</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
