@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { QRCodeSVG } from 'qrcode.react';
 import { getStoredCustomer, subscribeCustomerAuth } from '../../services/customerAuthService';
 import NavDrawer from "../../components/NavDrawer";
 import AppBottomNav from "../../components/AppBottomNav";
@@ -1610,53 +1611,78 @@ export default function HomeUserCustomer() {
         onLogin={handleModalLogin}
       />
 
-      {/* App Download Modal for 35% OFF First Order */}
+      {/* App Download Modal for 35% OFF First Order with QR Code (Matching Meesho Web) */}
       {showAppDownloadModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center space-y-4 shadow-2xl relative border border-slate-100 dark:border-slate-800 animate-in zoom-in-95">
             <button
               type="button"
               onClick={() => setShowAppDownloadModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white flex items-center justify-center font-bold text-sm cursor-pointer transition-colors"
+              aria-label="Close"
             >
               ✕
             </button>
 
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center text-3xl mx-auto shadow-xs">
-              📱
-            </div>
-
             <div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full">
-                App Exclusive Offer
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#b90041] bg-rose-50 dark:bg-rose-950/40 border border-rose-200/50 px-3 py-1 rounded-full">
+                App Exclusive • 35% OFF
               </span>
-              <h4 className="text-xl font-black text-slate-900 dark:text-white mt-2">
+              <h4 className="text-xl font-black text-slate-900 dark:text-white mt-3">
                 Download MShoppy App
               </h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Get flat <strong>35% OFF on your first order</strong>, daily flash deals &amp; free doorstep delivery!
+                Scan the QR code with your phone camera to download the app &amp; get flat <strong>35% OFF</strong> on your first order!
               </p>
             </div>
 
-            <div className="flex flex-col gap-2.5 pt-2">
-              <a
-                href="https://play.google.com/store/apps"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
-              >
-                <span className="text-base">🤖</span>
-                <span>Get it on Google Play</span>
-              </a>
-              <a
-                href="https://www.apple.com/app-store/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <span className="text-base">🍎</span>
-                <span>Download on App Store</span>
-              </a>
+            {/* Meesho-style QR Code Box */}
+            <div className="bg-gradient-to-br from-rose-50/60 via-white to-amber-50/60 dark:from-slate-800 dark:to-slate-800 p-4 rounded-2xl border-2 border-dashed border-rose-300 dark:border-slate-700 mx-auto inline-block shadow-inner">
+              <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200/80 inline-block">
+                <QRCodeSVG
+                  value="https://play.google.com/store/apps"
+                  size={156}
+                  bgColor="#ffffff"
+                  fgColor="#0f172a"
+                  level="Q"
+                  includeMargin={false}
+                />
+              </div>
+              <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#b90041] dark:text-rose-400">
+                <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                <span>Scan with Phone Camera</span>
+              </div>
+            </div>
+
+            {/* Direct Store Download Badges */}
+            <div className="pt-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Available on Google Play &amp; App Store
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href="https://play.google.com/store/apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M3.609 1.814L13.793 12 3.61 22.186a2.38 2.38 0 0 1-.61-.958V2.772c.162-.38.384-.71.61-.958zm11.242 11.244l2.42-2.42-12.7-7.24 10.28 9.66zm0 1.884l-10.28 9.66 12.7-7.24-2.42-2.42zm1.488-1.487l3.87 2.21c1.05.6 1.05 1.58 0 2.18l-3.87 2.21-2.07-2.07 2.07-2.53z"/>
+                  </svg>
+                  <span className="truncate">Google Play</span>
+                </a>
+                <a
+                  href="https://www.apple.com/app-store/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.43c.66-.82 1.11-1.96.99-3.1-.96.04-2.12.64-2.8 1.44-.61.71-1.14 1.88-1 2.99 1.07.08 2.16-.54 2.81-1.33z"/>
+                  </svg>
+                  <span className="truncate">App Store</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
