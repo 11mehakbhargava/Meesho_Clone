@@ -252,6 +252,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [hasUserReviewed, setHasUserReviewed] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPriceDetailsPopup, setShowPriceDetailsPopup] = useState(false);
 
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
@@ -1131,8 +1132,61 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                   <span className="text-2xl sm:text-3xl font-black text-slate-900">
                     ₹{effectivePrice}
                   </span>
-                  <span className="text-xs text-slate-500 font-bold">onwards</span>
-                  <span className="text-xs text-slate-400 cursor-pointer" title="Price inclusive of all taxes">ⓘ</span>
+
+                  {/* Info Icon with Exact Meesho PRICE DETAILS Popover */}
+                  <div className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowPriceDetailsPopup((prev) => !prev)}
+                      className="w-4 h-4 rounded-full border border-slate-300 text-slate-500 hover:text-slate-800 hover:border-slate-500 flex items-center justify-center text-[11px] font-serif cursor-pointer transition-colors select-none"
+                      aria-label="Price Details"
+                      title="View price details"
+                    >
+                      ⓘ
+                    </button>
+
+                    {showPriceDetailsPopup && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowPriceDetailsPopup(false)}
+                        />
+                        <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-2xl border border-slate-200/90 p-4 z-50 text-left animate-in fade-in zoom-in-95">
+                          <div className="hidden sm:block absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45" />
+
+                          <h5 className="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-3">
+                            PRICE DETAILS
+                          </h5>
+
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between items-center text-slate-600">
+                              <span>Maximum Retail Price (MRP)</span>
+                              <span className="font-semibold text-slate-800">
+                                ₹{product.originalPrice || Math.round(effectivePrice * 1.6)}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-slate-600">
+                              <span>Product Price</span>
+                              <span className="font-semibold text-slate-800">₹{effectivePrice}</span>
+                            </div>
+
+                            <div className="border-t border-slate-200 pt-2 flex justify-between items-center font-bold text-slate-900 text-sm">
+                              <span>Final Price</span>
+                              <span>₹{effectivePrice}</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[10.5px] text-slate-400 leading-relaxed space-y-1">
+                            <p>Prices are inclusive of all taxes.</p>
+                            <p>
+                              The MRP and the Product Price has been set by the supplier. Product price may additionally include applicable charges.
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   {product.originalPrice && (product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)) > effectivePrice && (
                     <span className="text-sm sm:text-base text-slate-400 line-through ml-1">
                       ₹{product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)}
