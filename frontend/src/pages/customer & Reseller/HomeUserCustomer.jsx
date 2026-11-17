@@ -740,37 +740,115 @@ export default function HomeUserCustomer() {
       });
     }
 
-    // 3. Sidebar Categories filter with intelligent keyword & stem resolver
+    // 3. Sidebar Categories filter with intelligent category rules & negative exclusions
     if (sidebarFilters.categories?.length > 0) {
-      const KEYWORD_MAP = {
-        'perfumes': ['perfume', 'edp', 'fragrance', 'body mist', 'deodorant', 'attar', 'cologne'],
-        'lipsticks': ['lipstick', 'lip', 'matte', 'crayon'],
-        'handbags': ['handbag', 'bag', 'tote', 'sling', 'clutch', 'backpack', 'purse'],
-        'footwear': ['shoe', 'chappal', 'sandal', 'loafer', 'sneaker', 'clog', 'flat', 'heel', 'footwear', 'boots', 'slippers'],
-        'audio & earbuds': ['earbud', 'headphone', 'tws', 'audio', 'speaker', 'bluetooth', 'earphone', 'neckband'],
-        'earrings & studs': ['earring', 'stud', 'jhumka', 'jhumki', 'bali'],
-        'dresses': ['dress', 'midi', 'maxi', 'frock', 'gown'],
-        'women tshirts': ['tshirt', 't-shirt', 'tee'],
-        'women tops and tunics': ['top', 'tunic', 'crop top'],
-        'sarees': ['saree', 'sari'],
-        'kurtis': ['kurti', 'kurta'],
-        'analog watches': ['watch', 'analog'],
-        'bedsheets': ['bedsheet', 'sheet', 'bed'],
-        'hair oil': ['oil', 'hair'],
-        'fridge covers': ['cover', 'fridge'],
-        'appliance covers': ['cover', 'appliance'],
-        'caps & hats': ['cap', 'hat'],
-        'blouses': ['blouse']
+      const CATEGORY_DEFINITIONS = {
+        'women tops and tunics': {
+          targetSlugs: ['women-western'],
+          terms: ['top', 'tops', 'tunic', 'tunics', 'crop top', 'peplum'],
+          negativeTerms: ['laptop', 'desktop', 'tabletop']
+        },
+        'women tshirts': {
+          targetSlugs: ['women-western'],
+          terms: ['tshirt', 't-shirt', 'tee']
+        },
+        'sarees': {
+          targetSlugs: ['women-ethnic'],
+          terms: ['saree', 'sari']
+        },
+        'kurtis': {
+          targetSlugs: ['women-ethnic'],
+          terms: ['kurti', 'kurta', 'anarkali']
+        },
+        'blouses': {
+          targetSlugs: ['women-ethnic'],
+          terms: ['blouse']
+        },
+        'dresses': {
+          targetSlugs: ['women-western'],
+          terms: ['dress', 'midi', 'maxi', 'frock', 'gown']
+        },
+        'perfumes': {
+          targetSlugs: ['beauty-health'],
+          terms: ['perfume', 'edp', 'fragrance', 'body mist', 'deodorant', 'attar', 'cologne']
+        },
+        'lipsticks': {
+          targetSlugs: ['beauty-health'],
+          terms: ['lipstick', 'lip gloss', 'lip balm', 'lip crayon', 'matte lip']
+        },
+        'hair oil': {
+          targetSlugs: ['beauty-health'],
+          terms: ['hair oil', 'ayurvedic oil', 'oil']
+        },
+        'handbags': {
+          targetSlugs: ['jewellery', 'accessories'],
+          terms: ['handbag', 'tote bag', 'sling bag', 'clutch', 'backpack', 'purse', 'bag', 'tote', 'sling']
+        },
+        'footwear': {
+          targetSlugs: ['footwear'],
+          terms: ['shoe', 'chappal', 'sandal', 'loafer', 'sneaker', 'clog', 'flat', 'heel', 'footwear', 'boots', 'slippers']
+        },
+        'audio & earbuds': {
+          targetSlugs: ['electronics'],
+          terms: ['earbud', 'headphone', 'tws', 'speaker', 'bluetooth', 'earphone', 'neckband']
+        },
+        'earrings & studs': {
+          targetSlugs: ['jewellery'],
+          terms: ['earring', 'stud', 'jhumka', 'jhumki', 'bali']
+        },
+        'analog watches': {
+          targetSlugs: ['jewellery', 'electronics'],
+          terms: ['watch', 'analog']
+        },
+        'bedsheets': {
+          targetSlugs: ['home-kitchen'],
+          terms: ['bedsheet', 'bed sheet', 'bed cover', 'sheet']
+        },
+        'fridge covers': {
+          targetSlugs: ['home-kitchen'],
+          terms: ['fridge cover', 'refrigerator cover']
+        },
+        'appliance covers': {
+          targetSlugs: ['home-kitchen'],
+          terms: ['appliance cover', 'washing machine cover', 'cover']
+        },
+        'caps & hats': {
+          targetSlugs: ['men', 'women-western', 'kids'],
+          terms: ['cap', 'hat', 'beanie'],
+          negativeTerms: ['handicap', 'landscape']
+        }
       };
 
       list = list.filter((p) => {
-        const catName = typeof p.category === 'object' ? (p.category?.name || '') : (p.category || '');
-        const text = `${p.title || ''} ${catName} ${p.categorySlug || ''} ${p.subCategory || ''} ${p.description || ''}`.toLowerCase();
+        const catSlug = (p.categorySlug || p.category?.slug || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        const subCat = (p.subCategory || '').toLowerCase();
+        const fullText = `${title} ${subCat}`;
 
         return sidebarFilters.categories.some((filterCat) => {
           const raw = filterCat.toLowerCase().trim();
-          const mapped = KEYWORD_MAP[raw] || [raw, raw.endsWith('s') ? raw.slice(0, -1) : raw];
-          return mapped.some((k) => text.includes(k));
+          const rule = CATEGORY_DEFINITIONS[raw];
+
+          if (!rule) {
+            const fallback = raw.endsWith('s') ? raw.slice(0, -1) : raw;
+            return fullText.includes(fallback);
+          }
+
+          // If targetSlugs defined, must match categorySlug
+          if (rule.targetSlugs && !rule.targetSlugs.includes(catSlug)) {
+            return false;
+          }
+
+          // If negative terms present (e.g. 'laptop'), reject
+          if (rule.negativeTerms?.some((neg) => title.includes(neg))) {
+            return false;
+          }
+
+          // Must match at least one positive term using word boundary or clean phrase
+          return rule.terms.some((term) => {
+            const regex = new RegExp(`\\b${term}\\b`, 'i');
+            return regex.test(title) || regex.test(subCat) || fullText.includes(term);
+          });
         });
       });
     }
