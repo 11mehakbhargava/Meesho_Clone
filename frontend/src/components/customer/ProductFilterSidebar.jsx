@@ -34,7 +34,9 @@ const COLOR_OPTIONS = [
 ];
 
 const FABRIC_OPTIONS = ['Cotton', 'Silk', 'Georgette', 'Denim', 'Rayon', 'Polyester'];
-const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+const APPAREL_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+const FOOTWEAR_SIZES = ['IND-6', 'IND-7', 'IND-8', 'IND-9', 'IND-10'];
+const SIZE_OPTIONS = [...APPAREL_SIZES, ...FOOTWEAR_SIZES];
 const PRICE_RANGES = [
   { label: 'Under ₹299', max: 299 },
   { label: '₹300 - ₹499', min: 300, max: 499 },
@@ -370,29 +372,72 @@ export default function ProductFilterSidebar({
         </button>
 
         {expandedSections.size && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {SIZE_OPTIONS.map((sz) => {
-              const isSelected = filters.sizes?.includes(sz);
-              return (
-                <button
-                  key={sz}
-                  type="button"
-                  onClick={() => {
-                    const next = isSelected
-                      ? filters.sizes.filter((s) => s !== sz)
-                      : [...(filters.sizes || []), sz];
-                    onFilterChange('sizes', next);
-                  }}
-                  className={`w-10 h-8 rounded-xl border text-[11px] font-bold flex items-center justify-center transition-all cursor-pointer ${
-                    isSelected
-                      ? 'border-[#9f0038] bg-[#9f0038] text-white'
-                      : 'border-slate-200 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                  }`}
-                >
-                  {sz}
-                </button>
-              );
-            })}
+          <div className="space-y-2 pt-1">
+            {(!filters.categories?.length || filters.categories.some((c) => c.toLowerCase() === 'footwear')) && (
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Footwear (UK/IND)
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {FOOTWEAR_SIZES.map((sz) => {
+                    const isSelected = filters.sizes?.includes(sz);
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => {
+                          const next = isSelected
+                            ? filters.sizes.filter((s) => s !== sz)
+                            : [...(filters.sizes || []), sz];
+                          onFilterChange('sizes', next);
+                        }}
+                        className={`px-2.5 h-8 rounded-xl border text-[10.5px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-[#9f0038] bg-[#9f0038] text-white'
+                            : 'border-slate-200 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {(!filters.categories?.length || !filters.categories.every((c) => c.toLowerCase() === 'footwear')) && (
+              <div>
+                {filters.categories?.some((c) => c.toLowerCase() === 'footwear') && (
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 pt-1">
+                    Clothing Sizes
+                  </span>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {APPAREL_SIZES.map((sz) => {
+                    const isSelected = filters.sizes?.includes(sz);
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => {
+                          const next = isSelected
+                            ? filters.sizes.filter((s) => s !== sz)
+                            : [...(filters.sizes || []), sz];
+                          onFilterChange('sizes', next);
+                        }}
+                        className={`w-10 h-8 rounded-xl border text-[11px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-[#9f0038] bg-[#9f0038] text-white'
+                            : 'border-slate-200 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

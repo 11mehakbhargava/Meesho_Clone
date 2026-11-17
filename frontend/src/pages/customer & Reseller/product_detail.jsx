@@ -838,10 +838,18 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     : [PLACEHOLDER_IMAGE];
 
   const catMeta = getCategoryMeta(product.categorySlug);
+  const categorySlugLower = (product.categorySlug || '').toLowerCase();
+  const isNoSizeCategory = categorySlugLower === 'beauty-health' || categorySlugLower === 'electronics';
 
-  const sizes = (Array.isArray(product.sizes) && product.sizes.length > 0)
+  const rawSizes = (Array.isArray(product.sizes) && product.sizes.length > 0)
     ? product.sizes
     : [];
+
+  const sizes = isNoSizeCategory
+    ? []
+    : (categorySlugLower === 'footwear' && (rawSizes.length === 0 || rawSizes.includes('Standard')))
+      ? ['IND-6', 'IND-7', 'IND-8', 'IND-9', 'IND-10']
+      : rawSizes;
 
   // Only resolve colors if the product actually provides them (never force dummy clothing colors)
   const colorOptions = (Array.isArray(product.colors) && product.colors.length > 0)
