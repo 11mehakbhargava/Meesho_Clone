@@ -79,84 +79,98 @@ const ORIGINAL_BRAND_CATEGORIES = [
     name: 'Personal Care',
     image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Beauty & Health',
+    searchQuery: 'Care',
   },
   {
     id: 'electronics',
     name: 'Electronics',
     image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Electronics & Gadgets',
+    searchQuery: '',
   },
   {
     id: 'makeup',
     name: 'Makeup',
     image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Beauty & Health',
+    searchQuery: 'Lipstick',
   },
   {
     id: 'men_perfume',
     name: 'Men Perfume',
     image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=500&auto=format&fit=crop&q=80',
-    targetCategory: 'Men',
+    targetCategory: 'Beauty & Health',
+    searchQuery: 'Perfume',
   },
   {
     id: 'bags',
     name: 'Bags',
     image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&auto=format&fit=crop&q=80',
-    targetCategory: 'Jewellery & Accessories',
+    targetCategory: 'All',
+    searchQuery: 'Bag',
   },
   {
     id: 'footwear',
     name: 'Footwear',
     image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Footwear',
+    searchQuery: '',
   },
   {
     id: 'books',
     name: 'Books',
     image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80',
-    targetCategory: 'Home & Kitchen',
+    targetCategory: 'All',
+    searchQuery: 'Book',
   },
   {
     id: 'smart_watches',
     name: 'Smart Watches',
     image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=500&auto=format&fit=crop&q=80',
-    targetCategory: 'Electronics & Gadgets',
+    targetCategory: 'All',
+    searchQuery: 'Watch',
   },
   {
     id: 'jewellery',
     name: 'Jewellery',
     image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Jewellery & Accessories',
+    searchQuery: '',
   },
   {
     id: 'kitchen_appliances',
     name: 'Kitchen',
     image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Home & Kitchen',
+    searchQuery: '',
   },
   {
     id: 'home_decor',
     name: 'Home Decor',
     image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Home & Kitchen',
+    searchQuery: '',
   },
   {
     id: 'kids_wear',
     name: 'Kids Wear',
     image: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Kids',
+    searchQuery: '',
   },
   {
     id: 'women_western',
     name: 'Women Western',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Women Western',
+    searchQuery: '',
   },
   {
     id: 'sports_fitness',
     name: 'Sports & Fitness',
     image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&auto=format&fit=crop&q=80',
     targetCategory: 'Men',
+    searchQuery: '',
   },
 ];
 
@@ -1253,7 +1267,13 @@ export default function HomeUserCustomer() {
                 <div
                   key={cat.id}
                   onClick={() => {
-                    setSelectedCategory(cat.targetCategory);
+                    if (cat.searchQuery) {
+                      setSearchQuery(cat.searchQuery);
+                    } else {
+                      setSearchQuery('');
+                    }
+                    setSelectedCategory(cat.targetCategory || 'All');
+                    setSelectedSubcat('All');
                     const el = document.getElementById('products-grid-section');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
@@ -1553,8 +1573,8 @@ export default function HomeUserCustomer() {
                   {displayedProducts.map((p, idx) => {
                     const isFav = favorites.includes(p.id);
                     const mainImg = p.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
-                    const hasOffer = p.discountPercentage >= 20 || idx % 2 === 0;
-                    const isMall = p.isMall || p.discountPercentage >= 35 || idx % 3 === 0;
+                    const hasOffer = Boolean(p.discountPercentage && p.discountPercentage >= 45);
+                    const isMall = Boolean(p.isMall || (p.discountPercentage && p.discountPercentage >= 35));
 
                     return (
                       <div 
