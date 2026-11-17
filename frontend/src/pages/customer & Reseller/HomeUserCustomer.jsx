@@ -1680,6 +1680,7 @@ export default function HomeUserCustomer() {
                           {hasOffer && (
                             <div className="mb-2">
                               <CountdownTimer
+                                productId={p.id}
                                 initialHours={4 - (idx % 3)}
                                 initialMinutes={31 + (idx * 5) % 25}
                                 initialSeconds={22 + (idx * 7) % 35}
