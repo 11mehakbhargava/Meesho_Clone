@@ -964,7 +964,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     ? Number(product.reviewsCount)
     : productReviews.length;
   const displayRatingsCount = rawReviewsCount;
-  const displayReviewsCount = rawReviewsCount;
+  const displayReviewsCount = productReviews.length > 0 ? productReviews.length : (rawReviewsCount > 0 ? Math.min(rawReviewsCount, 3) : 0);
 
   const hasRatings = rawReviewsCount > 0 || productReviews.length > 0;
 
@@ -1942,8 +1942,8 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       <span className="text-3xl text-[#038d63]">★</span>
                     </div>
                     <div className="text-xs text-slate-500 font-semibold leading-relaxed">
-                      <p>{displayRatingsCount} Ratings,</p>
-                      <p>{displayReviewsCount} Reviews</p>
+                      <p>{displayRatingsCount.toLocaleString()} Ratings{displayReviewsCount > 0 ? ',' : ''}</p>
+                      {displayReviewsCount > 0 && <p>{displayReviewsCount.toLocaleString()} Reviews</p>}
                     </div>
                   </div>
 
