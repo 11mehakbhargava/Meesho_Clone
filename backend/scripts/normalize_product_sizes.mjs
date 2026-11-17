@@ -48,20 +48,30 @@ async function normalize() {
   // 5. Readymade Apparel (Shirts, T-shirts, Tops, Kurtis, Dresses): Standard apparel sizing!
   const apparelRes = await prisma.product.updateMany({
     where: {
-      OR: [
-        { categorySlug: 'women-western' },
-        { categorySlug: 'men' },
+      AND: [
         {
-          categorySlug: 'women-ethnic',
-          NOT: [
-            { title: { contains: 'saree', mode: 'insensitive' } },
-            { subCategory: { contains: 'saree', mode: 'insensitive' } }
+          OR: [
+            { categorySlug: 'women-western' },
+            { categorySlug: 'men' },
+            {
+              AND: [
+                { categorySlug: 'women-ethnic' },
+                {
+                  NOT: [
+                    { title: { contains: 'saree', mode: 'insensitive' } },
+                    { subCategory: { contains: 'saree', mode: 'insensitive' } }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          OR: [
+            { sizes: { equals: ['Standard'] } },
+            { sizes: { equals: [] } }
           ]
         }
-      ],
-      OR: [
-        { sizes: { equals: ['Standard'] } },
-        { sizes: { equals: [] } }
       ]
     },
     data: { sizes: ['S', 'M', 'L', 'XL', 'XXL'] }
