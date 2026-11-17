@@ -17,35 +17,35 @@ const FAQS = [
     category: 'orders',
     question: 'How do I track my delivery?',
     answer:
-      'You can track your order in real-time from the Orders section. Click on the active order to see courier live location, dispatch hub details, and expected delivery date.',
+      'Track your order in real-time from the "My Orders" section to view live delivery status, courier partner details, and expected arrival date.',
   },
   {
     id: 'faq-2',
     category: 'reselling',
     question: 'When will I receive my reseller margin?',
     answer:
-      'Reseller margin is credited to your bank account within 2-3 business days after the customer delivery is completed and the 7-day return window has passed.',
+      'Reseller margins are automatically credited to your linked bank account or UPI within 24-48 hours after successful delivery and return window completion.',
   },
   {
     id: 'faq-3',
     category: 'returns',
-    question: 'What is the return policy for electronics?',
+    question: 'What is MShoppy’s return & exchange policy?',
     answer:
-      'Electronics items have a 7-day replacement guarantee in case of manufacturing defects or dead-on-arrival issues. Keep the original brand box and accessories intact.',
+      'You can request a return or exchange within 7 days of delivery directly from "My Orders" with doorstep pickup and verified instant refunds.',
   },
   {
     id: 'faq-4',
     category: 'payments',
     question: 'How do refunds work for COD (Cash on Delivery) orders?',
     answer:
-      'For COD returns, once the supplier verifies the returned parcel, you will receive an instant UPI transfer or bank transfer within 24 hours to your linked account.',
+      'For COD orders, refunds are credited directly to your bank account or UPI ID instantly upon doorstep parcel inspection and handover.',
   },
   {
     id: 'faq-5',
     category: 'licensing',
-    question: "What is MShoppy's Product Image Ownership & Licensing Policy?",
+    question: 'Are product images authentic and commercially licensed?',
     answer:
-      'All product photographs and media assets on MShoppy are self-hosted on our sovereign cloud infrastructure (Supabase Storage). Visual assets are sourced under Royalty-Free Commercial Licenses (CC0 / Pexels / Unsplash Commercial Terms) or authentic supplier/AI photography. Resellers have full commercial rights to share them across social platforms without third-party copyright concerns.',
+      'All catalog media on MShoppy is self-hosted, quality-verified, and commercially licensed. Resellers and customers have full rights to share authentic product visuals across social channels safely.',
   },
 ];
 
