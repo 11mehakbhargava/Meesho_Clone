@@ -208,13 +208,51 @@ export const getProducts = async (req, res) => {
     // Gender filter
     if (gender && gender.trim() !== '') {
       const g = gender.trim().toLowerCase();
-      conditions.push({
-        OR: [
-          { title: { contains: g, mode: 'insensitive' } },
-          { description: { contains: g, mode: 'insensitive' } },
-          { categorySlug: { contains: g, mode: 'insensitive' } }
-        ]
-      });
+      if (g === 'men') {
+        conditions.push({
+          AND: [
+            { categorySlug: { notIn: ['women-ethnic', 'women-western'] } },
+            {
+              OR: [
+                { categorySlug: 'men' },
+                { title: { contains: 'men', mode: 'insensitive' } },
+                { description: { contains: 'men', mode: 'insensitive' } }
+              ]
+            },
+            { title: { not: { contains: 'women', mode: 'insensitive' } } }
+          ]
+        });
+      } else if (g === 'women') {
+        conditions.push({
+          OR: [
+            { categorySlug: { in: ['women-ethnic', 'women-western'] } },
+            { title: { contains: 'women', mode: 'insensitive' } },
+            { description: { contains: 'women', mode: 'insensitive' } }
+          ]
+        });
+      } else if (g === 'boys' || g === 'boy') {
+        conditions.push({
+          OR: [
+            { title: { contains: 'boy', mode: 'insensitive' } },
+            { categorySlug: 'kids' }
+          ]
+        });
+      } else if (g === 'girls' || g === 'girl') {
+        conditions.push({
+          OR: [
+            { title: { contains: 'girl', mode: 'insensitive' } },
+            { categorySlug: 'kids' }
+          ]
+        });
+      } else {
+        conditions.push({
+          OR: [
+            { title: { contains: g, mode: 'insensitive' } },
+            { description: { contains: g, mode: 'insensitive' } },
+            { categorySlug: { contains: g, mode: 'insensitive' } }
+          ]
+        });
+      }
     }
 
     // Rating filter

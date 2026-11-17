@@ -855,10 +855,32 @@ export default function HomeUserCustomer() {
 
     // 4. Gender filter
     if (sidebarFilters.gender) {
-      const g = sidebarFilters.gender.toLowerCase();
+      const g = sidebarFilters.gender.toLowerCase().trim();
       list = list.filter((p) => {
         const catName = typeof p.category === 'object' ? (p.category?.name || '') : (p.category || '');
-        const text = `${p.title || ''} ${catName} ${p.categorySlug || ''} ${p.gender || ''} ${p.description || ''}`.toLowerCase();
+        const slug = (p.categorySlug || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const text = `${title} ${catName} ${slug} ${p.gender || ''} ${desc}`.toLowerCase();
+
+        if (g === 'men') {
+          if (slug.startsWith('women')) return false;
+          const clean = text.replace(/\bwomen('s)?\b|\bladies\b|\bfemale\b/gi, '');
+          return slug === 'men' || slug === 'men-western' || slug === 'men-ethnic' || /\b(men|mens|men's|male|gentlemen)\b/i.test(clean);
+        }
+
+        if (g === 'women') {
+          return slug.startsWith('women') || slug === 'jewellery' || /\b(women|womens|women's|female|ladies)\b/i.test(text);
+        }
+
+        if (g === 'boys' || g === 'boy') {
+          return /\b(boys?|boy's)\b/i.test(title) || (slug === 'kids' && !/\b(girls?)\b/i.test(title));
+        }
+
+        if (g === 'girls' || g === 'girl') {
+          return /\b(girls?|girl's)\b/i.test(title) || (slug === 'kids' && !/\b(boys?)\b/i.test(title));
+        }
+
         return text.includes(g);
       });
     }
