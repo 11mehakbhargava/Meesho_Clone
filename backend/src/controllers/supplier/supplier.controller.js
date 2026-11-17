@@ -1886,6 +1886,10 @@ export const getSupplierReturns = async (req, res, next) => {
         parsedShipping = ord.shippingAddress;
       }
 
+      const addressParts = (parsedShipping.details || '').split(',').map((s) => s.trim()).filter(Boolean);
+      const derivedCity = parsedShipping.city || (addressParts.length > 0 ? addressParts[0] : 'N/A');
+      const derivedState = parsedShipping.state || (addressParts.length > 2 ? addressParts[2] : (addressParts.length > 1 ? addressParts[1] : ''));
+
       let proofImages = [];
       if (Array.isArray(retReq?.images)) {
         proofImages = retReq.images;
@@ -1924,10 +1928,10 @@ export const getSupplierReturns = async (req, res, next) => {
           category: item.product?.categorySlug,
         },
         customer: {
-          name: parsedShipping.fullName || parsedShipping.name || ord.user?.name || 'Customer',
+          name: parsedShipping.fullName || parsedShipping.name || ord.user?.fullName || ord.user?.name || 'Customer',
           phone: parsedShipping.phone || ord.user?.phone || 'N/A',
-          city: parsedShipping.city || 'N/A',
-          state: parsedShipping.state || 'N/A',
+          city: derivedCity,
+          state: derivedState,
         },
         awb: parsedShipping.awb || `RTO${ord.id.slice(0, 8).toUpperCase()}`,
         courier: parsedShipping.courier || 'Delhivery Surface Reverse',

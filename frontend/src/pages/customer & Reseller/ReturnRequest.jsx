@@ -44,11 +44,11 @@ export default function ReturnRequest({ onNavigate, onBack }) {
   // Parse query params if any
   const searchParams = new URLSearchParams(location.search);
   const orderIdParam = searchParams.get('orderId') || '';
-  const itemParam = searchParams.get('item') || 'Delivered Product';
-  const priceParam = searchParams.get('price') || '799';
+  const itemParam = searchParams.get('item') || '';
+  const priceParam = searchParams.get('price') || '';
   const imageParam = searchParams.get('image') || '';
-  const sizeParam = searchParams.get('size') || 'Free Size';
-  const deliveredDateParam = searchParams.get('deliveredDate') || 'Recently Delivered';
+  const sizeParam = searchParams.get('size') || '';
+  const deliveredDateParam = searchParams.get('deliveredDate') || '';
 
   const [orderData, setOrderData] = useState(null);
 
@@ -60,10 +60,18 @@ export default function ReturnRequest({ onNavigate, onBack }) {
     }
   }, [orderIdParam]);
 
-  const displayItemName = orderData?.productName || orderData?.items?.[0]?.product?.title || (itemParam !== 'Delivered Product' ? itemParam : 'Delivered Item');
+  const displayItemName = orderData?.productName || orderData?.items?.[0]?.product?.title || itemParam || 'Ordered Item';
   const displayImage = orderData?.image || orderData?.items?.[0]?.product?.images?.[0] || imageParam || '';
-  const displayPrice = orderData?.totalAmount || orderData?.price || priceParam;
-  const displaySize = orderData?.size || orderData?.items?.[0]?.size || sizeParam;
+  const displayPrice = orderData?.totalAmount || orderData?.price || (priceParam ? Number(priceParam) : 0);
+  const displaySize = orderData?.size || orderData?.items?.[0]?.size || sizeParam || 'Standard Size';
+  const displayDeliveredDate = orderData?.deliveryDate || deliveredDateParam || 'Recently';
+  const courierPartner = orderData?.courier || orderData?.shippingAddress?.courier || 'Express Courier Partner';
+
+  const returnTrackingId = React.useMemo(() => {
+    if (orderData?.returnRequest?.id) return `RET-${orderData.returnRequest.id.slice(0, 8).toUpperCase()}`;
+    if (orderIdParam) return `RET-${orderIdParam.slice(0, 8).toUpperCase()}`;
+    return `RET-${Date.now().toString().slice(-6)}`;
+  }, [orderData, orderIdParam]);
 
   // Step state (1: Mode & Reason, 2: Proof & Photos, 3: Refund/Exchange, 4: Pickup Slot, 5: Success)
   const [currentStep, setCurrentStep] = useState(() => {
@@ -440,7 +448,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
             />
             <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
-                Delivered on {deliveredDateParam}
+                Delivered on {displayDeliveredDate}
               </span>
               <h2 className="font-extrabold text-xs sm:text-sm text-slate-900 truncate">{displayItemName}</h2>
               <p className="text-[11px] sm:text-xs text-slate-500 leading-tight">
@@ -1159,15 +1167,15 @@ export default function ReturnRequest({ onNavigate, onBack }) {
 
             <div>
               <span className="inline-block px-3 py-1 bg-pink-50 text-[#9f0038] font-black text-[11px] sm:text-xs rounded-full uppercase tracking-wide mb-2">
-                Return ID: #RET-92841
+                Return ID: #{returnTrackingId}
               </span>
               <h2 className="text-xl sm:text-3xl font-black text-slate-900">
                 {actionType === 'return' ? 'Return Request Placed! 🎉' : 'Exchange Scheduled! 🔄'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
                 {actionType === 'return'
-                  ? `Our courier partner will visit your address to pick up the item. Your refund of ₹${priceParam} will be credited immediately upon pickup.`
-                  : `Your size ${selectedExchangeSize} replacement has been booked and will be dispatched once rider picks up the current item.`}
+                  ? `Our courier partner will visit your address to pick up the item. Your refund of ₹${displayPrice} will be credited immediately upon pickup.`
+                  : `Your replacement has been booked and will be dispatched once rider picks up the current item.`}
               </p>
             </div>
 
@@ -1225,7 +1233,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   <span className="text-[#9f0038]">{selectedSlotLabel}</span>
                 </p>
                 <p className="text-slate-500 leading-relaxed text-[11px]">
-                  ⚠️ <strong>Security Note:</strong> Share this OTP with courier partner (Shadowfax) only after physical inspection of tags &amp; parcel handover. Once entered by the rider, your refund of <strong className="text-slate-700">₹{priceParam}</strong> will be processed instantly.
+                  ⚠️ <strong>Security Note:</strong> Share this OTP with courier partner ({courierPartner}) only after physical inspection of tags &amp; parcel handover. Once entered by the rider, your refund of <strong className="text-slate-700">₹{displayPrice}</strong> will be processed instantly.
                 </p>
                 <p className="text-emerald-700 font-semibold text-[10px] flex items-center gap-1 pt-0.5">
                   <span>📧</span> Sent automatically to your login email address
@@ -1248,7 +1256,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     current: false,
                   },
                   {
-                    title: 'Courier Rider Assigned (Shadowfax)',
+                    title: `Courier Rider Assigned (${courierPartner})`,
                     desc: 'Courier executive will arrive to collect return parcel',
                     done: false,
                     current: true,
@@ -1262,7 +1270,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                   {
                     title:
                       actionType === 'return'
-                        ? `₹${priceParam} Refund Credited to UPI/Bank`
+                        ? `₹${displayPrice} Refund Credited to UPI/Bank`
                         : 'New Replacement Size Dispatched',
                     desc:
                       actionType === 'return'
