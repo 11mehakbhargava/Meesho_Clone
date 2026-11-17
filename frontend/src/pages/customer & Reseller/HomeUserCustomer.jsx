@@ -483,11 +483,11 @@ export default function HomeUserCustomer() {
     return () => { isMounted = false; };
   }, []);
 
-  // 2. Fetch Products on Initial Mount & whenever Category or Search Query changes
+  // 2. Fetch Products on Initial Mount & whenever Category, Search, or Sidebar Filters change
   useEffect(() => {
     let isMounted = true;
     async function fetchInitialProducts() {
-      if (products.length === 0) setLoading(true);
+      setLoading(true);
       setLoadingMore(false);
       setPage(1);
       setHasMore(true);
@@ -496,9 +496,17 @@ export default function HomeUserCustomer() {
 
       try {
         const targetCategory = selectedCategory === "All" ? "" : selectedCategory;
+        const filterCats = sidebarFilters.categories?.length > 0 ? sidebarFilters.categories.join(',') : '';
         const res = await getProducts({
           category: targetCategory,
           search: searchQuery,
+          categories: filterCats,
+          gender: sidebarFilters.gender || '',
+          minPrice: sidebarFilters.priceRange?.min,
+          maxPrice: sidebarFilters.priceRange?.max,
+          minRating: sidebarFilters.minRating || '',
+          minDiscount: sidebarFilters.minDiscount || '',
+          sort: sortBy,
           page: 1,
           limit: 28,
           withMeta: true
@@ -510,7 +518,7 @@ export default function HomeUserCustomer() {
           setTotalProducts(res.total || 0);
           setHasMore(res.hasMore);
           hasMoreRef.current = res.hasMore;
-          if (loadedProds.length > 0) {
+          if (loadedProds.length > 0 && !filterCats && !sidebarFilters.gender) {
             try {
               sessionStorage.setItem('mshoppy_cached_home_prods', JSON.stringify(loadedProds));
               if (!localStorage.getItem('mshoppy_cached_catalog_prods')) {
@@ -529,7 +537,17 @@ export default function HomeUserCustomer() {
     setSelectedSubcat("All");
     fetchInitialProducts();
     return () => { isMounted = false; };
-  }, [selectedCategory, searchQuery]);
+  }, [
+    selectedCategory,
+    searchQuery,
+    sortBy,
+    sidebarFilters.categories,
+    sidebarFilters.gender,
+    sidebarFilters.priceRange,
+    sidebarFilters.minRating,
+    sidebarFilters.minDiscount,
+    sidebarFilters.mallOnly
+  ]);
 
   // 3. Load Next Batch (Infinite Scroll)
   const loadMoreProducts = useCallback(async () => {
@@ -540,11 +558,19 @@ export default function HomeUserCustomer() {
 
     const nextPage = pageRef.current + 1;
     const targetCategory = selectedCategory === "All" ? "" : selectedCategory;
+    const filterCats = sidebarFilters.categories?.length > 0 ? sidebarFilters.categories.join(',') : '';
 
     try {
       const res = await getProducts({
         category: targetCategory,
         search: searchQuery,
+        categories: filterCats,
+        gender: sidebarFilters.gender || '',
+        minPrice: sidebarFilters.priceRange?.min,
+        maxPrice: sidebarFilters.priceRange?.max,
+        minRating: sidebarFilters.minRating || '',
+        minDiscount: sidebarFilters.minDiscount || '',
+        sort: sortBy,
         page: nextPage,
         limit: 28,
         withMeta: true
@@ -571,7 +597,17 @@ export default function HomeUserCustomer() {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [selectedCategory, searchQuery]);
+  }, [
+    selectedCategory,
+    searchQuery,
+    sortBy,
+    sidebarFilters.categories,
+    sidebarFilters.gender,
+    sidebarFilters.priceRange,
+    sidebarFilters.minRating,
+    sidebarFilters.minDiscount,
+    sidebarFilters.mallOnly
+  ]);
 
   // 4. Dual Sentinel (IntersectionObserver + Smooth Window Scroll Listener)
   useEffect(() => {
@@ -704,11 +740,38 @@ export default function HomeUserCustomer() {
       });
     }
 
-    // 3. Sidebar Categories filter
+    // 3. Sidebar Categories filter with intelligent keyword & stem resolver
     if (sidebarFilters.categories?.length > 0) {
+      const KEYWORD_MAP = {
+        'perfumes': ['perfume', 'edp', 'fragrance', 'body mist', 'deodorant', 'attar', 'cologne'],
+        'lipsticks': ['lipstick', 'lip', 'matte', 'crayon'],
+        'handbags': ['handbag', 'bag', 'tote', 'sling', 'clutch', 'backpack', 'purse'],
+        'footwear': ['shoe', 'chappal', 'sandal', 'loafer', 'sneaker', 'clog', 'flat', 'heel', 'footwear', 'boots', 'slippers'],
+        'audio & earbuds': ['earbud', 'headphone', 'tws', 'audio', 'speaker', 'bluetooth', 'earphone', 'neckband'],
+        'earrings & studs': ['earring', 'stud', 'jhumka', 'jhumki', 'bali'],
+        'dresses': ['dress', 'midi', 'maxi', 'frock', 'gown'],
+        'women tshirts': ['tshirt', 't-shirt', 'tee'],
+        'women tops and tunics': ['top', 'tunic', 'crop top'],
+        'sarees': ['saree', 'sari'],
+        'kurtis': ['kurti', 'kurta'],
+        'analog watches': ['watch', 'analog'],
+        'bedsheets': ['bedsheet', 'sheet', 'bed'],
+        'hair oil': ['oil', 'hair'],
+        'fridge covers': ['cover', 'fridge'],
+        'appliance covers': ['cover', 'appliance'],
+        'caps & hats': ['cap', 'hat'],
+        'blouses': ['blouse']
+      };
+
       list = list.filter((p) => {
-        const titleAndDesc = `${p.title || ''} ${p.category || ''} ${p.subCategory || ''}`.toLowerCase();
-        return sidebarFilters.categories.some((cat) => titleAndDesc.includes(cat.toLowerCase()));
+        const catName = typeof p.category === 'object' ? (p.category?.name || '') : (p.category || '');
+        const text = `${p.title || ''} ${catName} ${p.categorySlug || ''} ${p.subCategory || ''} ${p.description || ''}`.toLowerCase();
+
+        return sidebarFilters.categories.some((filterCat) => {
+          const raw = filterCat.toLowerCase().trim();
+          const mapped = KEYWORD_MAP[raw] || [raw, raw.endsWith('s') ? raw.slice(0, -1) : raw];
+          return mapped.some((k) => text.includes(k));
+        });
       });
     }
 
@@ -716,7 +779,8 @@ export default function HomeUserCustomer() {
     if (sidebarFilters.gender) {
       const g = sidebarFilters.gender.toLowerCase();
       list = list.filter((p) => {
-        const text = `${p.title || ''} ${p.category || ''} ${p.gender || ''}`.toLowerCase();
+        const catName = typeof p.category === 'object' ? (p.category?.name || '') : (p.category || '');
+        const text = `${p.title || ''} ${catName} ${p.categorySlug || ''} ${p.gender || ''} ${p.description || ''}`.toLowerCase();
         return text.includes(g);
       });
     }

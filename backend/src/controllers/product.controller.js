@@ -6,7 +6,7 @@ import redisClient from '../config/redisClient.js';
  */
 export const getProducts = async (req, res) => {
   try {
-    const { category, search, minPrice, maxPrice, sort, page = 1, limit, all } = req.query;
+    const { category, search, minPrice, maxPrice, sort, page = 1, limit, all, categories, gender, minRating, minDiscount } = req.query;
 
     const isFetchAll = all === 'true' || limit === 'all' || limit === '0' || limit === 'max';
     const pageNum = parseInt(page) || 1;
@@ -14,7 +14,7 @@ export const getProducts = async (req, res) => {
     const skip = isFetchAll ? undefined : ((pageNum - 1) * take);
 
     // Fast-path: Check Redis cache if running
-    const cacheKey = `products:${category || 'all'}:${search || ''}:${minPrice || ''}:${maxPrice || ''}:${sort || 'default'}:${isFetchAll ? 'all' : pageNum}:${isFetchAll ? 'all' : take}`;
+    const cacheKey = `products:${category || 'all'}:${search || ''}:${categories || ''}:${gender || ''}:${minRating || ''}:${minDiscount || ''}:${minPrice || ''}:${maxPrice || ''}:${sort || 'default'}:${isFetchAll ? 'all' : pageNum}:${isFetchAll ? 'all' : take}`;
     if (redisClient?.isOpen) {
       try {
         const cached = await redisClient.get(cacheKey);
@@ -77,6 +77,73 @@ export const getProducts = async (req, res) => {
           { category: { name: { contains: q, mode: 'insensitive' } } },
         ]
       });
+    }
+
+    // Sidebar multi-category filter with intelligent keyword & stem expansion
+    if (categories && categories.trim() !== '') {
+      const catList = categories.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean);
+      const CATEGORY_KEYWORD_MAP = {
+        'perfumes': ['perfume', 'edp', 'fragrance', 'body mist', 'deodorant', 'attar', 'cologne'],
+        'lipsticks': ['lipstick', 'lip', 'matte', 'crayon'],
+        'handbags': ['handbag', 'bag', 'tote', 'sling', 'clutch', 'backpack', 'purse'],
+        'footwear': ['shoe', 'chappal', 'sandal', 'loafer', 'sneaker', 'clog', 'flat', 'heel', 'footwear', 'boots', 'slippers'],
+        'audio & earbuds': ['earbud', 'headphone', 'tws', 'audio', 'speaker', 'bluetooth', 'earphone', 'neckband'],
+        'earrings & studs': ['earring', 'stud', 'jhumka', 'jhumki', 'bali'],
+        'dresses': ['dress', 'midi', 'maxi', 'frock', 'gown'],
+        'women tshirts': ['tshirt', 't-shirt', 'tee'],
+        'women tops and tunics': ['top', 'tunic', 'crop top'],
+        'sarees': ['saree', 'sari'],
+        'kurtis': ['kurti', 'kurta'],
+        'analog watches': ['watch', 'analog'],
+        'bedsheets': ['bedsheet', 'sheet', 'bed'],
+        'hair oil': ['oil', 'hair'],
+        'fridge covers': ['cover', 'fridge'],
+        'appliance covers': ['cover', 'appliance'],
+        'caps & hats': ['cap', 'hat'],
+        'blouses': ['blouse']
+      };
+
+      const allTerms = catList.flatMap((cat) => {
+        return CATEGORY_KEYWORD_MAP[cat] || [cat, cat.endsWith('s') ? cat.slice(0, -1) : cat];
+      });
+
+      if (allTerms.length > 0) {
+        conditions.push({
+          OR: allTerms.flatMap((term) => [
+            { title: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+            { subCategory: { contains: term, mode: 'insensitive' } }
+          ])
+        });
+      }
+    }
+
+    // Gender filter
+    if (gender && gender.trim() !== '') {
+      const g = gender.trim().toLowerCase();
+      conditions.push({
+        OR: [
+          { title: { contains: g, mode: 'insensitive' } },
+          { description: { contains: g, mode: 'insensitive' } },
+          { categorySlug: { contains: g, mode: 'insensitive' } }
+        ]
+      });
+    }
+
+    // Rating filter
+    if (minRating) {
+      const r = parseFloat(minRating);
+      if (!isNaN(r)) {
+        conditions.push({ rating: { gte: r } });
+      }
+    }
+
+    // Discount filter
+    if (minDiscount) {
+      const d = parseInt(minDiscount);
+      if (!isNaN(d)) {
+        conditions.push({ discountPercentage: { gte: d } });
+      }
     }
 
     // Price range filter

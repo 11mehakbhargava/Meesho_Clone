@@ -97,6 +97,10 @@ export async function getProducts(params = {}) {
   const query = new URLSearchParams();
   if (params.category && params.category !== 'All') query.set('category', params.category);
   if (params.search) query.set('search', params.search);
+  if (params.categories) query.set('categories', params.categories);
+  if (params.gender) query.set('gender', params.gender);
+  if (params.minRating) query.set('minRating', params.minRating);
+  if (params.minDiscount) query.set('minDiscount', params.minDiscount);
   if (params.minPrice) query.set('minPrice', params.minPrice);
   if (params.maxPrice) query.set('maxPrice', params.maxPrice);
   if (params.sort) query.set('sort', params.sort);
