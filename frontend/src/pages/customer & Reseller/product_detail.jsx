@@ -1578,49 +1578,53 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                 </div>
               </div>
 
-              {/* Sold By Card (Matching Screenshot 3) */}
-              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs mb-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#9f0038] flex items-center justify-center font-bold text-xl border border-rose-100 shadow-2xs">
-                      🏪
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-slate-400 font-medium">Sold By</span>
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
-                          <span>✓</span> Verified
-                        </span>
+              {/* Dynamic Sold By Seller Card */}
+              {product.supplierName && (
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-xs mb-5 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#9f0038] flex items-center justify-center font-bold text-xl border border-rose-100 shadow-2xs shrink-0">
+                        🏪
                       </div>
-                      <h4 className="font-black text-sm text-slate-900 tracking-tight">
-                        {product.supplierName || 'QUNEY'}
-                      </h4>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-slate-400 font-medium">Sold By</span>
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+                            <span>✓</span> Verified
+                          </span>
+                        </div>
+                        <h4 className="font-black text-sm text-slate-900 tracking-tight truncate">
+                          {product.supplierName}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(`/search?q=${encodeURIComponent(product.supplierName)}`)}
+                      className="px-4 py-2 rounded-xl border border-[#9f0038] text-[#9f0038] hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                    >
+                      View Shop
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-4 sm:gap-6 pt-2 border-t border-slate-100 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-0.5 bg-[#038d63] text-white font-bold text-[10px] px-2 py-0.5 rounded-full">
+                        <span>{product.supplierStats?.rating ? Number(product.supplierStats.rating).toFixed(1) : (product.rating ? Number(product.rating).toFixed(1) : '4.2')}</span>
+                        <span>★</span>
+                      </span>
+                      <span className="text-slate-500 font-semibold">
+                        {(product.supplierStats?.totalRatings || (product.reviewsCount ? product.reviewsCount * 3 : 240)).toLocaleString()} Ratings
+                      </span>
+                    </div>
+                    <div className="text-slate-300">•</div>
+                    <div className="text-slate-700 font-bold">
+                      {(product.supplierStats?.productCount || 1).toLocaleString()} <span className="text-slate-500 font-normal">Products</span>
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(`/search?supplier=${encodeURIComponent(product.supplierName || 'QUNEY')}`)}
-                    className="px-4 py-2 rounded-xl border border-[#9f0038] text-[#9f0038] hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    View Shop
-                  </button>
                 </div>
-
-                <div className="flex items-center gap-6 pt-2 border-t border-slate-100 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-0.5 bg-[#038d63] text-white font-bold text-[10px] px-2 py-0.5 rounded-full">
-                      <span>4.2</span>
-                      <span>★</span>
-                    </span>
-                    <span className="text-slate-500 font-semibold">259,722 Ratings</span>
-                  </div>
-                  <div className="text-slate-300">•</div>
-                  <div className="text-slate-700 font-bold">
-                    1,246 <span className="text-slate-500 font-normal">Products</span>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Trust Badges Strip (Matching Screenshot 3) */}
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/70 space-y-3 mb-5">
