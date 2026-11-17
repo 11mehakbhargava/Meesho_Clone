@@ -964,13 +964,17 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     ? Number(product.reviewsCount)
     : productReviews.length;
   const displayRatingsCount = rawReviewsCount;
-  const displayReviewsCount = productReviews.length > 0 ? productReviews.length : (rawReviewsCount > 0 ? Math.min(rawReviewsCount, 3) : 0);
+  // If product has written reviews in DB, display actual count; otherwise 0 (buyers only rated with stars)
+  const displayReviewsCount = productReviews.length;
 
   const hasRatings = rawReviewsCount > 0 || productReviews.length > 0;
 
-  // Star breakdown: use actual written reviews if available, or compute realistic distribution from product.rating & reviewsCount
+  // Star breakdown: distribute total ratings across 5 star levels matching exact Meesho specification
   const computeBreakdown = () => {
-    if (productReviews.length > 0) {
+    const total = Math.max(1, displayRatingsCount);
+
+    // If total ratings matches the written reviews count, use exact written reviews count
+    if (productReviews.length >= total && productReviews.length > 0) {
       return {
         5: productReviews.filter((r) => Number(r.rating) === 5).length,
         4: productReviews.filter((r) => Number(r.rating) === 4).length,
@@ -979,30 +983,43 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         1: productReviews.filter((r) => Number(r.rating) === 1).length,
       };
     }
-    if (reviewsBreakdown && (reviewsBreakdown[5] || reviewsBreakdown[4] || reviewsBreakdown[3])) {
+
+    // If backend reviewsBreakdown matches total, use it
+    const sumBreakdown =
+      (Number(reviewsBreakdown?.[5]) || 0) +
+      (Number(reviewsBreakdown?.[4]) || 0) +
+      (Number(reviewsBreakdown?.[3]) || 0) +
+      (Number(reviewsBreakdown?.[2]) || 0) +
+      (Number(reviewsBreakdown?.[1]) || 0);
+    if (sumBreakdown > 0 && Math.abs(sumBreakdown - total) < 5) {
       return reviewsBreakdown;
     }
-    const total = Math.max(1, rawReviewsCount);
+
+    // Realistic proportional distribution matching total ratings & rating score (exact Meesho behavior)
     const r = rawRating;
-    let p5 = 0.6, p4 = 0.25, p3 = 0.1, p2 = 0.03, p1 = 0.02;
+    let p5, p4, p3, p2, p1;
     if (r >= 4.7) {
-      p5 = 0.75; p4 = 0.20; p3 = 0.04; p2 = 0.01; p1 = 0.0;
+      p5 = 0.74; p4 = 0.18; p3 = 0.05; p2 = 0.02; p1 = 0.01;
     } else if (r >= 4.4) {
-      p5 = 0.60; p4 = 0.25; p3 = 0.10; p2 = 0.03; p1 = 0.02;
+      p5 = 0.60; p4 = 0.26; p3 = 0.09; p2 = 0.03; p1 = 0.02;
     } else if (r >= 4.0) {
-      p5 = 0.45; p4 = 0.35; p3 = 0.12; p2 = 0.05; p1 = 0.03;
+      p5 = 0.46; p4 = 0.32; p3 = 0.13; p2 = 0.05; p1 = 0.04;
+    } else if (r >= 3.7) {
+      // Exactly like Meesho reference: 3.7★ with 2570 ratings (~39.3% 5★, ~23.1% 4★, ~18.5% 3★, ~6.8% 2★, ~12.3% 1★)
+      p5 = 0.393; p4 = 0.231; p3 = 0.185; p2 = 0.068; p1 = 0.123;
     } else if (r >= 3.5) {
-      p5 = 0.30; p4 = 0.30; p3 = 0.25; p2 = 0.10; p1 = 0.05;
+      p5 = 0.30; p4 = 0.28; p3 = 0.22; p2 = 0.11; p1 = 0.09;
     } else {
-      p5 = 0.20; p4 = 0.20; p3 = 0.30; p2 = 0.20; p1 = 0.10;
+      p5 = 0.20; p4 = 0.20; p3 = 0.25; p2 = 0.20; p1 = 0.15;
     }
-    return {
-      5: Math.round(total * p5),
-      4: Math.round(total * p4),
-      3: Math.round(total * p3),
-      2: Math.round(total * p2),
-      1: Math.max(0, total - Math.round(total * p5) - Math.round(total * p4) - Math.round(total * p3) - Math.round(total * p2)),
-    };
+
+    const c5 = Math.round(total * p5);
+    const c4 = Math.round(total * p4);
+    const c3 = Math.round(total * p3);
+    const c2 = Math.round(total * p2);
+    const c1 = Math.max(0, total - (c5 + c4 + c3 + c2));
+
+    return { 5: c5, 4: c4, 3: c3, 2: c2, 1: c1 };
   };
 
   const breakdown = computeBreakdown();
@@ -1955,7 +1972,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         <div className="flex-1 h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className={`h-full ${b.color} rounded-full`} style={{ width: `${b.pct}%` }} />
                         </div>
-                        <span className="w-10 text-right text-slate-500 text-[11px] font-mono shrink-0">{b.count}</span>
+                        <span className="min-w-[44px] text-right text-slate-600 text-xs font-semibold tabular-nums shrink-0">{b.count}</span>
                       </div>
                     ))}
                   </div>
