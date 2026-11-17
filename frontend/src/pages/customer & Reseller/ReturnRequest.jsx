@@ -258,7 +258,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
       return;
     }
     setIsUpiVerified(true);
-    showToast('✓ UPI ID verified: PRIYA SHARMA (HDFC Bank)');
+    showToast(`✓ UPI ID (${upiId}) verified successfully!`);
   };
 
   const handleSendEmailOtp = async () => {
@@ -899,7 +899,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                         </div>
                         {isUpiVerified && (
                           <p className="text-xs text-emerald-700 font-bold flex items-center gap-1.5 leading-snug">
-                            <span>✓</span> Verified Name: <strong>PRIYA SHARMA</strong> (HDFC Bank)
+                            <span>✓</span> Verified UPI ID: <strong>{upiId}</strong>
                           </p>
                         )}
                       </div>
@@ -957,7 +957,7 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                     )}
                   </div>
 
-                  {/* Option 3: Meesho Wallet Credit */}
+                  {/* Option 3: Store Wallet Credit */}
                   <div
                     onClick={() => setRefundMethod('wallet')}
                     className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
@@ -968,14 +968,9 @@ export default function ReturnRequest({ onNavigate, onBack }) {
                       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                         <span className="text-xl sm:text-2xl shrink-0">👛</span>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <h4 className="font-black text-xs sm:text-sm text-slate-900">Store Wallet Balance</h4>
-                            <span className="text-[9px] sm:text-[10px] font-black bg-rose-100 text-[#9f0038] px-2 py-0.5 rounded-full shrink-0">
-                              +₹50 Extra Bonus
-                            </span>
-                          </div>
+                          <h4 className="font-black text-xs sm:text-sm text-slate-900">Store Wallet Balance</h4>
                           <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Instant ₹{priceParam} + ₹50 shopping bonus = ₹{Number(priceParam) + 50} credit for next orders
+                            Instant ₹{displayPrice} refund credited to wallet for next orders
                           </p>
                         </div>
                       </div>
