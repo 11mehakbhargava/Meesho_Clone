@@ -259,6 +259,20 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const affiliateMargin = urlMargin > 0 ? urlMargin : Number(localStorage.getItem('mshoppy_affiliate_margin') || 0);
   const effectivePrice = (product?.price || 0) + (affiliateMargin > 0 ? affiliateMargin : 0);
 
+  // Dynamic MRP (Maximum Retail Price) ensuring it always reflects originalPrice + margin and is strictly >= effectivePrice
+  const effectiveOriginalPrice = useMemo(() => {
+    const rawOrig = Number(product?.originalPrice || 0);
+    const margin = affiliateMargin > 0 ? affiliateMargin : 0;
+    if (rawOrig > (product?.price || 0)) {
+      return rawOrig + margin;
+    }
+    const discount = Number(product?.discountPercentage || 0);
+    if (discount > 0 && discount < 100) {
+      return Math.round(effectivePrice / (1 - discount / 100));
+    }
+    return Math.round(effectivePrice * 1.25);
+  }, [product?.originalPrice, product?.price, product?.discountPercentage, affiliateMargin, effectivePrice]);
+
   // Reseller WhatsApp Sharing & Custom Margin State (ONLY active when explicitly visiting in reseller mode from Reseller Hub)
   const isResellerMode = searchParams.get('source') === 'reseller';
   const [selectedResellerMargin, setSelectedResellerMargin] = useState(100);
@@ -1162,7 +1176,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                             <div className="flex justify-between items-center text-slate-600">
                               <span>Maximum Retail Price (MRP)</span>
                               <span className="font-semibold text-slate-800">
-                                ₹{product.originalPrice || Math.round(effectivePrice * 1.6)}
+                                ₹{effectiveOriginalPrice}
                               </span>
                             </div>
 
@@ -1187,9 +1201,9 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       </>
                     )}
                   </div>
-                  {product.originalPrice && (product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)) > effectivePrice && (
+                  {effectiveOriginalPrice > effectivePrice && (
                     <span className="text-sm sm:text-base text-slate-400 line-through ml-1">
-                      ₹{product.originalPrice + (affiliateMargin > 0 ? affiliateMargin : 0)}
+                      ₹{effectiveOriginalPrice}
                     </span>
                   )}
                   {product.discountPercentage > 0 && (
