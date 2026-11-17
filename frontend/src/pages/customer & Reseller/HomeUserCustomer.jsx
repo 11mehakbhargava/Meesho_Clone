@@ -1573,8 +1573,8 @@ export default function HomeUserCustomer() {
                   {displayedProducts.map((p, idx) => {
                     const isFav = favorites.includes(p.id);
                     const mainImg = p.images?.[0] || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
-                    const hasOffer = Boolean(p.discountPercentage && p.discountPercentage >= 45);
-                    const isMall = Boolean(p.isMall || (p.discountPercentage && p.discountPercentage >= 35));
+                    const hasOffer = Boolean(Number(p.discountPercentage) >= 40);
+                    const isMall = Boolean(p.isMall || (Number(p.discountPercentage) >= 35));
 
                     return (
                       <div 
