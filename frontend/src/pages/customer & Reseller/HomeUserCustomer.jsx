@@ -70,6 +70,89 @@ const REAL_DATABASE_BANNERS = [
   }
 ];
 
+const ORIGINAL_BRAND_CATEGORIES = [
+  {
+    id: 'personal_care',
+    name: 'Personal Care',
+    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Beauty & Health',
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics',
+    image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Electronics & Gadgets',
+  },
+  {
+    id: 'makeup',
+    name: 'Makeup',
+    image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Beauty & Health',
+  },
+  {
+    id: 'men_perfume',
+    name: 'Men Perfume',
+    image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Men',
+  },
+  {
+    id: 'bags',
+    name: 'Bags',
+    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Jewellery & Accessories',
+  },
+  {
+    id: 'footwear',
+    name: 'Footwear',
+    image: 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Footwear',
+  },
+  {
+    id: 'books',
+    name: 'Books',
+    image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80',
+    targetCategory: 'Home & Kitchen',
+  },
+];
+
+const FEATURED_BRAND_LOGOS = [
+  { name: 'mamaearth', display: 'mamaearth', color: 'text-emerald-600', icon: '🌿' },
+  { name: 'WILD STONE', display: 'WILD STONE', color: 'text-slate-900 dark:text-white' },
+  { name: 'plūm', display: 'plūm', color: 'text-purple-700 dark:text-purple-400' },
+  { name: 'NIVEA', display: 'NIVEA', color: 'bg-[#002b7f] text-white', isCircleBadge: true },
+  { name: 'Himalaya', display: 'Himalaya', sub: 'SINCE 1930', color: 'text-teal-700' },
+  { name: 'Mi', display: 'mi', color: 'bg-[#ff6900] text-white', isSquareBadge: true },
+  { name: 'Bata', display: 'Bata', color: 'text-red-600 italic font-serif text-lg font-black' },
+  { name: 'WOW', display: 'WOW', sub: 'SKIN SCIENCE', color: 'text-slate-900 dark:text-white' },
+];
+
+const CURATED_OFFER_TILES = [
+  {
+    id: 'trending',
+    title: 'Trending Now',
+    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=80',
+    filterTag: 'Trending',
+  },
+  {
+    id: 'budget',
+    title: 'Budget Buys',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
+    filterTag: 'Under ₹349',
+  },
+  {
+    id: 'top_rated',
+    title: 'Top Rated Picks',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
+    filterTag: '4★ & Above',
+  },
+  {
+    id: 'daily_essentials',
+    title: 'Daily Essentials',
+    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&auto=format&fit=crop&q=80',
+    filterTag: 'Essentials',
+  },
+];
+
 export default function HomeUserCustomer() {
   const navigate = useNavigate();
   const bannerRef = React.useRef(null);
@@ -90,6 +173,27 @@ export default function HomeUserCustomer() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedSubcat, setSelectedSubcat] = useState("All");
+  const [curatedFilter, setCuratedFilter] = useState(null);
+  const brandCategoriesRef = useRef(null);
+
+  const scrollBrandCategories = (direction) => {
+    if (brandCategoriesRef.current) {
+      brandCategoriesRef.current.scrollBy({
+        left: direction === 'left' ? -260 : 260,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleCuratedFilterClick = (filterTag) => {
+    if (curatedFilter === filterTag) {
+      setCuratedFilter(null);
+    } else {
+      setCuratedFilter(filterTag);
+      const el = document.getElementById('products-grid-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   const [products, setProducts] = useState(() => {
     try {
       const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_home_prods') || localStorage.getItem('mshoppy_cached_catalog_prods') || '[]');
@@ -451,16 +555,32 @@ export default function HomeUserCustomer() {
 
   const displayedProducts = useMemo(() => {
     if (!products) return [];
-    if (selectedSubcat === 'All') return products;
+    let list = products;
+
+    // Apply curated filter if selected
+    if (curatedFilter === 'Under ₹349') {
+      list = list.filter((p) => Number(p.price) <= 349);
+    } else if (curatedFilter === '4★ & Above') {
+      list = list.filter((p) => Number(p.rating || 0) >= 4.0);
+    } else if (curatedFilter === 'Trending') {
+      list = [...list].sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
+    } else if (curatedFilter === 'Essentials') {
+      list = list.filter((p) => {
+        const cat = (p.category || p.categoryName || '').toLowerCase();
+        return cat.includes('home') || cat.includes('kitchen') || cat.includes('beauty') || cat.includes('personal');
+      });
+    }
+
+    if (selectedSubcat === 'All') return list;
     const term = selectedSubcat.toLowerCase().trim();
-    return products.filter((p) => {
+    return list.filter((p) => {
       const pSub = (p.subCategory || '').toLowerCase().trim();
       if (pSub === term) return true;
       if (pSub) return false;
       const full = `${p.title || ''} ${p.description || ''}`.toLowerCase();
       return full.includes(term);
     });
-  }, [products, selectedSubcat]);
+  }, [products, selectedSubcat, curatedFilter]);
 
   const categoryChips = [
     { name: "All", slug: "All", icon: "dashboard" },
@@ -902,6 +1022,176 @@ export default function HomeUserCustomer() {
           </div>
         </section>
 
+        {/* =========================================================================
+            SECTION 1: ORIGINAL BRANDS, FEATURED BRANDS & PROMOTIONAL BANNERS (Matching Screenshot 1)
+        ========================================================================= */}
+        <section className="mt-8 space-y-6">
+          {/* 1. Header: Original Brands + VIEW ALL */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-headline font-black text-xl sm:text-2xl text-slate-900 dark:text-white tracking-tight">
+                Original Brands
+              </h3>
+              <span className="w-5 h-5 rounded-full bg-[#5c3bf5] text-white flex items-center justify-center text-[11px] font-bold shadow-xs">
+                ✓
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/explorer')}
+              className="text-[#9f0038] hover:text-[#78002a] text-xs font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <span>VIEW ALL</span>
+              <span className="text-sm">›</span>
+            </button>
+          </div>
+
+          {/* 2. Original Brands Category Carousel with Next Arrow */}
+          <div className="relative group">
+            <div
+              ref={brandCategoriesRef}
+              className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth"
+            >
+              {ORIGINAL_BRAND_CATEGORIES.map((cat) => (
+                <div
+                  key={cat.id}
+                  onClick={() => {
+                    setSelectedCategory(cat.targetCategory);
+                    const el = document.getElementById('products-grid-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex-shrink-0 w-28 sm:w-36 md:w-40 rounded-2xl sm:rounded-3xl bg-[#f0f3ff] dark:bg-slate-800/80 border border-indigo-100/70 dark:border-indigo-900/40 p-2 sm:p-2.5 flex flex-col items-center justify-between cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all duration-300 group/card"
+                >
+                  <div className="w-full aspect-[4/5] rounded-xl overflow-hidden flex items-center justify-center mb-2">
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-full h-full object-contain group-hover/card:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="w-full bg-[#5838fc] group-hover/card:bg-[#461fe0] text-white text-center py-1.5 sm:py-2 px-2 rounded-xl sm:rounded-2xl shadow-xs transition-colors">
+                    <span className="text-[11px] sm:text-xs font-bold tracking-tight block truncate">
+                      {cat.name}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Arrow Button on carousel */}
+            <button
+              type="button"
+              onClick={() => scrollBrandCategories('right')}
+              className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all cursor-pointer z-10"
+              aria-label="Next categories"
+            >
+              <span className="material-symbols-outlined text-base">chevron_right</span>
+            </button>
+          </div>
+
+          {/* 3. Featured Brand Logos Strip */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-2xs">
+            <div className="flex items-center justify-between gap-6 sm:gap-8 overflow-x-auto no-scrollbar py-1 px-2">
+              {FEATURED_BRAND_LOGOS.map((b, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSearchQuery(b.name);
+                    handleSearchSubmit(b.name);
+                  }}
+                  className="flex-shrink-0 cursor-pointer flex items-center justify-center transition-all hover:scale-105 select-none"
+                  title={`Shop ${b.name}`}
+                >
+                  {b.isCircleBadge ? (
+                    <span className="w-9 h-9 rounded-full bg-[#002b7f] text-white font-black text-[9px] flex items-center justify-center tracking-tighter shadow-xs">
+                      {b.display}
+                    </span>
+                  ) : b.isSquareBadge ? (
+                    <span className="w-8 h-8 rounded-lg bg-[#ff6900] text-white font-black text-sm flex items-center justify-center shadow-xs">
+                      {b.display}
+                    </span>
+                  ) : b.sub ? (
+                    <div className="text-center leading-tight">
+                      <span className={`font-extrabold text-sm sm:text-base ${b.color}`}>
+                        {b.display}
+                      </span>
+                      <span className="block text-[7px] font-bold text-slate-400 uppercase tracking-widest">
+                        {b.sub}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={`font-black text-sm sm:text-base tracking-tight ${b.color}`}>
+                      {b.display} {b.icon || ''}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Promotional Banners: Left 35% OFF First Order + Right 4 Curated Category Tiles */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-stretch">
+            {/* Left Card: 35% OFF on First Order */}
+            <div className="lg:col-span-4 bg-gradient-to-br from-[#f59e0b] via-[#fbbf24] to-[#f59e0b] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-slate-900 relative overflow-hidden flex flex-col justify-between shadow-sm">
+              <div className="space-y-1">
+                <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-950/80">
+                  Up to
+                </span>
+                <h4 className="text-4xl sm:text-5xl font-black text-[#85002f] tracking-tight drop-shadow-xs">
+                  35% OFF
+                </h4>
+                <p className="text-sm sm:text-base font-extrabold text-amber-950">
+                  on first order
+                </p>
+                <p className="text-[11px] font-semibold text-amber-900/80">
+                  *Only on App
+                </p>
+              </div>
+
+              <div className="pt-4 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowGuestModal(true)}
+                  className="bg-white hover:bg-slate-50 text-slate-900 px-5 py-2.5 rounded-full font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                >
+                  Download Now
+                </button>
+                <span className="text-[9px] text-amber-950/60 font-semibold">T&amp;C Apply*</span>
+              </div>
+            </div>
+
+            {/* Right Banner: Purple Gradient with 4 Curated Tiles */}
+            <div className="lg:col-span-8 bg-gradient-to-r from-[#5a0044] via-[#750059] to-[#800062] rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-white relative overflow-hidden flex flex-col justify-center shadow-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                {CURATED_OFFER_TILES.map((tile) => (
+                  <div
+                    key={tile.id}
+                    onClick={() => handleCuratedFilterClick(tile.filterTag)}
+                    className={`bg-white/10 hover:bg-white/20 backdrop-blur-xs border-2 ${
+                      curatedFilter === tile.filterTag ? 'border-amber-300 ring-2 ring-amber-300/50' : 'border-amber-200/50'
+                    } rounded-2xl p-2 flex flex-col items-center justify-between cursor-pointer transition-all duration-300 hover:scale-[1.02] group/tile`}
+                  >
+                    <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-2 relative bg-purple-950/40">
+                      <img
+                        src={tile.image}
+                        alt={tile.title}
+                        className="w-full h-full object-cover group-hover/tile:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="w-full bg-white text-slate-900 text-center py-1.5 px-1.5 rounded-xl shadow-xs">
+                      <span className="text-[10px] sm:text-xs font-black tracking-tight block truncate">
+                        {tile.title}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Database Categories Bar */}
         <section className="mt-8">
           <div className="flex items-center justify-between mb-4">
@@ -958,8 +1248,8 @@ export default function HomeUserCustomer() {
         </section>
 
         {/* Real Products Grid from PostgreSQL Database */}
-        <section className="mt-10">
-          <div className="flex items-center justify-between mb-6">
+        <section id="products-grid-section" className="mt-10">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-headline font-extrabold text-2xl text-[#191c1e] dark:text-slate-100">
                 Products For You
@@ -968,8 +1258,24 @@ export default function HomeUserCustomer() {
                 Lowest prices, verified suppliers & top quality products
               </p>
             </div>
-
           </div>
+
+          {/* Curated Active Filter Pill */}
+          {curatedFilter && (
+            <div className="flex items-center gap-2 mb-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-xl text-xs">
+              <span className="text-amber-800 dark:text-amber-300 font-bold">
+                Active Offer Filter: <strong>{curatedFilter}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setCuratedFilter(null)}
+                className="text-amber-900 dark:text-amber-200 font-black hover:underline cursor-pointer ml-auto flex items-center gap-1"
+              >
+                <span>Clear Filter</span>
+                <span>✕</span>
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
