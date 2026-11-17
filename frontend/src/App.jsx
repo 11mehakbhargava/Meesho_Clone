@@ -83,6 +83,7 @@ import SupplierRotLedger from './pages/supplier/SupplierRotLedger';
 import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
 import SupplierLogin from './pages/supplier/SupplierLogin';
 import SupplierRegister from './pages/supplier/SupplierRegister';
+import SupplierLandingPage from './pages/supplier/SupplierLandingPage';
 
 // Admin Panel & Auth Pages
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -195,6 +196,7 @@ const screenCatalog = [
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
   { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
+  { path: '/supplier', name: 'Supplier Portal Landing', icon: '🏪', group: 'Supplier' },
   { path: '/supplier-login', name: 'Supplier Login', icon: '🔐', group: 'Supplier' },
   { path: '/supplier-register', name: 'Supplier Registration', icon: '📝', group: 'Supplier' },
 
@@ -681,6 +683,9 @@ function AppRoutes() {
       supplierLogin: '/supplier-login',
       'supplier-register': '/supplier-register',
       supplierRegister: '/supplier-register',
+      supplier: '/supplier',
+      'supplier-landing': '/supplier',
+      'become-a-supplier': '/supplier',
       returns: '/supplier-returns',
 
       // Admin & Community
@@ -845,7 +850,16 @@ function AppRoutes() {
         <Route path="/messenger" element={<Navigate to="/support" replace />} />
         <Route path="/conversation" element={<Navigate to="/support" replace />} />
         <Route path="/notifications" element={<NotificationCenter />} />
-        <Route path="/" element={<HomeUserCustomer />} />
+        <Route 
+          path="/" 
+          element={
+            typeof window !== 'undefined' && window.location.hostname.startsWith('supplier.') ? (
+              <SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />
+            ) : (
+              <HomeUserCustomer />
+            )
+          } 
+        />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/supplier/logout" element={<SupplierLogoutPage />} />
@@ -1376,6 +1390,18 @@ function AppRoutes() {
         <Route
           path="/supplier-register"
           element={<SupplierRegister onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier-landing"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/become-a-supplier"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
         />
 
         {/* Admin Panel Routes (Protected) */}

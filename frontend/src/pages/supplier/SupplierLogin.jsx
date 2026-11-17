@@ -111,11 +111,17 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   // ==========================================
   // --- REGISTRATION STATE & LOGIC ---
   // ==========================================
-  const [regData, setRegData] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    password: '',
+  const [regData, setRegData] = useState(() => {
+    let prefillPhone = '';
+    try {
+      prefillPhone = sessionStorage.getItem('mshoppy_supplier_prefill_phone') || '';
+    } catch (_) {}
+    return {
+      fullName: '',
+      phone: prefillPhone,
+      email: '',
+      password: '',
+    };
   });
 
   const [agreeTerms, setAgreeTerms] = useState(true);
