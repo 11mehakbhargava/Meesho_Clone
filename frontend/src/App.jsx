@@ -196,7 +196,7 @@ const screenCatalog = [
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
   { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
-  { path: '/supplier', name: 'Supplier Portal Landing', icon: '🏪', group: 'Supplier' },
+  { path: '/supplier', name: 'Become a Supplier (Landing)', icon: '🏬', group: 'Supplier' },
   { path: '/supplier-login', name: 'Supplier Login', icon: '🔐', group: 'Supplier' },
   { path: '/supplier-register', name: 'Supplier Registration', icon: '📝', group: 'Supplier' },
 
@@ -684,8 +684,8 @@ function AppRoutes() {
       'supplier-register': '/supplier-register',
       supplierRegister: '/supplier-register',
       supplier: '/supplier',
+      'become-supplier': '/supplier',
       'supplier-landing': '/supplier',
-      'become-a-supplier': '/supplier',
       returns: '/supplier-returns',
 
       // Admin & Community
@@ -850,16 +850,7 @@ function AppRoutes() {
         <Route path="/messenger" element={<Navigate to="/support" replace />} />
         <Route path="/conversation" element={<Navigate to="/support" replace />} />
         <Route path="/notifications" element={<NotificationCenter />} />
-        <Route 
-          path="/" 
-          element={
-            typeof window !== 'undefined' && window.location.hostname.startsWith('supplier.') ? (
-              <SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />
-            ) : (
-              <HomeUserCustomer />
-            )
-          } 
-        />
+        <Route path="/" element={<HomeUserCustomer />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/supplier/logout" element={<SupplierLogoutPage />} />
@@ -1384,15 +1375,11 @@ function AppRoutes() {
           element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
-          path="/supplier-login"
-          element={<SupplierLogin onNavigate={handleNav} onBack={handleBack} />}
-        />
-        <Route
-          path="/supplier-register"
-          element={<SupplierRegister onNavigate={handleNav} onBack={handleBack} />}
-        />
-        <Route
           path="/supplier"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/become-supplier"
           element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
@@ -1400,8 +1387,12 @@ function AppRoutes() {
           element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
-          path="/become-a-supplier"
-          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+          path="/supplier-login"
+          element={<SupplierLogin onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier-register"
+          element={<SupplierRegister onNavigate={handleNav} onBack={handleBack} />}
         />
 
         {/* Admin Panel Routes (Protected) */}

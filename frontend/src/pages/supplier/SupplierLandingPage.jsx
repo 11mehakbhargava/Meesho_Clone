@@ -5,692 +5,840 @@ import {
   ShieldCheck,
   CheckCircle2,
   ArrowRight,
-  IndianRupee,
   TrendingUp,
+  IndianRupee,
   Truck,
   RotateCcw,
   Clock,
+  Layers,
+  Store,
+  Phone,
+  HelpCircle,
+  PackageCheck,
+  BarChart3,
+  Award,
+  Zap,
   ChevronDown,
   ChevronUp,
   Percent,
-  Package,
-  Layers,
-  Store,
-  FileSpreadsheet,
-  Headphones,
-  Check,
+  Calculator,
   Building2,
-  Users,
-  Award,
-  Zap,
-  HelpCircle,
-  LogIn,
-  UserPlus
+  Lock,
+  ExternalLink
 } from 'lucide-react';
+
+const CATEGORY_MARGIN_DATA = {
+  'women_ethnic': { name: 'Women Ethnic & Sarees', otherComm: 19, avgShip: 45, icon: '👗' },
+  'men_fashion': { name: 'Men Western & Casuals', otherComm: 18, avgShip: 50, icon: '👕' },
+  'footwear': { name: 'Shoes & Footwear', otherComm: 17, avgShip: 55, icon: '👟' },
+  'home_kitchen': { name: 'Home & Kitchen Appliances', otherComm: 16, avgShip: 60, icon: '🍳' },
+  'electronics': { name: 'Electronics & Audio', otherComm: 15, avgShip: 45, icon: '🎧' },
+  'beauty_health': { name: 'Beauty & Personal Care', otherComm: 20, avgShip: 40, icon: '✨' },
+};
+
+const FAQS = [
+  {
+    q: 'Why should I sell on MShoppy instead of other platforms?',
+    a: 'MShoppy offers 0% Commission across all 700+ categories. You take home 100% of your selling price (deducting only mandatory government 1% TCS/TDS). Plus, we charge ₹0 penalty on RTO/customer cancellations and provide 7-day automated bank payouts.'
+  },
+  {
+    q: 'Do I need a GSTIN to register as a supplier?',
+    a: 'Yes, as per Indian GST regulations for inter-state e-commerce supply, a valid GSTIN (Regular or Composition) along with an active bank account is required to register and receive automated payouts.'
+  },
+  {
+    q: 'How does shipping and order pickup work?',
+    a: 'You simply pack the product and paste our 1-click printable shipping label. Our trusted courier partners (Delhivery, Shadowfax, Xpressbees) will pick up the parcel directly from your warehouse or doorstep.'
+  },
+  {
+    q: 'What happens if a customer returns or cancels an order (RTO)?',
+    a: 'Unlike Amazon or other platforms that impose heavy return handling fines on sellers, MShoppy has a strict ₹0 Penalty policy for RTO (Return to Origin). Unopened packets are returned to your warehouse safely at zero penalty.'
+  },
+  {
+    q: 'When do I receive my payments?',
+    a: 'MShoppy runs an automated 7-day payment cycle. Payments for delivered orders are credited directly into your registered bank account via NEFT/IMPS within 7 to 10 days of successful delivery.'
+  },
+  {
+    q: 'Can I upload products in bulk (Excel / CSV)?',
+    a: 'Yes! You can either add products one-by-one with our adaptive size/color matrix, or download our ready-made CSV/Excel template, fill product details, and upload 50+ catalogs in just 1 click.'
+  }
+];
 
 export default function SupplierLandingPage({ onNavigate }) {
   const navigate = useNavigate();
 
-  const handleNav = (path) => {
-    if (onNavigate) {
-      onNavigate(path);
-    } else {
-      navigate(path);
-    }
-  };
+  // Fast-track phone registration lead state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
-  // Quick Registration Hero Input State
-  const [quickPhone, setQuickPhone] = useState('');
-  const [quickGstin, setQuickGstin] = useState('');
-
-  const handleQuickRegisterSubmit = (e) => {
-    e.preventDefault();
-    const cleanPhone = quickPhone.trim().replace(/\D/g, '');
-    const cleanGst = quickGstin.trim().toUpperCase();
-    
-    // Store in session so SupplierRegister can pre-fill
-    if (cleanPhone) sessionStorage.setItem('mshoppy_supplier_prefill_phone', cleanPhone);
-    if (cleanGst) sessionStorage.setItem('mshoppy_supplier_prefill_gstin', cleanGst);
-    
-    handleNav('/supplier-register');
-  };
-
-  // Profit Calculator State
-  const [calcCategory, setCalcCategory] = useState('ethnic');
-  const [sellingPrice, setSellingPrice] = useState(650);
-
-  const categoriesConfig = {
-    ethnic: { name: 'Women Ethnic Wear (Sarees, Kurtis)', otherCommissionRate: 0.18, fixedClosingFee: 30 },
-    western: { name: 'Western Wear (Tees, Dresses)', otherCommissionRate: 0.19, fixedClosingFee: 25 },
-    men: { name: 'Men Fashion & Streetwear', otherCommissionRate: 0.18, fixedClosingFee: 28 },
-    beauty: { name: 'Beauty & Skincare', otherCommissionRate: 0.16, fixedClosingFee: 20 },
-    electronics: { name: 'Electronics & Audio', otherCommissionRate: 0.15, fixedClosingFee: 35 },
-    home: { name: 'Home & Kitchen Essentials', otherCommissionRate: 0.17, fixedClosingFee: 25 },
-  };
-
-  const calcResults = useMemo(() => {
-    const cfg = categoriesConfig[calcCategory] || categoriesConfig.ethnic;
-    const price = Number(sellingPrice) || 0;
-
-    // Other Marketplaces (18% commission + closing fee + payment gateway)
-    const otherComm = Math.round(price * cfg.otherCommissionRate);
-    const otherClosing = cfg.fixedClosingFee;
-    const otherGateway = Math.round(price * 0.02);
-    const otherDeductions = otherComm + otherClosing + otherGateway;
-    const otherPayout = Math.max(0, price - otherDeductions);
-
-    // MShoppy (0% Commission, 0 Closing Fee, 1% TCS + 1% TDS standard)
-    const mshoppyTcsTds = Math.round(price * 0.02);
-    const mshoppyPayout = Math.max(0, price - mshoppyTcsTds);
-
-    const savingsPerOrder = mshoppyPayout - otherPayout;
-    const annualSavings100Orders = savingsPerOrder * 100 * 12;
-
-    return {
-      price,
-      otherComm,
-      otherClosing,
-      otherGateway,
-      otherDeductions,
-      otherPayout,
-      mshoppyTcsTds,
-      mshoppyPayout,
-      savingsPerOrder,
-      annualSavings100Orders,
-    };
-  }, [calcCategory, sellingPrice]);
+  // Interactive Profit Calculator States
+  const [calcCategory, setCalcCategory] = useState('women_ethnic');
+  const [calcPrice, setCalcPrice] = useState(650);
+  const [calcOrders, setCalcOrders] = useState(120);
 
   // FAQ Accordion State
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
-  const faqs = [
-    {
-      q: 'Why should I sell on MShoppy instead of Amazon or Flipkart?',
-      a: 'MShoppy charges 0% Commission across all categories. Unlike other marketplaces that cut 18% to 28% in referral fees and closing charges, you take home virtually 100% of your listed price. Furthermore, MShoppy offers zero penalty on RTO (Return to Origin) cancellations, automated 7-day bank payouts, and does not require costly brand registry or UPC barcodes.'
-    },
-    {
-      q: 'What documents are required to start selling on MShoppy?',
-      a: 'To register as a supplier, you only need three things: 1) A valid GSTIN (Regular or Composition scheme), 2) An active Bank Account (Account number & IFSC for daily/weekly settlement payouts), and 3) A registered pickup address with pincode where courier riders can collect your parcels.'
-    },
-    {
-      q: 'Do I need to send my inventory to a central fulfillment warehouse (like Amazon FBA)?',
-      a: 'No! MShoppy operates on a 100% doorstep pickup model. You store products in your own shop, home, or warehouse. When you receive an order, simply pack it, paste the printable barcode shipping label, and our logistics partners (Delhivery, Shadowfax, Xpressbees) will pick it up directly from your doorstep.'
-    },
-    {
-      q: 'When and how do I receive payments for my sales?',
-      a: 'Payments are automatically transferred directly to your bank account via NEFT/RTGS within 7 to 10 days of the product being delivered to the customer. You can track upcoming, in-transit, and settled payouts in real time on your Settlements Dashboard.'
-    },
-    {
-      q: 'What is MShoppy policy on RTO (Return to Origin) and Customer Returns?',
-      a: 'If a customer refuses or is unavailable at delivery (RTO), MShoppy charges ₹0 return shipping penalty to the supplier. For customer returns (size or defect issues), if you receive a damaged or wrong product, you can upload unboxing proof on our Supplier Safety Claim Desk to claim financial compensation.'
-    },
-    {
-      q: 'Can I upload products in bulk, or do I have to add them one by one?',
-      a: 'Both! You can list items individually using our adaptive form (which automatically shows size/color toggles for fashion and hides them for non-apparel like facewash), or you can download our 1-click Excel/CSV template to upload 50+ to 100+ products at once.'
+  const handleNav = (path) => {
+    if (onNavigate) onNavigate(path);
+    else navigate(path);
+  };
+
+  const handleStartSelling = (e) => {
+    e.preventDefault();
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone && cleanPhone.length !== 10) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      return;
     }
-  ];
+    setPhoneError('');
+    if (cleanPhone) {
+      try {
+        sessionStorage.setItem('mshoppy_supplier_prefill_phone', cleanPhone);
+      } catch (_) {}
+    }
+    handleNav('/supplier-register');
+  };
+
+  // Real-time calculation logic
+  const calcResults = useMemo(() => {
+    const selectedCat = CATEGORY_MARGIN_DATA[calcCategory] || CATEGORY_MARGIN_DATA['women_ethnic'];
+    const price = Number(calcPrice) || 500;
+    const orders = Number(calcOrders) || 100;
+
+    // MShoppy: 0% Comm, 1% TCS, 1% TDS = 2% total statutory deduction
+    const mshoppyPerOrderTaxes = price * 0.02;
+    const mshoppyTakeHomePerOrder = Math.max(0, price - mshoppyPerOrderTaxes);
+    const mshoppyMonthlyNet = Math.round(mshoppyTakeHomePerOrder * orders);
+
+    // Other Platforms: otherComm% (15-20%) + Closing Fee (~₹15) + Fixed Handling (~₹20) + 2% Taxes
+    const otherCommRate = selectedCat.otherComm / 100;
+    const otherDeductionPerOrder = (price * otherCommRate) + 35 + (price * 0.02);
+    const otherTakeHomePerOrder = Math.max(0, price - otherDeductionPerOrder);
+    const otherMonthlyNet = Math.round(otherTakeHomePerOrder * orders);
+
+    const monthlyDifference = Math.max(0, mshoppyMonthlyNet - otherMonthlyNet);
+    const yearlyExtra = monthlyDifference * 12;
+
+    return {
+      mshoppyTakeHomePerOrder: Math.round(mshoppyTakeHomePerOrder),
+      mshoppyMonthlyNet,
+      otherTakeHomePerOrder: Math.round(otherTakeHomePerOrder),
+      otherMonthlyNet,
+      monthlyDifference,
+      yearlyExtra,
+      otherComm: selectedCat.otherComm
+    };
+  }, [calcCategory, calcPrice, calcOrders]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-[#b7004d] selection:text-white">
+    <div className="min-h-screen bg-[#fafbfc] text-slate-900 font-sans antialiased selection:bg-[#d82a62] selection:text-white">
       {/* ======================================================== */}
-      {/* 1. TOP HEADER NAVIGATION BAR */}
+      {/* 1. TOP STICKY SUPPLIER NAVIGATION HEADER                 */}
       {/* ======================================================== */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-pink-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          {/* Logo */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+          {/* Logo & Portal Identifier */}
           <div 
-            onClick={() => handleNav('/supplier')} 
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            onClick={() => handleNav('/')}
+            className="flex items-center gap-3 cursor-pointer select-none group"
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#850d3a] to-[#d82a62] text-white flex items-center justify-center font-black text-xl shadow-md shadow-pink-900/20 group-hover:scale-105 transition-transform">
-              M
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#5a0624] via-[#850d3a] to-[#d82a62] flex items-center justify-center shadow-sm shadow-pink-900/20 group-hover:scale-105 transition-transform">
+              <Store className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">MShoppy</span>
-                <span className="px-2 py-0.5 rounded-full bg-pink-100 text-[#b7004d] text-[10px] font-extrabold uppercase tracking-wide">
-                  Supplier Hub
+              <div className="flex items-center gap-1.5">
+                <span className="text-xl font-black text-[#b7004d] tracking-tight">MShoppy</span>
+                <span className="px-2 py-0.5 rounded-md bg-pink-100 text-[#b7004d] text-[10px] font-black uppercase tracking-wider">
+                  Supplier
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-slate-500 hidden sm:block">India's 0% Commission Wholesale Portal</p>
+              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">Sell Wholesale Pan-India</p>
             </div>
           </div>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-600">
-            <a href="#benefits" className="hover:text-[#b7004d] transition-colors">Why MShoppy</a>
-            <a href="#calculator" className="hover:text-[#b7004d] transition-colors">Profit Calculator</a>
+          {/* Center Anchor Navigation Links (Desktop) */}
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-bold text-slate-600">
+            <a href="#why-sell" className="hover:text-[#b7004d] transition-colors">Why MShoppy</a>
+            <a href="#calculator" className="hover:text-[#b7004d] transition-colors flex items-center gap-1">
+              <span>Earnings Calculator</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </a>
             <a href="#how-it-works" className="hover:text-[#b7004d] transition-colors">How It Works</a>
+            <a href="#categories" className="hover:text-[#b7004d] transition-colors">High Demand</a>
             <a href="#faqs" className="hover:text-[#b7004d] transition-colors">FAQs</a>
           </nav>
 
-          {/* Action Buttons: Login & Start Selling */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Action CTAs */}
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => handleNav('/supplier-login')}
-              className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-2xl border border-slate-200 hover:border-[#b7004d] text-slate-700 hover:text-[#b7004d] font-bold text-xs sm:text-sm transition-all active:scale-95 cursor-pointer bg-white"
+              className="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-700 hover:text-[#b7004d] hover:bg-pink-50/60 border border-slate-200 transition-all cursor-pointer"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Login</span>
+              Login
             </button>
-
             <button
               type="button"
               onClick={() => handleNav('/supplier-register')}
-              className="inline-flex items-center gap-1.5 px-5 sm:px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#b7004d] to-[#d82a62] hover:from-[#9b1147] hover:to-[#b7004d] text-white font-extrabold text-xs sm:text-sm shadow-md shadow-pink-600/30 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#850d3a] to-[#d82a62] hover:from-[#6b082e] hover:to-[#b7004d] text-white text-xs font-black shadow-md shadow-pink-600/25 active:scale-95 transition-all cursor-pointer"
             >
-              <UserPlus className="w-4 h-4" />
               <span>Start Selling</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </header>
 
       {/* ======================================================== */}
-      {/* 2. HERO SECTION WITH VALUE PROPOSITION & QUICK SIGNUP */}
+      {/* 2. HIGH-IMPACT HERO SECTION (Conversion Lead Form)       */}
       {/* ======================================================== */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-pink-50/60 via-rose-50/30 to-white pt-10 sm:pt-16 pb-16 lg:pb-24 border-b border-pink-100/60">
-        {/* Ambient Gradient Blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-pink-200/40 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-rose-200/30 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#5a0624] via-[#850d3a] to-[#2c0311] text-white pt-12 pb-20 sm:pt-16 sm:pb-28">
+        {/* Ambient Glowing Orbs */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-pink-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-80 h-80 rounded-full bg-rose-400/10 blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             
-            {/* Left Column: Headlines & Pillars */}
+            {/* Left 7 Columns: Hero Value Proposition */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-pink-100 border border-pink-200 text-[#b7004d] text-xs font-black tracking-wide uppercase shadow-xs">
-                <Sparkles className="w-4 h-4 text-[#b7004d]" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-pink-200 shadow-sm">
+                <Sparkles className="w-4 h-4 text-pink-300" />
                 <span>India's Most Supplier-Friendly E-Commerce Platform</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-                Sell Online to <span className="text-[#b7004d] underline decoration-pink-300 decoration-wavy decoration-2">14 Crore+</span> Customers at <span className="text-emerald-700 bg-emerald-50 px-3 py-1 rounded-2xl border border-emerald-200 inline-block mt-1 sm:mt-0">0% Commission</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5.5xl font-black tracking-tight leading-[1.15]">
+                Sell Online to <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200">14 Cr+ Customers</span> at <span className="underline decoration-pink-400 decoration-wavy decoration-2">0% Commission</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-600 max-w-2xl font-medium leading-relaxed">
-                Grow your wholesale & manufacturing business across 28,000+ pin codes. No commission cuts, no cancellation penalties, and guaranteed 7-day payments directly to your bank account.
+              <p className="text-base sm:text-lg text-pink-100/90 font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                Grow your wholesale & manufacturing business pan-India. List with just a GSTIN, get 7-day automated bank payouts, and pay zero commission on every order.
               </p>
 
-              {/* Highlights Checklist */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
-                {[
-                  '0% Commission on all product categories',
-                  '₹0 Penalty on RTO (Return to Origin)',
-                  'Doorstep parcel pickup by top couriers',
-                  '7-Day direct bank settlement cycle',
-                  'No Brand Registry / UPC barcode required',
-                  'Real-time order chime & label printing'
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-slate-700">
-                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+              {/* Fast-Track Phone Input Lead Card */}
+              <div className="bg-white/10 backdrop-blur-lg p-2.5 sm:p-3 rounded-3xl border border-white/20 shadow-2xl max-w-xl mx-auto lg:mx-0">
+                <form onSubmit={handleStartSelling} className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="relative w-full flex-1">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-pink-200 font-bold text-sm">
+                      <span>🇮🇳 +91</span>
+                      <span className="text-white/40">|</span>
                     </div>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Mobile Quick Action Link */}
-              <div className="pt-2 lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => handleNav('/supplier-register')}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#b7004d] to-[#d82a62] text-white font-black text-base shadow-lg shadow-pink-600/30 flex items-center justify-center gap-2"
-                >
-                  <span>Start Selling on MShoppy</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column: High-Conversion Quick Register Card */}
-            <div className="lg:col-span-5">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-pink-200/80 shadow-xl shadow-pink-900/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-100/50 rounded-bl-full pointer-events-none" />
-
-                <div className="space-y-1 mb-6">
-                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-[#b7004d] uppercase tracking-wider">
-                    <Store className="w-4 h-4" />
-                    <span>Free Supplier Registration</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Start Your Seller Journey
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Takes only 5 minutes. No upfront registration fee.
-                  </p>
-                </div>
-
-                <form onSubmit={handleQuickRegisterSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                      Enter Mobile Number <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-xs font-black text-slate-500 border-r border-slate-200 pr-2.5">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        required
-                        value={quickPhone}
-                        onChange={(e) => setQuickPhone(e.target.value)}
-                        placeholder="9876543210"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-16 pr-4 text-sm font-bold text-slate-900 focus:bg-white focus:border-[#b7004d] focus:ring-2 focus:ring-pink-100 outline-none transition"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
-                      GSTIN (Optional for now)
-                    </label>
                     <input
-                      type="text"
-                      maxLength={15}
-                      value={quickGstin}
-                      onChange={(e) => setQuickGstin(e.target.value.toUpperCase())}
-                      placeholder="e.g. 07AAAAA0000A1Z5"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-900 uppercase focus:bg-white focus:border-[#b7004d] focus:ring-2 focus:ring-pink-100 outline-none transition"
+                      type="tel"
+                      maxLength={10}
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        setPhoneNumber(e.target.value.replace(/\D/g, ''));
+                        setPhoneError('');
+                      }}
+                      placeholder="Enter 10-digit mobile number"
+                      className="w-full bg-white/15 focus:bg-white text-white focus:text-slate-900 placeholder:text-pink-200/60 rounded-2xl py-3.5 pl-22 pr-4 text-sm font-semibold outline-none transition-all border border-white/20 focus:border-white"
                     />
-                    <span className="text-[10px] text-slate-400 mt-1 block">You can also add GSTIN later inside your KYC Hub.</span>
                   </div>
-
                   <button
                     type="submit"
-                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#b7004d] to-[#d82a62] hover:from-[#9b1147] hover:to-[#b7004d] text-white font-extrabold text-sm shadow-md shadow-pink-600/30 transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2 group"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-sm shadow-lg shadow-emerald-500/30 transition-transform active:scale-95 cursor-pointer shrink-0"
                   >
-                    <span>Register as Supplier</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <span>Start Selling</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
-
-                  <div className="pt-2 text-center border-t border-slate-100">
-                    <p className="text-xs text-slate-500 font-medium">
-                      Already have a supplier account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => handleNav('/supplier-login')}
-                        className="text-[#b7004d] font-bold hover:underline cursor-pointer"
-                      >
-                        Login here
-                      </button>
-                    </p>
-                  </div>
                 </form>
+                {phoneError && (
+                  <p className="text-xs text-rose-300 font-bold mt-2 text-left pl-3">{phoneError}</p>
+                )}
+              </div>
+
+              {/* Key Trust Micro-Badges */}
+              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs font-semibold text-pink-200/90">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>GSTIN & Bank Account Required</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>No UPC Barcode Mandate</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Doorstep Courier Pickup</span>
+                </div>
               </div>
             </div>
 
-          </div>
+            {/* Right 5 Columns: Visual Live Trust Matrix Card */}
+            <div className="lg:col-span-5">
+              <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl space-y-6">
+                
+                {/* Header Tag */}
+                <div className="flex items-center justify-between pb-4 border-b border-white/15">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs font-black uppercase tracking-wider text-pink-200">MShoppy Ecosystem</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-bold text-xs border border-emerald-400/30">
+                    Verified Payouts
+                  </span>
+                </div>
 
-          {/* Trust Metric Counters Banner */}
-          <div className="mt-14 pt-8 border-t border-pink-100 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">11 Lakh+</span>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trusted Suppliers</p>
+                {/* 4 Pillars of Scale */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                    <div className="text-2xl sm:text-3xl font-black text-white">11 Lakh+</div>
+                    <p className="text-xs text-pink-200/80 mt-1 font-medium">Trusted Suppliers</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                    <div className="text-2xl sm:text-3xl font-black text-amber-300">14 Crore+</div>
+                    <p className="text-xs text-pink-200/80 mt-1 font-medium">Active Customers</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                    <div className="text-2xl sm:text-3xl font-black text-emerald-300">28,000+</div>
+                    <p className="text-xs text-pink-200/80 mt-1 font-medium">Pincodes Served</p>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+                    <div className="text-2xl sm:text-3xl font-black text-rose-300">0%</div>
+                    <p className="text-xs text-pink-200/80 mt-1 font-medium">Commission Rate</p>
+                  </div>
+                </div>
+
+                {/* Trust Seal */}
+                <div className="pt-2 p-4 rounded-2xl bg-black/20 border border-white/10 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-bold text-white">7-Day Payment Guarantee</p>
+                    <p className="text-pink-200/80 text-[11px] mt-0.5">Automated NEFT transfer straight into your verified bank account.</p>
+                  </div>
+                </div>
+
+              </div>
             </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-4xl font-black text-[#b7004d] tracking-tight">0%</span>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Commission Fee</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">7 Days</span>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Automated Bank Settlement</p>
-            </div>
-            <div className="space-y-1">
-              <span className="text-2xl sm:text-4xl font-black text-emerald-700 tracking-tight">28,000+</span>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pan-India Pincodes</p>
-            </div>
+
           </div>
         </div>
       </section>
 
       {/* ======================================================== */}
-      {/* 3. INTERACTIVE PROFIT & SAVINGS CALCULATOR (MEESHO SPECIAL) */}
+      {/* 3. WHY SELL ON MSHOPPY (4 Core USPs vs Others)          */}
       {/* ======================================================== */}
-      <section id="calculator" className="py-16 sm:py-24 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider">
-              <Percent className="w-3.5 h-3.5" />
-              <span>Transparent Math</span>
+      <section id="why-sell" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
+          <span className="px-3.5 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
+            Why Wholesalers Prefer MShoppy
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            Built for High Profit, Zero Hassle Selling
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            Unlike legacy marketplaces that squeeze suppliers with heavy commissions and unfair cancellation penalties, MShoppy maximizes your profit.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          {/* Card 1: 0% Commission */}
+          <div className="bg-white p-7 rounded-3xl border border-pink-100 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-pink-50 text-[#b7004d] flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#b7004d] group-hover:text-white transition-all">
+                <Percent className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">0% Commission Rate</h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                Keep 100% of your listing base price. Other platforms deduct 15% to 28% in referral fees, closing fees, and collection charges.
+              </p>
             </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-600">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Zero referral fee across 700+ categories</span>
+            </div>
+          </div>
+
+          {/* Card 2: 0 Penalty on RTO */}
+          <div className="bg-white p-7 rounded-3xl border border-rose-100 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                <RotateCcw className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">₹0 Penalty on RTO</h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                If a customer refuses the parcel at doorstep or cancels before delivery, we charge zero penalty fees. Unopened packages return safely.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-600">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Full compensation on damaged transit</span>
+            </div>
+          </div>
+
+          {/* Card 3: 7-Day Payment Cycle */}
+          <div className="bg-white p-7 rounded-3xl border border-emerald-100 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                <Clock className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">7-Day Payment Cycle</h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                Enjoy fast cashflow with automated payments credited directly to your bank account within 7 to 10 days of order delivery.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-600">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Direct NEFT / IMPS settlements</span>
+            </div>
+          </div>
+
+          {/* Card 4: No Brand Gatekeeping */}
+          <div className="bg-white p-7 rounded-3xl border border-amber-100 shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                <Store className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">No Barcode / UPC Mandate</h3>
+              <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                Sell directly with your valid GSTIN. No expensive GS1 barcodes, trademark certificates, or Brand Registry approvals required.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-600">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Instant catalog listing approval</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 4. INTERACTIVE EARNINGS / PROFIT CALCULATOR (MEESHO SPECIAL)*/}
+      {/* ======================================================== */}
+      <section id="calculator" className="py-20 bg-gradient-to-b from-white to-pink-50/50 border-y border-pink-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
+            <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5">
+              <Calculator className="w-3.5 h-3.5" />
+              <span>Live Earnings Comparison</span>
+            </span>
             <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
               See How Much More You Earn on MShoppy
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 font-medium">
-              Compare your net take-home earnings on MShoppy’s 0% Commission model versus typical 18%–25% commission marketplaces.
+            <p className="text-sm sm:text-base text-slate-600">
+              Compare your exact take-home profit against other marketplace platforms charging 15-20% commissions.
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-pink-50/50 via-white to-slate-50 rounded-3xl border border-pink-200/80 p-6 sm:p-10 shadow-lg shadow-pink-900/5 max-w-5xl mx-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 border border-pink-200 shadow-xl max-w-5xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
-              {/* Inputs Column */}
+              {/* Left Column: Interactive Sliders & Category Pickers */}
               <div className="lg:col-span-6 space-y-6">
+                
+                {/* 1. Category Selection */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-2">
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-2">
                     1. Select Your Product Category
                   </label>
-                  <select
-                    value={calcCategory}
-                    onChange={(e) => setCalcCategory(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-2xl py-3 px-4 text-sm font-bold text-slate-900 focus:border-[#b7004d] focus:ring-2 focus:ring-pink-100 outline-none transition cursor-pointer"
-                  >
-                    {Object.entries(categoriesConfig).map(([key, item]) => (
-                      <option key={key} value={key}>
-                        {item.name}
-                      </option>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Object.entries(CATEGORY_MARGIN_DATA).map(([key, data]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCalcCategory(key)}
+                        className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-2 text-xs font-bold ${
+                          calcCategory === key
+                            ? 'bg-pink-50 border-[#b7004d] text-[#b7004d] shadow-xs'
+                            : 'bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-base">{data.icon}</span>
+                        <span className="truncate">{data.name.split('&')[0]}</span>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
+                {/* 2. Selling Price Slider */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-                      2. Enter Product Selling Price
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                      2. Product Selling Price (MRP/Wholesale)
                     </label>
-                    <span className="text-lg font-black text-[#b7004d]">
-                      ₹{Number(sellingPrice).toLocaleString('en-IN')}
-                    </span>
+                    <span className="text-base font-black text-[#b7004d]">₹{calcPrice}</span>
                   </div>
                   <input
                     type="range"
-                    min={150}
-                    max={3000}
-                    step={50}
-                    value={sellingPrice}
-                    onChange={(e) => setSellingPrice(Number(e.target.value))}
-                    className="w-full accent-[#b7004d] cursor-pointer"
+                    min="150"
+                    max="3000"
+                    step="50"
+                    value={calcPrice}
+                    onChange={(e) => setCalcPrice(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#b7004d]"
                   />
-                  <div className="flex justify-between text-[11px] font-bold text-slate-400 mt-1">
+                  <div className="flex justify-between text-[11px] text-slate-400 font-medium mt-1">
                     <span>₹150</span>
                     <span>₹1,500</span>
                     <span>₹3,000</span>
                   </div>
                 </div>
 
-                {/* Savings Callout Pill */}
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Extra Profit Per Order</span>
-                    <p className="text-2xl font-black text-emerald-700">
-                      +₹{calcResults.savingsPerOrder.toLocaleString('en-IN')}
-                    </p>
+                {/* 3. Monthly Orders Slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                      3. Estimated Orders Per Month
+                    </label>
+                    <span className="text-base font-black text-[#b7004d]">{calcOrders} Orders</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[11px] font-bold text-emerald-800">Annual Gain (100 orders/mo)</span>
-                    <p className="text-sm font-black text-emerald-700">
-                      ₹{calcResults.annualSavings100Orders.toLocaleString('en-IN')} extra
-                    </p>
+                  <input
+                    type="range"
+                    min="20"
+                    max="1000"
+                    step="10"
+                    value={calcOrders}
+                    onChange={(e) => setCalcOrders(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#b7004d]"
+                  />
+                  <div className="flex justify-between text-[11px] text-slate-400 font-medium mt-1">
+                    <span>20</span>
+                    <span>500</span>
+                    <span>1,000+ orders</span>
                   </div>
                 </div>
+
               </div>
 
-              {/* Comparison Breakdown Cards Column */}
-              <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Right Column: Comparative Results & Profit Callout */}
+              <div className="lg:col-span-6 bg-gradient-to-br from-slate-900 to-[#420417] text-white p-6 sm:p-8 rounded-3xl space-y-6 shadow-xl">
                 
-                {/* Card 1: Other Marketplaces */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Other Platforms</span>
-                    <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">~20% Cut</span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs text-slate-600">
-                    <div className="flex justify-between">
-                      <span>Listing Price:</span>
-                      <span className="font-bold">₹{calcResults.price}</span>
-                    </div>
-                    <div className="flex justify-between text-rose-600">
-                      <span>Commission:</span>
-                      <span>-₹{calcResults.otherComm}</span>
-                    </div>
-                    <div className="flex justify-between text-rose-600">
-                      <span>Closing & Fixed Fee:</span>
-                      <span>-₹{calcResults.otherClosing}</span>
-                    </div>
-                    <div className="flex justify-between text-rose-600">
-                      <span>Payment Gateway (2%):</span>
-                      <span>-₹{calcResults.otherGateway}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-200">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase">You Receive</span>
-                    <p className="text-xl font-black text-slate-800">
-                      ₹{calcResults.otherPayout.toLocaleString('en-IN')}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                  <span className="text-xs font-bold text-pink-200 uppercase tracking-wider">Monthly Profit Audit</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-extrabold text-xs">
+                    0% Comm vs {calcResults.otherComm}% Comm
+                  </span>
                 </div>
 
-                {/* Card 2: MShoppy 0% Commission */}
-                <div className="bg-white rounded-2xl p-5 border-2 border-[#b7004d] shadow-md shadow-pink-600/10 space-y-3 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-[#b7004d] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-bl-lg">
-                    Best for Sellers
-                  </div>
-
-                  <div className="flex items-center justify-between border-b border-pink-100 pb-2">
-                    <span className="text-xs font-black text-[#b7004d] uppercase tracking-wide">MShoppy</span>
-                    <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">0% Commission</span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs text-slate-600">
-                    <div className="flex justify-between">
-                      <span>Listing Price:</span>
-                      <span className="font-bold">₹{calcResults.price}</span>
+                {/* Side-by-Side Comparison */}
+                <div className="grid grid-cols-2 gap-4">
+                  
+                  {/* Other Marketplaces */}
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase block">Other Platforms</span>
+                    <div className="text-xl sm:text-2xl font-black text-slate-200 mt-1">
+                      ₹{calcResults.otherMonthlyNet.toLocaleString('en-IN')}
                     </div>
-                    <div className="flex justify-between text-emerald-700 font-bold">
-                      <span>Commission (0%):</span>
-                      <span>₹0</span>
-                    </div>
-                    <div className="flex justify-between text-emerald-700 font-bold">
-                      <span>Closing Fee:</span>
-                      <span>₹0</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Govt TCS / TDS (2%):</span>
-                      <span>-₹{calcResults.mshoppyTcsTds}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-pink-100">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase">You Receive</span>
-                    <p className="text-2xl font-black text-[#b7004d]">
-                      ₹{calcResults.mshoppyPayout.toLocaleString('en-IN')}
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      ₹{calcResults.otherTakeHomePerOrder}/order after {calcResults.otherComm}% commission + fees
                     </p>
                   </div>
+
+                  {/* MShoppy Payout */}
+                  <div className="bg-emerald-500/15 rounded-2xl p-4 border border-emerald-400/30">
+                    <span className="text-[11px] font-bold text-emerald-300 uppercase block">On MShoppy</span>
+                    <div className="text-xl sm:text-2xl font-black text-emerald-300 mt-1">
+                      ₹{calcResults.mshoppyMonthlyNet.toLocaleString('en-IN')}
+                    </div>
+                    <p className="text-[10px] text-emerald-200/80 mt-1">
+                      ₹{calcResults.mshoppyTakeHomePerOrder}/order with 0% Commission
+                    </p>
+                  </div>
+
                 </div>
 
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================== */}
-      {/* 4. WHY SELL ON MSHOPPY (MEESHO'S 6 CORE PILLARS) */}
-      {/* ======================================================== */}
-      <section id="benefits" className="py-16 sm:py-24 bg-slate-50 border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
-              <Award className="w-3.5 h-3.5" />
-              <span>Supplier First Benefits</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Built for Wholesalers & Manufacturers
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 font-medium">
-              We eliminated the complex rules, hidden fees, and harsh penalties of legacy marketplaces so you can focus on making and selling quality goods.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Feature 1 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 text-[#b7004d] flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <Percent className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                0% Commission Fee
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Keep every rupee you earn. Whether you sell fashion, electronics, or home essentials, MShoppy charges zero commission on your orders.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <RotateCcw className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                ₹0 Penalty on RTO
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                If an undelivered parcel returns to origin because the customer was unreachable or cancelled at the door, you pay zero cancellation penalty.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                7-Day Payment Cycle
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Faster working capital rotation. Payouts are directly credited to your registered bank account via NEFT/IMPS within 7 days of delivery.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <Package className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                No UPC or Brand Gatekeeping
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Start selling instantly with just your GSTIN. No expensive GS1 barcodes, no trademark applications, and no brand authorization gatekeeping.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                Doorstep Courier Pickup
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                No need to travel to courier hubs. Delhivery, Shadowfax, and Xpressbees riders pick up packed parcels directly from your warehouse door.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs hover:shadow-md transition group">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#b7004d] flex items-center justify-center font-bold mb-5 group-hover:scale-110 transition-transform">
-                <Zap className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight mb-2">
-                Live Order Chime & Radar
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Never miss an order. Get real-time melodic sound alerts the instant a customer orders, with 1-click printable shipping labels and manifests.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================== */}
-      {/* 5. HOW IT WORKS (4 SIMPLE STEPS) */}
-      {/* ======================================================== */}
-      <section id="how-it-works" className="py-16 sm:py-24 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
-              <Layers className="w-3.5 h-3.5" />
-              <span>Step-by-Step Guide</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              How to Start Selling in 4 Simple Steps
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 font-medium">
-              From free registration to your first bank payout, here is how MShoppy works for every merchant.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 relative">
-            {[
-              {
-                step: '01',
-                title: 'Register in 5 Mins',
-                desc: 'Sign up with your phone number, GSTIN, and active bank account details for direct payouts.',
-                icon: Store,
-                color: 'bg-pink-50 text-[#b7004d]'
-              },
-              {
-                step: '02',
-                title: 'Upload Your Catalog',
-                desc: 'Add items 1-by-1 with adaptive size/color toggles, or download our Excel template for bulk upload.',
-                icon: FileSpreadsheet,
-                color: 'bg-indigo-50 text-indigo-700'
-              },
-              {
-                step: '03',
-                title: 'Pack & Print Label',
-                desc: 'Hear the 3.5s order chime, pack your parcel, and print the auto-generated barcode shipping label.',
-                icon: Package,
-                color: 'bg-amber-50 text-amber-700'
-              },
-              {
-                step: '04',
-                title: 'Handover & Get Paid',
-                desc: 'Courier rider collects parcel from your door. Money is deposited in your bank within 7 days.',
-                icon: IndianRupee,
-                color: 'bg-emerald-50 text-emerald-700'
-              }
-            ].map((st, idx) => {
-              const IconComp = st.icon;
-              return (
-                <div key={idx} className="bg-slate-50/80 rounded-3xl p-6 sm:p-7 border border-slate-200/80 relative space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-black text-slate-300 tracking-tight">
-                      {st.step}
-                    </span>
-                    <div className={`w-10 h-10 rounded-2xl ${st.color} flex items-center justify-center`}>
-                      <IconComp className="w-5 h-5" />
-                    </div>
-                  </div>
+                {/* Highlighted Net Monthly Difference */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg space-y-1 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div>
-                    <h4 className="text-base font-black text-slate-900 tracking-tight mb-1">
-                      {st.title}
-                    </h4>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {st.desc}
-                    </p>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 block">
+                      Extra Money In Your Bank
+                    </span>
+                    <div className="text-2xl font-black tracking-tight">
+                      +₹{calcResults.monthlyDifference.toLocaleString('en-IN')} <span className="text-sm font-normal text-emerald-100">/ month</span>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleNav('/supplier-register')}
+                    className="px-4 py-2.5 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs transition active:scale-95 cursor-pointer shrink-0 shadow-sm"
+                  >
+                    Claim Profit ➔
+                  </button>
                 </div>
-              );
-            })}
+
+                <div className="text-center text-[11px] text-pink-200/70 font-medium">
+                  Annualized extra revenue: <strong className="text-white">+₹{calcResults.yearlyExtra.toLocaleString('en-IN')}</strong> per year with MShoppy.
+                </div>
+
+              </div>
+
+            </div>
           </div>
 
-          <div className="mt-12 text-center">
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 5. HOW SELLING ON MSHOPPY WORKS (4 Step Pipeline)        */}
+      {/* ======================================================== */}
+      <section id="how-it-works" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-16">
+          <span className="px-3.5 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
+            Simple 4-Step Process
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            How Selling on MShoppy Works
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            Start selling in less than 10 minutes with our simplified onboarding experience.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+          
+          {/* Step 1 */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-pink-300 transition-all space-y-4 relative">
+            <div className="w-10 h-10 rounded-2xl bg-[#5a0624] text-white flex items-center justify-center font-black text-sm">
+              01
+            </div>
+            <h3 className="text-base font-black text-slate-900">Sign Up in 2 Mins</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              All you need is a valid GSTIN, an active bank account for daily settlements, and your pickup address.
+            </p>
+            <div className="text-[11px] font-bold text-[#b7004d] pt-2 border-t border-slate-100">
+              Instant KYC verification ➔
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-pink-300 transition-all space-y-4 relative">
+            <div className="w-10 h-10 rounded-2xl bg-[#850d3a] text-white flex items-center justify-center font-black text-sm">
+              02
+            </div>
+            <h3 className="text-base font-black text-slate-900">Upload Your Catalog</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Add products one-by-one with size/color switches, or upload 50+ items in 1 click using our bulk Excel sheet.
+            </p>
+            <div className="text-[11px] font-bold text-[#b7004d] pt-2 border-t border-slate-100">
+              Zero barcode requirements ➔
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-pink-300 transition-all space-y-4 relative">
+            <div className="w-10 h-10 rounded-2xl bg-[#b7004d] text-white flex items-center justify-center font-black text-sm">
+              03
+            </div>
+            <h3 className="text-base font-black text-slate-900">Receive Orders & Pack</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Get an automatic sound chime when orders arrive. Download the shipping slip & handover to courier pickup.
+            </p>
+            <div className="text-[11px] font-bold text-[#b7004d] pt-2 border-t border-slate-100">
+              Lowest shipping partner rates ➔
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-pink-300 transition-all space-y-4 relative">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm">
+              04
+            </div>
+            <h3 className="text-base font-black text-slate-900">7-Day Direct Payout</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Payments are deposited directly into your bank account within 7 to 10 days of successful delivery.
+            </p>
+            <div className="text-[11px] font-bold text-emerald-600 pt-2 border-t border-slate-100">
+              Live escrow passbook ➔
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 6. HIGH-DEMAND CATEGORIES SPOTLIGHT                      */}
+      {/* ======================================================== */}
+      <section id="categories" className="py-20 bg-slate-50/70 border-t border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
+            <div>
+              <span className="text-xs font-black text-[#b7004d] uppercase tracking-wider block mb-1">
+                Trending Opportunities
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                High-Demand Categories on MShoppy
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 max-w-sm">
+              Over 14 Crore buyers shop across these top segments every single week with rising order volume.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { name: 'Women Ethnic', orders: '4.2x Growth', icon: '👗', badge: '🔥 Hot' },
+              { name: 'Men Western', orders: '3.6x Growth', icon: '👕', badge: 'Trending' },
+              { name: 'Shoes & Footwear', orders: '2.8x Growth', icon: '👟', badge: 'High Volume' },
+              { name: 'Home & Kitchen', orders: '3.1x Growth', icon: '🍳', badge: 'Popular' },
+              { name: 'Electronics & Audio', orders: '2.9x Growth', icon: '🎧', badge: 'Fast Moving' },
+              { name: 'Jewellery & Beauty', orders: '4.5x Growth', icon: '💍', badge: '🔥 Bestseller' },
+            ].map((cat, idx) => (
+              <div 
+                key={idx}
+                className="bg-white p-5 rounded-3xl border border-slate-200/80 hover:border-pink-300 hover:shadow-md transition-all text-center flex flex-col items-center justify-between group"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-pink-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  {cat.icon}
+                </div>
+                <div className="mt-3">
+                  <h4 className="text-xs font-black text-slate-900">{cat.name}</h4>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">
+                    {cat.orders}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 7. REAL WHOLESALER SUCCESS STORIES                       */}
+      {/* ======================================================== */}
+      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+          <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider">
+            Wholesaler Testimonials
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            Hear from Suppliers Growing with Us
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div className="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center gap-1 text-amber-400">
+              {[...Array(5)].map((_, i) => (
+                <Award key={i} className="w-4 h-4 fill-amber-400" />
+              ))}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 italic leading-relaxed">
+              "We run a textile manufacturing unit in Surat. On other marketplaces, we were paying ₹80 commission per kurti. With MShoppy's 0% commission, our profit margin shot up by 25% in the first month."
+            </p>
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#850d3a] text-white flex items-center justify-center font-black text-xs">
+                RP
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">Ramesh Patel</h4>
+                <p className="text-[11px] text-slate-500">Patel Fabrics, Surat (Surat Textile Market)</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center gap-1 text-amber-400">
+              {[...Array(5)].map((_, i) => (
+                <Award key={i} className="w-4 h-4 fill-amber-400" />
+              ))}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 italic leading-relaxed">
+              "The 7-day automated payment cycle is a game-changer for wholesalers. We never have to follow up for our money. We now dispatch 400+ daily orders across all northern states."
+            </p>
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#b7004d] text-white flex items-center justify-center font-black text-xs">
+                SM
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">Sunita Meena</h4>
+                <p className="text-[11px] text-slate-500">Jaipur Heritage Kurtis, Jaipur</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center gap-1 text-amber-400">
+              {[...Array(5)].map((_, i) => (
+                <Award key={i} className="w-4 h-4 fill-amber-400" />
+              ))}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 italic leading-relaxed">
+              "No UPC barcode gatekeeping meant we could add 120 electronic accessories in one weekend. The live order chime alert on the seller dashboard keeps our warehouse packing team hyper-productive."
+            </p>
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs">
+                AV
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">Alok Verma</h4>
+                <p className="text-[11px] text-slate-500">Verma Tech & Cables, Delhi</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 8. SUPPLIER FAQS ACCORDION                               */}
+      {/* ======================================================== */}
+      <section id="faqs" className="py-20 bg-slate-50/70 border-t border-slate-200/70">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center space-y-3 mb-14">
+            <span className="px-3.5 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
+              Got Questions?
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              Frequently Asked Questions
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {FAQS.map((faq, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs transition-colors"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 cursor-pointer"
+                >
+                  <span className="text-sm font-black text-slate-900">{faq.q}</span>
+                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
+                    {openFaqIndex === idx ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </button>
+                {openFaqIndex === idx && (
+                  <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/30">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 9. HIGH-CONVERSION BOTTOM CALL TO ACTION                 */}
+      {/* ======================================================== */}
+      <section className="py-16 bg-gradient-to-r from-[#5a0624] via-[#850d3a] to-[#d82a62] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">
+            Ready to Grow Your Business Pan-India?
+          </h2>
+          <p className="text-base text-pink-100 max-w-xl mx-auto">
+            Join 11 Lakh+ suppliers selling with 0% commission and guaranteed 7-day automated bank settlements.
+          </p>
+          <div className="pt-2">
             <button
               type="button"
               onClick={() => handleNav('/supplier-register')}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#b7004d] hover:bg-[#9b1147] text-white font-black text-sm shadow-lg shadow-pink-600/30 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-[#b7004d] hover:bg-pink-50 font-black text-sm shadow-xl transition-all active:scale-95 cursor-pointer"
             >
-              <span>Get Started Now</span>
+              <span>Start Selling Now (0% Commission)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -698,143 +846,49 @@ export default function SupplierLandingPage({ onNavigate }) {
       </section>
 
       {/* ======================================================== */}
-      {/* 6. WHAT YOU NEED TO START SELLING (CHECKLIST) */}
+      {/* 10. COMPREHENSIVE SUPPLIER FOOTER                        */}
       {/* ======================================================== */}
-      <section className="py-16 sm:py-20 bg-gradient-to-r from-pink-900 via-[#850d3a] to-[#b7004d] text-white">
+      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 space-y-3">
-              <span className="text-xs font-bold text-pink-200 uppercase tracking-widest">Simple Onboarding</span>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-                All You Need to Start Selling
-              </h2>
-              <p className="text-sm text-pink-100/90 leading-relaxed font-medium">
-                No complex paperwork or legal fees. Have these three essentials ready to activate your wholesale merchant account immediately.
-              </p>
-            </div>
-
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 space-y-2">
-                <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
-                  1
-                </div>
-                <h4 className="text-sm font-black tracking-tight">Active GSTIN</h4>
-                <p className="text-xs text-pink-100/80">Regular or Composition GST for inter-state wholesale commerce.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 space-y-2">
-                <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
-                  2
-                </div>
-                <h4 className="text-sm font-black tracking-tight">Bank Account</h4>
-                <p className="text-xs text-pink-100/80">Current or Savings account in your or business name for 7-day NEFT settlements.</p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 space-y-2">
-                <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold">
-                  3
-                </div>
-                <h4 className="text-sm font-black tracking-tight">Pickup Address</h4>
-                <p className="text-xs text-pink-100/80">Warehouse or store address with pincode for courier doorstep parcel collection.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================== */}
-      {/* 7. FREQUENTLY ASKED QUESTIONS (FAQ ACCORDION) */}
-      {/* ======================================================== */}
-      <section id="faqs" className="py-16 sm:py-24 bg-white border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-[#b7004d] text-xs font-black uppercase tracking-wider">
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span>Got Questions?</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-sm text-slate-600 font-medium">
-              Everything you need to know about selling on MShoppy, commission policies, and daily dispatch.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {faqs.map((f, idx) => {
-              const isOpen = openFaqIndex === idx;
-              return (
-                <div
-                  key={idx}
-                  className={`rounded-2xl border transition-all ${
-                    isOpen ? 'border-[#b7004d] bg-pink-50/20 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 cursor-pointer"
-                  >
-                    <span className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                      {f.q}
-                    </span>
-                    <span className="shrink-0 text-slate-400">
-                      {isOpen ? <ChevronUp className="w-5 h-5 text-[#b7004d]" /> : <ChevronDown className="w-5 h-5" />}
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-5 sm:px-6 pb-6 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-pink-100/60 font-medium">
-                      {f.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================== */}
-      {/* 8. FOOTER CALL TO ACTION */}
-      {/* ======================================================== */}
-      <footer className="bg-slate-950 text-white py-14 sm:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-10 border-b border-slate-800 text-center md:text-left">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 pb-8 border-b border-slate-800">
             <div>
-              <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Ready to Grow Your Business Across India?
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Join 11 Lakh+ suppliers selling at 0% Commission with doorstep pickup.
+              <div className="flex items-center gap-2 mb-3">
+                <Store className="w-5 h-5 text-[#d82a62]" />
+                <span className="text-white font-black text-base">MShoppy Supplier Central</span>
+              </div>
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                Empowering India's micro-entrepreneurs, wholesalers, and textile manufacturers with zero-commission e-commerce infrastructure.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => handleNav('/supplier-login')}
-                className="px-5 py-3 rounded-2xl border border-slate-700 hover:border-slate-500 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
-              >
-                Supplier Login
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNav('/supplier-register')}
-                className="px-6 py-3 rounded-2xl bg-[#b7004d] hover:bg-[#9b1147] text-white font-extrabold text-xs sm:text-sm shadow-md shadow-pink-900/30 transition cursor-pointer"
-              >
-                Register Now
-              </button>
+            <div>
+              <h5 className="text-white font-bold mb-3 uppercase tracking-wider text-[11px]">Sell Online</h5>
+              <ul className="space-y-2">
+                <li><a href="#why-sell" className="hover:text-white transition">Why MShoppy</a></li>
+                <li><a href="#calculator" className="hover:text-white transition">Profit Calculator</a></li>
+                <li><a href="#how-it-works" className="hover:text-white transition">How It Works</a></li>
+                <li><button onClick={() => handleNav('/supplier-register')} className="hover:text-white transition">Register as Supplier</button></li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="text-white font-bold mb-3 uppercase tracking-wider text-[11px]">Supplier Hub</h5>
+              <ul className="space-y-2">
+                <li><button onClick={() => handleNav('/supplier-login')} className="hover:text-white transition">Supplier Login</button></li>
+                <li><button onClick={() => handleNav('/seller-web-dashboard1')} className="hover:text-white transition">Seller Operations Dashboard</button></li>
+                <li><button onClick={() => handleNav('/support-center')} className="hover:text-white transition">Supplier Support Desk</button></li>
+              </ul>
+            </div>
+            <div>
+              <h5 className="text-white font-bold mb-3 uppercase tracking-wider text-[11px]">Policies & Trust</h5>
+              <ul className="space-y-2">
+                <li><button onClick={() => handleNav('/policy?tab=terms')} className="hover:text-white transition">Supplier Code of Conduct</button></li>
+                <li><button onClick={() => handleNav('/policy?tab=privacy')} className="hover:text-white transition">Privacy & Data Security</button></li>
+                <li><span className="text-emerald-400 font-semibold">✓ 100% Escrow Protected</span></li>
+              </ul>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} MShoppy Supplier Hub. All rights reserved.</p>
-            <div className="flex items-center gap-6">
-              <button onClick={() => handleNav('/supplier-login')} className="hover:text-white transition">Supplier Login</button>
-              <button onClick={() => handleNav('/supplier-register')} className="hover:text-white transition">Register</button>
-              <button onClick={() => handleNav('/policy/terms')} className="hover:text-white transition">Terms of Service</button>
-              <button onClick={() => handleNav('/policy/privacy')} className="hover:text-white transition">Privacy Policy</button>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
+            <p>© {new Date().getFullYear()} MShoppy Technologies Pvt. Ltd. All rights reserved.</p>
+            <p>Designed for Indian Wholesalers & Manufacturers.</p>
           </div>
         </div>
       </footer>
