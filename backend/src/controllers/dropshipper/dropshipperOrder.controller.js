@@ -154,7 +154,7 @@ export const pushDropshipperOrder = async (req, res) => {
           select: { email: true, fullName: true, storeName: true }
         });
 
-        const storeBrand = whiteLabelStoreName || partnerProfile?.storeName || 'Kunal Retail';
+        const storeBrand = whiteLabelStoreName || partnerProfile?.storeName || 'Partner Store';
         const formattedOrderId = `DSP-${newOrder.id.slice(0, 8).toUpperCase()}`;
 
         if (partnerProfile?.email) {
@@ -563,7 +563,7 @@ export const updateDropshipperOrder = async (req, res) => {
 
         if (partner?.email) {
           const formattedId = `DSP-${updatedOrder.id.slice(0, 8).toUpperCase()}`;
-          const storeName = partner.storeName || 'Kunal Retail';
+          const storeName = partner.storeName || 'Partner Store';
 
           if (finalStatus === 'DELIVERED') {
             sendOrderDeliveredMarginReleasedEmail({

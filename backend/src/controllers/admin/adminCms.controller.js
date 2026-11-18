@@ -9,11 +9,11 @@ const DEFAULT_CMS_TEMPLATES = [
     title: 'Privacy Policy',
     slug: 'privacy-policy',
     status: 'PUBLISHED',
-    metaTitle: 'Privacy Policy | Meesho Clone India',
+    metaTitle: 'Privacy Policy | MShoppy India',
     metaDescription: 'Read our Privacy Policy to understand how we collect, protect, and use your personal data in compliance with DPDPA regulations.',
     content: `<h1>Privacy Policy</h1>
 <p>Last updated: October 2026</p>
-<p>Welcome to Meesho Clone. We value the trust you place in us and recognize the importance of secure transactions and information privacy. This Privacy Policy describes how Meesho Clone ("we", "our", or "us") collects, uses, shares, and processes your personal data through our website and mobile application.</p>
+<p>Welcome to MShoppy. We value the trust you place in us and recognize the importance of secure transactions and information privacy. This Privacy Policy describes how MShoppy ("we", "our", or "us") collects, uses, shares, and processes your personal data through our website and mobile application.</p>
 
 <h2>1. Collection of Information</h2>
 <p>We collect personal information that you provide to us when you register an account, place an order, apply for reseller or supplier status, or contact our customer support. This includes:</p>
@@ -43,17 +43,17 @@ const DEFAULT_CMS_TEMPLATES = [
     title: 'Terms and Conditions',
     slug: 'terms-and-conditions',
     status: 'PUBLISHED',
-    metaTitle: 'Terms & Conditions of Service | Meesho Clone',
-    metaDescription: 'Review terms governing use of the Meesho Clone social commerce platform, orders, reseller margins, and user obligations.',
+    metaTitle: 'Terms & Conditions of Service | MShoppy',
+    metaDescription: 'Review terms governing use of the MShoppy social commerce platform, orders, reseller margins, and user obligations.',
     content: `<h1>Terms and Conditions</h1>
 <p>Last updated: October 2026</p>
-<p>Please read these Terms and Conditions carefully before using the Meesho Clone platform. By accessing or using our services, you agree to be bound by these Terms.</p>
+<p>Please read these Terms and Conditions carefully before using the MShoppy platform. By accessing or using our services, you agree to be bound by these Terms.</p>
 
 <h2>1. User Account & Eligibility</h2>
 <p>You must be at least 18 years old or possess legal parental/guardian consent to use our platform. You are responsible for maintaining the confidentiality of your credentials and all activities occurring under your account.</p>
 
 <h2>2. Marketplace Nature</h2>
-<p>Meesho Clone acts as an intermediary social commerce marketplace connecting independent buyers, sellers, suppliers, and resellers. Suppliers are solely responsible for product specifications, manufacturing quality, and warranty fulfillment.</p>
+<p>MShoppy acts as an intermediary social commerce marketplace connecting independent buyers, sellers, suppliers, and resellers. Suppliers are solely responsible for product specifications, manufacturing quality, and warranty fulfillment.</p>
 
 <h2>3. Reseller & Dropshipping Guidelines</h2>
 <p>Resellers may add custom profit margins to catalog products. Resellers must not misrepresent product claims or brand affiliations. Excessive cancellations or fraudulent behavior may result in permanent suspension.</p>
@@ -62,13 +62,13 @@ const DEFAULT_CMS_TEMPLATES = [
 <p>All prices displayed are inclusive of applicable taxes unless specified otherwise. We reserve the right to correct pricing errors and cancel orders arising from typographical or technical anomalies.</p>
 
 <h2>5. Intellectual Property</h2>
-<p>All brand logos, UI designs, code, graphics, and trademarks on this platform are owned by or licensed to Meesho Clone.</p>`
+<p>All brand logos, UI designs, code, graphics, and trademarks on this platform are owned by or licensed to MShoppy.</p>`
   },
   {
     title: 'Return & Refund Policy',
     slug: 'return-and-refund-policy',
     status: 'PUBLISHED',
-    metaTitle: 'Return, Replacement & Refund Policy | Meesho Clone',
+    metaTitle: 'Return, Replacement & Refund Policy | MShoppy',
     metaDescription: 'Hassle-free 7-day return policy. Learn about reverse pickups, return eligibility, and refund timelines.',
     content: `<h1>Return, Replacement & Refund Policy</h1>
 <p>Last updated: October 2026</p>
@@ -91,14 +91,14 @@ const DEFAULT_CMS_TEMPLATES = [
 <h2>4. Refund Timelines</h2>
 <ul>
   <li><strong>Prepaid Orders (UPI/Cards):</strong> Refund will reflect within 3-5 business days after quality verification.</li>
-  <li><strong>Cash on Delivery (COD):</strong> Refund will be credited directly to your registered Bank Account / UPI ID or Meesho Clone Wallet within 2-4 business days.</li>
+  <li><strong>Cash on Delivery (COD):</strong> Refund will be credited directly to your registered Bank Account / UPI ID or MShoppy Wallet within 2-4 business days.</li>
 </ul>`
   },
   {
     title: 'Shipping & Delivery Policy',
     slug: 'shipping-policy',
     status: 'PUBLISHED',
-    metaTitle: 'Shipping & Delivery Policy | Meesho Clone',
+    metaTitle: 'Shipping & Delivery Policy | MShoppy',
     metaDescription: 'Details on shipping coverage across India, delivery timelines, tracking, and free shipping benefits.',
     content: `<h1>Shipping & Delivery Policy</h1>
 <p>Last updated: October 2026</p>
@@ -122,10 +122,10 @@ const DEFAULT_CMS_TEMPLATES = [
     title: 'About Us',
     slug: 'about-us',
     status: 'PUBLISHED',
-    metaTitle: 'About Us | Meesho Clone - Empowering Bharat',
-    metaDescription: 'Discover how Meesho Clone empowers small businesses, women entrepreneurs, and millions of shoppers with accessible social commerce.',
-    content: `<h1>About Meesho Clone</h1>
-<p>Meesho Clone is India's next-generation social commerce ecosystem. We are on a mission to democratize internet commerce for everyone across India.</p>
+    metaTitle: 'About Us | MShoppy - Empowering Bharat',
+    metaDescription: 'Discover how MShoppy empowers small businesses, women entrepreneurs, and millions of shoppers with accessible social commerce.',
+    content: `<h1>About MShoppy</h1>
+<p>MShoppy is India's next-generation social commerce ecosystem. We are on a mission to democratize internet commerce for everyone across India.</p>
 
 <h2>Our Vision</h2>
 <p>To empower 100 million micro, small, and medium enterprises (MSMEs) and individual entrepreneurs to start and grow their online business with zero capital investment.</p>
@@ -141,7 +141,7 @@ const DEFAULT_CMS_TEMPLATES = [
     title: 'Contact Us & Grievance Redressal',
     slug: 'contact-us',
     status: 'PUBLISHED',
-    metaTitle: 'Contact Us & Grievance Redressal | Meesho Clone',
+    metaTitle: 'Contact Us & Grievance Redressal | MShoppy',
     metaDescription: 'Reach our dedicated 24/7 customer support team or connect with our official Grievance Officer.',
     content: `<h1>Contact Us & Grievance Redressal</h1>
 <p>Have questions, concerns, or feedback? We are here to help!</p>
@@ -149,7 +149,7 @@ const DEFAULT_CMS_TEMPLATES = [
 <h2>Customer Support</h2>
 <ul>
   <li><strong>Help Center:</strong> Accessible 24/7 via the 'Help' section in your account</li>
-  <li><strong>Email:</strong> support@meeshoclone.local</li>
+  <li><strong>Email:</strong> support@mshoppy.com</li>
   <li><strong>Toll-Free Helpline:</strong> 1800-123-4567 (Mon - Sat, 9:00 AM to 7:00 PM IST)</li>
 </ul>
 
@@ -158,8 +158,8 @@ const DEFAULT_CMS_TEMPLATES = [
 <p>
   <strong>Officer Name:</strong> Grievance Officer<br />
   <strong>Designation:</strong> Head of Consumer Protection<br />
-  <strong>Email:</strong> grievance-officer@meeshoclone.local<br />
-  <strong>Address:</strong> Meesho Clone Headquarters, Tech Park Phase 2, Bangalore, Karnataka - 560103, India.
+  <strong>Email:</strong> grievance-officer@mshoppy.com<br />
+  <strong>Address:</strong> MShoppy Headquarters, Tech Park Phase 2, Bangalore, Karnataka - 560103, India.
 </p>`
   }
 ];

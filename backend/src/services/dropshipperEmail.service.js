@@ -203,13 +203,13 @@ export const sendDropshipperOrderPushEmail = async ({
 export const sendCustomerWhiteLabelConfirmationEmail = async ({
   customerEmail,
   customerName,
-  storeBrandName = 'Kunal Retail',
+  storeBrandName = 'Partner Store',
   orderId,
   productTitle,
   quantity = 1,
   totalAmount,
   shippingAddress,
-  supportPhone = '9098296425'
+  supportPhone = '+91 98765 43210'
 }) => {
   if (!customerEmail) return false;
 

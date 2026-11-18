@@ -150,7 +150,7 @@ export const getDropshipperDashboardOverview = async (req, res) => {
     const partnerData = {
       firebaseUid,
       fullName: profile?.fullName || 'Dropshipper Partner',
-      storeName: profile?.storeName || kycRecord?.businessName || 'Kunal Retail Store',
+      storeName: profile?.storeName || kycRecord?.businessName || 'Partner Store',
       email: profile?.email || '',
       phone: profile?.phone || '',
       avatarUrl: profile?.avatarUrl || null,

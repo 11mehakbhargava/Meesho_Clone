@@ -185,7 +185,7 @@ export default function DropshipperDashboard() {
   const [isRefreshingDashboard, setIsRefreshingDashboard] = useState(false);
 
   // Live Email Hub & Live SMTP Testing States
-  const [testEmailRecipient, setTestEmailRecipient] = useState(() => currentUser?.email || 'kunal07sikarwar@gmail.com');
+  const [testEmailRecipient, setTestEmailRecipient] = useState(() => currentUser?.email || '');
   const [testEmailTemplate, setTestEmailTemplate] = useState('ORDER_PUSH');
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
@@ -201,8 +201,8 @@ export default function DropshipperDashboard() {
       const res = await sendTestDropshipperEmailApi({
         to: testEmailRecipient,
         templateType: testEmailTemplate,
-        partnerName: profileForm.fullName || currentUser?.fullName || 'Kunal Sikarwar',
-        storeName: profileForm.storeName || currentUser?.storeName || 'Kunal Retail'
+        partnerName: profileForm.fullName || currentUser?.fullName || 'Partner Seller',
+        storeName: profileForm.storeName || currentUser?.storeName || 'My Store'
       });
 
       if (res?.success) {
@@ -1284,7 +1284,7 @@ export default function DropshipperDashboard() {
                             type="text"
                             value={profileForm.fullName}
                             onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                            placeholder="e.g. Kunal Sikarwar"
+                            placeholder="e.g. Rahul Sharma"
                             className="h-11 rounded-2xl border-gray-200 focus:border-[#b7004d] focus:ring-[#b7004d]/20 text-sm font-medium"
                             required
                           />
@@ -1309,7 +1309,7 @@ export default function DropshipperDashboard() {
                                 const val = e.target.value.replace(/\D/g, '');
                                 setProfileForm({ ...profileForm, phone: val });
                               }}
-                              placeholder="9098296425"
+                              placeholder="9876543210"
                               className="h-11 rounded-2xl border-gray-200 focus:border-[#b7004d] focus:ring-[#b7004d]/20 text-sm font-medium pl-16"
                             />
                           </div>
@@ -1414,7 +1414,7 @@ export default function DropshipperDashboard() {
                       className="w-full h-11 rounded-2xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 focus:border-[#b7004d] focus:outline-none cursor-pointer"
                     >
                       <option value="ORDER_PUSH">🚀 Order Push & Margin Lock (To Dropshipper)</option>
-                      <option value="CUSTOMER_CONFIRMATION">🛍️ White-Label Customer Receipt (Brand: {profileForm.storeName || 'Kunal Retail'})</option>
+                      <option value="CUSTOMER_CONFIRMATION">🛍️ White-Label Customer Receipt (Brand: {profileForm.storeName || 'My Store'})</option>
                       <option value="DISPATCH">🚚 Courier Dispatch & Live AWB Tracking</option>
                       <option value="DELIVERED">💰 Delivered & Margin Released to Wallet</option>
                       <option value="ROT_WAIVER">🛡️ ROT Return Waiver (100% Reverse Freight Zero Loss)</option>
@@ -1468,7 +1468,7 @@ export default function DropshipperDashboard() {
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed">
-                    Customer receipts use your Store Name (<strong className="text-gray-700">{profileForm.storeName || 'Kunal Retail'}</strong>) with zero supplier or Meesho mention.
+                    Customer receipts use your Store Name (<strong className="text-gray-700">{profileForm.storeName || 'My Store'}</strong>) with zero supplier or Meesho mention.
                   </p>
                 </div>
 

@@ -909,7 +909,7 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
                             handleApplyCoupon();
                           }
                         }}
-                        placeholder="Enter Coupon or Referral Code (e.g. MSHOPPY3465)"
+                        placeholder="Enter Coupon or Referral Code"
                         className="flex-1 bg-[#f8f9fb] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-400 tracking-wider uppercase"
                       />
                       <button
@@ -1131,7 +1131,7 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
                     One-Time Password (OTP) Sent
                   </p>
                   <p className="text-[11px] text-blue-800 leading-snug">
-                    An OTP has been sent to your mobile ending with <strong className="font-bold">***{address?.phone?.slice(-4) || '3465'}</strong> linked to Card ending in <strong className="font-bold">***{paymentProcessing.cardLast4}</strong>.
+                    An OTP has been sent to your mobile ending with <strong className="font-bold">***{address?.phone?.slice(-4) || 'XXXX'}</strong> linked to Card ending in <strong className="font-bold">***{paymentProcessing.cardLast4}</strong>.
                   </p>
                 </div>
 

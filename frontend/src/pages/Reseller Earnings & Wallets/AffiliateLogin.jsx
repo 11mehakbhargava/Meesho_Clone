@@ -207,7 +207,7 @@ export default function AffiliateLogin() {
         <Input 
           id="affiliate-register-referral" 
           type="text" 
-          placeholder="e.g. MEESHOVIP" 
+          placeholder="e.g. MSHOPPYVIP" 
           value={referralTag}
           onChange={(e) => setReferralTag(e.target.value.toUpperCase())}
           className="h-12 px-4 text-base rounded-xl focus-visible:ring-[#b7004d]/30"

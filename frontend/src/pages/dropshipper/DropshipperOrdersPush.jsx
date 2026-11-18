@@ -176,8 +176,8 @@ export default function DropshipperOrdersPush() {
       // ignore
     }
     return {
-      storeBrandName: currentUser?.storeName || 'Kunal Retail',
-      supportPhone: currentUser?.phone || '+91 90982 96425',
+      storeBrandName: currentUser?.storeName || 'My Store',
+      supportPhone: currentUser?.phone || '',
       returnAddress: 'Plot 42, Textile Logistics Park, Surat, Gujarat - 395002',
       customNote: 'Thank you for shopping with us! For easy returns or size exchanges WhatsApp support.',
       showQrCode: true
@@ -3155,9 +3155,9 @@ export default function DropshipperOrdersPush() {
         const igst = isInterState ? totalTax : 0;
         
         const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invoiceModalOrder.id || '').replace(/[^A-Za-z0-9]/g, '').slice(-6).toUpperCase()}`;
-        const storeName = invoiceModalOrder.whiteLabelStoreName || brandSettings.storeBrandName || 'Kunal Retail Store';
+        const storeName = invoiceModalOrder.whiteLabelStoreName || brandSettings.storeBrandName || 'My Store';
         const returnAddress = brandSettings.returnAddress || 'Textile Logistics Park, Surat, Gujarat - 395002';
-        const supportPhone = brandSettings.supportPhone || '+91 90982 96425';
+        const supportPhone = brandSettings.supportPhone || (currentUser?.phone || '');
         const isCod = (invoiceModalOrder.paymentMode || 'COD').toUpperCase() === 'COD';
 
         return (

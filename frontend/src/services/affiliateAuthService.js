@@ -54,7 +54,7 @@ export async function loginAffiliate({ phone, email, fullName, referralCode, otp
     console.warn('Affiliate login API fallback mode:', error.message);
 
     const cleanPhone = phone ? phone.toString().replace(/\D/g, '').slice(-10) : '';
-    const generatedCode = referralCode || (cleanPhone ? `MSHOPPY${cleanPhone.slice(-4)}` : 'MEESHO500');
+    const generatedCode = referralCode || (cleanPhone ? `MSHOPPY${cleanPhone.slice(-4)}` : `MSHOPPY${Math.floor(1000 + Math.random() * 9000)}`);
 
     // Check if there is an existing KYC application
     const existingKyc = getAffiliateApp();
@@ -62,7 +62,7 @@ export async function loginAffiliate({ phone, email, fullName, referralCode, otp
     const fallbackUser = {
       id: cleanPhone ? `affiliate_${cleanPhone}` : `affiliate_${Date.now()}`,
       phone: cleanPhone,
-      email: email || (cleanPhone ? `${cleanPhone}@affiliate.meesho` : 'partner@meesho.com'),
+      email: email || (cleanPhone ? `${cleanPhone}@affiliate.mshoppy` : 'partner@mshoppy.com'),
       fullName: fullName || existingKyc?.fullName || (cleanPhone ? `Affiliate Partner +91 ${cleanPhone.slice(-4)}` : 'Sovereign Partner'),
       role: 'AFFILIATE',
       referralCode: generatedCode,

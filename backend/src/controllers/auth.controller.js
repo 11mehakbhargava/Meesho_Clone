@@ -367,7 +367,7 @@ export const affiliateLogin = async (req, res) => {
     }
 
     const userId = cleanPhone ? `affiliate_${cleanPhone}` : `affiliate_${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-    const generatedCode = referralCode || (cleanPhone ? `MSHOPPY${cleanPhone.slice(-4)}` : 'MEESHO500');
+    const generatedCode = referralCode || (cleanPhone ? `MSHOPPY${cleanPhone.slice(-4)}` : `MSHOPPY${userId.slice(-4).toUpperCase()}`);
 
     // Query or create directly in PostgreSQL Profile table
     let profile = await prisma.profile.findFirst({

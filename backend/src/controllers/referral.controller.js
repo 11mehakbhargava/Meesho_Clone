@@ -240,7 +240,7 @@ export const applyReferralCode = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Referral code ${cleanCode} successfully applied! You will get 20% off on your 1st order!`,
+      message: `Referral code ${cleanCode} successfully applied! You will get 40% off on your 1st order (up to ₹100)!`,
       data: newRef
     });
   } catch (error) {
@@ -279,16 +279,23 @@ export const getReferralInfo = async (req, res) => {
       }
     });
 
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        message: `Referral code "${cleanCode}" is invalid or does not exist.`
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: {
         code: cleanCode,
-        referrerName: referrer?.fullName || 'Shruti Paliwal',
-        referrerAvatar: referrer?.avatarUrl || '',
+        referrerName: referrer.fullName || 'A friend',
+        referrerAvatar: referrer.avatarUrl || '',
         discountPercent: 40,
         maxDiscount: 100,
         offerTitle: 'Flat 40% OFF on First Order (Up to ₹100)',
-        offerDescription: `Join MShoppy and get cheapest prices online. Install via ${referrer?.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
+        offerDescription: `Join MShoppy and get cheapest prices online. Install via ${referrer.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
         minOrderValue: 0
       }
     });
