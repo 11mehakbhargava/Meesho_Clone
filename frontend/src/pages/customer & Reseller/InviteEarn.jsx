@@ -334,19 +334,23 @@ export default function InviteEarn({ onNavigate, onBack }) {
               <span className="text-xs sm:text-sm font-bold text-slate-500">Total Earnings</span>
               <button
                 type="button"
-                onClick={() => handleNav('/user-dashboard1?tab=profile')}
-                className="text-xs sm:text-sm font-bold text-[#9f0038] hover:text-[#840032] flex items-center gap-0.5 cursor-pointer"
+                onClick={() => handleNav('/user-dashboard1?tab=wallet')}
+                className="text-xs sm:text-sm font-bold text-[#9f0038] hover:text-[#840032] flex items-center gap-0.5 cursor-pointer hover:underline"
               >
                 <span>Wallet Balance</span>
                 <span className="material-symbols-outlined text-sm">chevron_right</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#840032] text-white flex items-center justify-center shadow-xs">
+            <div
+              onClick={() => handleNav('/user-dashboard1?tab=wallet')}
+              className="flex items-center gap-3 cursor-pointer group"
+              title="Open Wallet"
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#840032] text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
               </div>
-              <span className="text-2xl sm:text-4xl font-black text-slate-900">
+              <span className="text-2xl sm:text-4xl font-black text-slate-900 group-hover:text-[#9f0038] transition-colors">
                 ₹{referralData.totalCashEarned}
               </span>
             </div>

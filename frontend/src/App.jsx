@@ -558,6 +558,12 @@ function AppRoutes() {
       '/profile': '/user-dashboard1?tab=profile',
       'account-profile': '/user-dashboard1?tab=profile',
       '/account-profile': '/user-dashboard1?tab=profile',
+      wallet: '/user-dashboard1?tab=wallet',
+      'wallet': '/user-dashboard1?tab=wallet',
+      '/wallet': '/user-dashboard1?tab=wallet',
+      'user-wallet': '/user-dashboard1?tab=wallet',
+      '/user-wallet': '/user-dashboard1?tab=wallet',
+      userWallet: '/user-dashboard1?tab=wallet',
       orders: '/orders',
       'my-orders': '/orders',
       return_request: '/return-request',
@@ -788,6 +794,8 @@ function AppRoutes() {
         <Route path="/become-affiliate" element={<AffiliateKYC onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/affiliate-kyc-status" element={<AffiliateKycStatus onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/affiliate-status" element={<AffiliateKycStatus onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/wallet" element={<Navigate to="/user-dashboard1?tab=wallet" replace />} />
+        <Route path="/user-wallet" element={<Navigate to="/user-dashboard1?tab=wallet" replace />} />
         <Route path="/my-wallet" element={<Navigate to="/reseller-wallet" replace />} />
         <Route path="/reseller-wallet" element={<ResellerWallet />} />
         <Route path="/reseller-returns" element={<ResellerReturnsLedger onNavigate={handleNav} onBack={handleBack} />} />
