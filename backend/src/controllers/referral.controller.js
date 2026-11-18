@@ -48,7 +48,14 @@ const getOrCreateReferralCode = async (user) => {
 export const getReferralStats = async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || req.headers['x-customer-id'] || req.query.userId;
-    const origin = req.headers.origin || 'http://localhost:5173';
+    let clientOrigin = process.env.FRONTEND_URL || 'https://meesho.digitalsabkuch.com';
+    try {
+      if (req.headers.origin) {
+        clientOrigin = new URL(req.headers.origin).origin;
+      } else if (req.headers.referer) {
+        clientOrigin = new URL(req.headers.referer).origin;
+      }
+    } catch (_) {}
 
     if (!userId) {
       return res.status(401).json({
@@ -67,7 +74,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `https://app.mshoppy.com/invite/${referralCode}`;
+    const referralLink = `${clientOrigin}/invite/${referralCode}`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({

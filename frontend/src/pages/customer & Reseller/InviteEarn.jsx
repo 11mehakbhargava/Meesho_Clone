@@ -157,9 +157,13 @@ export default function InviteEarn({ onNavigate, onBack }) {
       : (customerUser?.id ? `MSHOPPY${customerUser.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}` : '')
   );
 
-  const currentReferralLink = referralData.referralLink || (
-    currentReferralCode ? `https://app.mshoppy.com/invite/${currentReferralCode}` : ''
-  );
+  const originBase = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'https://meesho.digitalsabkuch.com';
+
+  const currentReferralLink = currentReferralCode
+    ? `${originBase}/invite/${currentReferralCode}`
+    : (referralData.referralLink || '');
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
