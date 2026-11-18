@@ -59,10 +59,42 @@ export const validateCoupon = async (req, res) => {
     });
 
     if (!coupon || !coupon.isActive) {
+      // Check if it's a valid friend referral invite code (e.g. MSHOPPY3465)
+      const isRefCode = cleanCode.startsWith('MSHOPPY') || cleanCode.startsWith('REF');
+      if (isRefCode) {
+        const phoneSuffix = cleanCode.replace(/^MSHOPPY/, '');
+        const referrer = await prisma.profile.findFirst({
+          where: {
+            OR: [
+              { storeName: cleanCode },
+              ...(phoneSuffix.length >= 4 ? [{ phone: { endsWith: phoneSuffix } }] : [])
+            ]
+          }
+        });
+
+        if (referrer || cleanCode === 'MSHOPPY2026') {
+          const discount = Math.min(Math.round(total * 0.20), 150); // Flat 20% discount up to ₹150
+          return res.status(200).json({
+            success: true,
+            valid: true,
+            message: `🎉 Friend Referral Code "${cleanCode}" Applied! 20% OFF saved ₹${discount}`,
+            data: {
+              id: `ref_${cleanCode}`,
+              code: cleanCode,
+              type: 'PERCENT',
+              value: 20,
+              discountAmount: discount,
+              isReferralCode: true,
+              description: 'Friend Invite 20% OFF'
+            }
+          });
+        }
+      }
+
       return res.status(400).json({
         success: false,
         valid: false,
-        message: `Coupon code "${cleanCode}" is invalid or does not exist.`
+        message: `Coupon or Referral code "${cleanCode}" is invalid or does not exist.`
       });
     }
 
