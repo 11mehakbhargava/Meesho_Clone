@@ -406,9 +406,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
               <h3 className="font-black text-sm text-slate-900">
                 Your Invited Friends ({referralData.friends.length})
               </h3>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                Live DB Status
-              </span>
             </div>
 
             <div className="divide-y divide-slate-100">
