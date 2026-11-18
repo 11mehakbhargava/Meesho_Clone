@@ -1020,20 +1020,9 @@ export default function InviteEarn({ onNavigate, onBack }) {
 
               {/* Referral Link Box */}
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Invite Link
-                  </span>
-                  <a
-                    href={`/invite/${currentReferralCode}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-bold text-[#9f0038] hover:underline flex items-center gap-0.5"
-                  >
-                    <span>Test / Preview</span>
-                    <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-                  </a>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Invite Link
+                </span>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-slate-700 font-mono break-all select-all flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
                     {currentReferralLink}
