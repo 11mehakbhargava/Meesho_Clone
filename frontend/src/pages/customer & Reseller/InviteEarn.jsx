@@ -37,6 +37,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
@@ -167,19 +168,21 @@ export default function InviteEarn({ onNavigate, onBack }) {
     (c.phone || '').includes(searchQuery)
   );
 
-  // Copy referral link/code
+  // Copy referral link/code silently without popup (inline feedback only)
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(currentReferralLink);
-    setCopiedCode(true);
-    toast.success('Referral link copied to clipboard! 📋');
-    setTimeout(() => setCopiedCode(false), 2500);
+    try {
+      navigator.clipboard.writeText(currentReferralLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (_) {}
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(currentReferralCode);
-    setCopiedCode(true);
-    toast.success(`Referral code ${currentReferralCode} copied!`);
-    setTimeout(() => setCopiedCode(false), 2500);
+    try {
+      navigator.clipboard.writeText(currentReferralCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (_) {}
   };
 
   // Build personalized WhatsApp invite message
@@ -210,7 +213,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
           return match ? { ...c, invited: true } : c;
         })
       );
-      toast.success(`Invite sent to ${contact.name}! 🚀`);
     }
 
     window.open(whatsappUrl, '_blank');
@@ -292,7 +294,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
     setShowAddContactModal(false);
     setNewContactName('');
     setNewContactPhone('');
-    toast.success(`Added ${custom.name}! Click 'Invite Now' to send on WhatsApp.`);
   };
 
   const handleRemoveCustomContact = (contactId) => {
@@ -300,7 +301,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
     const updated = existingCustom.filter((c) => c.id !== contactId);
     localStorage.setItem(STORAGE_CUSTOM_CONTACTS, JSON.stringify(updated));
     setActiveContacts((prev) => prev.filter((c) => c.id !== contactId));
-    toast.success('Contact removed');
   };
 
   // ── MY INVITES VIEW (Matching Screenshots 2 & 3) ──────────────────
@@ -1015,10 +1015,16 @@ export default function InviteEarn({ onNavigate, onBack }) {
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                  className={`px-3 py-1.5 border text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1 cursor-pointer shrink-0 ${
+                    copiedLink
+                      ? 'bg-rose-50 border-rose-200 text-[#9f0038]'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-xs">link</span>
-                  <span>Copy</span>
+                  <span className="material-symbols-outlined text-xs">
+                    {copiedLink ? 'check' : 'link'}
+                  </span>
+                  <span>{copiedLink ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
 
