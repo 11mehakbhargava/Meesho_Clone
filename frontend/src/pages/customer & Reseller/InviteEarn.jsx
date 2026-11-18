@@ -295,6 +295,14 @@ export default function InviteEarn({ onNavigate, onBack }) {
     toast.success(`Added ${custom.name}! Click 'Invite Now' to send on WhatsApp.`);
   };
 
+  const handleRemoveCustomContact = (contactId) => {
+    const existingCustom = getSavedCustomContacts();
+    const updated = existingCustom.filter((c) => c.id !== contactId);
+    localStorage.setItem(STORAGE_CUSTOM_CONTACTS, JSON.stringify(updated));
+    setActiveContacts((prev) => prev.filter((c) => c.id !== contactId));
+    toast.success('Contact removed');
+  };
+
   // ── MY INVITES VIEW (Matching Screenshots 2 & 3) ──────────────────
   if (showMyInvites) {
     return (
@@ -925,30 +933,44 @@ export default function InviteEarn({ onNavigate, onBack }) {
                     </div>
                   </div>
 
-                  {/* WhatsApp "Invite Now" pill button */}
-                  <button
-                    type="button"
-                    onClick={() => handleShareWhatsApp(contact)}
-                    className={`px-3.5 py-1.5 rounded-full border text-xs font-black transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                      contact.invited
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : 'border-[#9f0038] text-[#9f0038] hover:bg-rose-50 shadow-2xs'
-                    }`}
-                  >
-                    {/* WhatsApp Green Icon */}
-                    <svg
-                      className="w-3.5 h-3.5 fill-current text-[#25D366] shrink-0"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Delete custom contact */}
+                    {(contact.id?.startsWith('custom_') || contact.id?.startsWith('device_')) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomContact(contact.id)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Remove contact"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    )}
+
+                    {/* WhatsApp "Invite Now" pill button */}
+                    <button
+                      type="button"
+                      onClick={() => handleShareWhatsApp(contact)}
+                      className={`px-3.5 py-1.5 rounded-full border text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                        contact.invited
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                          : 'border-[#9f0038] text-[#9f0038] hover:bg-rose-50 shadow-2xs'
+                      }`}
                     >
-                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.074-2.029-.475-1.708-.702-2.8-2.457-2.885-2.57-.085-.113-.687-.914-.687-1.745 0-.83.434-1.238.588-1.408.155-.17.339-.212.453-.212.113 0 .227.001.326.006.104.005.244-.04.382.292.144.344.492 1.201.536 1.288.044.088.073.19.014.305-.059.115-.089.186-.176.289-.088.102-.185.228-.264.307-.089.088-.182.185-.078.363.104.178.463.764.994 1.238.683.61 1.258.799 1.437.888.179.089.284.074.39-.045.106-.119.456-.531.577-.714.122-.182.244-.153.409-.092.164.061 1.042.491 1.221.58.179.089.298.133.342.207.045.074.045.431-.099.836z" />
-                    </svg>
-                    <span>{contact.invited ? 'Sent ✓' : 'Invite Now'}</span>
-                  </button>
+                      {/* WhatsApp Green Icon */}
+                      <svg
+                        className="w-3.5 h-3.5 fill-current text-[#25D366] shrink-0"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.074-2.029-.475-1.708-.702-2.8-2.457-2.885-2.57-.085-.113-.687-.914-.687-1.745 0-.83.434-1.238.588-1.408.155-.17.339-.212.453-.212.113 0 .227.001.326.006.104.005.244-.04.382.292.144.344.492 1.201.536 1.288.044.088.073.19.014.305-.059.115-.089.186-.176.289-.088.102-.185.228-.264.307-.089.088-.182.185-.078.363.104.178.463.764.994 1.238.683.61 1.258.799 1.437.888.179.089.284.074.39-.045.106-.119.456-.531.577-.714.122-.182.244-.153.409-.092.164.061 1.042.491 1.221.58.179.089.298.133.342.207.045.074.045.431-.099.836z" />
+                      </svg>
+                      <span>{contact.invited ? 'Sent ✓' : 'Invite Now'}</span>
+                    </button>
+                  </div>
                 </div>
               ))
-            ) : (
+            ) : searchQuery ? (
               <div className="py-8 text-center text-slate-400 text-xs space-y-2">
-                <p>No contacts found matching "{searchQuery}".</p>
+                <p>No contacts found matching &ldquo;{searchQuery}&rdquo;.</p>
                 <button
                   type="button"
                   onClick={() => setShowAddContactModal(true)}
@@ -956,6 +978,28 @@ export default function InviteEarn({ onNavigate, onBack }) {
                 >
                   + Add Friend by Phone Number
                 </button>
+              </div>
+            ) : (
+              <div className="py-10 px-4 text-center space-y-3">
+                <div className="w-14 h-14 mx-auto rounded-full bg-rose-50 flex items-center justify-center text-[#9f0038]">
+                  <span className="material-symbols-outlined text-2xl">person_add</span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-800">Invite Friends &amp; Earn Cash</h4>
+                  <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">
+                    Add friends to send them your invite link directly, or tap below to share on WhatsApp!
+                  </p>
+                </div>
+                <div className="pt-1 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddContactModal(true)}
+                    className="px-4 py-2 bg-[#9f0038] text-white font-bold rounded-xl text-xs hover:bg-[#840032] shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    <span>Add Friend to Invite</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

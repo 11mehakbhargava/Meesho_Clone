@@ -287,7 +287,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
-    const [showImageZoom, setShowImageZoom] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [canReviewProduct, setCanReviewProduct] = useState(false);
   const [userOrderId, setUserOrderId] = useState(null);
@@ -575,7 +575,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     ];
     try {
       navigator.clipboard?.writeText(lines.join('\n'));
-    } catch (_) {}
+    } catch (_) { }
     setCopiedHighlights(true);
     setTimeout(() => setCopiedHighlights(false), 2500);
   };
@@ -1745,7 +1745,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                         {catMeta.sizeLabel || 'Select Size'}
                       </h3>
                     </div>
-{/* Size chart button removed (no hardcoded measurements) */}
+                    {/* Size chart button removed (no hardcoded measurements) */}
                   </div>
 
                   <div className="flex flex-wrap gap-2 sm:gap-2.5">
@@ -2062,105 +2062,105 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <>
                       <div className="divide-y divide-slate-100">
                         {displayed.map((rev) => {
-                        const isHelpful = helpfulClicked.has(rev.id);
-                        const count = (helpfulCounts[rev.id] !== undefined ? helpfulCounts[rev.id] : rev.helpfulCount) || 0;
+                          const isHelpful = helpfulClicked.has(rev.id);
+                          const count = (helpfulCounts[rev.id] !== undefined ? helpfulCounts[rev.id] : rev.helpfulCount) || 0;
 
-                        return (
-                          <div key={rev.id} className="py-4 space-y-2">
-                            {/* Author Name */}
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 border border-slate-200">
-                                {rev.initials || 'U'}
+                          return (
+                            <div key={rev.id} className="py-4 space-y-2">
+                              {/* Author Name */}
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 border border-slate-200">
+                                  {rev.initials || 'U'}
+                                </div>
+                                <span className="font-bold text-xs sm:text-sm text-slate-800">{rev.name}</span>
                               </div>
-                              <span className="font-bold text-xs sm:text-sm text-slate-800">{rev.name}</span>
-                            </div>
 
-                            {/* Green Star Pill + Date */}
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="inline-flex items-center gap-0.5 bg-[#038d63] text-white font-bold text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full">
-                                <span>{Number(rev.rating).toFixed(1)}</span>
-                                <span>★</span>
-                              </span>
-                              <span className="text-[11px] text-slate-400 font-normal">
-                                • Posted on {rev.time}
-                              </span>
-                            </div>
-
-                            {/* Review Text */}
-                            {rev.comment && (
-                              <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-normal pt-0.5">
-                                {rev.comment}
-                              </p>
-                            )}
-
-                            {/* Customer Review Photos */}
-                            {Array.isArray(rev.photos) && rev.photos.length > 0 && (
-                              <div className="flex gap-2 pt-1.5 overflow-x-auto no-scrollbar">
-                                {rev.photos.map((pUrl, pIdx) => (
-                                  <div
-                                    key={pIdx}
-                                    onClick={() => setPreviewReviewImage({
-                                      url: pUrl,
-                                      author: rev.name,
-                                      rating: rev.rating,
-                                      comment: rev.comment
-                                    })}
-                                    className="w-14 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 cursor-pointer hover:border-pink-400 hover:shadow-sm transition-all"
-                                    title="Click to view full photo"
-                                  >
-                                    <img
-                                      src={pUrl}
-                                      alt="Buyer uploaded photo"
-                                      className="w-full h-full object-cover hover:scale-105 transition-transform"
-                                    />
-                                  </div>
-                                ))}
+                              {/* Green Star Pill + Date */}
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="inline-flex items-center gap-0.5 bg-[#038d63] text-white font-bold text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full">
+                                  <span>{Number(rev.rating).toFixed(1)}</span>
+                                  <span>★</span>
+                                </span>
+                                <span className="text-[11px] text-slate-400 font-normal">
+                                  • Posted on {rev.time}
+                                </span>
                               </div>
-                            )}
 
-                            {/* Helpful Button (Exact Meesho style) */}
-                            <div className="pt-1">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleHelpful(rev.id)}
-                                className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${isHelpful ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-800'
-                                  }`}
-                              >
-                                <span className="material-symbols-outlined text-sm">thumb_up</span>
-                                <span>Helpful ({count})</span>
-                              </button>
+                              {/* Review Text */}
+                              {rev.comment && (
+                                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-normal pt-0.5">
+                                  {rev.comment}
+                                </p>
+                              )}
+
+                              {/* Customer Review Photos */}
+                              {Array.isArray(rev.photos) && rev.photos.length > 0 && (
+                                <div className="flex gap-2 pt-1.5 overflow-x-auto no-scrollbar">
+                                  {rev.photos.map((pUrl, pIdx) => (
+                                    <div
+                                      key={pIdx}
+                                      onClick={() => setPreviewReviewImage({
+                                        url: pUrl,
+                                        author: rev.name,
+                                        rating: rev.rating,
+                                        comment: rev.comment
+                                      })}
+                                      className="w-14 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 cursor-pointer hover:border-pink-400 hover:shadow-sm transition-all"
+                                      title="Click to view full photo"
+                                    >
+                                      <img
+                                        src={pUrl}
+                                        alt="Buyer uploaded photo"
+                                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Helpful Button (Exact Meesho style) */}
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleHelpful(rev.id)}
+                                  className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${isHelpful ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                  <span className="material-symbols-outlined text-sm">thumb_up</span>
+                                  <span>Helpful ({count})</span>
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
 
-                    {/* VIEW ALL REVIEWS (EXACT MEESHO DESIGN FROM SCREENSHOT 3) */}
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (visibleReviewsCount >= filtered.length) {
-                            setVisibleReviewsCount(2);
-                            const el = document.getElementById('product-reviews-section');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                          } else {
-                            setVisibleReviewsCount((prev) => Math.min(prev + 5, filtered.length));
-                          }
-                        }}
-                        className="text-[#9f0038] hover:text-[#78002a] font-black text-xs tracking-wider uppercase flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <span>{visibleReviewsCount >= filtered.length ? 'SHOW LESS REVIEWS' : 'VIEW ALL REVIEWS'}</span>
-                        <span className="text-sm font-bold">›</span>
-                      </button>
-                      <span className="text-xs text-slate-400 font-semibold">
-                        Showing {Math.min(visibleReviewsCount, filtered.length)} of {filtered.length} reviews
-                      </span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
+                      {/* VIEW ALL REVIEWS (EXACT MEESHO DESIGN FROM SCREENSHOT 3) */}
+                      <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (visibleReviewsCount >= filtered.length) {
+                              setVisibleReviewsCount(2);
+                              const el = document.getElementById('product-reviews-section');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                            } else {
+                              setVisibleReviewsCount((prev) => Math.min(prev + 5, filtered.length));
+                            }
+                          }}
+                          className="text-[#9f0038] hover:text-[#78002a] font-black text-xs tracking-wider uppercase flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <span>{visibleReviewsCount >= filtered.length ? 'SHOW LESS REVIEWS' : 'VIEW ALL REVIEWS'}</span>
+                          <span className="text-sm font-bold">›</span>
+                        </button>
+                        <span className="text-xs text-slate-400 font-semibold">
+                          Showing {Math.min(visibleReviewsCount, filtered.length)} of {filtered.length} reviews
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             )}
           </div>
 
