@@ -1216,13 +1216,13 @@ export default function HomeUserCustomer() {
         </div>
       </header>
 
-      {/* Active Friend Referral 20% OFF Banner */}
+      {/* Active Friend Referral 40% OFF Banner */}
       {activeReferralCode && (
         <div className="bg-gradient-to-r from-rose-600 via-[#9f0038] to-purple-700 text-white px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
           <div className="flex items-center gap-2 mx-auto">
             <span className="text-base">🎉</span>
             <span>
-              Friend Invite Active: <strong>Flat 20% OFF</strong> applied on your 1st order (Code: <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded text-white font-bold">{activeReferralCode}</span>)
+              Friend Invite Active: <strong>Flat 40% OFF (Up to ₹100)</strong> applied on your 1st order (Code: <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded text-white font-bold">{activeReferralCode}</span>)
             </span>
           </div>
           <button

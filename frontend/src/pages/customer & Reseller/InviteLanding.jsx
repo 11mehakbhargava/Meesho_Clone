@@ -42,12 +42,12 @@ export default function InviteLanding() {
       localStorage.setItem('mshoppy_referral_code', cleanCode);
       localStorage.setItem('mshoppy_referral_timestamp', Date.now().toString());
 
-      // 2. Pre-apply the 20% welcome coupon
+      // 2. Pre-apply the 40% welcome coupon (up to ₹100)
       const couponObj = {
         code: cleanCode,
-        discountPercent: 20,
+        discountPercent: 40,
         maxDiscount: 100,
-        description: '20% OFF Referral Welcome Bonus'
+        description: '40% OFF Referral Welcome Bonus (Up to ₹100)'
       };
       localStorage.setItem('mshoppy_applied_coupon', JSON.stringify(couponObj));
       localStorage.setItem('mshoppy_referral_banner_seen', 'false');
@@ -120,7 +120,7 @@ export default function InviteLanding() {
 
         {/* Offer Details Body */}
         <div className="p-5 sm:p-6 space-y-4">
-          {/* Flat 20% Voucher Box */}
+          {/* Flat 40% Voucher Box */}
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-xs shrink-0">
@@ -128,7 +128,7 @@ export default function InviteLanding() {
               </div>
               <div>
                 <p className="text-sm font-black text-slate-900 leading-tight">
-                  Flat 20% OFF on 1st Order
+                  Flat 40% OFF on 1st Order
                 </p>
                 <p className="text-xs text-amber-900 font-medium mt-0.5">
                   Up to ₹100 instant discount at checkout
@@ -173,7 +173,7 @@ export default function InviteLanding() {
               onClick={handleClaimOffer}
               className="w-full bg-[#9f0038] hover:bg-[#840032] text-white py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-900/15 cursor-pointer active:scale-98 transition-all"
             >
-              <span>Claim 20% OFF & Start Shopping</span>
+              <span>Claim 40% OFF & Start Shopping</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>
 

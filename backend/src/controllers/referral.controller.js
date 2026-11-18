@@ -40,7 +40,7 @@ export const getReferralStats = async (req, res) => {
         success: true,
         data: {
           referralCode: 'MSHOPPY2026',
-          referralLink: `${origin}/invite/MSHOPPY2026`,
+          referralLink: 'https://app.meesho.com/2yoV/r99th0qd?via=MSHOPPY2026&from=account_section',
           totalInvited: 0,
           deliveredCount: 0,
           pendingCount: 0,
@@ -74,7 +74,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `${origin}/invite/${referralCode}`;
+    const referralLink = `https://app.meesho.com/2yoV/r99th0qd?via=${referralCode}&from=account_section`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({
@@ -292,10 +292,10 @@ export const getReferralInfo = async (req, res) => {
         code: cleanCode,
         referrerName: referrer?.fullName || 'Shruti Paliwal',
         referrerAvatar: referrer?.avatarUrl || '',
-        discountPercent: 20,
+        discountPercent: 40,
         maxDiscount: 100,
-        offerTitle: 'Flat 20% OFF on First Order',
-        offerDescription: `${referrer?.fullName || 'Shruti Paliwal'} has invited you to shop on MShoppy! Enjoy wholesale prices and flat 20% OFF on your 1st order.`,
+        offerTitle: 'Flat 40% OFF on First Order (Up to ₹100)',
+        offerDescription: `Join Meesho and get cheapest prices online. Install via ${referrer?.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
         minOrderValue: 0
       }
     });

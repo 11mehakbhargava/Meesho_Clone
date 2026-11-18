@@ -73,19 +73,19 @@ export const validateCoupon = async (req, res) => {
         });
 
         if (referrer || cleanCode === 'MSHOPPY2026') {
-          const discount = Math.min(Math.round(total * 0.20), 150); // Flat 20% discount up to ₹150
+          const discount = Math.min(Math.round(total * 0.40), 100); // Flat 40% discount up to ₹100 (Meesho official offer)
           return res.status(200).json({
             success: true,
             valid: true,
-            message: `🎉 Friend Referral Code "${cleanCode}" Applied! 20% OFF saved ₹${discount}`,
+            message: `🎉 Friend Referral Code "${cleanCode}" Applied! 40% OFF saved ₹${discount}`,
             data: {
               id: `ref_${cleanCode}`,
               code: cleanCode,
               type: 'PERCENT',
-              value: 20,
+              value: 40,
               discountAmount: discount,
               isReferralCode: true,
-              description: 'Friend Invite 20% OFF'
+              description: 'Friend Invite 40% OFF (Up to ₹100)'
             }
           });
         }

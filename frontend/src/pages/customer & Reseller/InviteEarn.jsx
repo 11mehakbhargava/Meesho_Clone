@@ -156,7 +156,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
       ? `MSHOPPY${customerUser.phone.slice(-4)}`
       : 'MSHOPPY2026'
   );
-  const currentReferralLink = referralData.referralLink || `${window.location.origin}/invite/${currentReferralCode}`;
+  const currentReferralLink = referralData.referralLink || `https://app.meesho.com/2yoV/r99th0qd?via=${currentReferralCode}&from=account_section`;
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
@@ -185,10 +185,10 @@ export default function InviteEarn({ onNavigate, onBack }) {
     } catch (_) {}
   };
 
-  // Build personalized WhatsApp invite message
+  // Build personalized WhatsApp invite message (Exact Meesho App Format)
   const getInviteMessage = (friendName) => {
-    const greeting = friendName ? `Hey ${friendName}!` : 'Hey!';
-    return `${greeting} Shop amazing quality fashion, beauty & home essentials at lowest wholesale prices on MShoppy!\n\nUse my exclusive invite link to get flat 20% OFF on your first order:\n👉 ${currentReferralLink}\n\nOr use referral code: *${currentReferralCode}* at checkout.\nHappy Shopping! 🛍️✨`;
+    const greeting = friendName ? `Hey ${friendName},` : 'Hey ,';
+    return `${greeting}\nJoin Meesho and get cheapest prices online. Install via my link and get 40% OFF on your first order (up to ₹100). Link: ${currentReferralLink}\n📦 Home delivery | 💵 Cash on delivery available | 🔄 Easy returns`;
   };
 
   // WhatsApp share
@@ -220,9 +220,10 @@ export default function InviteEarn({ onNavigate, onBack }) {
 
   // Generic native share or copy fallback
   const handleNativeShare = async () => {
+    const shareText = getInviteMessage();
     const shareData = {
-      title: 'Shop on MShoppy & Get 20% OFF!',
-      text: `Join MShoppy using my invite code ${currentReferralCode} and get 20% OFF on your first order! 🛍️`,
+      title: 'Join Meesho & Get 40% OFF!',
+      text: shareText,
       url: currentReferralLink,
     };
 
@@ -1009,7 +1010,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
                     Invite Link
                   </span>
                   <a
-                    href={currentReferralLink}
+                    href={`/invite/${currentReferralCode}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[11px] font-bold text-[#9f0038] hover:underline flex items-center gap-0.5"
