@@ -116,8 +116,8 @@ export default function SellerOrders1({ onNavigate, embedded = false, onNavigate
       else if (!isSilentRadar) setLoading(true);
 
       const [ordersRes, profRes] = await Promise.allSettled([
-        supplierApiService.fetchSupplierOrders(),
-        supplierApiService.fetchSupplierProfile(),
+        supplierApiService.fetchSupplierOrders({}, { skipCache: isRefresh || isSilentRadar }),
+        supplierApiService.fetchSupplierProfile({ skipCache: isRefresh }),
       ]);
 
       if (ordersRes.status === 'fulfilled' && ordersRes.value) {

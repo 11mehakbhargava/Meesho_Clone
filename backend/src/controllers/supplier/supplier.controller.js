@@ -87,6 +87,15 @@ export const deriveAggregateOrderStatus = (items = []) => {
   return 'ORDERED';
 };
 
+// Dashboard stats cache to prevent repeated remote DB full table scans (TTL: 30s)
+const dashboardStatsCache = new Map();
+const STATS_CACHE_TTL = 30 * 1000;
+
+export const invalidateSupplierDashboardCache = (supplierId) => {
+  if (supplierId) dashboardStatsCache.delete(supplierId);
+  else dashboardStatsCache.clear();
+};
+
 /**
  * 1. Get Supplier Dashboard Statistics
  * GET /api/supplier/dashboard-stats
@@ -101,32 +110,53 @@ export const getDashboardStats = async (req, res, next) => {
       });
     }
 
-    // Total active (non-deleted) products for this supplier
-    const totalProducts = await prisma.product.count({
-      where: { supplierId, isDeleted: false },
-    }).catch(() => 0);
+    const isRefresh = req.query?.refresh === 'true';
+    const cached = dashboardStatsCache.get(supplierId);
+    if (!isRefresh && cached && cached.expiry > Date.now()) {
+      return res.status(200).json({
+        success: true,
+        data: cached.data,
+      });
+    }
 
-    // Low stock active products (< 10)
-    const lowStockCount = await prisma.product.count({
-      where: { supplierId, isDeleted: false, stock: { lt: 10 } },
-    }).catch(() => 0);
-
-    // Fetch supplier order items
-    const orderItems = await prisma.orderItem.findMany({
-      where: {
-        product: { supplierId },
-      },
-      include: {
-        order: true,
-        product: true,
-      },
-    }).catch(() => []);
+    // Parallel execution of independent counts and selective query projection
+    const [totalProducts, lowStockCount, orderItems] = await Promise.all([
+      prisma.product.count({
+        where: { supplierId, isDeleted: false },
+      }).catch(() => 0),
+      prisma.product.count({
+        where: { supplierId, isDeleted: false, stock: { lt: 10 } },
+      }).catch(() => 0),
+      prisma.orderItem.findMany({
+        where: {
+          product: { supplierId },
+        },
+        select: {
+          id: true,
+          orderId: true,
+          price: true,
+          quantity: true,
+          itemStatus: true,
+          order: {
+            select: {
+              orderStatus: true,
+              createdAt: true,
+            },
+          },
+          product: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      }).catch(() => []),
+    ]);
 
     const totalOrders = orderItems.length;
     const totalRevenue = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
     // Recent 5 orders with supplier-specific item status
-    const recentOrders = orderItems.slice(-5).map((item) => ({
+    const recentOrders = orderItems.slice(0, 5).map((item) => ({
       orderId: item.orderId,
       orderItemId: item.id,
       productTitle: item.product?.title,
@@ -136,15 +166,22 @@ export const getDashboardStats = async (req, res, next) => {
       createdAt: item.order?.createdAt,
     }));
 
+    const responseData = {
+      totalProducts,
+      lowStockCount,
+      totalOrders,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      recentOrders,
+    };
+
+    dashboardStatsCache.set(supplierId, {
+      data: responseData,
+      expiry: Date.now() + STATS_CACHE_TTL,
+    });
+
     return res.status(200).json({
       success: true,
-      data: {
-        totalProducts,
-        lowStockCount,
-        totalOrders,
-        totalRevenue: Math.round(totalRevenue * 100) / 100,
-        recentOrders,
-      },
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -1211,6 +1248,10 @@ export const getSupplierOrders = async (req, res, next) => {
       });
     }
 
+    const { limit, page } = req.query;
+    const take = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 100) : undefined;
+    const skip = page && take ? (Math.max(1, parseInt(page, 10)) - 1) * take : undefined;
+
     const orders = await prisma.order.findMany({
       where: {
         items: {
@@ -1222,13 +1263,26 @@ export const getSupplierOrders = async (req, res, next) => {
       include: {
         items: {
           where: { product: { supplierId } }, // Isolate: only return THIS supplier's items
-          include: { product: true },
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                images: true,
+                sku: true,
+                price: true,
+                categorySlug: true,
+              },
+            },
+          },
         },
         user: {
           select: { id: true, fullName: true, phone: true, email: true },
         },
       },
       orderBy: { createdAt: 'desc' },
+      take,
+      skip,
     });
 
     // Scope orderStatus and totalAmount strictly to this supplier's items to avoid multi-vendor collision
@@ -1386,6 +1440,8 @@ export const updateOrderStatus = async (req, res, next) => {
         .catch((err) => console.error(`⚠️ [Supplier Order ${id}] OTP email failed:`, err.message));
     }
 
+    invalidateSupplierDashboardCache(supplierId);
+
     return res.status(200).json({
       success: true,
       message: `Item status updated to ${targetStatus} (Parent order: ${result.parentOrderStatus})`,
@@ -1411,34 +1467,56 @@ export const getSupplierSettlements = async (req, res, next) => {
       });
     }
 
-    // 1. Fetch supplier profile & verified bank details from database
-    const profile = await prisma.profile.findUnique({
-      where: { id: supplierId },
-      select: {
-        id: true,
-        fullName: true,
-        storeName: true,
-        bankDetails: true,
-        gstin: true,
-        pan: true,
-      },
-    });
+    // Parallel fetch: profile, orderItems (selective projection without heavy joins), and wallet
+    const [profile, orderItems, existingWallet] = await Promise.all([
+      prisma.profile.findUnique({
+        where: { id: supplierId },
+        select: {
+          id: true,
+          fullName: true,
+          storeName: true,
+          bankDetails: true,
+          gstin: true,
+          pan: true,
+        },
+      }),
+      prisma.orderItem.findMany({
+        where: {
+          product: { supplierId },
+        },
+        select: {
+          id: true,
+          orderId: true,
+          price: true,
+          quantity: true,
+          itemStatus: true,
+          order: {
+            select: {
+              orderStatus: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+      prisma.wallet.findUnique({
+        where: { userId: supplierId },
+        include: {
+          transactions: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      }),
+    ]);
 
-    // 2. Fetch order items for this supplier from database
-    const orderItems = await prisma.orderItem.findMany({
-      where: {
-        product: { supplierId },
-      },
-      include: {
-        order: true,
-        product: true,
-      },
-      orderBy: {
-        order: { createdAt: 'desc' },
-      },
-    });
+    let wallet = existingWallet;
+    if (!wallet) {
+      wallet = await prisma.wallet.create({
+        data: { userId: supplierId, balance: 0, pending: 0 },
+        include: { transactions: true },
+      }).catch(() => null);
+    }
 
-    // 3. Compute live financial numbers strictly from real database rows
+    // Compute live financial numbers strictly from real database rows
     let grossRevenue = 0;
     let settledAmount = 0;
     let escrowBalance = 0;
@@ -1459,23 +1537,6 @@ export const getSupplierSettlements = async (req, res, next) => {
         escrowBalance += (itemTotal - tds);
       }
     });
-
-    // 4. Fetch supplier wallet and past withdrawal transactions
-    let wallet = await prisma.wallet.findUnique({
-      where: { userId: supplierId },
-      include: {
-        transactions: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
-
-    if (!wallet) {
-      wallet = await prisma.wallet.create({
-        data: { userId: supplierId, balance: 0, pending: 0 },
-        include: { transactions: true },
-      }).catch(() => null);
-    }
 
     const withdrawalTxns = (wallet?.transactions || []).filter((t) => t.type === 'debit');
     const totalWithdrawn = withdrawalTxns.reduce((acc, t) => acc + (t.amount || 0), 0);

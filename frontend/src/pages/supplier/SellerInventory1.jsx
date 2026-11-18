@@ -99,9 +99,9 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
       else setLoading(true);
 
       const [prodsRes, catsRes, profRes] = await Promise.allSettled([
-        supplierApiService.fetchSupplierProducts({ limit: 100 }),
-        supplierApiService.fetchCategories(),
-        supplierApiService.fetchSupplierProfile(),
+        supplierApiService.fetchSupplierProducts({ limit: 100 }, { skipCache: isRefresh }),
+        supplierApiService.fetchCategories({ skipCache: isRefresh }),
+        supplierApiService.fetchSupplierProfile({ skipCache: isRefresh }),
       ]);
 
       if (prodsRes.status === 'fulfilled' && prodsRes.value) {

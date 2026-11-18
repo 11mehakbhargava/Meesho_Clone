@@ -88,10 +88,44 @@ export function clearAuthSession() {
   }
 }
 
+// In-memory response cache & in-flight promise deduplicator
+const responseCache = new Map();
+const inFlightPromises = new Map();
+
+export function clearSupplierApiCache(pattern = null) {
+  if (!pattern) {
+    responseCache.clear();
+    return;
+  }
+  for (const key of responseCache.keys()) {
+    if (key.includes(pattern)) {
+      responseCache.delete(key);
+    }
+  }
+}
+
 /**
- * Helper to make API requests with Authorization header
+ * Helper to make API requests with Authorization header, SWR caching, and deduplication
  */
 async function request(endpoint, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+  const skipCache = Boolean(options.skipCache);
+  const cacheTtl = options.cacheTtl || (endpoint.includes('categories') ? 300000 : 30000); // 5m for categories, 30s for lists
+  const cacheKey = endpoint;
+
+  // 1. Fast-path: Return cached data immediately if fresh
+  if (isGet && !skipCache) {
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data;
+    }
+    // Share in-flight network request with concurrent callers
+    if (inFlightPromises.has(cacheKey)) {
+      return inFlightPromises.get(cacheKey);
+    }
+  }
+
   const token = getAuthToken();
   const headers = {
     ...options.headers,
@@ -109,26 +143,68 @@ async function request(endpoint, options = {}) {
 
   const url = `${API_BASE_URL}${endpoint}`;
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+  const fetchPromise = (async () => {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    const data = await response.json().catch(() => ({}));
+      const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(data.message || `API error (${response.status})`);
+      if (!response.ok) {
+        throw new Error(data.message || `API error (${response.status})`);
+      }
+
+      // Store successful GET in cache
+      if (isGet) {
+        responseCache.set(cacheKey, {
+          data,
+          expiry: Date.now() + cacheTtl,
+        });
+      } else {
+        // Mutation occurred: selectively invalidate relevant caches
+        if (endpoint.includes('/products')) {
+          clearSupplierApiCache('/supplier/products');
+          clearSupplierApiCache('/supplier/dashboard-stats');
+        } else if (endpoint.includes('/orders')) {
+          clearSupplierApiCache('/supplier/orders');
+          clearSupplierApiCache('/supplier/dashboard-stats');
+          clearSupplierApiCache('/supplier/finance-settlements');
+        } else if (endpoint.includes('/profile') || endpoint.includes('/bank') || endpoint.includes('/gst')) {
+          clearSupplierApiCache('/supplier/auth/me');
+          clearSupplierApiCache('/supplier/profile');
+          clearSupplierApiCache('/supplier/kyc');
+        } else if (endpoint.includes('/kyc')) {
+          clearSupplierApiCache('/supplier/kyc');
+        } else if (endpoint.includes('/finance') || endpoint.includes('/withdraw')) {
+          clearSupplierApiCache('/supplier/finance-settlements');
+        } else if (endpoint.includes('/returns')) {
+          clearSupplierApiCache('/supplier/returns');
+        } else if (endpoint.includes('/reviews')) {
+          clearSupplierApiCache('/supplier/reviews');
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.warn(`[SupplierAPI] Request to ${endpoint} failed:`, error.message);
+      if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('NetworkError'))) {
+        throw new Error(`Backend server is offline or unreachable at ${API_BASE_URL}.`);
+      }
+      throw error;
+    } finally {
+      if (isGet) {
+        inFlightPromises.delete(cacheKey);
+      }
     }
+  })();
 
-    return data;
-  } catch (error) {
-    console.warn(`[SupplierAPI] Request to ${endpoint} failed:`, error.message);
-    if (error.name === 'TypeError' && (error.message.includes('fetch') || error.message.includes('NetworkError'))) {
-      throw new Error(`Backend server is offline or unreachable at ${API_BASE_URL}.`);
-    }
-    throw error;
+  if (isGet) {
+    inFlightPromises.set(cacheKey, fetchPromise);
   }
+
+  return fetchPromise;
 }
 
 /**
@@ -378,8 +454,8 @@ export async function bulkUploadSupplierProducts(products) {
 }
 
 // Get Categories
-export async function fetchCategories() {
-  const data = await request('/supplier/categories');
+export async function fetchCategories(options = {}) {
+  const data = await request('/supplier/categories', options);
   return data.data || [];
 }
 
@@ -393,8 +469,10 @@ export async function createCategory(categoryData) {
 }
 
 // Get Orders for Supplier
-export async function fetchSupplierOrders() {
-  const data = await request('/supplier/orders');
+export async function fetchSupplierOrders(params = {}, options = {}) {
+  const query = new URLSearchParams(params).toString();
+  const endpoint = `/supplier/orders${query ? `?${query}` : ''}`;
+  const data = await request(endpoint, options);
   return data.data || [];
 }
 

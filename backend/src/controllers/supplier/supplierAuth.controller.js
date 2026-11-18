@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma.js';
+import { invalidateSupplierCache } from '../../middlewares/supplierAuth.middleware.js';
 
 // Helper to format supplier response safely
 const formatSupplierResponse = (user) => {
@@ -98,6 +99,8 @@ export const updateSupplierProfile = async (req, res, next) => {
       data: updateData,
     });
 
+    invalidateSupplierCache(supplierId);
+
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully!',
@@ -137,6 +140,8 @@ export const updateBankDetails = async (req, res, next) => {
       data: { bankDetails },
     });
 
+    invalidateSupplierCache(supplierId);
+
     return res.status(200).json({
       success: true,
       message: 'Bank details updated successfully!',
@@ -171,6 +176,8 @@ export const updateGstDetails = async (req, res, next) => {
       where: { id: supplierId },
       data: updateData,
     });
+
+    invalidateSupplierCache(supplierId);
 
     return res.status(200).json({
       success: true,

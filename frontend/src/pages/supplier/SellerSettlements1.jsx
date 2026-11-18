@@ -68,8 +68,8 @@ export default function SellerSettlements1({ onNavigate, embedded = false, onNav
       else setLoading(true);
 
       const [financeRes, profRes] = await Promise.allSettled([
-        supplierApiService.fetchSupplierSettlements(),
-        supplierApiService.fetchSupplierProfile(),
+        supplierApiService.fetchSupplierSettlements({ skipCache: isRefresh }),
+        supplierApiService.fetchSupplierProfile({ skipCache: isRefresh }),
       ]);
 
       if (financeRes.status === 'fulfilled' && financeRes.value) {

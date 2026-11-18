@@ -153,8 +153,8 @@ export default function SellerKyc1({ onNavigate, embedded = false, onNavigateTab
       if (!isRefresh) setLoading(true);
 
       const [kycRes, profRes] = await Promise.allSettled([
-        supplierApiService.fetchSupplierKyc(),
-        supplierApiService.fetchSupplierProfile(),
+        supplierApiService.fetchSupplierKyc({ skipCache: isRefresh }),
+        supplierApiService.fetchSupplierProfile({ skipCache: isRefresh }),
       ]);
 
       const prof = (profRes.status === 'fulfilled' && profRes.value) ? profRes.value : getCurrentSupplier();
