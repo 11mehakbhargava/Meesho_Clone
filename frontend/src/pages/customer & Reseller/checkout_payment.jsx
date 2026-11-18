@@ -152,7 +152,17 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
         if (savedCoupon) {
           try {
             const parsed = JSON.parse(savedCoupon);
-            if (parsed?.code) setAppliedCoupon(parsed);
+            if (parsed?.code) {
+              setAppliedCoupon(parsed);
+              const computedSubtotal = items.reduce((sum, it) => sum + ((it.product?.price || 0) * it.quantity), 0);
+              if (computedSubtotal > 0) {
+                validateCoupon(parsed.code, computedSubtotal).then(res => {
+                  if (res?.success && res.data) {
+                    setAppliedCoupon(res.data);
+                  }
+                }).catch(() => {});
+              }
+            }
           } catch (e) {}
         }
 
@@ -191,15 +201,42 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
     init();
   }, [urlMode, urlProductId, urlSize]);
 
-  // Dynamic Affiliate Margin Support (e.g. ₹849 + ₹150 = ₹999)
-  const affiliateMargin = Number(localStorage.getItem('mshoppy_affiliate_margin') || 0);
+  // Dynamic Affiliate Margin Support (ONLY when coming from an explicit reseller share URL or in reselling mode)
+  const urlMargin = getAffiliateMarginFromParams(location.search);
+  const affiliateMargin = urlMargin > 0 ? urlMargin : (isReselling ? Number(localStorage.getItem('mshoppy_affiliate_margin') || 0) : 0);
 
   const basePrice = cartItems.reduce((sum, it) => {
     const baseP = it.product?.price || 0;
-    const effP = baseP + (affiliateMargin > 0 ? affiliateMargin : 0);
+    const itemMargin = it.affiliateMargin || (affiliateMargin > 0 ? affiliateMargin : 0);
+    const effP = baseP + itemMargin;
     return sum + (effP * it.quantity);
   }, 0);
-  const couponDiscount = appliedCoupon ? (appliedCoupon.discountAmount || 0) : 0;
+
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon || basePrice <= 0) return 0;
+
+    // 1. Concrete discountAmount from API if available
+    const explicitAmt = Number(appliedCoupon.discountAmount);
+    if (!isNaN(explicitAmt) && explicitAmt > 0) {
+      return explicitAmt;
+    }
+
+    // 2. Percentage based discount (e.g. 40% OFF Referral Welcome up to ₹100)
+    const percent = Number(appliedCoupon.discountPercent || (appliedCoupon.type === 'PERCENT' ? appliedCoupon.value : 0));
+    if (percent > 0) {
+      const calculated = Math.round((basePrice * percent) / 100);
+      const maxD = Number(appliedCoupon.maxDiscount || 0);
+      return maxD > 0 ? Math.min(calculated, maxD) : calculated;
+    }
+
+    // 3. Flat discount
+    if ((appliedCoupon.type === 'FLAT' || appliedCoupon.type === 'FIXED') && appliedCoupon.value) {
+      return Math.min(basePrice, Number(appliedCoupon.value));
+    }
+
+    return 0;
+  }, [appliedCoupon, basePrice]);
+
   const finalAmount = Math.max(0, basePrice - couponDiscount);
   const customerInvoiceTotal = isReselling ? finalAmount + Number(marginAmount || 0) : finalAmount;
 
@@ -1004,7 +1041,7 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
                         />
                         <div className="flex-1 min-w-0 text-xs">
                           <p className="font-bold text-slate-800 truncate">{it.product?.title}</p>
-                          <p className="text-[11px] text-slate-400">Qty: {it.quantity} • ₹{it.product?.price}</p>
+                          <p className="text-[11px] text-slate-400">Qty: {it.quantity} • ₹{(it.product?.price || 0) + (it.affiliateMargin || (affiliateMargin > 0 ? affiliateMargin : 0))}</p>
                         </div>
                       </div>
                     ))}

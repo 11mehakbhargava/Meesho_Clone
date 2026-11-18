@@ -39,9 +39,10 @@ export default function InviteLanding() {
   // Handle Claim Offer & Start Shopping
   const handleClaimOffer = () => {
     try {
-      // 1. Store referral code for attribution
+      // 1. Store referral code for attribution & clear any stale reseller margin
       localStorage.setItem('mshoppy_referral_code', cleanCode);
       localStorage.setItem('mshoppy_referral_timestamp', Date.now().toString());
+      localStorage.removeItem('mshoppy_affiliate_margin');
 
       // 2. Pre-apply the 40% welcome coupon (up to ₹100)
       const couponObj = {
