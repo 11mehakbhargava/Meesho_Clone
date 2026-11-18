@@ -40,7 +40,7 @@ export const getReferralStats = async (req, res) => {
         success: true,
         data: {
           referralCode: 'MSHOPPY2026',
-          referralLink: `${origin}/?ref=MSHOPPY2026`,
+          referralLink: `${origin}/invite/MSHOPPY2026`,
           totalInvited: 0,
           deliveredCount: 0,
           pendingCount: 0,
@@ -74,7 +74,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `${origin}/?ref=${referralCode}`;
+    const referralLink = `${origin}/invite/${referralCode}`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({
@@ -252,6 +252,55 @@ export const applyReferralCode = async (req, res) => {
     });
   } catch (error) {
     console.error('Error applying referral code:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/referrals/info/:code
+ * Public details for the Invite Landing Page (/invite/:code)
+ */
+export const getReferralInfo = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Code is required' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const cleanSuffix = cleanCode.replace(/^MSHOPPY/, '');
+
+    const referrer = await prisma.profile.findFirst({
+      where: {
+        OR: [
+          { storeName: cleanCode },
+          { id: cleanCode },
+          ...(cleanSuffix.length >= 4 ? [{ phone: { endsWith: cleanSuffix } }] : [])
+        ]
+      },
+      select: {
+        id: true,
+        fullName: true,
+        avatarUrl: true,
+        storeName: true
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        code: cleanCode,
+        referrerName: referrer?.fullName || 'Shruti Paliwal',
+        referrerAvatar: referrer?.avatarUrl || '',
+        discountPercent: 20,
+        maxDiscount: 100,
+        offerTitle: 'Flat 20% OFF on First Order',
+        offerDescription: `${referrer?.fullName || 'Shruti Paliwal'} has invited you to shop on MShoppy! Enjoy wholesale prices and flat 20% OFF on your 1st order.`,
+        minOrderValue: 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching referral info:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

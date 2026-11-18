@@ -53,6 +53,7 @@ import ReturnRequest from './pages/customer & Reseller/ReturnRequest';
 import AffiliateKYC from './pages/customer & Reseller/AffiliateKYC';
 import AffiliateKycStatus from './pages/customer & Reseller/AffiliateKycStatus';
 import InviteEarn from './pages/customer & Reseller/InviteEarn';
+import InviteLanding from './pages/customer & Reseller/InviteLanding';
 import PolicyPage from './pages/customer & Reseller/PolicyPage';
 import { getAffiliateMarginFromParams } from './utils/affiliateLinkHelper';
 
@@ -786,6 +787,8 @@ function AppRoutes() {
         <Route path="/earnings-dashboard-2" element={<Navigate to="/earnings" replace />} />
         <Route path="/invite-earn" element={<InviteEarn onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/refer-earn" element={<InviteEarn onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/invite/:code" element={<InviteLanding />} />
+        <Route path="/invite" element={<InviteLanding />} />
         <Route path="/affiliate-program" element={<AffiliateProgram />} />
         <Route
           path="/affiliate-panel"

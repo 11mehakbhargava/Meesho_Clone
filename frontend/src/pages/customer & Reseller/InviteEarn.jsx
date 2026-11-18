@@ -156,7 +156,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
       ? `MSHOPPY${customerUser.phone.slice(-4)}`
       : 'MSHOPPY2026'
   );
-  const currentReferralLink = referralData.referralLink || `${window.location.origin}/?ref=${currentReferralCode}`;
+  const currentReferralLink = referralData.referralLink || `${window.location.origin}/invite/${currentReferralCode}`;
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
@@ -1003,29 +1003,40 @@ export default function InviteEarn({ onNavigate, onBack }) {
               </div>
 
               {/* Referral Link Box */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Invite Link
                   </span>
-                  <span className="text-xs font-medium text-slate-600 truncate block font-mono">
+                  <a
+                    href={currentReferralLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-[#9f0038] hover:underline flex items-center gap-0.5"
+                  >
+                    <span>Test / Preview</span>
+                    <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                  </a>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-slate-700 font-mono break-all select-all flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
                     {currentReferralLink}
                   </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className={`px-3 py-1.5 border text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1 cursor-pointer shrink-0 ${
+                      copiedLink
+                        ? 'bg-rose-50 border-rose-200 text-[#9f0038]'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xs">
+                      {copiedLink ? 'check' : 'link'}
+                    </span>
+                    <span>{copiedLink ? 'Copied' : 'Copy'}</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className={`px-3 py-1.5 border text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1 cursor-pointer shrink-0 ${
-                    copiedLink
-                      ? 'bg-rose-50 border-rose-200 text-[#9f0038]'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-xs">
-                    {copiedLink ? 'check' : 'link'}
-                  </span>
-                  <span>{copiedLink ? 'Copied' : 'Copy'}</span>
-                </button>
               </div>
 
               {/* Action Buttons on Laptop */}

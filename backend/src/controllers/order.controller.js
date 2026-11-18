@@ -216,71 +216,81 @@ export const createOrder = async (req, res) => {
         const directMargin = parseFloat(req.body.marginAmount) || 0;
         const commissionAmount = Math.round(Math.max(calculatedMargin, directMargin));
 
-        // Find the affiliate partner profile
-        const refPrefix = cleanRef.replace(/^AFF-/, '').slice(0, 5).toLowerCase();
+        // Find the referrer or affiliate partner profile
+        const cleanSuffix = cleanRef.replace(/^(MSHOPPY|AFF-)/, '');
         let affiliateProfile = await prisma.profile.findFirst({
           where: {
             OR: [
               { storeName: cleanRef },
               { id: cleanRef },
-              ...(refPrefix.length >= 3 ? [{ email: { startsWith: refPrefix } }] : [])
+              ...(cleanSuffix.length >= 3 ? [{ email: { startsWith: cleanSuffix.toLowerCase() } }] : []),
+              ...(cleanSuffix.length >= 4 ? [{ phone: { endsWith: cleanSuffix } }] : [])
             ]
           },
           include: { wallet: true }
         });
 
-        // Fallback: If not found, match with active reseller/affiliate
-        if (!affiliateProfile) {
+        // Fallback for generic affiliate
+        if (!affiliateProfile && commissionAmount > 0) {
           affiliateProfile = await prisma.profile.findFirst({
             where: { role: 'RESELLER' },
             include: { wallet: true }
           });
         }
 
-        if (affiliateProfile && affiliateProfile.id !== userId && commissionAmount > 0) {
-          // Record referral in PostgreSQL referrals table
-          await prisma.referral.create({
-            data: {
+        if (affiliateProfile && affiliateProfile.id !== userId) {
+          // Record or link referral in PostgreSQL referrals table for Invite & Earn
+          const existingRef = await prisma.referral.findFirst({
+            where: {
               referrerId: affiliateProfile.id,
-              referredId: userId,
-              code: cleanRef,
-              rewardAmount: commissionAmount,
-              isRedeemed: true
+              referredId: userId
             }
-          }).catch(e => console.warn('Referral creation note:', e.message));
+          });
 
-          // Ensure wallet exists for affiliate
-          let wallet = affiliateProfile.wallet;
-          if (!wallet) {
-            wallet = await prisma.wallet.create({
+          if (!existingRef) {
+            await prisma.referral.create({
               data: {
-                userId: affiliateProfile.id,
-                balance: 0,
-                pending: 0
+                referrerId: affiliateProfile.id,
+                referredId: userId,
+                code: cleanRef,
+                rewardAmount: commissionAmount > 0 ? commissionAmount : 0,
+                isRedeemed: true
               }
-            });
+            }).catch(e => console.warn('Referral creation note:', e.message));
           }
 
-          // Credit the custom margin into the affiliate's real database wallet
-          await prisma.wallet.update({
-            where: { id: wallet.id },
-            data: {
-              balance: { increment: commissionAmount }
+          // If there is custom reseller margin commission, credit to wallet immediately
+          if (commissionAmount > 0) {
+            let wallet = affiliateProfile.wallet;
+            if (!wallet) {
+              wallet = await prisma.wallet.create({
+                data: {
+                  userId: affiliateProfile.id,
+                  balance: 0,
+                  pending: 0
+                }
+              });
             }
-          });
 
-          // Create wallet transaction record for passbook & audit trail
-          await prisma.walletTransaction.create({
-            data: {
-              walletId: wallet.id,
-              amount: commissionAmount,
-              type: 'credit',
-              description: `Affiliate Custom Margin for Order #${order.id.slice(-6).toUpperCase()}`,
-              orderId: order.id
-            }
-          });
+            await prisma.wallet.update({
+              where: { id: wallet.id },
+              data: {
+                balance: { increment: commissionAmount }
+              }
+            });
 
-          console.log(`[Affiliate] Credited ₹${commissionAmount} custom margin to ${affiliateProfile.email || affiliateProfile.fullName} for Order ${order.id}`);
+            await prisma.walletTransaction.create({
+              data: {
+                walletId: wallet.id,
+                amount: commissionAmount,
+                type: 'credit',
+                description: `Affiliate Custom Margin for Order #${order.id.slice(-6).toUpperCase()}`,
+                orderId: order.id
+              }
+            });
+
+            console.log(`[Affiliate] Credited ₹${commissionAmount} custom margin to ${affiliateProfile.email || affiliateProfile.fullName} for Order ${order.id}`);
+          }
         }
       } catch (affiliateErr) {
         console.warn('Affiliate custom margin credit note:', affiliateErr.message);

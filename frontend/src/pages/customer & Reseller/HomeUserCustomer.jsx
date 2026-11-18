@@ -453,6 +453,17 @@ export default function HomeUserCustomer() {
     return unsub;
   }, []);
 
+  // Referral attribution state
+  const [activeReferralCode, setActiveReferralCode] = useState(() => {
+    try {
+      const dismissed = localStorage.getItem('mshoppy_referral_banner_dismissed');
+      if (dismissed === 'true') return null;
+      return localStorage.getItem('mshoppy_referral_code');
+    } catch {
+      return null;
+    }
+  });
+
   // 1. Load Categories, Banners & Wishlist on initial mount
   useEffect(() => {
     let isMounted = true;
@@ -1204,6 +1215,28 @@ export default function HomeUserCustomer() {
           </div>
         </div>
       </header>
+
+      {/* Active Friend Referral 20% OFF Banner */}
+      {activeReferralCode && (
+        <div className="bg-gradient-to-r from-rose-600 via-[#9f0038] to-purple-700 text-white px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
+          <div className="flex items-center gap-2 mx-auto">
+            <span className="text-base">🎉</span>
+            <span>
+              Friend Invite Active: <strong>Flat 20% OFF</strong> applied on your 1st order (Code: <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded text-white font-bold">{activeReferralCode}</span>)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveReferralCode(null);
+              try { localStorage.setItem('mshoppy_referral_banner_dismissed', 'true'); } catch (_) {}
+            }}
+            className="text-white/80 hover:text-white text-xs font-bold px-2 py-0.5 cursor-pointer ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-24 md:pb-12">
         {/* Mobile Search */}
