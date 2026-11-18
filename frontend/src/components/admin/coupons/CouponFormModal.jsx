@@ -75,7 +75,7 @@ export default function CouponFormModal({
 
   // Random code generator
   const handleGenerateRandomCode = () => {
-    const prefixes = ['MSHOPPY', 'SUPER', 'FESTIVE', 'SAVE', 'VIP', 'OFFER'];
+    const prefixes = ['MEESHO', 'SUPER', 'FESTIVE', 'SAVE', 'VIP', 'OFFER'];
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const num = Math.floor(10 + Math.random() * 90);
     const code = `${prefix}${num}`;
@@ -159,7 +159,7 @@ export default function CouponFormModal({
             </div>
             <input
               type="text"
-              placeholder="e.g. MSHOPPY100"
+              placeholder="e.g. MEESHO100"
               value={formData.code}
               onChange={(e) =>
                 setFormData((prev) => ({

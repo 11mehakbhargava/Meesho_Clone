@@ -368,7 +368,7 @@ export default function SellerKyc1({ onNavigate, embedded = false, onNavigateTab
                   </span>
                 </div>
                 <p className="text-xs text-emerald-800/80 mt-0.5 leading-relaxed">
-                  Your business identity and bank accounts have been verified by MShoppy Compliance. Your products receive verified trust badges and daily payouts are active.
+                  Your business identity and bank accounts have been verified by Meesho Compliance. Your products receive verified trust badges and daily payouts are active.
                 </p>
               </div>
             </div>
@@ -397,7 +397,7 @@ export default function SellerKyc1({ onNavigate, embedded = false, onNavigateTab
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/80 mt-0.5 leading-relaxed">
-                  Your documents are currently being checked by the MShoppy merchant verification desk. Verification typically completes within 4–12 business hours.
+                  Your documents are currently being checked by the Meesho merchant verification desk. Verification typically completes within 4–12 business hours.
                 </p>
               </div>
             </div>

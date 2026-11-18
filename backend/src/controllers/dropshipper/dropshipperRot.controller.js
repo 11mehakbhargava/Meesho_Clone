@@ -254,7 +254,7 @@ export const submitRotDispute = async (req, res) => {
           sendRotWaiverAlertEmail({
             partnerEmail: partner.email,
             partnerName: partner.fullName || 'Partner',
-            storeName: partner.storeName || 'Partner Store',
+            storeName: partner.storeName || 'Kunal Retail',
             orderId,
             returnReason: reason || 'Customer Refused / NDR',
             waivedFreight: 120,

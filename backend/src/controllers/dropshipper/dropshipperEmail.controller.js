@@ -17,9 +17,9 @@ export const testDropshipperEmail = async (req, res) => {
     const {
       to,
       templateType = 'ORDER_PUSH',
-      partnerName = 'Partner Seller',
-      storeName = 'Partner Store',
-      customerName = 'Valued Customer'
+      partnerName = 'Kunal Sikarwar',
+      storeName = 'Kunal Retail',
+      customerName = 'Radhika Sharma'
     } = req.body;
 
     if (!to || !to.includes('@')) {
@@ -58,7 +58,7 @@ export const testDropshipperEmail = async (req, res) => {
           quantity: 1,
           totalAmount: 999,
           shippingAddress: 'Flat 402, Royal Palms, City Center, Gwalior - 474011',
-          supportPhone: '+91 98765 43210'
+          supportPhone: '9098296425'
         });
         break;
 

@@ -2179,7 +2179,7 @@ export default function DropshipperSettlementTracking({ onNavigate, onBack }) {
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-gray-500">Disbursed From:</span>
-                  <span className="font-semibold text-gray-700">MShoppy Merchant Escrow Node</span>
+                  <span className="font-semibold text-gray-700">Meesho Merchant Escrow Node</span>
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-gray-500">Execution Date & Time:</span>

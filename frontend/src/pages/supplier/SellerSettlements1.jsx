@@ -531,7 +531,7 @@ export default function SellerSettlements1({ onNavigate, embedded = false, onNav
           <div className="space-y-1">
             <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>MShoppy 0% Commission & Fair Remittance Promise</span>
+              <span>Meesho 0% Commission & Fair Remittance Promise</span>
             </h4>
             <p className="text-xs text-slate-500 max-w-2xl">
               Payouts are transferred directly to your bank via NEFT every 7 business days following delivery. In accordance with Section 194-O of the Income Tax Act, 1% TDS is deposited directly to your PAN.
