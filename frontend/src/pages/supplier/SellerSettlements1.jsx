@@ -6,7 +6,13 @@ import supplierApiService, { clearAuthSession, getCurrentSupplier } from '../../
 import { auth } from '../../utils/firebase';
 import { signOut } from 'firebase/auth';
 import { toast } from 'sonner';
-import { SUPPLIER_MENU } from './supplierNavConfig';
+import {
+  SUPPLIER_MENU,
+  SUPPLIER_ROLES,
+  getStoredSupplierSubRole,
+  getSupplierMenuForRole,
+  isTabAllowedForRole,
+} from './supplierNavConfig';
 import {
   Banknote,
   RefreshCw,
@@ -45,6 +51,16 @@ export default function SellerSettlements1({ onNavigate, embedded = false, onNav
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isSubmittingWithdraw, setIsSubmittingWithdraw] = useState(false);
+  const [currentSubRole, setCurrentSubRole] = useState(getStoredSupplierSubRole);
+
+  useEffect(() => {
+    const handleRole = (e) => setCurrentSubRole(e?.detail || getStoredSupplierSubRole());
+    window.addEventListener('supplier_subrole_changed', handleRole);
+    return () => window.removeEventListener('supplier_subrole_changed', handleRole);
+  }, []);
+
+  const isAllowed = isTabAllowedForRole('finance', currentSubRole);
+  const currentRoleCfg = SUPPLIER_ROLES[currentSubRole] || SUPPLIER_ROLES.OWNER;
 
   const loadSettlementsData = useCallback(async (isRefresh = false) => {
     try {
@@ -683,19 +699,66 @@ export default function SellerSettlements1({ onNavigate, embedded = false, onNav
   );
 
   if (embedded) {
+    if (!isAllowed) {
+      return (
+        <div className="max-w-2xl mx-auto my-10 bg-white rounded-2xl border border-rose-200 p-8 shadow-lg text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+            🛡️
+          </div>
+          <h3 className="text-xl font-black text-slate-900">
+            Access Restricted: Financial Ledger Protected
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Your role <strong className="text-slate-900 font-bold">{currentRoleCfg.label}</strong> does not have access to Financial Payouts & Bank Transfers. This section is restricted to the Store Owner (Admin).
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => onNavigateTab ? onNavigateTab('staff') : handleNav('/seller-web-dashboard1?tab=staff')}
+              className="px-5 py-2.5 rounded-xl bg-[#b7004d] text-white font-bold text-xs hover:bg-[#92003d] transition cursor-pointer shadow-xs"
+            >
+              Open RBAC & Staff Management
+            </button>
+          </div>
+        </div>
+      );
+    }
     return mainContent;
   }
 
   return (
     <DashboardLayout
-      menuItems={SUPPLIER_MENU}
+      menuItems={getSupplierMenuForRole(currentSubRole)}
       activeTab="finance"
       onTabChange={handleTabChange}
-      roleName="SUPPLIER"
+      roleName={`SUPPLIER • ${currentRoleCfg.shortLabel}`}
       userName={supplierDisplayName}
       onLogout={() => setShowLogoutConfirm(true)}
     >
-      {mainContent}
+      {!isAllowed ? (
+        <div className="max-w-2xl mx-auto my-10 bg-white rounded-2xl border border-rose-200 p-8 shadow-lg text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+            🛡️
+          </div>
+          <h3 className="text-xl font-black text-slate-900">
+            Access Restricted: Financial Ledger Protected
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Your role <strong className="text-slate-900 font-bold">{currentRoleCfg.label}</strong> does not have access to Financial Payouts & Bank Transfers. This section is restricted to the Store Owner (Admin).
+          </p>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleNav('/seller-web-dashboard1?tab=staff')}
+              className="px-5 py-2.5 rounded-xl bg-[#b7004d] text-white font-bold text-xs hover:bg-[#92003d] transition cursor-pointer shadow-xs"
+            >
+              Open RBAC & Staff Management
+            </button>
+          </div>
+        </div>
+      ) : (
+        mainContent
+      )}
 
       <LogoutConfirmDialog
         isOpen={showLogoutConfirm}
