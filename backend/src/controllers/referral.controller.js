@@ -1,23 +1,54 @@
 import prisma from '../config/prisma.js';
 
 /**
- * Helper to get or generate user's permanent referral code
+ * Helper to generate a unique short slug for each user's dynamic invite link
+ */
+const generateUniqueUserSlug = (user) => {
+  const seed = (user.id || user.phone || 'guest').toString();
+  let hash = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) + hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const positive = Math.abs(hash);
+  const part1 = positive.toString(36);
+  const part2 = (seed.replace(/[^a-z0-9]/gi, '').slice(-4) || 'msh').toLowerCase();
+  return (part1 + part2).slice(0, 8);
+};
+
+/**
+ * Helper to get or generate user's permanent unique referral code
  */
 const getOrCreateReferralCode = async (user) => {
   if (user.storeName && user.storeName.startsWith('MSHOPPY')) {
     return user.storeName;
   }
-  const cleanPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
-  const code = cleanPhone && cleanPhone.length >= 4
-    ? `MSHOPPY${cleanPhone.slice(-4)}`
-    : `MSHOPPY${user.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}`;
 
-  if (!user.storeName) {
-    await prisma.profile.update({
-      where: { id: user.id },
-      data: { storeName: code }
-    }).catch(() => {});
+  const cleanPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
+  const baseSuffix = cleanPhone && cleanPhone.length >= 4
+    ? cleanPhone.slice(-4)
+    : user.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase();
+
+  let code = `MSHOPPY${baseSuffix}`;
+
+  // Check for collision with another user's code
+  const conflict = await prisma.profile.findFirst({
+    where: {
+      storeName: code,
+      id: { not: user.id }
+    }
+  });
+
+  if (conflict) {
+    const extra = user.id.replace(/[^A-Za-z0-9]/g, '').slice(-2).toUpperCase();
+    code = `MSHOPPY${baseSuffix}${extra}`;
   }
+
+  await prisma.profile.update({
+    where: { id: user.id },
+    data: { storeName: code }
+  }).catch(() => {});
+
   return code;
 };
 
@@ -74,7 +105,8 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `https://app.mshoppy.com/2yoV/r99th0qd?via=${referralCode}&from=account_section`;
+    const userSlug = generateUniqueUserSlug(user);
+    const referralLink = `https://app.mshoppy.com/2yoV/${userSlug}?via=${referralCode}&from=account_section`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({

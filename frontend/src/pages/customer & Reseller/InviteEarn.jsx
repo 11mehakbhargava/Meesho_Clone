@@ -150,13 +150,28 @@ export default function InviteEarn({ onNavigate, onBack }) {
     };
   }, []);
 
-  // Persistent / dynamic referral code and link
+  // Persistent / dynamic unique referral code and link per user
   const currentReferralCode = referralData.referralCode || (
     customerUser?.phone
-      ? `MSHOPPY${customerUser.phone.slice(-4)}`
-      : 'MSHOPPY2026'
+      ? `MSHOPPY${customerUser.phone.replace(/[^0-9]/g, '').slice(-4)}`
+      : (customerUser?.id ? `MSHOPPY${customerUser.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}` : 'MSHOPPY2026')
   );
-  const currentReferralLink = referralData.referralLink || `https://app.mshoppy.com/2yoV/r99th0qd?via=${currentReferralCode}&from=account_section`;
+
+  // Fallback unique short slug based on logged-in user identity (never hardcoded)
+  const fallbackSlug = useMemo(() => {
+    const seed = (customerUser?.id || customerUser?.phone || 'mshoppy').toString();
+    let hash = 5381;
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) + hash) + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    const positive = Math.abs(hash);
+    const part1 = positive.toString(36);
+    const part2 = (seed.replace(/[^a-z0-9]/gi, '').slice(-4) || 'msh').toLowerCase();
+    return (part1 + part2).slice(0, 8);
+  }, [customerUser]);
+
+  const currentReferralLink = referralData.referralLink || `https://app.mshoppy.com/2yoV/${fallbackSlug}?via=${currentReferralCode}&from=account_section`;
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
