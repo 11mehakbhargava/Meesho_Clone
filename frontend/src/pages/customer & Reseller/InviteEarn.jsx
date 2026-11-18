@@ -65,7 +65,34 @@ export default function InviteEarn({ onNavigate, onBack }) {
     suggestedContacts: []
   });
 
-  const [activeContacts, setActiveContacts] = useState([]);
+  // LocalStorage persistence helpers so custom added friends & invite status NEVER disappear on refresh
+  const STORAGE_CUSTOM_CONTACTS = 'mshoppy_custom_contacts';
+  const STORAGE_INVITED_MAP = 'mshoppy_invited_contacts_map';
+
+  const getSavedCustomContacts = () => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_CUSTOM_CONTACTS) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const getSavedInvitedMap = () => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_INVITED_MAP) || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const [activeContacts, setActiveContacts] = useState(() => {
+    const custom = getSavedCustomContacts();
+    const map = getSavedInvitedMap();
+    return custom.map((c) => ({
+      ...c,
+      invited: !!map[c.id] || !!map[(c.phone || '').replace(/[^0-9]/g, '').slice(-10)] || !!c.invited
+    }));
+  });
 
   // Fetch real database referral statistics on mount
   useEffect(() => {
@@ -77,8 +104,28 @@ export default function InviteEarn({ onNavigate, onBack }) {
         if (!isMounted) return;
         if (data) {
           setReferralData(data);
-          // Combine any custom user-added contacts with suggested contacts from DB
-          setActiveContacts(data.suggestedContacts || []);
+          
+          const customList = getSavedCustomContacts();
+          const invitedMap = getSavedInvitedMap();
+
+          // Merge custom contacts first, then backend suggestions
+          const combined = [...customList, ...(data.suggestedContacts || [])];
+          const seen = new Set();
+          const merged = [];
+
+          for (const c of combined) {
+            const cleanP = (c.phone || '').replace(/[^0-9]/g, '').slice(-10);
+            const key = cleanP || c.id;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            merged.push({
+              ...c,
+              invited: !!invitedMap[key] || !!invitedMap[c.id] || !!c.invited
+            });
+          }
+
+          setActiveContacts(merged);
         }
       })
       .catch((err) => {
@@ -138,8 +185,17 @@ export default function InviteEarn({ onNavigate, onBack }) {
       : `https://api.whatsapp.com/send?text=${encoded}`;
 
     if (contact) {
+      const cleanP = (contact.phone || '').replace(/[^0-9]/g, '').slice(-10);
+      const invitedMap = getSavedInvitedMap();
+      if (cleanP) invitedMap[cleanP] = true;
+      invitedMap[contact.id] = true;
+      localStorage.setItem(STORAGE_INVITED_MAP, JSON.stringify(invitedMap));
+
       setActiveContacts((prev) =>
-        prev.map((c) => (c.id === contact.id ? { ...c, invited: true } : c))
+        prev.map((c) => {
+          const match = c.id === contact.id || ((c.phone || '').replace(/[^0-9]/g, '').slice(-10) === cleanP);
+          return match ? { ...c, invited: true } : c;
+        })
       );
       toast.success(`Invite sent to ${contact.name}! 🚀`);
     }
@@ -183,6 +239,9 @@ export default function InviteEarn({ onNavigate, onBack }) {
             avatar: (c.name?.[0] || 'P').slice(0, 2).toUpperCase(),
             color: 'bg-indigo-100 text-indigo-700'
           }));
+          const existingCustom = getSavedCustomContacts();
+          const updated = [...newItems, ...existingCustom];
+          localStorage.setItem(STORAGE_CUSTOM_CONTACTS, JSON.stringify(updated));
           setActiveContacts((prev) => [...newItems, ...prev]);
           toast.success(`Imported ${newItems.length} contacts from your phone! 📱`);
         }
@@ -201,15 +260,22 @@ export default function InviteEarn({ onNavigate, onBack }) {
       toast.error('Please enter friend name and phone number');
       return;
     }
+    const cleanDigits = newContactPhone.trim().replace(/[^0-9]/g, '');
     const custom = {
       id: `custom_${Date.now()}`,
       name: newContactName.trim(),
-      phone: newContactPhone.trim(),
+      phone: cleanDigits.length === 10 ? `+91 ${cleanDigits.slice(0, 5)} ${cleanDigits.slice(5)}` : newContactPhone.trim(),
+      rawPhone: cleanDigits,
       invited: false,
       avatar: newContactName.trim().slice(0, 2).toUpperCase(),
       color: 'bg-emerald-100 text-emerald-700'
     };
-    setActiveContacts((prev) => [custom, ...prev]);
+
+    const existingCustom = getSavedCustomContacts();
+    const updated = [custom, ...existingCustom.filter(c => (c.phone || '').replace(/[^0-9]/g, '').slice(-10) !== cleanDigits.slice(-10))];
+    localStorage.setItem(STORAGE_CUSTOM_CONTACTS, JSON.stringify(updated));
+
+    setActiveContacts((prev) => [custom, ...prev.filter(c => (c.phone || '').replace(/[^0-9]/g, '').slice(-10) !== cleanDigits.slice(-10))]);
     setShowAddContactModal(false);
     setNewContactName('');
     setNewContactPhone('');

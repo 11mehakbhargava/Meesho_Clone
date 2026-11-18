@@ -166,42 +166,94 @@ export const getReferralStats = async (req, res) => {
     const totalCashEarned = deliveredCount * 123;
     const maxPotentialCash = 10 * 123; // 1230
 
-    // 4. Fetch real suggested contacts from saved addresses in DB (real names and phones user has used!)
-    const savedAddresses = await prisma.address.findMany({
+    // 4. Fetch real suggested contacts from other users in DB (excluding user themselves & already invited friends)
+    const userPhoneClean = (user.phone || '').replace(/[^0-9]/g, '');
+    const alreadyReferredPhones = new Set(
+      friends.map((f) => (f.rawPhone || '').replace(/[^0-9]/g, '')).filter(Boolean)
+    );
+    const alreadyReferredNames = new Set(
+      friends.map((f) => (f.name || '').trim().toLowerCase()).filter(Boolean)
+    );
+
+    if (userPhoneClean) {
+      alreadyReferredPhones.add(userPhoneClean);
+      alreadyReferredPhones.add(userPhoneClean.slice(-10));
+    }
+
+    // Exclude all phones from addresses of referred users
+    const referredUserIds = realReferrals.map((r) => r.referredId).filter(Boolean);
+    if (referredUserIds.length > 0) {
+      const refAddrs = await prisma.address.findMany({
+        where: { userId: { in: referredUserIds } },
+        select: { phone: true, fullName: true }
+      });
+      for (const a of refAddrs) {
+        if (a.phone) {
+          const cleanP = a.phone.replace(/[^0-9]/g, '').slice(-10);
+          alreadyReferredPhones.add(cleanP);
+        }
+        if (a.fullName) {
+          alreadyReferredNames.add(a.fullName.trim().toLowerCase());
+        }
+      }
+    }
+
+    // Query other customer delivery addresses
+    const otherAddrs = await prisma.address.findMany({
       where: {
-        userId,
+        userId: { not: userId },
         phone: { not: '' }
       },
       select: { fullName: true, phone: true },
       distinct: ['phone'],
-      take: 8
+      take: 20
     });
 
-    let contactsList = savedAddresses.map((addr, i) => ({
-      id: `addr_${i}`,
-      name: addr.fullName || 'Contact',
-      phone: addr.phone.startsWith('+91') ? addr.phone : `+91 ${addr.phone}`,
-      invited: false,
-      avatar: (addr.fullName || 'C').slice(0, 2).toUpperCase(),
-      color: ['bg-purple-100 text-purple-700', 'bg-rose-100 text-rose-700', 'bg-emerald-100 text-emerald-700', 'bg-blue-100 text-blue-700'][i % 4]
-    }));
+    // Query other profiles in DB
+    const otherProfiles = await prisma.profile.findMany({
+      where: {
+        id: { not: userId },
+        phone: { not: null }
+      },
+      select: { fullName: true, phone: true },
+      distinct: ['phone'],
+      take: 15
+    });
 
-    // If user has no saved addresses, get verified customer contacts from Address table to give real suggestions
-    if (contactsList.length === 0) {
-      const publicAddrs = await prisma.address.findMany({
-        where: { phone: { not: '' } },
-        select: { fullName: true, phone: true },
-        distinct: ['phone'],
-        take: 6
-      });
-      contactsList = publicAddrs.map((addr, i) => ({
-        id: `pub_${i}`,
-        name: addr.fullName,
-        phone: addr.phone.startsWith('+91') ? addr.phone : `+91 ${addr.phone}`,
+    const seenPhones = new Set();
+    const contactsList = [];
+
+    for (const c of [...otherAddrs, ...otherProfiles]) {
+      const clean = (c.phone || '').replace(/[^0-9]/g, '');
+      if (!clean || clean.length < 10) continue;
+      const last10 = clean.slice(-10);
+
+      // Skip self, already referred friends, or already seen
+      if (alreadyReferredPhones.has(clean) || alreadyReferredPhones.has(last10) || seenPhones.has(last10)) {
+        continue;
+      }
+      // Skip if full name matches current logged-in user or already referred friend
+      const cleanName = (c.fullName || '').trim().toLowerCase();
+      if (user.fullName && cleanName === user.fullName.trim().toLowerCase()) {
+        continue;
+      }
+      if (alreadyReferredNames.has(cleanName)) {
+        continue;
+      }
+
+      seenPhones.add(last10);
+      const idx = contactsList.length;
+      contactsList.push({
+        id: `contact_${last10}`,
+        name: c.fullName || `Friend ${last10.slice(-4)}`,
+        phone: `+91 ${last10.slice(0, 5)} ${last10.slice(5)}`,
+        rawPhone: `+91${last10}`,
         invited: false,
-        avatar: (addr.fullName || 'C').slice(0, 2).toUpperCase(),
-        color: ['bg-purple-100 text-purple-700', 'bg-rose-100 text-rose-700', 'bg-emerald-100 text-emerald-700', 'bg-blue-100 text-blue-700'][i % 4]
-      }));
+        avatar: (c.fullName || 'F').slice(0, 2).toUpperCase(),
+        color: ['bg-purple-100 text-purple-700', 'bg-rose-100 text-rose-700', 'bg-emerald-100 text-emerald-700', 'bg-blue-100 text-blue-700'][idx % 4]
+      });
+
+      if (contactsList.length >= 8) break;
     }
 
     return res.status(200).json({
