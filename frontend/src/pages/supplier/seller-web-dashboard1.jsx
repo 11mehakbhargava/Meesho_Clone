@@ -175,11 +175,11 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
       setError(null);
 
       const [statsRes, prodsRes, ordsRes, profRes, kycRes] = await Promise.allSettled([
-        supplierApiService.fetchDashboardStats({ skipCache: isRefresh }),
-        supplierApiService.fetchSupplierProducts({ limit: 10 }, { skipCache: isRefresh }),
-        supplierApiService.fetchSupplierOrders({ limit: 10 }, { skipCache: isRefresh }),
-        supplierApiService.fetchSupplierProfile({ skipCache: isRefresh }),
-        fetchSupplierKyc({ skipCache: isRefresh }),
+        supplierApiService.fetchDashboardStats(),
+        supplierApiService.fetchSupplierProducts({ limit: 10 }),
+        supplierApiService.fetchSupplierOrders({ limit: 10 }),
+        supplierApiService.fetchSupplierProfile(),
+        fetchSupplierKyc(),
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value) {
@@ -253,34 +253,22 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
     }
   }, []);
 
-  // Only load heavy overview stats when on overview tab (or when tab switches to overview)
   useEffect(() => {
-    if (activeTab === 'overview' && !stats) {
-      loadDashboardData();
-    }
-  }, [activeTab, stats, loadDashboardData]);
-
-  // Ensure supplier profile is initialized
-  useEffect(() => {
-    if (!profile) {
-      supplierApiService.fetchSupplierProfile().then((p) => {
-        if (p) setProfile(p);
-      }).catch(() => {});
-    }
-  }, [profile]);
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   // Radar tracking in Master Hub
   const knownOrderIdsRef = useRef(new Set());
   const isFirstLoadRef = useRef(true);
 
-  // Background radar for incoming orders (every 15s) when not on orders tab
+  // Background radar for incoming orders (every 8s) when not on orders tab
   useEffect(() => {
     const radarInterval = setInterval(async () => {
       // If currently on orders tab, SellerOrders1 handles its own real-time radar
       if (activeTab === 'orders') return;
 
       try {
-        const res = await supplierApiService.fetchSupplierOrders({ limit: 10 }, { skipCache: true });
+        const res = await supplierApiService.fetchSupplierOrders({ limit: 10 });
         const list = Array.isArray(res?.orders)
           ? res.orders
           : Array.isArray(res?.data)
@@ -315,7 +303,7 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
           }
         }
       } catch (_) {}
-    }, 15000);
+    }, 8000);
 
     return () => clearInterval(radarInterval);
   }, [activeTab, handleTabChange]);
