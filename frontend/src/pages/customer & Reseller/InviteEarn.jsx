@@ -156,7 +156,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
       ? `MSHOPPY${customerUser.phone.slice(-4)}`
       : 'MSHOPPY2026'
   );
-  const currentReferralLink = referralData.referralLink || `https://app.meesho.com/2yoV/r99th0qd?via=${currentReferralCode}&from=account_section`;
+  const currentReferralLink = referralData.referralLink || `https://app.mshoppy.com/2yoV/r99th0qd?via=${currentReferralCode}&from=account_section`;
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
@@ -185,10 +185,10 @@ export default function InviteEarn({ onNavigate, onBack }) {
     } catch (_) {}
   };
 
-  // Build personalized WhatsApp invite message (Exact Meesho App Format)
+  // Build personalized WhatsApp invite message (MShoppy Brand Format)
   const getInviteMessage = (friendName) => {
     const greeting = friendName ? `Hey ${friendName},` : 'Hey ,';
-    return `${greeting}\nJoin Meesho and get cheapest prices online. Install via my link and get 40% OFF on your first order (up to ₹100). Link: ${currentReferralLink}\n📦 Home delivery | 💵 Cash on delivery available | 🔄 Easy returns`;
+    return `${greeting}\nJoin MShoppy and get cheapest prices online. Install via my link and get 40% OFF on your first order (up to ₹100). Link: ${currentReferralLink}\n📦 Home delivery | 💵 Cash on delivery available | 🔄 Easy returns`;
   };
 
   // WhatsApp share
@@ -222,7 +222,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
   const handleNativeShare = async () => {
     const shareText = getInviteMessage();
     const shareData = {
-      title: 'Join Meesho & Get 40% OFF!',
+      title: 'Join MShoppy & Get 40% OFF!',
       text: shareText,
       url: currentReferralLink,
     };
@@ -1211,7 +1211,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
       {/* ── Fixed Bottom Action Bar (Mobile Only: lg:hidden) ───────── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/80 p-3 sm:p-4 shadow-xl lg:hidden">
         <div className="max-w-lg mx-auto flex items-center gap-2.5">
-          {/* Primary WhatsApp Button: Solid Meesho Magenta */}
+          {/* Primary WhatsApp Button: Solid MShoppy Magenta */}
           <button
             type="button"
             onClick={() => handleShareWhatsApp()}

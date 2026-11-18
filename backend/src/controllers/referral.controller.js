@@ -40,7 +40,7 @@ export const getReferralStats = async (req, res) => {
         success: true,
         data: {
           referralCode: 'MSHOPPY2026',
-          referralLink: 'https://app.meesho.com/2yoV/r99th0qd?via=MSHOPPY2026&from=account_section',
+          referralLink: 'https://app.mshoppy.com/2yoV/r99th0qd?via=MSHOPPY2026&from=account_section',
           totalInvited: 0,
           deliveredCount: 0,
           pendingCount: 0,
@@ -74,7 +74,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `https://app.meesho.com/2yoV/r99th0qd?via=${referralCode}&from=account_section`;
+    const referralLink = `https://app.mshoppy.com/2yoV/r99th0qd?via=${referralCode}&from=account_section`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({
@@ -295,7 +295,7 @@ export const getReferralInfo = async (req, res) => {
         discountPercent: 40,
         maxDiscount: 100,
         offerTitle: 'Flat 40% OFF on First Order (Up to ₹100)',
-        offerDescription: `Join Meesho and get cheapest prices online. Install via ${referrer?.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
+        offerDescription: `Join MShoppy and get cheapest prices online. Install via ${referrer?.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
         minOrderValue: 0
       }
     });

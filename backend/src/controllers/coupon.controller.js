@@ -73,7 +73,7 @@ export const validateCoupon = async (req, res) => {
         });
 
         if (referrer || cleanCode === 'MSHOPPY2026') {
-          const discount = Math.min(Math.round(total * 0.40), 100); // Flat 40% discount up to ₹100 (Meesho official offer)
+          const discount = Math.min(Math.round(total * 0.40), 100); // Flat 40% discount up to ₹100 (MShoppy referral offer)
           return res.status(200).json({
             success: true,
             valid: true,
