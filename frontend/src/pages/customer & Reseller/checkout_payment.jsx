@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppBottomNav from '../../components/AppBottomNav';
 import {
@@ -16,6 +16,7 @@ import {
 import { recordAffiliateOrder } from '../../services/affiliateAuthService';
 import { addNotification } from '../../services/notificationService';
 import { API_BASE } from '../../config/apiConfig';
+import { getAffiliateMarginFromParams } from '../../utils/affiliateLinkHelper';
 
 export default function CheckoutPayment({ onNavigate, onBack }) {
   const navigate = useNavigate();
@@ -202,7 +203,7 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
   }, [urlMode, urlProductId, urlSize]);
 
   // Dynamic Affiliate Margin Support (ONLY when coming from an explicit reseller share URL or in reselling mode)
-  const urlMargin = getAffiliateMarginFromParams(location.search);
+  const urlMargin = getAffiliateMarginFromParams(searchParams);
   const affiliateMargin = urlMargin > 0 ? urlMargin : (isReselling ? Number(localStorage.getItem('mshoppy_affiliate_margin') || 0) : 0);
 
   const basePrice = cartItems.reduce((sum, it) => {
@@ -350,13 +351,18 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
         shippingAddress: address,
         paymentMethod: paymentMethodToSave.toUpperCase(),
         totalAmount: finalAmount,
+        couponCode: appliedCoupon?.code || undefined,
         referralCode: referralCode || undefined,
         customerEmail: userEmail || address?.email || undefined
       };
 
       const res = await createOrder(orderPayload);
+      if (!res?.success || !res?.data) {
+        throw new Error(res?.message || 'Failed to place order in database');
+      }
+
       localStorage.removeItem('mshoppy_applied_coupon');
-      const placedOrderId = (res?.data?.id) || ('ORD-' + Math.floor(100000 + Math.random() * 900000));
+      const placedOrderId = (res.data.id) || ('ORD-' + Math.floor(100000 + Math.random() * 900000));
 
       // Instant 0ms Cross-Tab Real-Time Broadcast to Supplier Dashboard / Orders
       try {
@@ -397,19 +403,15 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
         data: { orderId: placedOrderId, amount: finalAmount }
       });
 
-      if (res?.success && res.data) {
-        setConfirmedOrder({ ...res.data, referralCode });
-        if (isBuyNow) {
-          localStorage.removeItem('mshoppy_buynow_item');
-          localStorage.removeItem('mshoppy_checkout_mode');
-        } else {
-          try {
-            await clearCart();
-            localStorage.removeItem('mshoppy_checkout_mode');
-          } catch (e) {}
-        }
+      setConfirmedOrder({ ...res.data, referralCode });
+      if (isBuyNow) {
+        localStorage.removeItem('mshoppy_buynow_item');
+        localStorage.removeItem('mshoppy_checkout_mode');
       } else {
-        throw new Error(res?.message || 'Failed to place order in database');
+        try {
+          await clearCart();
+          localStorage.removeItem('mshoppy_checkout_mode');
+        } catch (e) {}
       }
     } catch (err) {
       console.error('Failed to place order:', err);

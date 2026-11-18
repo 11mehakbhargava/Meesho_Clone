@@ -142,19 +142,21 @@ export const createOrder = async (req, res) => {
       finalOrderTotal = Math.max(0, authoritativeTotal - discount);
     }
 
-    // Atomic transaction: Decrement stock, create order, clear user cart
+    // Atomic transaction: Decrement stock, create order, clear user cart with extended timeout for cloud DB
     const order = await prisma.$transaction(async (tx) => {
-      // 1. Decrement inventory for each product
-      for (const item of validatedItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity
+      // 1. Decrement inventory for each product in parallel
+      await Promise.all(
+        validatedItems.map(item =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity
+              }
             }
-          }
-        });
-      }
+          })
+        )
+      );
 
       // 2. Create the order with verified pricing
       const newOrder = await tx.order.create({
@@ -199,6 +201,9 @@ export const createOrder = async (req, res) => {
       }
 
       return newOrder;
+    }, {
+      maxWait: 15000,
+      timeout: 30000
     });
 
     // 5. Affiliate Referral Attribution & Real Database Custom Margin Credit

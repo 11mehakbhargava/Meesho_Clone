@@ -174,7 +174,28 @@ export const validateCoupon = async (req, res) => {
         where: { code: cleanCode }
       });
 
-      if (!coupon || !coupon.isActive) return 0;
+      if (!coupon || !coupon.isActive) {
+        // Also support friend referral invite codes (e.g. MSHOPPY... or REF...)
+        const isRefCode = cleanCode.startsWith('MSHOPPY') || cleanCode.startsWith('REF');
+        if (isRefCode) {
+          const phoneSuffix = cleanCode.replace(/^MSHOPPY/, '');
+          const referrer = await prisma.profile.findFirst({
+            where: {
+              OR: [
+                { storeName: cleanCode },
+                ...(phoneSuffix.length >= 4 ? [{ phone: { endsWith: phoneSuffix } }] : [])
+              ]
+            }
+          });
+
+          if (referrer) {
+            // Flat 40% discount up to ₹100 (MShoppy friend referral offer)
+            return Math.min(Math.round(total * 0.40), 100);
+          }
+        }
+        return 0;
+      }
+
       if (new Date(coupon.expiresAt) <= new Date()) return 0;
       if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return 0;
       if (total < coupon.minOrder) return 0;
