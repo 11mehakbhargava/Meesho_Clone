@@ -125,7 +125,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
   // Build personalized WhatsApp invite message
   const getInviteMessage = (friendName) => {
     const greeting = friendName ? `Hey ${friendName}!` : 'Hey!';
-    return `${greeting} Shop amazing quality fashion, beauty & home essentials at lowest wholesale prices on Meesho!\n\nUse my exclusive invite link to get flat 20% OFF on your first order:\n👉 ${currentReferralLink}\n\nOr use referral code: *${currentReferralCode}* at checkout.\nHappy Shopping! 🛍️✨`;
+    return `${greeting} Shop amazing quality fashion, beauty & home essentials at lowest wholesale prices on MShoppy!\n\nUse my exclusive invite link to get flat 20% OFF on your first order:\n👉 ${currentReferralLink}\n\nOr use referral code: *${currentReferralCode}* at checkout.\nHappy Shopping! 🛍️✨`;
   };
 
   // WhatsApp share
@@ -150,8 +150,8 @@ export default function InviteEarn({ onNavigate, onBack }) {
   // Generic native share or copy fallback
   const handleNativeShare = async () => {
     const shareData = {
-      title: 'Shop on Meesho & Get 20% OFF!',
-      text: `Join Meesho using my invite code ${currentReferralCode} and get 20% OFF on your first order! 🛍️`,
+      title: 'Shop on MShoppy & Get 20% OFF!',
+      text: `Join MShoppy using my invite code ${currentReferralCode} and get 20% OFF on your first order! 🛍️`,
       url: currentReferralLink,
     };
 
@@ -303,47 +303,31 @@ export default function InviteEarn({ onNavigate, onBack }) {
               <span className="material-symbols-outlined text-xl">trending_flat</span>
             </div>
 
-            {/* Step 3: Earn Cash in Meesho Balance */}
+            {/* Step 3: Earn Cash in Wallet Balance */}
             <div className="col-span-1 flex flex-col items-center">
               <div className="w-13 h-13 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center shadow-xs">
-                <div className="w-7 h-7 rounded-xl bg-[#840032] text-white flex items-center justify-center font-black text-xs shadow-xs">
-                  m
-                </div>
+                <span className="material-symbols-outlined text-2xl text-[#9f0038]">
+                  account_balance_wallet
+                </span>
               </div>
               <p className="text-[10px] sm:text-[11px] font-bold text-slate-700 leading-tight mt-2">
                 Earn Cash in
                 <br />
-                Meesho Balance
+                Wallet Balance
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── 10 Invites Real Dynamic Milestones (Exact Screenshot Style) ──── */}
-        <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                Rewards Progress
-              </span>
-              <span className="text-[11px] font-semibold text-slate-700">
-                {referralData.deliveredCount} of 10 Friends Delivered
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                Earned: ₹{referralData.totalCashEarned} / ₹{referralData.maxPotentialCash}
-              </span>
-            </div>
-          </div>
-
-          {/* Horizontally scrollable container so all 10 milestones display cleanly with smooth swipe */}
-          <div className="overflow-x-auto no-scrollbar pb-3 pt-2 -mx-2 px-2 scroll-smooth">
+        {/* ── 10 Invites Milestones (Exact Clean Card Matching Reference) ──── */}
+        <section className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs">
+          {/* Horizontally scrollable container so all 10 milestones display cleanly */}
+          <div className="overflow-x-auto no-scrollbar py-2 -mx-2 px-2 scroll-smooth">
             <div className="relative min-w-[760px] sm:min-w-[800px] px-6">
               {/* Horizontal Connecting Track Line with Dynamic Green Progress */}
-              <div className="absolute top-7 left-10 right-10 h-1 bg-slate-200 rounded-full overflow-hidden -z-0">
+              <div className="absolute top-7 left-10 right-10 h-[2px] bg-slate-200 overflow-hidden -z-0">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
+                  className="h-full bg-emerald-500 transition-all duration-500"
                   style={{
                     width: `${Math.min(100, (referralData.deliveredCount / 10) * 100)}%`
                   }}
@@ -356,45 +340,40 @@ export default function InviteEarn({ onNavigate, onBack }) {
                   <div key={m.id} className="flex flex-col items-center">
                     {/* Circle with ₹123 */}
                     <div
-                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center border-2 transition-all shadow-xs relative ${
+                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex flex-col items-center justify-center border-2 transition-all relative ${
                         m.unlocked
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
-                          : 'bg-white border-slate-300 text-slate-500'
+                          ? 'bg-emerald-50/40 border-emerald-500 text-emerald-800'
+                          : 'bg-white border-slate-200 text-slate-600'
                       }`}
                     >
-                      <span className="font-extrabold text-xs sm:text-sm tracking-tight">
+                      <span className="font-bold text-xs sm:text-sm tracking-tight">
                         ₹{m.amount}
                       </span>
 
-                      {/* Lock / Unlock Badge at bottom of circle */}
-                      <div
-                        className={`absolute -bottom-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-xs ${
-                          m.unlocked
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-[#9f0038] text-white'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[12px]">
-                          {m.unlocked ? 'check' : 'lock'}
-                        </span>
-                      </div>
+                      {/* Clean Vector Lock / Unlock Badge at bottom of circle */}
+                      {m.unlocked ? (
+                        <div className="absolute -bottom-1.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                          <svg className="w-2.5 h-2.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="absolute -bottom-1.5 w-5 h-5 rounded-full bg-[#9f005b] text-white flex items-center justify-center shadow-xs">
+                          <svg className="w-2.5 h-2.5 fill-current text-white" viewBox="0 0 24 24">
+                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
 
                     {/* Label below circle */}
-                    <span className="mt-3 text-xs font-semibold text-slate-700 whitespace-nowrap">
+                    <span className="mt-2.5 text-xs font-medium text-slate-700 whitespace-nowrap">
                       {m.label}
-                    </span>
-                    <span className={`text-[10px] font-bold whitespace-nowrap ${m.unlocked ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {m.statusText}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="mt-1 text-center text-[11px] text-slate-400 font-medium flex items-center justify-center gap-1">
-            <span className="text-[#9f0038]">↔</span> Scroll sideways to view all 10 invites (Earn up to ₹1,230)
           </div>
         </section>
 
@@ -695,7 +674,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
                   2
                 </span>
                 <p>
-                  Your friend clicks the link, signs up, and places their <strong>1st order</strong> on Meesho.
+                  Your friend clicks the link, signs up, and places their <strong>1st order</strong> on MShoppy.
                 </p>
               </div>
 
@@ -704,12 +683,12 @@ export default function InviteEarn({ onNavigate, onBack }) {
                   3
                 </span>
                 <p>
-                  Once their 1st order is successfully delivered, <strong>₹123 cash</strong> is automatically credited to your Meesho Balance!
+                  Once their 1st order is successfully delivered, <strong>₹123 cash</strong> is automatically credited to your Wallet Balance!
                 </p>
               </div>
 
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-amber-800 text-[11px] font-medium">
-                💡 You can use your Meesho Balance to purchase any items or withdraw it straight to your bank account!
+                💡 You can use your Wallet Balance to purchase any items or withdraw it straight to your bank account!
               </div>
             </div>
 
