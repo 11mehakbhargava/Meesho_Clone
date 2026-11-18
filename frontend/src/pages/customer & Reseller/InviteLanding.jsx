@@ -12,7 +12,7 @@ export default function InviteLanding() {
   const [copied, setCopied] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
-  const cleanCode = (code || 'MSHOPPY3465').trim().toUpperCase();
+  const cleanCode = (code || '').trim().toUpperCase();
 
   useEffect(() => {
     let isMounted = true;

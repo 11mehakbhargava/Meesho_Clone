@@ -1,22 +1,6 @@
 import prisma from '../config/prisma.js';
 
 /**
- * Helper to generate a unique short slug for each user's dynamic invite link
- */
-const generateUniqueUserSlug = (user) => {
-  const seed = (user.id || user.phone || 'guest').toString();
-  let hash = 5381;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) + hash) + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const positive = Math.abs(hash);
-  const part1 = positive.toString(36);
-  const part2 = (seed.replace(/[^a-z0-9]/gi, '').slice(-4) || 'msh').toLowerCase();
-  return (part1 + part2).slice(0, 8);
-};
-
-/**
  * Helper to get or generate user's permanent unique referral code
  */
 const getOrCreateReferralCode = async (user) => {
@@ -67,31 +51,9 @@ export const getReferralStats = async (req, res) => {
     const origin = req.headers.origin || 'http://localhost:5173';
 
     if (!userId) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          referralCode: 'MSHOPPY2026',
-          referralLink: 'https://app.mshoppy.com/2yoV/r99th0qd?via=MSHOPPY2026&from=account_section',
-          totalInvited: 0,
-          deliveredCount: 0,
-          pendingCount: 0,
-          totalCashEarned: 0,
-          maxPotentialCash: 1230,
-          milestones: [
-            { id: 1, amount: 123, label: '1st Invite', unlocked: false, statusText: 'Pending' },
-            { id: 2, amount: 123, label: '2nd Invite', unlocked: false, statusText: 'Locked' },
-            { id: 3, amount: 123, label: '3rd Invite', unlocked: false, statusText: 'Locked' },
-            { id: 4, amount: 123, label: '4th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 5, amount: 123, label: '5th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 6, amount: 123, label: '6th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 7, amount: 123, label: '7th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 8, amount: 123, label: '8th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 9, amount: 123, label: '9th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 10, amount: 123, label: '10th Invite', unlocked: false, statusText: 'Locked' },
-          ],
-          friends: [],
-          suggestedContacts: []
-        }
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to view referral stats'
       });
     }
 
@@ -105,8 +67,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const userSlug = generateUniqueUserSlug(user);
-    const referralLink = `https://app.mshoppy.com/2yoV/${userSlug}?via=${referralCode}&from=account_section`;
+    const referralLink = `https://app.mshoppy.com/invite/${referralCode}`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({
