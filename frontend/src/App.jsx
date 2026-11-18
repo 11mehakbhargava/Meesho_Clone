@@ -85,6 +85,7 @@ import SupplierRotLedger from './pages/supplier/SupplierRotLedger';
 import CustomerOrderSupplierFulfilment from './pages/supplier/CustomerOrderSupplierFulfilment';
 import SupplierLogin from './pages/supplier/SupplierLogin';
 import SupplierRegister from './pages/supplier/SupplierRegister';
+import SupplierLandingPage from './pages/supplier/SupplierLandingPage';
 
 // Admin Panel & Auth Pages
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -198,6 +199,7 @@ const screenCatalog = [
   { path: '/supplier-returns', name: 'Returns, RTO & Claims Hub', icon: '🔄', group: 'Supplier' },
   { path: '/supplier-rot-ledger', name: 'Supplier ROT & Freight Ledger', icon: '🧾', group: 'Supplier' },
   { path: '/dropship-fulfilment', name: 'Customer Order & Supplier Fulfilment', icon: '📦🔄', group: 'Supplier' },
+  { path: '/supplier', name: 'Become a Supplier (Landing)', icon: '🏬', group: 'Supplier' },
   { path: '/supplier-login', name: 'Supplier Login', icon: '🔐', group: 'Supplier' },
   { path: '/supplier-register', name: 'Supplier Registration', icon: '📝', group: 'Supplier' },
 
@@ -695,6 +697,9 @@ function AppRoutes() {
       supplierLogin: '/supplier-login',
       'supplier-register': '/supplier-register',
       supplierRegister: '/supplier-register',
+      supplier: '/supplier',
+      'become-supplier': '/supplier',
+      'supplier-landing': '/supplier',
       returns: '/supplier-returns',
 
       // Admin & Community
@@ -1401,6 +1406,18 @@ function AppRoutes() {
         <Route
           path="/customer-order-supplier-fulfilment"
           element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/become-supplier"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/supplier-landing"
+          element={<SupplierLandingPage onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
           path="/supplier-login"

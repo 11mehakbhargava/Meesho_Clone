@@ -57,7 +57,9 @@ export default function SellerReturns1({ onNavigate, embedded = false, onNavigat
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [activePhotoPreview, setActivePhotoPreview] = useState(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [disputeType, setDisputeType] = useState('WRONG_ITEM');
   const [disputeReason, setDisputeReason] = useState('');
+  const [unboxingProof, setUnboxingProof] = useState('');
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
 
   const loadReturnsData = useCallback(async (isRefresh = false) => {
@@ -153,23 +155,30 @@ export default function SellerReturns1({ onNavigate, embedded = false, onNavigat
 
     const targetId = selectedClaim.returnRequestId || selectedClaim.id || selectedClaim.orderId;
     setDisputeSubmitting(true);
+    const combinedReason = `[SPF Claim: ${disputeType}] ${disputeReason.trim()}${
+      unboxingProof.trim() ? ` | Unboxing Proof: ${unboxingProof.trim()}` : ''
+    }`;
+
     try {
       await supplierApiService.updateReturnStatus(targetId, 'disputed', {
-        disputeReason: disputeReason.trim(),
+        disputeReason: combinedReason,
+        claimType: 'WRONG_ITEM_SAFETY_CLAIM',
+        unboxingProof: unboxingProof.trim(),
       });
       setReturnOrders((prev) =>
         prev.map((o) =>
           o.id === targetId || o.orderId === targetId || o.returnRequestId === targetId
-            ? { ...o, rtoStatus: 'DISPUTED', orderStatus: 'DISPUTED' }
+            ? { ...o, rtoStatus: 'DISPUTED', orderStatus: 'DISPUTED', reason: combinedReason }
             : o
         )
       );
       if (selectedClaim) {
-        setSelectedClaim((prev) => (prev ? { ...prev, rtoStatus: 'DISPUTED', orderStatus: 'DISPUTED' } : null));
+        setSelectedClaim((prev) => (prev ? { ...prev, rtoStatus: 'DISPUTED', orderStatus: 'DISPUTED', reason: combinedReason } : null));
       }
-      toast.success('Dispute raised successfully. MShoppy Trust & Safety team is reviewing evidence.');
+      toast.success('🛡️ Wrong Return Safety Claim submitted! MShoppy Trust & Safety desk is reviewing unboxing evidence.');
       setDisputeModalOpen(false);
       setDisputeReason('');
+      setUnboxingProof('');
     } catch (err) {
       toast.error('Failed to submit dispute');
     } finally {
@@ -698,25 +707,62 @@ export default function SellerReturns1({ onNavigate, embedded = false, onNavigat
               </div>
 
               <p className="text-xs text-slate-500">
-                Submit an operational dispute if the customer sent a wrong item, counterfeit product, damaged merchandise, or an empty parcel.
+                Submit a safety claim if the customer returned a wrong item, counterfeit product, severely damaged piece, or an empty parcel.
               </p>
 
-              <form onSubmit={handleDisputeSubmit} className="space-y-4">
+              <form onSubmit={handleDisputeSubmit} className="space-y-3.5">
+                {/* Claim Type */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-                    Dispute Explanation & Evidence Summary *
+                    Claim Issue Type *
+                  </label>
+                  <select
+                    value={disputeType}
+                    onChange={(e) => setDisputeType(e.target.value)}
+                    className="w-full h-10 px-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-purple-500 focus:bg-white transition"
+                  >
+                    <option value="WRONG_ITEM">Wrong Item Received (Different item inside box)</option>
+                    <option value="EMPTY_BOX">Empty Parcel Received (Outer box empty / torn seal)</option>
+                    <option value="DAMAGED_USED">Damaged / Heavily Used Merchandise Returned</option>
+                    <option value="COUNTERFEIT_SUBSTITUTION">Counterfeit / Fake Item Substituted</option>
+                    <option value="MISSING_PARTS">Missing Critical Accessories / Blouse / Dupatta</option>
+                  </select>
+                </div>
+
+                {/* Evidence Summary */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                    Dispute Explanation &amp; Remarks *
                   </label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     required
                     value={disputeReason}
                     onChange={(e) => setDisputeReason(e.target.value)}
                     placeholder="e.g. Received empty outer box with torn security tape; item serial number does not match original shipment..."
-                    className="w-full p-3.5 text-xs rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition"
+                    className="w-full p-3 text-xs rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2">
+                {/* Unboxing Video / Photo Link */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Unboxing Video / Photos Link (Proof)</span>
+                    <span className="text-[10px] text-purple-600 font-semibold">Drive / Imgur / Cloud URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={unboxingProof}
+                    onChange={(e) => setUnboxingProof(e.target.value)}
+                    placeholder="https://drive.google.com/... or https://imgur.com/..."
+                    className="w-full h-10 px-3.5 text-xs rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none transition"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Upload unboxing video or parcel photos within 72 hrs of delivery to claim 100% Safety Compensation.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setDisputeModalOpen(false)}
@@ -729,7 +775,7 @@ export default function SellerReturns1({ onNavigate, embedded = false, onNavigat
                     disabled={disputeSubmitting || !disputeReason.trim()}
                     className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
-                    {disputeSubmitting ? 'Submitting...' : 'Submit Dispute'}
+                    {disputeSubmitting ? 'Submitting...' : 'Submit Safety Claim'}
                   </button>
                 </div>
               </form>
