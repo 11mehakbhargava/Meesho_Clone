@@ -40,6 +40,15 @@ export default function InviteEarn({ onNavigate, onBack }) {
   const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [newContactName, setNewContactName] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
+  const [showMyInvites, setShowMyInvites] = useState(false);
+  const [expandedFriends, setExpandedFriends] = useState({});
+
+  const toggleExpandFriend = (id) => {
+    setExpandedFriends((prev) => ({
+      ...prev,
+      [id]: prev[id] === undefined ? false : !prev[id]
+    }));
+  };
 
   // Real Dynamic State from Backend
   const [referralData, setReferralData] = useState({
@@ -147,6 +156,10 @@ export default function InviteEarn({ onNavigate, onBack }) {
       : 'MSHOPPY2026'
   );
   const currentReferralLink = referralData.referralLink || `${window.location.origin}/?ref=${currentReferralCode}`;
+
+  const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
+  const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
+  const pendingFriends = (referralData.friends || []).filter((f) => !f.hasDelivered);
 
   // Filtered contacts based on search query
   const filteredContacts = activeContacts.filter((c) =>
@@ -282,6 +295,322 @@ export default function InviteEarn({ onNavigate, onBack }) {
     toast.success(`Added ${custom.name}! Click 'Invite Now' to send on WhatsApp.`);
   };
 
+  // ── MY INVITES VIEW (Matching Screenshots 2 & 3) ──────────────────
+  if (showMyInvites) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fa] text-slate-900 pb-28 select-none">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-100 shadow-2xs">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowMyInvites(false)}
+              className="w-9 h-9 -ml-2 rounded-full flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Back to Invite & Earn"
+            >
+              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+
+            <h1 className="font-extrabold text-sm sm:text-base tracking-wider text-slate-900 uppercase">
+              MY INVITES
+            </h1>
+
+            <div className="w-9 h-9 -mr-2" />
+          </div>
+        </header>
+
+        <main className="max-w-lg mx-auto px-4 pt-3 space-y-4">
+          {/* Total Earnings Card (Exact Image 2) */}
+          <section className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500">Total Earnings</span>
+              <button
+                type="button"
+                onClick={() => handleNav('/user-dashboard1?tab=profile')}
+                className="text-xs font-bold text-[#9f0038] hover:text-[#840032] flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>Wallet Balance</span>
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#840032] text-white flex items-center justify-center shadow-xs">
+                <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
+              </div>
+              <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                ₹{referralData.totalCashEarned}
+              </span>
+            </div>
+
+            {/* Two Side-by-Side Summary Cards: Successful & Pending */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Successful Card (Green) */}
+              <div className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-1">
+                <span className="text-xs font-bold text-emerald-800 block">Successful</span>
+                <p className="text-2xl font-black text-slate-900">
+                  {referralData.deliveredCount}
+                </p>
+                <span className="text-[11px] font-semibold text-slate-600 block">
+                  Earned: ₹{referralData.totalCashEarned}
+                </span>
+              </div>
+
+              {/* Pending Card (Orange) */}
+              <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/40 space-y-1">
+                <span className="text-xs font-bold text-amber-800 block">Pending</span>
+                <p className="text-2xl font-black text-slate-900">
+                  {pendingCount}
+                </p>
+                <span className="text-[11px] font-semibold text-slate-600 block">
+                  Pending: ₹{pendingCount * 123}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Pending Friends Section (Matching Image 2 & 3) */}
+          {pendingFriends.length > 0 && (
+            <section className="space-y-2.5">
+              <h3 className="font-black text-sm text-slate-900 px-1">
+                Pending ({pendingFriends.length})
+              </h3>
+
+              <div className="space-y-2.5">
+                {pendingFriends.map((friend) => {
+                  const isExpanded = expandedFriends[friend.id] !== false;
+                  return (
+                    <div
+                      key={friend.id}
+                      className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs space-y-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${friend.color}`}>
+                          {friend.avatar}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm text-slate-900 truncate">
+                            {friend.name}
+                          </p>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {friend.phone}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Dropdown status row (Image 2) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandFriend(friend.id)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:bg-slate-100/70 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="material-symbols-outlined text-base text-[#9f0038]">
+                            inventory_2
+                          </span>
+                          <span className="text-xs font-semibold text-slate-700 truncate">
+                            {friend.statusDetail || 'Waiting for their order to be delivered'}
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-slate-400 text-lg">
+                          {isExpanded ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+
+                      {/* 3-Step Progress Tracker (Image 3) */}
+                      {isExpanded && (
+                        <div className="pt-4 pb-3 px-3 bg-slate-50/50 rounded-xl border border-slate-100/80">
+                          <div className="relative flex items-center justify-between max-w-xs mx-auto">
+                            {/* Track Line */}
+                            <div className="absolute top-4 left-6 right-6 h-[2px] bg-slate-200 -z-0" />
+                            <div
+                              className="absolute top-4 left-6 h-[2px] bg-emerald-500 transition-all duration-500 -z-0"
+                              style={{ width: friend.hasDelivered ? '100%' : '50%' }}
+                            />
+
+                            {/* Step 1: App Installed */}
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs">
+                                <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-700 mt-1.5 whitespace-nowrap">
+                                App Installed
+                              </span>
+                            </div>
+
+                            {/* Step 2: Order Delivered */}
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-xs transition-all ${
+                                friend.hasDelivered
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white border-2 border-slate-300 text-slate-400'
+                              }`}>
+                                {friend.hasDelivered ? (
+                                  <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <span className="material-symbols-outlined text-sm text-slate-500">
+                                    inventory_2
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-[10px] font-bold mt-1.5 whitespace-nowrap ${
+                                friend.hasDelivered ? 'text-emerald-700' : 'text-slate-600'
+                              }`}>
+                                Order Delivered
+                              </span>
+                            </div>
+
+                            {/* Step 3: Cash Earned */}
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-xs transition-all ${
+                                friend.hasDelivered
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-white border-2 border-slate-300 text-slate-400'
+                              }`}>
+                                {friend.hasDelivered ? (
+                                  <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <span className="font-extrabold text-xs text-slate-500">₹</span>
+                                )}
+                              </div>
+                              <span className={`text-[10px] font-bold mt-1.5 whitespace-nowrap ${
+                                friend.hasDelivered ? 'text-emerald-700' : 'text-slate-600'
+                              }`}>
+                                Cash Earned
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Successful Friends Section */}
+          {successfulFriends.length > 0 && (
+            <section className="space-y-2.5">
+              <h3 className="font-black text-sm text-emerald-800 px-1">
+                Successful ({successfulFriends.length})
+              </h3>
+
+              <div className="space-y-2.5">
+                {successfulFriends.map((friend) => {
+                  const isExpanded = expandedFriends[friend.id] !== false;
+                  return (
+                    <div
+                      key={friend.id}
+                      className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-xs space-y-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${friend.color}`}>
+                          {friend.avatar}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm text-slate-900 truncate">
+                            {friend.name}
+                          </p>
+                          <p className="text-[11px] text-slate-400 font-mono">
+                            {friend.phone}
+                          </p>
+                        </div>
+                        <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                          +₹123 Earned
+                        </span>
+                      </div>
+
+                      {/* Dropdown status row */}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandFriend(friend.id)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 cursor-pointer hover:bg-emerald-50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="material-symbols-outlined text-base text-emerald-600">
+                            check_circle
+                          </span>
+                          <span className="text-xs font-bold text-emerald-800 truncate">
+                            1st Order Delivered! Cash Credited 🎉
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-slate-400 text-lg">
+                          {isExpanded ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+
+                      {/* 3-Step Progress Tracker (All 3 Green) */}
+                      {isExpanded && (
+                        <div className="pt-4 pb-3 px-3 bg-emerald-50/30 rounded-xl border border-emerald-100">
+                          <div className="relative flex items-center justify-between max-w-xs mx-auto">
+                            <div className="absolute top-4 left-6 right-6 h-[2px] bg-emerald-500 -z-0" />
+
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs">
+                                <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-800 mt-1.5 whitespace-nowrap">
+                                App Installed
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs">
+                                <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-800 mt-1.5 whitespace-nowrap">
+                                Order Delivered
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col items-center relative z-10">
+                              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs">
+                                <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-[3] text-white" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-800 mt-1.5 whitespace-nowrap">
+                                Cash Earned
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Empty state if zero invites */}
+          {referralData.friends.length === 0 && (
+            <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-[#9f0038] flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-2xl">group</span>
+              </div>
+              <p className="text-sm font-bold text-slate-700">No invites yet</p>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                Share your invite link with friends. When they install the app and place their first order, you'll earn ₹123!
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-900 pb-28 select-none">
       {/* ── Top Header Bar ───────────────────────────────────────── */}
@@ -387,6 +716,34 @@ export default function InviteEarn({ onNavigate, onBack }) {
 
         {/* ── 10 Invites Milestones (Exact Clean Card Matching Reference) ──── */}
         <section className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs">
+          {/* Header Row: Total Earnings | Pending ... View All > (Matching Screenshot 1) */}
+          <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100">
+            <div className="flex items-center gap-6 sm:gap-8">
+              <div>
+                <p className="text-[11px] font-bold text-slate-500">Total Earnings</p>
+                <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  ₹{referralData.totalCashEarned}
+                </p>
+              </div>
+              <div className="h-8 w-[1px] bg-slate-200" />
+              <div>
+                <p className="text-[11px] font-bold text-slate-500">Pending</p>
+                <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  {pendingCount}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMyInvites(true)}
+              className="text-xs font-black text-[#9f0038] hover:text-[#840032] flex items-center gap-0.5 cursor-pointer py-1 px-2 rounded-lg hover:bg-rose-50 transition-colors"
+            >
+              <span>View All</span>
+              <span className="material-symbols-outlined text-base">chevron_right</span>
+            </button>
+          </div>
+
           {/* Horizontally scrollable container so all 10 milestones display cleanly */}
           <div className="overflow-x-auto no-scrollbar py-2 -mx-2 px-2 scroll-smooth">
             <div className="relative min-w-[760px] sm:min-w-[800px] px-6">

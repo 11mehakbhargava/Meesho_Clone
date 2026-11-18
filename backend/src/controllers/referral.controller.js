@@ -43,6 +43,7 @@ export const getReferralStats = async (req, res) => {
           referralLink: `${origin}/?ref=MSHOPPY2026`,
           totalInvited: 0,
           deliveredCount: 0,
+          pendingCount: 0,
           totalCashEarned: 0,
           maxPotentialCash: 1230,
           milestones: [
@@ -141,7 +142,12 @@ export const getReferralStats = async (req, res) => {
         status,
         statusClass,
         rewardEarned,
+        hasInstalled: true,
+        hasActiveOrder,
         hasDelivered,
+        statusDetail: hasDelivered
+          ? '1st Order Delivered! Cash Credited 🎉'
+          : (hasActiveOrder ? 'Order placed, in transit 🚚' : 'Waiting for their order to be delivered'),
         joinedAt: ref.createdAt,
         avatar: initials,
         color: ['bg-purple-100 text-purple-700', 'bg-blue-100 text-blue-700', 'bg-rose-100 text-rose-700', 'bg-emerald-100 text-emerald-700'][idx % 4]
@@ -263,6 +269,7 @@ export const getReferralStats = async (req, res) => {
         referralLink,
         totalInvited: realReferrals.length,
         deliveredCount,
+        pendingCount: Math.max(0, realReferrals.length - deliveredCount),
         totalCashEarned,
         maxPotentialCash,
         milestones,
