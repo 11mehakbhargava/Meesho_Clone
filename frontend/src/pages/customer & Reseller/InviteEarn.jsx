@@ -352,7 +352,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
             </div>
 
             {/* Two Side-by-Side Summary Cards: Successful & Pending */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-1">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-1">
               {/* Successful Card (Green) */}
               <div className="p-3.5 sm:p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-1">
                 <span className="text-xs font-bold text-emerald-800 block">Successful</span>
@@ -372,17 +372,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
                 </p>
                 <span className="text-[11px] font-semibold text-slate-600 block">
                   Pending: ₹{pendingCount * 123}
-                </span>
-              </div>
-
-              {/* Total Capacity (Desktop only) */}
-              <div className="hidden lg:block p-3.5 sm:p-4 rounded-2xl border border-purple-200 bg-purple-50/40 space-y-1">
-                <span className="text-xs font-bold text-purple-800 block">Total Capacity</span>
-                <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                  10 Friends
-                </p>
-                <span className="text-[11px] font-semibold text-slate-600 block">
-                  Max Potential: ₹1,230
                 </span>
               </div>
             </div>
@@ -673,19 +662,13 @@ export default function InviteEarn({ onNavigate, onBack }) {
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-pink-100/60 rounded-full blur-xl pointer-events-none" />
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-purple-100/60 rounded-full blur-xl pointer-events-none" />
 
-              <div className="lg:flex lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-slate-600 tracking-wide">
-                    Invite New Friends
-                  </p>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-0.5">
-                    Earn Cash
-                  </h2>
-                </div>
-                <div className="hidden lg:flex items-center gap-2 bg-emerald-50 text-emerald-800 px-3.5 py-1.5 rounded-full border border-emerald-200 text-xs font-bold">
-                  <span className="material-symbols-outlined text-base">payments</span>
-                  <span>Flat ₹123 per Friend Delivered</span>
-                </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-slate-600 tracking-wide">
+                  Invite New Friends
+                </p>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-0.5">
+                  Earn Cash
+                </h2>
               </div>
 
               {/* Mobile 3 Steps Illustration Flow (Exact screenshot match) */}
@@ -788,7 +771,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
             <section className="bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-5 lg:p-6 border border-slate-100 shadow-xs">
               {/* Header Row: Total Earnings | Pending ... View All > */}
               <div className="flex items-center justify-between pb-3.5 mb-2 border-b border-slate-100">
-                <div className="flex items-center gap-6 sm:gap-8 lg:gap-10">
+                <div className="flex items-center gap-6 sm:gap-8">
                   <div>
                     <p className="text-[11px] sm:text-xs font-bold text-slate-500">Total Earnings</p>
                     <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -800,13 +783,6 @@ export default function InviteEarn({ onNavigate, onBack }) {
                     <p className="text-[11px] sm:text-xs font-bold text-slate-500">Pending</p>
                     <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                       {pendingCount}
-                    </p>
-                  </div>
-                  <div className="hidden sm:block h-8 sm:h-9 w-[1px] bg-slate-200" />
-                  <div className="hidden sm:block">
-                    <p className="text-[11px] sm:text-xs font-bold text-slate-500">Potential Rewards</p>
-                    <p className="text-xl sm:text-2xl font-black text-emerald-700 tracking-tight">
-                      ₹{referralData.maxPotentialCash}
                     </p>
                   </div>
                 </div>
