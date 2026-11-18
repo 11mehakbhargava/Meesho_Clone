@@ -32,6 +32,7 @@ const navSections = [
   {
     title: "Growth & Programs",
     items: [
+      { name: "Invite & Earn Cash", path: "/invite-earn", icon: "group_add", badge: "Earn ₹123" },
       { name: "Affiliate Partner Panel", path: "/affiliate-program", icon: "loyalty" },
     ]
   }
@@ -43,6 +44,12 @@ const customerNavSections = [
       { name: "Home & Deals", path: "/", icon: "home" },
       { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
       // { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" }, // temporarily hidden as requested
+    ]
+  },
+  {
+    title: "Rewards & Offers",
+    items: [
+      { name: "Invite & Earn Cash", path: "/invite-earn", icon: "featured_seasonal_and_gifts", badge: "Earn ₹123" },
     ]
   },
   {

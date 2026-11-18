@@ -982,3 +982,34 @@ export async function requestWalletWithdrawal({ amount, method, destination }) {
   }
 }
 
+/**
+ * Real Refer & Earn API (100% Dynamic Database Driven)
+ */
+export async function getReferralStats() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/referrals/stats`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    return data?.data || null;
+  } catch (error) {
+    console.error('Failed to fetch referral stats:', error);
+    return null;
+  }
+}
+
+export async function applyReferralCode(code) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/referrals/apply`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ code, userId: getCustomerId() })
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Failed to apply referral code:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+

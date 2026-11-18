@@ -560,13 +560,57 @@ export const updateOrderStatus = async (req, res) => {
       }
     }
 
-    // Auto-dispatch delivery OTP email as soon as marked OUT_FOR_DELIVERY (Prepaid orders only)
-    if (upperStatus === 'OUT_FOR_DELIVERY' && (updated.paymentMethod || '').toUpperCase() !== 'COD') {
+    // Auto-credit ₹123 referral cashback to the referrer if this is the friend's 1st delivered order!
+    if (upperStatus === 'DELIVERED') {
       try {
-        const otpResult = await dispatchDeliveryOtpEmail({ orderId: id, type: 'DELIVERY' });
-        console.log(`🚚 [Order ${id}] OUT_FOR_DELIVERY OTP automatically emailed to: ${otpResult.sentTo}`);
-      } catch (err) {
-        console.error(`⚠️ [Order ${id}] OUT_FOR_DELIVERY email dispatch error:`, err.message);
+        const referral = await prisma.referral.findFirst({
+          where: {
+            referredId: updated.userId
+          },
+          include: { referrer: { include: { wallet: true } } }
+        });
+
+        if (referral) {
+          let referrerWallet = referral.referrer?.wallet;
+          if (!referrerWallet) {
+            referrerWallet = await prisma.wallet.create({
+              data: { userId: referral.referrerId, balance: 0, pending: 0 }
+            });
+          }
+
+          const alreadyCredited = referrerWallet?.id ? await prisma.walletTransaction.findFirst({
+            where: {
+              walletId: referrerWallet.id,
+              description: { contains: 'Refer & Earn' }
+            }
+          }) : null;
+
+          if (!alreadyCredited) {
+            await prisma.wallet.update({
+              where: { id: referrerWallet.id },
+              data: { balance: { increment: 123 } }
+            });
+
+            await prisma.walletTransaction.create({
+              data: {
+                walletId: referrerWallet.id,
+                amount: 123,
+                type: 'credit',
+                description: `Refer & Earn: ₹123 credited! Friend's 1st order was delivered!`,
+                orderId: updated.id
+              }
+            });
+
+            await prisma.referral.update({
+              where: { id: referral.id },
+              data: { rewardAmount: (referral.rewardAmount || 0) + 123, isRedeemed: true }
+            });
+
+            console.log(`🎁 [Referral Reward] Credited ₹123 cash into referrer ${referral.referrerId}'s wallet!`);
+          }
+        }
+      } catch (refErr) {
+        console.warn('Referral reward processing note:', refErr.message);
       }
     }
 
