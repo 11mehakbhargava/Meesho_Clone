@@ -192,8 +192,11 @@ export default function ShoppingCart({ onNavigate, onBack }) {
         setCouponDiscount(res.data.discountAmount);
         setCouponCode('');
         localStorage.setItem('mshoppy_applied_coupon', JSON.stringify(res.data));
+        if (res.data.isReferralCode || (res.data.code && res.data.code.startsWith('MSHOPPY'))) {
+          localStorage.setItem('mshoppy_referral_code', res.data.code);
+        }
         setShowCouponsModal(false);
-        triggerToast(`🎉 Coupon "${res.data.code}" Applied! Saved ₹${res.data.discountAmount}`);
+        triggerToast(`🎉 Code "${res.data.code}" Applied! Saved ₹${res.data.discountAmount}`);
       } else {
         triggerToast(res?.message || 'Invalid coupon code. Only generated codes are accepted.');
       }
@@ -770,7 +773,7 @@ export default function ShoppingCart({ onNavigate, onBack }) {
                         type="text"
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        placeholder="Enter Coupon (e.g. SAVE50, FESTIVE15)"
+                        placeholder="Enter Coupon or Referral Code (e.g. MSHOPPY3465)"
                         className="flex-1 bg-[#f8f9fb] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-400 uppercase tracking-wider"
                       />
                       <button
