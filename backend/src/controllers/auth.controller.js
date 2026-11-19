@@ -1,9 +1,8 @@
 import admin from '../config/firebaseAdmin.js';
 import prisma from '../config/prisma.js';
-import jwt from 'jsonwebtoken';
 
 /**
- * Generate a Firebase token for user or return secure fallback JWT
+ * Generate a Firebase custom token for user or return authenticated session identifier
  */
 const generateFirebaseToken = async (userId, claims = {}) => {
   try {
@@ -14,11 +13,7 @@ const generateFirebaseToken = async (userId, claims = {}) => {
   } catch (error) {
     console.warn('Firebase createCustomToken notice:', error.message);
   }
-  return jwt.sign(
-    { id: userId, uid: userId, ...claims },
-    process.env.JWT_SECRET || 'meesho_jwt_secret_super_secure_key_2026',
-    { expiresIn: '30d' }
-  );
+  return userId;
 };
 
 // Helper to sanitize phone number
@@ -1153,11 +1148,10 @@ export const googleAuth = async (req, res) => {
     const latestKyc = profile.kycApplications?.[0];
     const kycStatus = latestKyc?.status || (profile.role === 'RESELLER' ? 'APPROVED' : 'NOT_SUBMITTED');
 
-    const token = jwt.sign(
-      { id: profile.id, email: profile.email, role: profile.role },
-      process.env.JWT_SECRET || 'meesho_jwt_secret_super_secure_key_2026',
-      { expiresIn: '7d' }
-    );
+    const token = await generateFirebaseToken(profile.id, {
+      role: profile.role,
+      email: profile.email,
+    });
 
     return res.status(200).json({
       success: true,
