@@ -85,7 +85,8 @@ import {
   Link2,
   HelpCircle,
   Globe,
-  Send
+  Send,
+  Gift
 } from 'lucide-react';
 
 export default function UserWebDashboard1({ onNavigate, onBack }) {
@@ -1266,6 +1267,13 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
       badge: wishlistItems.length > 0 ? String(wishlistItems.length) : null,
       badgeClass: 'bg-rose-100 text-rose-700'
     },
+    {
+      id: 'invite',
+      label: 'Invite & Earn Cash 🎁',
+      icon: Gift,
+      badge: '₹123',
+      badgeClass: 'bg-emerald-100 text-emerald-800 font-bold'
+    },
     // Wallet Payouts ONLY unlocked if Reseller KYC is approved
     ...(isResellerApproved
       ? [
@@ -1278,6 +1286,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Tab switch handler with route intercept for external shopping pages
   const handleTabChange = (tabId) => {
+    if (tabId === 'invite') {
+      handleNav('/invite-earn');
+      return;
+    }
     if (tabId === 'cat-products') {
       handleNav('/explorer');
       return;

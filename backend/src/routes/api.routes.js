@@ -44,6 +44,7 @@ import paymentRoutes from './payment.routes.js';
 import walletRoutes from './wallet.routes.js';
 import bannerRoutes from './banner.routes.js';
 import uploadRoutes from './upload.routes.js';
+import referralRoutes from './referral.routes.js';
 
 const apiRouter = Router();
 
@@ -110,6 +111,7 @@ apiRouter.use('/returns', returnRoutes);
 apiRouter.use('/payment', paymentRoutes);
 apiRouter.use('/wallet', walletRoutes);
 apiRouter.use('/wallets', walletRoutes);
+apiRouter.use('/referrals', referralRoutes);
 apiRouter.use('/banners', bannerRoutes);
 apiRouter.use('/upload', uploadRoutes);
 
