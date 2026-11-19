@@ -1129,7 +1129,7 @@ export default function HomeUserCustomer() {
 
             <button
               type="button"
-              onClick={() => navigate('/dropshipper-register')}
+              onClick={() => navigate('/dropshipper')}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 transition-all cursor-pointer active:scale-95"
               title="Resell products with zero investment and earn margins"
             >
