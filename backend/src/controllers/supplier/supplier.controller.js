@@ -307,15 +307,25 @@ export const addProduct = async (req, res, next) => {
       finalCategorySlug = 'women-ethnic';
     }
 
-    // Ensure Category exists or create it
-    await prisma.category.upsert({
+    // Ensure Category exists or create it (Custom categories added by suppliers require Admin approval)
+    let category = await prisma.category.findUnique({
       where: { slug: finalCategorySlug },
-      update: {},
-      create: {
-        name: categoryName || finalCategorySlug.replace(/-/g, ' ').toUpperCase(),
-        slug: finalCategorySlug,
-      },
     });
+
+    let isNewCustomCategory = false;
+    if (!category) {
+      isNewCustomCategory = true;
+      category = await prisma.category.create({
+        data: {
+          name: categoryName || finalCategorySlug.replace(/-/g, ' ').toUpperCase(),
+          slug: finalCategorySlug,
+          status: 'PENDING',
+          requestedBySupplierId: supplierId || null,
+        },
+      });
+    }
+
+    const isCategoryPending = isNewCustomCategory || (category && category.status === 'PENDING');
 
     // Handle Uploaded Images & Multiple Image URLs
     let imageUrls = [];
@@ -465,15 +475,16 @@ export const addProduct = async (req, res, next) => {
         isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
         supplierId,
+        isActive: !isCategoryPending, // Product is Held Under Review until Admin approves custom category
       },
       include: {
         category: true,
       },
     });
 
-    // Also sync to Supabase if available
+    // Also sync to Supabase if available (Only sync to public live catalog if category is approved)
     try {
-      if (supabase && newProduct) {
+      if (supabase && newProduct && !isCategoryPending) {
         await supabase.from('products').insert([
           {
             id: newProduct.id,
@@ -492,10 +503,15 @@ export const addProduct = async (req, res, next) => {
       }
     } catch (_) {}
 
+    const responseMsg = isCategoryPending
+      ? `Product "${newProduct.title}" submitted! It is currently UNDER REVIEW pending Admin approval for category "${category?.name || finalCategorySlug}".`
+      : 'Product created and published successfully to live catalog!';
+
     return res.status(201).json({
       success: true,
-      message: 'Product created and published successfully to database!',
+      message: responseMsg,
       data: newProduct,
+      isUnderReview: isCategoryPending,
     });
   } catch (error) {
     console.error('Error in addProduct:', error);
@@ -692,14 +708,19 @@ export const updateProduct = async (req, res, next) => {
       updateData.categorySlug = slugify(updateData.categoryName, { lower: true, strict: true });
     }
     if (updateData.categorySlug) {
-      await prisma.category.upsert({
+      const existingCat = await prisma.category.findUnique({
         where: { slug: updateData.categorySlug },
-        update: {},
-        create: {
-          name: updateData.categoryName || updateData.categorySlug.replace(/-/g, ' ').toUpperCase(),
-          slug: updateData.categorySlug,
-        },
       });
+      if (!existingCat) {
+        await prisma.category.create({
+          data: {
+            name: updateData.categoryName || updateData.categorySlug.replace(/-/g, ' ').toUpperCase(),
+            slug: updateData.categorySlug,
+            status: 'PENDING',
+            requestedBySupplierId: supplierId || null,
+          },
+        });
+      }
     }
     delete updateData.categoryName;
 
@@ -971,15 +992,24 @@ export const bulkUploadProducts = async (req, res, next) => {
       let catSlug = item.categorySlug || slugify(catName, { lower: true, strict: true });
       if (!catSlug) catSlug = 'women-ethnic';
 
-      // Ensure Category exists
-      await prisma.category.upsert({
+      // Ensure Category exists (Custom category from supplier requires Admin approval)
+      const existingCat = await prisma.category.findUnique({
         where: { slug: catSlug },
-        update: {},
-        create: {
-          name: catName,
-          slug: catSlug,
-        },
       });
+      let isCatPending = false;
+      if (!existingCat) {
+        isCatPending = true;
+        await prisma.category.create({
+          data: {
+            name: catName,
+            slug: catSlug,
+            status: 'PENDING',
+            requestedBySupplierId: supplierId || null,
+          },
+        });
+      } else if (existingCat.status === 'PENDING') {
+        isCatPending = true;
+      }
 
       // Parse sizes
       let parsedSizes = ['Free Size'];
@@ -1079,6 +1109,7 @@ export const bulkUploadProducts = async (req, res, next) => {
           isFreeDelivery: item.isFreeDelivery !== false,
           supplierName: supplierDisplayName,
           supplierId,
+          isActive: !isCatPending,
         },
       });
 
@@ -1173,7 +1204,14 @@ export const bulkDeleteProducts = async (req, res, next) => {
  */
 export const getCategories = async (req, res, next) => {
   try {
+    const supplierId = req.supplierId || req.user?.id;
     const categories = await prisma.category.findMany({
+      where: {
+        OR: [
+          { status: 'APPROVED' },
+          ...(supplierId ? [{ status: 'PENDING', requestedBySupplierId: supplierId }] : [])
+        ]
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -1188,22 +1226,61 @@ export const getCategories = async (req, res, next) => {
 
 export const addCategory = async (req, res, next) => {
   try {
-    const { name, imageUrl } = req.body;
-    if (!name) {
+    const { name, imageUrl, parentId } = req.body;
+    const supplierId = req.supplierId || req.user?.id;
+    if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Category name is required' });
     }
 
-    const slug = slugify(name, { lower: true, strict: true });
-    const category = await prisma.category.upsert({
-      where: { slug },
-      update: { name, imageUrl: imageUrl || null },
-      create: { name, slug, imageUrl: imageUrl || null },
+    const cleanName = name.trim();
+    const slug = slugify(cleanName, { lower: true, strict: true });
+
+    // Check if category already exists
+    const existing = await prisma.category.findFirst({
+      where: {
+        OR: [
+          { slug },
+          { name: { equals: cleanName, mode: 'insensitive' } }
+        ]
+      }
+    });
+
+    if (existing) {
+      if (existing.status === 'APPROVED') {
+        return res.status(200).json({
+          success: true,
+          message: 'Category already exists and is active!',
+          data: existing,
+          isPendingApproval: false
+        });
+      }
+      if (existing.status === 'PENDING') {
+        return res.status(200).json({
+          success: true,
+          message: 'This category has already been submitted and is pending Admin approval.',
+          data: existing,
+          isPendingApproval: true
+        });
+      }
+    }
+
+    // New custom category -> status: 'PENDING' for Admin review
+    const category = await prisma.category.create({
+      data: {
+        name: cleanName,
+        slug,
+        imageUrl: imageUrl || null,
+        parentId: parentId || null,
+        status: 'PENDING',
+        requestedBySupplierId: supplierId || null,
+      }
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Category saved successfully!',
+      message: 'Custom category submitted for Admin approval! It will be activated once approved by Admin.',
       data: category,
+      isPendingApproval: true
     });
   } catch (error) {
     next(error);

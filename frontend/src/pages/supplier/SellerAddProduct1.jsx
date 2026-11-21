@@ -796,35 +796,46 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
       // 1. Submit product to backend API (handles file writing and deduplication)
       const createdProduct = await supplierApiService.createSupplierProduct(payload);
 
-      // 2. Direct Supabase sync with the final images & video
-      try {
-        if (supabase) {
-          const syncedImages = createdProduct?.images || payload.images;
-          await supabase.from('products').insert([
-            {
-              title: payload.title,
-              description: payload.description,
-              price: payload.price,
-              stock: payload.stock,
-              images: syncedImages,
-              category_slug: payload.categorySlug,
-              sizes: payload.sizes,
-              colors: payload.colors,
-              thickness: payload.thickness,
-              supplier_name: supplierDisplayName,
-              video_url: payload.videoUrl,
-              video_type: payload.videoType,
-            }
-          ]).select().catch(() => {});
+      const isHeldUnderReview = formData.categorySlug === 'CUSTOM' || createdProduct?.isUnderReview || createdProduct?.category?.status === 'PENDING';
+
+      // 2. Direct Supabase sync with the final images & video (ONLY sync to live catalog if category is approved)
+      if (!isHeldUnderReview) {
+        try {
+          if (supabase) {
+            const syncedImages = createdProduct?.images || payload.images;
+            await supabase.from('products').insert([
+              {
+                title: payload.title,
+                description: payload.description,
+                price: payload.price,
+                stock: payload.stock,
+                images: syncedImages,
+                category_slug: payload.categorySlug,
+                sizes: payload.sizes,
+                colors: payload.colors,
+                thickness: payload.thickness,
+                supplier_name: supplierDisplayName,
+                video_url: payload.videoUrl,
+                video_type: payload.videoType,
+              }
+            ]).select().catch(() => {});
+          }
+        } catch (sbErr) {
+          console.warn('Supabase client insert note:', sbErr);
         }
-      } catch (sbErr) {
-        console.warn('Supabase client insert note:', sbErr);
       }
 
-      toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
+      if (isHeldUnderReview) {
+        toast.info(
+          `⏳ Custom category "${formData.customCategory.trim() || selectedCategory}" is under review. This product is saved as "Under Review" and will automatically be added to live catalog once approved by Admin.`
+        );
+      } else {
+        toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
+      }
+
       setTimeout(() => {
         handleNav('/supplier-inventory1');
-      }, 600);
+      }, 700);
     } catch (err) {
       console.error('Failed to create product:', err);
       toast.error(err.message || 'Failed to publish product. Please check your inputs.');
@@ -948,7 +959,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                 >
                   {categories.map((c) => (
                     <option key={c.id || c.slug} value={c.slug || c.name}>
-                      {c.name}
+                      {c.name} {c.status === 'PENDING' ? '⏳ (Pending Admin Approval)' : ''}
                     </option>
                   ))}
                   <option value="ethnic-wear">Ethnic Wear</option>
@@ -956,19 +967,27 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <option value="accessories">Jewellery & Accessories</option>
                   <option value="footwear">Footwear & Bags</option>
                   <option value="home-kitchen">Home & Kitchen</option>
-                  <option value="CUSTOM">+ Add Custom Category</option>
+                  <option value="CUSTOM">+ Add Custom Category (Requires Admin Review)</option>
                 </select>
 
                 {formData.categorySlug === 'CUSTOM' && (
-                  <input
-                    type="text"
-                    name="customCategory"
-                    placeholder="Type custom category name..."
-                    value={formData.customCategory}
-                    onChange={handleChange}
-                    className="w-full h-10 px-3 mt-2 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
-                    required
-                  />
+                  <div className="mt-2 space-y-1.5">
+                    <input
+                      type="text"
+                      name="customCategory"
+                      placeholder="Type custom category name (e.g. Handmade Terracotta)..."
+                      value={formData.customCategory}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
+                      required
+                    />
+                    <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                      <span className="shrink-0 text-sm">⏳</span>
+                      <span>
+                        <strong>Admin Approval Required:</strong> Custom categories do not appear in the public catalog immediately. Once submitted, this category goes to the Admin Panel for approval.
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
 
