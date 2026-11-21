@@ -44,6 +44,7 @@ import { INDIAN_BANKS } from '../../components/BankAutocompleteSelect';
 
 // Icons from lucide-react (matching admin-panel1 & seller-web-dashboard1 theme)
 import {
+  Home,
   LayoutDashboard,
   ShoppingBag,
   Heart,
@@ -1297,6 +1298,7 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Master Sidebar Menu Items
   const customerMenuItems = [
+    { id: 'home', label: 'Home & Deals 🛍️', icon: Home },
     { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
     {
       id: 'affiliate',
@@ -1338,6 +1340,10 @@ export default function UserWebDashboard1({ onNavigate, onBack }) {
 
   // Tab switch handler with route intercept for external shopping pages
   const handleTabChange = (tabId) => {
+    if (tabId === 'home' || tabId === 'home-deals') {
+      handleNav('/');
+      return;
+    }
     if (tabId === 'invite') {
       handleNav('/invite-earn');
       return;
