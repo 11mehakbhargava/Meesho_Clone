@@ -30,6 +30,7 @@ import DropshipperSupportDesk from './pages/dropshipper/DropshipperSupportDesk';
 import DropshipperOrdersPush from './pages/dropshipper/DropshipperOrdersPush';
 import DropshipperIntegrations from './pages/dropshipper/DropshipperIntegrations';
 import DropshipperWholesaleCatalog from './pages/dropshipper/DropshipperWholesaleCatalog';
+import DropshipperLandingPage from './pages/dropshipper/DropshipperLandingPage';
 
 // Customer & Reseller Shopping Pages
 import HomeUserCustomer from './pages/customer & Reseller/HomeUserCustomer';
@@ -111,6 +112,7 @@ import StructureFlow from './pages/Design_Ecosystem_&_Theme_Variations/structure
 // Screen Catalog for Floating Navigator
 const screenCatalog = [
   // 1. Dropshipper Portal Screens
+  { path: '/dropshipper', name: 'Dropshipper Landing Page', icon: '🌐', group: 'Dropshipper' },
   { path: '/dropshipper-dashboard', name: 'Dropshipper Dashboard', icon: '📊', group: 'Dropshipper' },
   { path: '/dropshipper-wholesale-catalog', name: 'Wholesale Sourcing Hub', icon: '📦', group: 'Dropshipper' },
   { path: '/dropshipper-orders-push', name: 'Push Customer Orders', icon: '📤', group: 'Dropshipper' },
@@ -730,6 +732,9 @@ function AppRoutes() {
       '/analytics': '/admin-panel',
       'admin-dropshipper-kyc': '/admin-panel',
       adminDropshipperKyc: '/admin-panel',
+      dropshipper: '/dropshipper',
+      'dropshipper-landing': '/dropshipper',
+      dropshipperLanding: '/dropshipper',
       'dropshipper-register': '/dropshipper-register',
       dropshipperRegister: '/dropshipper-register',
       'dropshipper-kyc': '/dropshipper-register',
@@ -1409,6 +1414,22 @@ function AppRoutes() {
         <Route
           path="/customer-order-supplier-fulfilment"
           element={<CustomerOrderSupplierFulfilment onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/dropshipper"
+          element={<DropshipperLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/dropship"
+          element={<DropshipperLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/join-dropshipper"
+          element={<DropshipperLandingPage onNavigate={handleNav} onBack={handleBack} />}
+        />
+        <Route
+          path="/dropshipper-landing"
+          element={<DropshipperLandingPage onNavigate={handleNav} onBack={handleBack} />}
         />
         <Route
           path="/supplier"

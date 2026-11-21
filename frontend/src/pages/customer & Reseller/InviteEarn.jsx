@@ -150,13 +150,20 @@ export default function InviteEarn({ onNavigate, onBack }) {
     };
   }, []);
 
-  // Persistent / dynamic referral code and link
+  // Dynamic unique referral code and link for current logged-in user (zero hardcoded strings)
   const currentReferralCode = referralData.referralCode || (
     customerUser?.phone
-      ? `MSHOPPY${customerUser.phone.slice(-4)}`
-      : 'MSHOPPY2026'
+      ? `MSHOPPY${customerUser.phone.replace(/[^0-9]/g, '').slice(-4)}`
+      : (customerUser?.id ? `MSHOPPY${customerUser.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}` : '')
   );
-  const currentReferralLink = referralData.referralLink || `https://app.meesho.com/2yoV/r99th0qd?via=${currentReferralCode}&from=account_section`;
+
+  const originBase = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'https://meesho.digitalsabkuch.com';
+
+  const currentReferralLink = currentReferralCode
+    ? `${originBase}/invite/${currentReferralCode}`
+    : (referralData.referralLink || '');
 
   const pendingCount = referralData.pendingCount ?? Math.max(0, (referralData.totalInvited || referralData.friends?.length || 0) - (referralData.deliveredCount || 0));
   const successfulFriends = (referralData.friends || []).filter((f) => f.hasDelivered);
@@ -185,10 +192,10 @@ export default function InviteEarn({ onNavigate, onBack }) {
     } catch (_) {}
   };
 
-  // Build personalized WhatsApp invite message (Exact Meesho App Format)
+  // Build personalized WhatsApp invite message (MShoppy Brand Format)
   const getInviteMessage = (friendName) => {
     const greeting = friendName ? `Hey ${friendName},` : 'Hey ,';
-    return `${greeting}\nJoin Meesho and get cheapest prices online. Install via my link and get 40% OFF on your first order (up to ₹100). Link: ${currentReferralLink}\n📦 Home delivery | 💵 Cash on delivery available | 🔄 Easy returns`;
+    return `${greeting}\nJoin MShoppy and get cheapest prices online. Install via my link and get 40% OFF on your first order (up to ₹100). Link: ${currentReferralLink}\n📦 Home delivery | 💵 Cash on delivery available | 🔄 Easy returns`;
   };
 
   // WhatsApp share
@@ -222,7 +229,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
   const handleNativeShare = async () => {
     const shareText = getInviteMessage();
     const shareData = {
-      title: 'Join Meesho & Get 40% OFF!',
+      title: 'Join MShoppy & Get 40% OFF!',
       text: shareText,
       url: currentReferralLink,
     };
@@ -1005,20 +1012,9 @@ export default function InviteEarn({ onNavigate, onBack }) {
 
               {/* Referral Link Box */}
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Invite Link
-                  </span>
-                  <a
-                    href={`/invite/${currentReferralCode}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-bold text-[#9f0038] hover:underline flex items-center gap-0.5"
-                  >
-                    <span>Test / Preview</span>
-                    <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-                  </a>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Invite Link
+                </span>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-semibold text-slate-700 font-mono break-all select-all flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
                     {currentReferralLink}
@@ -1211,7 +1207,7 @@ export default function InviteEarn({ onNavigate, onBack }) {
       {/* ── Fixed Bottom Action Bar (Mobile Only: lg:hidden) ───────── */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/80 p-3 sm:p-4 shadow-xl lg:hidden">
         <div className="max-w-lg mx-auto flex items-center gap-2.5">
-          {/* Primary WhatsApp Button: Solid Meesho Magenta */}
+          {/* Primary WhatsApp Button: Solid MShoppy Magenta */}
           <button
             type="button"
             onClick={() => handleShareWhatsApp()}

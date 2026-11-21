@@ -298,7 +298,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
 
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
-  const affiliateMargin = urlMargin > 0 ? urlMargin : Number(localStorage.getItem('mshoppy_affiliate_margin') || 0);
+  const affiliateMargin = urlMargin > 0 ? urlMargin : 0;
   const effectivePrice = (product?.price || 0) + (affiliateMargin > 0 ? affiliateMargin : 0);
 
   // Dynamic MRP (Maximum Retail Price) ensuring it always reflects originalPrice + margin and is strictly >= effectivePrice

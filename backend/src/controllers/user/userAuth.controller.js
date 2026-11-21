@@ -155,7 +155,7 @@ export const loginUser = async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
     let profile;
     try {
-      profile = await prisma.profile.findFirst({
+      const candidates = await prisma.profile.findMany({
         where: {
           OR: [
             { id: firebaseUid },
@@ -166,6 +166,17 @@ export const loginUser = async (req, res) => {
           wallet: true
         }
       });
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => {
+          if (a.id === firebaseUid) return -1;
+          if (b.id === firebaseUid) return 1;
+          const aGhost = a.id.startsWith('customer_') ? 1 : 0;
+          const bGhost = b.id.startsWith('customer_') ? 1 : 0;
+          return aGhost - bGhost;
+        });
+        profile = candidates[0];
+      }
 
       if (!profile) {
         // Auto-provision if user exists in Firebase but not in DB yet
@@ -332,7 +343,7 @@ export const verifyLoginOtp = async (req, res) => {
 
     let profile;
     try {
-      profile = await prisma.profile.findFirst({
+      const candidates = await prisma.profile.findMany({
         where: {
           OR: [
             firebaseUid ? { id: firebaseUid } : null,
@@ -341,6 +352,17 @@ export const verifyLoginOtp = async (req, res) => {
         },
         include: { wallet: true }
       });
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => {
+          if (firebaseUid && a.id === firebaseUid) return -1;
+          if (firebaseUid && b.id === firebaseUid) return 1;
+          const aGhost = a.id.startsWith('customer_') ? 1 : 0;
+          const bGhost = b.id.startsWith('customer_') ? 1 : 0;
+          return aGhost - bGhost;
+        });
+        profile = candidates[0];
+      }
 
       if (!profile) {
         profile = await prisma.profile.create({

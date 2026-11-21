@@ -1,23 +1,38 @@
 import prisma from '../config/prisma.js';
 
 /**
- * Helper to get or generate user's permanent referral code
+ * Helper to get or generate user's permanent unique referral code
  */
 const getOrCreateReferralCode = async (user) => {
   if (user.storeName && user.storeName.startsWith('MSHOPPY')) {
     return user.storeName;
   }
-  const cleanPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
-  const code = cleanPhone && cleanPhone.length >= 4
-    ? `MSHOPPY${cleanPhone.slice(-4)}`
-    : `MSHOPPY${user.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase()}`;
 
-  if (!user.storeName) {
-    await prisma.profile.update({
-      where: { id: user.id },
-      data: { storeName: code }
-    }).catch(() => {});
+  const cleanPhone = user.phone ? user.phone.replace(/[^0-9]/g, '') : '';
+  const baseSuffix = cleanPhone && cleanPhone.length >= 4
+    ? cleanPhone.slice(-4)
+    : user.id.replace(/[^A-Za-z0-9]/g, '').slice(-4).toUpperCase();
+
+  let code = `MSHOPPY${baseSuffix}`;
+
+  // Check for collision with another user's code
+  const conflict = await prisma.profile.findFirst({
+    where: {
+      storeName: code,
+      id: { not: user.id }
+    }
+  });
+
+  if (conflict) {
+    const extra = user.id.replace(/[^A-Za-z0-9]/g, '').slice(-2).toUpperCase();
+    code = `MSHOPPY${baseSuffix}${extra}`;
   }
+
+  await prisma.profile.update({
+    where: { id: user.id },
+    data: { storeName: code }
+  }).catch(() => {});
+
   return code;
 };
 
@@ -33,34 +48,19 @@ const getOrCreateReferralCode = async (user) => {
 export const getReferralStats = async (req, res) => {
   try {
     const userId = req.headers['x-user-id'] || req.headers['x-customer-id'] || req.query.userId;
-    const origin = req.headers.origin || 'http://localhost:5173';
+    let clientOrigin = process.env.FRONTEND_URL || 'https://meesho.digitalsabkuch.com';
+    try {
+      if (req.headers.origin) {
+        clientOrigin = new URL(req.headers.origin).origin;
+      } else if (req.headers.referer) {
+        clientOrigin = new URL(req.headers.referer).origin;
+      }
+    } catch (_) {}
 
     if (!userId) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          referralCode: 'MSHOPPY2026',
-          referralLink: 'https://app.meesho.com/2yoV/r99th0qd?via=MSHOPPY2026&from=account_section',
-          totalInvited: 0,
-          deliveredCount: 0,
-          pendingCount: 0,
-          totalCashEarned: 0,
-          maxPotentialCash: 1230,
-          milestones: [
-            { id: 1, amount: 123, label: '1st Invite', unlocked: false, statusText: 'Pending' },
-            { id: 2, amount: 123, label: '2nd Invite', unlocked: false, statusText: 'Locked' },
-            { id: 3, amount: 123, label: '3rd Invite', unlocked: false, statusText: 'Locked' },
-            { id: 4, amount: 123, label: '4th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 5, amount: 123, label: '5th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 6, amount: 123, label: '6th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 7, amount: 123, label: '7th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 8, amount: 123, label: '8th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 9, amount: 123, label: '9th Invite', unlocked: false, statusText: 'Locked' },
-            { id: 10, amount: 123, label: '10th Invite', unlocked: false, statusText: 'Locked' },
-          ],
-          friends: [],
-          suggestedContacts: []
-        }
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to view referral stats'
       });
     }
 
@@ -74,7 +74,7 @@ export const getReferralStats = async (req, res) => {
     }
 
     const referralCode = await getOrCreateReferralCode(user);
-    const referralLink = `https://app.meesho.com/2yoV/r99th0qd?via=${referralCode}&from=account_section`;
+    const referralLink = `${clientOrigin}/invite/${referralCode}`;
 
     // 1. Fetch real referrals from DB
     const realReferrals = await prisma.referral.findMany({
@@ -247,7 +247,7 @@ export const applyReferralCode = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Referral code ${cleanCode} successfully applied! You will get 20% off on your 1st order!`,
+      message: `Referral code ${cleanCode} successfully applied! You will get 40% off on your 1st order (up to ₹100)!`,
       data: newRef
     });
   } catch (error) {
@@ -286,16 +286,23 @@ export const getReferralInfo = async (req, res) => {
       }
     });
 
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        message: `Referral code "${cleanCode}" is invalid or does not exist.`
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: {
         code: cleanCode,
-        referrerName: referrer?.fullName || 'Shruti Paliwal',
-        referrerAvatar: referrer?.avatarUrl || '',
+        referrerName: referrer.fullName || 'A friend',
+        referrerAvatar: referrer.avatarUrl || '',
         discountPercent: 40,
         maxDiscount: 100,
         offerTitle: 'Flat 40% OFF on First Order (Up to ₹100)',
-        offerDescription: `Join Meesho and get cheapest prices online. Install via ${referrer?.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
+        offerDescription: `Join MShoppy and get cheapest prices online. Install via ${referrer.fullName || 'friend'}'s link and get 40% OFF on your first order (up to ₹100).`,
         minOrderValue: 0
       }
     });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import API_BASE from '../../config/apiConfig';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = API_BASE;
 
 export default function InviteLanding() {
   const { code } = useParams();
@@ -10,9 +11,8 @@ export default function InviteLanding() {
   const [referralInfo, setReferralInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
-  const cleanCode = (code || 'MSHOPPY3465').trim().toUpperCase();
+  const cleanCode = (code || '').trim().toUpperCase();
 
   useEffect(() => {
     let isMounted = true;
@@ -38,9 +38,10 @@ export default function InviteLanding() {
   // Handle Claim Offer & Start Shopping
   const handleClaimOffer = () => {
     try {
-      // 1. Store referral code for attribution
+      // 1. Store referral code for attribution & clear any stale reseller margin
       localStorage.setItem('mshoppy_referral_code', cleanCode);
       localStorage.setItem('mshoppy_referral_timestamp', Date.now().toString());
+      localStorage.removeItem('mshoppy_affiliate_margin');
 
       // 2. Pre-apply the 40% welcome coupon (up to ₹100)
       const couponObj = {
@@ -83,183 +84,219 @@ export default function InviteLanding() {
   };
 
   const referrerName = referralInfo?.referrerName || 'A friend';
+  const initial = referrerName.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/60 via-slate-50 to-white flex flex-col items-center justify-start p-4 sm:p-6 text-slate-800">
-      {/* Top Brand Bar */}
-      <div className="w-full max-w-md flex items-center justify-between py-3 mb-2">
-        <div className="flex items-center gap-2">
-          <img src="/mshoppy-logo.png" alt="MShoppy" className="h-8 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <span className="text-xl font-black text-[#9f0038] tracking-tight">MShoppy</span>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-xs font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Verified Invite</span>
-        </div>
-      </div>
-
-      {/* Main Card */}
-      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/60 overflow-hidden">
-        {/* Header Hero Banner */}
-        <div className="bg-gradient-to-r from-[#9f0038] via-[#b7004d] to-[#d61c68] text-white p-6 sm:p-7 relative overflow-hidden text-center">
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
-          <div className="absolute -left-6 -top-6 w-24 h-24 bg-rose-400/20 rounded-full blur-lg pointer-events-none" />
-
-          {/* Inviter Avatar Badge */}
-          <div className="w-16 h-16 rounded-full bg-white text-[#9f0038] font-black text-2xl flex items-center justify-center mx-auto mb-3 shadow-lg border-2 border-white/80 ring-4 ring-white/20">
-            {referrerName.charAt(0).toUpperCase()}
+    <div className="min-h-screen bg-gradient-to-br from-rose-50/70 via-slate-50 to-pink-50/40 flex flex-col justify-between text-slate-800">
+      {/* Top Navbar */}
+      <header className="w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/user-home')}>
+            <img
+              src="/mshoppy-logo.png"
+              alt="MShoppy"
+              className="h-8 sm:h-9 w-auto object-contain"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+            <span className="text-xl sm:text-2xl font-black text-[#9f0038] tracking-tight">MShoppy</span>
           </div>
-
-          <h1 className="text-lg sm:text-xl font-black tracking-tight leading-snug">
-            {referrerName} invited you!
-          </h1>
-          <p className="text-rose-100 text-xs sm:text-sm font-medium mt-1">
-            Shop wholesale fashion, home & beauty essentials at lowest prices
-          </p>
-        </div>
-
-        {/* Offer Details Body */}
-        <div className="p-5 sm:p-6 space-y-4">
-          {/* Flat 40% Voucher Box */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl shadow-xs shrink-0">
-                🎁
-              </div>
-              <div>
-                <p className="text-sm font-black text-slate-900 leading-tight">
-                  Flat 40% OFF on 1st Order
-                </p>
-                <p className="text-xs text-amber-900 font-medium mt-0.5">
-                  Up to ₹100 instant discount at checkout
-                </p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Verified Friend Invite</span>
             </div>
-            <span className="px-2 py-0.5 bg-amber-200 text-amber-900 font-black text-[10px] rounded-md tracking-wider uppercase shrink-0">
-              Active
-            </span>
           </div>
+        </div>
+      </header>
 
-          {/* Referral Code Box */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-2">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Exclusive Referral Code
+      {/* Main Content Area (Laptop / Desktop Responsive Split Layout) */}
+      <main className="flex-1 flex items-center py-8 sm:py-12 md:py-16 px-4 sm:px-6">
+        <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Column (Desktop / Laptop View: Story & Benefits) */}
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left order-2 lg:order-1">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-100/80 border border-rose-200 text-[#9f0038] text-xs font-extrabold tracking-wide uppercase">
+              <span>🎁 Exclusive Referral Welcome Offer</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
+              Shop Direct from Factories with{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#9f0038] via-[#c2185b] to-[#e91e63]">
+                Flat 40% OFF
               </span>
-              <span className="text-base font-black text-[#9f0038] font-mono tracking-wider">
-                {cleanCode}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                copied
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <span className="material-symbols-outlined text-xs">
-                {copied ? 'check' : 'content_copy'}
-              </span>
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
-          </div>
+            </h1>
 
-          {/* Action CTAs */}
-          <div className="space-y-2.5 pt-2">
-            <button
-              type="button"
-              onClick={handleClaimOffer}
-              className="w-full bg-[#9f0038] hover:bg-[#840032] text-white py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-900/15 cursor-pointer active:scale-98 transition-all"
-            >
-              <span>Claim 40% OFF & Start Shopping</span>
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowInstallGuide(true)}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-            >
-              <span className="material-symbols-outlined text-sm">install_mobile</span>
-              <span>Install MShoppy App on Phone</span>
-            </button>
-          </div>
-
-          {/* Trust Guarantees */}
-          <div className="border-t border-slate-100 pt-4 grid grid-cols-3 gap-2 text-center">
-            <div className="flex flex-col items-center">
-              <span className="text-base">🏷️</span>
-              <span className="text-[10px] font-bold text-slate-800 mt-1 leading-tight">Wholesale Prices</span>
-              <span className="text-[9px] text-slate-400">Direct Factory</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-base">💵</span>
-              <span className="text-[10px] font-bold text-slate-800 mt-1 leading-tight">Cash on Delivery</span>
-              <span className="text-[9px] text-slate-400">Pay at Doorstep</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-base">🔄</span>
-              <span className="text-[10px] font-bold text-slate-800 mt-1 leading-tight">7-Day Returns</span>
-              <span className="text-[9px] text-slate-400">Easy Refunds</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Install App Modal */}
-      {showInstallGuide && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <span className="text-lg">📱</span>
-                <span>Install MShoppy App</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowInstallGuide(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center cursor-pointer text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              To install MShoppy on your phone like a native app:
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl mx-auto lg:mx-0">
+              <strong className="text-slate-900 font-bold">{referrerName}</strong> has invited you to join <strong className="text-[#9f0038]">MShoppy</strong>. Enjoy lowest wholesale prices on fashion, home decor, electronics & daily essentials with zero middleman commissions.
             </p>
 
-            <div className="bg-slate-50 rounded-2xl p-3.5 space-y-2 text-xs text-slate-700">
-              <p className="font-semibold text-slate-800">For Android (Chrome):</p>
-              <p className="text-[11px] text-slate-600">1. Tap the <strong>three dots (⋮)</strong> at the top right of Chrome.</p>
-              <p className="text-[11px] text-slate-600">2. Tap <strong>'Add to Home screen'</strong> or <strong>'Install app'</strong>.</p>
+            {/* 4 Feature Value Props */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3.5 pt-2 max-w-lg mx-auto lg:mx-0 text-left">
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-start gap-3">
+                <span className="text-2xl">🏷️</span>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">Wholesale Rates</p>
+                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Direct from verified manufacturers</p>
+                </div>
+              </div>
 
-              <div className="border-t border-slate-200/60 pt-2 mt-2">
-                <p className="font-semibold text-slate-800">For iPhone (Safari):</p>
-                <p className="text-[11px] text-slate-600">1. Tap the <strong>Share (⎋)</strong> button at the bottom.</p>
-                <p className="text-[11px] text-slate-600">2. Select <strong>'Add to Home Screen' (+)</strong>.</p>
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-start gap-3">
+                <span className="text-2xl">💵</span>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">Cash on Delivery</p>
+                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Pay safely after doorstep delivery</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-start gap-3">
+                <span className="text-2xl">🔄</span>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">7-Day Easy Returns</p>
+                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Hassle-free doorstep pickup & refund</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-start gap-3">
+                <span className="text-2xl">🚚</span>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">Free Delivery</p>
+                  <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Available on 50,000+ top products</p>
+                </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowInstallGuide(false);
-                handleClaimOffer();
-              }}
-              className="w-full bg-[#9f0038] hover:bg-[#840032] text-white py-3 rounded-xl font-bold text-xs cursor-pointer"
-            >
-              Got It, Continue to Shop
-            </button>
+            {/* Trust Proof */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-xs text-slate-500 font-semibold">
+              <span className="flex items-center gap-1 text-amber-500 font-bold">
+                ★★★★★ <span className="text-slate-700 ml-1">4.8/5 App Rating</span>
+              </span>
+              <span>•</span>
+              <span>🇮🇳 Trusted by 1 Crore+ Happy Shoppers</span>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Footer info */}
-      <p className="text-[11px] text-slate-400 mt-6 text-center">
-        © 2026 MShoppy India. India's Favourite Wholesale Shopping Marketplace.
-      </p>
+          {/* Right Column (Hero Voucher & Claim Card) */}
+          <div className="lg:col-span-5 w-full max-w-md mx-auto order-1 lg:order-2">
+            <div className="bg-white border-2 border-rose-100 rounded-3xl shadow-2xl shadow-rose-950/10 overflow-hidden transform hover:-translate-y-1 transition-all duration-300">
+              
+              {/* Card Header with Inviter Avatar */}
+              <div className="bg-gradient-to-r from-[#9f0038] via-[#b7004d] to-[#d61c68] text-white p-6 sm:p-7 text-center relative overflow-hidden">
+                <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -left-6 -top-6 w-24 h-24 bg-rose-400/20 rounded-full blur-lg pointer-events-none" />
+
+                {/* Avatar */}
+                <div className="w-16 h-16 rounded-full bg-white text-[#9f0038] font-black text-2xl flex items-center justify-center mx-auto mb-3 shadow-lg border-2 border-white/90 ring-4 ring-white/20">
+                  {initial}
+                </div>
+
+                <p className="text-rose-100 text-xs font-bold uppercase tracking-wider">
+                  You Have Been Invited By
+                </p>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5">
+                  {referrerName}
+                </h2>
+                <p className="text-rose-100 text-xs mt-1">
+                  Claim your first-order welcome discount below
+                </p>
+              </div>
+
+              {/* Card Body */}
+              <div className="p-5 sm:p-6 space-y-4">
+                
+                {/* 40% OFF Ticket Voucher Box */}
+                <div className="relative bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-dashed border-amber-300 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-xs shrink-0">
+                      🎁
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                          Flat 40% OFF
+                        </span>
+                        <span className="px-2 py-0.2 bg-emerald-100 text-emerald-800 font-black text-[10px] rounded uppercase">
+                          Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900 font-semibold mt-0.5">
+                        Up to ₹100 instant discount on 1st order
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referral Code Box */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Referral Code
+                    </span>
+                    <span className="text-base font-black text-[#9f0038] font-mono tracking-wider">
+                      {cleanCode}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      copied
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 shadow-2xs'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xs">
+                      {copied ? 'check' : 'content_copy'}
+                    </span>
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Action CTAs */}
+                <div className="pt-2 space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={handleClaimOffer}
+                    className="w-full bg-[#9f0038] hover:bg-[#840032] text-white py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-rose-900/25 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <span>Claim 40% OFF & Start Shopping</span>
+                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+                  </button>
+
+                  <a
+                    href="https://play.google.com/store/apps"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm text-[#9f0038]">install_mobile</span>
+                    <span>Download MShoppy App on Phone</span>
+                  </a>
+
+                  <p className="text-[11px] text-slate-400 text-center font-medium pt-0.5">
+                    ⚡ 40% discount will be automatically applied at checkout
+                  </p>
+                </div>
+
+                {/* Bottom Trust Badges */}
+                <div className="border-t border-slate-100 pt-3 flex items-center justify-around text-[10px] text-slate-500 font-bold">
+                  <span className="flex items-center gap-1">🛡️ 100% Genuine</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">⚡ Fast Dispatch</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">🔒 Safe Payments</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-slate-200/60 bg-white/60 py-4 text-center text-xs text-slate-400">
+        <p>© 2026 MShoppy India. India's Favourite Wholesale Shopping Marketplace.</p>
+      </footer>
     </div>
   );
 }
