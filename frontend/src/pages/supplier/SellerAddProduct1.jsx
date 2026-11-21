@@ -821,6 +821,10 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
         console.warn('Supabase client insert note:', sbErr);
       }
 
+      if (formData.categorySlug === 'CUSTOM') {
+        toast.info(`⏳ Custom category "${formData.customCategory.trim()}" has been submitted for Admin approval.`);
+      }
+
       toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
       setTimeout(() => {
         handleNav('/supplier-inventory1');
@@ -948,7 +952,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                 >
                   {categories.map((c) => (
                     <option key={c.id || c.slug} value={c.slug || c.name}>
-                      {c.name}
+                      {c.name} {c.status === 'PENDING' ? '⏳ (Pending Admin Approval)' : ''}
                     </option>
                   ))}
                   <option value="ethnic-wear">Ethnic Wear</option>
@@ -956,19 +960,27 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <option value="accessories">Jewellery & Accessories</option>
                   <option value="footwear">Footwear & Bags</option>
                   <option value="home-kitchen">Home & Kitchen</option>
-                  <option value="CUSTOM">+ Add Custom Category</option>
+                  <option value="CUSTOM">+ Add Custom Category (Requires Admin Review)</option>
                 </select>
 
                 {formData.categorySlug === 'CUSTOM' && (
-                  <input
-                    type="text"
-                    name="customCategory"
-                    placeholder="Type custom category name..."
-                    value={formData.customCategory}
-                    onChange={handleChange}
-                    className="w-full h-10 px-3 mt-2 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
-                    required
-                  />
+                  <div className="mt-2 space-y-1.5">
+                    <input
+                      type="text"
+                      name="customCategory"
+                      placeholder="Type custom category name (e.g. Handmade Terracotta)..."
+                      value={formData.customCategory}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
+                      required
+                    />
+                    <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                      <span className="shrink-0 text-sm">⏳</span>
+                      <span>
+                        <strong>Admin Approval Required:</strong> Custom categories do not appear in the public catalog immediately. Once submitted, this category goes to the Admin Panel for approval.
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
 
