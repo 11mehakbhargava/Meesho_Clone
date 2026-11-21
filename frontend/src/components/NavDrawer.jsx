@@ -39,27 +39,9 @@ const navSections = [
 ];
 const customerNavSections = [
   {
-    title: "Shop & Categories",
-    items: [
-      { name: "Home & Deals", path: "/", icon: "home" },
-      { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
-      // { name: "Curated Spotlight", path: "/spotlight", icon: "auto_awesome" }, // temporarily hidden as requested
-    ]
-  },
-  {
     title: "Rewards & Offers",
     items: [
       { name: "Invite & Earn Cash", path: "/invite-earn", icon: "featured_seasonal_and_gifts", badge: "Earn ₹123" },
-    ]
-  },
-  {
-    title: "My Account & Orders",
-    items: [
-      { name: "My Orders & Tracking", path: "/orders", icon: "local_shipping" },
-      { name: "My Wishlist", path: "/wishlist", icon: "favorite" },
-      { name: "Shopping Bag", path: "/cart", icon: "shopping_bag" },
-      { name: "Account Profile", path: "/user-dashboard1?tab=profile", icon: "account_circle" },
-      { name: "Notifications", path: "/notifications", icon: "notifications" },
     ]
   },
   {
