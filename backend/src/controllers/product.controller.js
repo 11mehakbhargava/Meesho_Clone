@@ -433,6 +433,8 @@ export const createProduct = async (req, res) => {
       images,
       sizes,
       colors,
+      videoUrl,
+      videoType,
       stock = 50,
       isFreeDelivery = true,
       supplierName = 'Verified Supplier',
@@ -515,6 +517,8 @@ export const createProduct = async (req, res) => {
         images: productImages,
         sizes: productSizes,
         colors: productColors,
+        videoUrl: (videoUrl || '').trim() || null,
+        videoType: (videoType || '').trim() || null,
         stock: parseInt(stock, 10) || 50,
         isFreeDelivery: Boolean(isFreeDelivery),
         supplierName: supplierName || 'Verified Supplier'
@@ -604,6 +608,8 @@ export const updateProduct = async (req, res) => {
     }
 
     if (supplierName !== undefined) data.supplierName = supplierName;
+    if (req.body.videoUrl !== undefined) data.videoUrl = (req.body.videoUrl || '').trim() || null;
+    if (req.body.videoType !== undefined) data.videoType = (req.body.videoType || '').trim() || null;
 
     const updated = await prisma.product.update({
       where: { id },

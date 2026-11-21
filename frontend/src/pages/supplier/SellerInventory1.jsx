@@ -31,7 +31,8 @@ import {
   ExternalLink,
   UploadCloud,
   Image as ImageIcon,
-  Download
+  Download,
+  Video
 } from 'lucide-react';
 import { exportInventoryToCsv } from '../../utils/csvExport';
 import BulkCatalogUploadModal from '../../components/supplier/catalog/BulkCatalogUploadModal';
@@ -766,6 +767,12 @@ export default function SellerInventory1({ onNavigate, embedded = false, onNavig
                                 <span className="text-[11px] text-slate-400 font-mono">
                                   SKU: {prod.sku || `MSH-${String(prod.id).slice(-6)}`}
                                 </span>
+                                {Boolean(prod.videoUrl || prod.video_url) && (
+                                  <span className="text-[9.5px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 flex items-center gap-1" title="Product has Video Demo Reel attached">
+                                    <Video className="w-2.5 h-2.5 text-rose-600" />
+                                    <span>Video</span>
+                                  </span>
+                                )}
                                 {prod.thickness && (
                                   <span className="text-[9.5px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                                     {prod.thickness}

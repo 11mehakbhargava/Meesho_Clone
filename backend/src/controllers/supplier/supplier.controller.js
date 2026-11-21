@@ -277,6 +277,8 @@ export const addProduct = async (req, res, next) => {
       stock,
       sku,
       variants,
+      videoUrl,
+      videoType,
       isFreeDelivery,
       supplierName = supplierProfile.storeName || supplierProfile.fullName || 'Verified Supplier',
     } = req.body;
@@ -457,6 +459,8 @@ export const addProduct = async (req, res, next) => {
         thicknesses: parsedThicknesses,
         sku: (sku || '').trim() || null,
         variants: parsedVariants,
+        videoUrl: (videoUrl || '').trim() || null,
+        videoType: (videoType || '').trim() || null,
         stock: finalStock,
         isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
@@ -481,6 +485,8 @@ export const addProduct = async (req, res, next) => {
             category_slug: newProduct.categorySlug,
             supplier_id: supplierId,
             supplier_name: supplierName,
+            video_url: newProduct.videoUrl,
+            video_type: newProduct.videoType,
           }
         ]).select().catch(() => {});
       }
@@ -648,6 +654,13 @@ export const updateProduct = async (req, res, next) => {
 
     if (updateData.sku !== undefined) {
       updateData.sku = typeof updateData.sku === 'string' && updateData.sku.trim() ? updateData.sku.trim() : null;
+    }
+
+    if (updateData.videoUrl !== undefined) {
+      updateData.videoUrl = typeof updateData.videoUrl === 'string' && updateData.videoUrl.trim() ? updateData.videoUrl.trim() : null;
+    }
+    if (updateData.videoType !== undefined) {
+      updateData.videoType = typeof updateData.videoType === 'string' && updateData.videoType.trim() ? updateData.videoType.trim() : null;
     }
 
     if (updateData.variants !== undefined) {

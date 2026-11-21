@@ -295,6 +295,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPriceDetailsPopup, setShowPriceDetailsPopup] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
@@ -1181,6 +1182,21 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
           <div className="lg:col-span-6 xl:col-span-7 lg:sticky lg:top-24 space-y-4">
             {/* Full Uncropped Image Presentation */}
             <section className="relative bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden group">
+              {/* Product Video Button */}
+              {(product?.videoUrl || product?.video_url) && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowVideoModal(true);
+                  }}
+                  className="absolute top-4 left-4 z-20 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md border border-white/20 transition cursor-pointer active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-base text-rose-500">play_arrow</span>
+                  <span>Video Demo</span>
+                </button>
+              )}
+
               {/* Floating Top Buttons */}
               <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
                 <button
@@ -1294,7 +1310,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               )}
 
               {/* Thumbnail Preview Bar */}
-              {images.length > 1 && (
+              {(images.length > 1 || Boolean(product?.videoUrl || product?.video_url)) && (
                 <div className="flex gap-2.5 p-3 bg-slate-50 border-t border-slate-100 overflow-x-auto no-scrollbar">
                   {images.map((img, idx) => (
                     <button
@@ -1317,6 +1333,18 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                       />
                     </button>
                   ))}
+
+                  {(product?.videoUrl || product?.video_url) && (
+                    <button
+                      type="button"
+                      onClick={() => setShowVideoModal(true)}
+                      className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 border-rose-300 bg-slate-900 text-white flex flex-col items-center justify-center shrink-0 cursor-pointer hover:border-rose-500 transition-all p-1 shadow-xs"
+                      title="Watch Product Video Demo"
+                    >
+                      <span className="material-symbols-outlined text-2xl text-rose-500">play_circle</span>
+                      <span className="text-[10px] font-black uppercase tracking-tight text-white mt-1">Video</span>
+                    </button>
+                  )}
                 </div>
               )}
             </section>
@@ -2866,6 +2894,72 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Product Video Demo Reel Modal */}
+      {showVideoModal && (product?.videoUrl || product?.video_url) && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="relative w-full max-w-3xl bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+            <div className="flex items-center justify-between p-4 border-b border-white/10 text-white">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-rose-500 text-2xl">videocam</span>
+                <span className="text-sm font-bold truncate">{product.title} - Video Demo</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowVideoModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+            <div className="aspect-video w-full bg-black flex items-center justify-center overflow-hidden">
+              {(() => {
+                const vidUrl = product.videoUrl || product.video_url;
+                const ytMatch = vidUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+                if (ytMatch && ytMatch[1]) {
+                  return (
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`}
+                      title="Product Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  );
+                }
+                const igMatch = vidUrl.match(/(?:instagram\.com\/(?:reel|p|tv)\/)([\w-]+)/i);
+                if (igMatch && igMatch[1]) {
+                  return (
+                    <div className="text-center p-8 text-white space-y-3">
+                      <span className="material-symbols-outlined text-5xl text-pink-500">movie</span>
+                      <h4 className="text-base font-bold">Instagram Reel Attached</h4>
+                      <p className="text-xs text-slate-300 max-w-sm mx-auto">{vidUrl}</p>
+                      <a
+                        href={vidUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-600 text-white text-xs font-bold shadow-lg hover:opacity-95"
+                      >
+                        <span>Open Reel on Instagram</span>
+                        <span className="material-symbols-outlined text-sm">open_in_new</span>
+                      </a>
+                    </div>
+                  );
+                }
+                return (
+                  <video
+                    src={vidUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain"
+                  />
+                );
+              })()}
+            </div>
+          </div>
         </div>
       )}
     </div>
