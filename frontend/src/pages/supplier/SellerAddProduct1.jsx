@@ -796,39 +796,46 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
       // 1. Submit product to backend API (handles file writing and deduplication)
       const createdProduct = await supplierApiService.createSupplierProduct(payload);
 
-      // 2. Direct Supabase sync with the final images & video
-      try {
-        if (supabase) {
-          const syncedImages = createdProduct?.images || payload.images;
-          await supabase.from('products').insert([
-            {
-              title: payload.title,
-              description: payload.description,
-              price: payload.price,
-              stock: payload.stock,
-              images: syncedImages,
-              category_slug: payload.categorySlug,
-              sizes: payload.sizes,
-              colors: payload.colors,
-              thickness: payload.thickness,
-              supplier_name: supplierDisplayName,
-              video_url: payload.videoUrl,
-              video_type: payload.videoType,
-            }
-          ]).select().catch(() => {});
+      const isHeldUnderReview = formData.categorySlug === 'CUSTOM' || createdProduct?.isUnderReview || createdProduct?.category?.status === 'PENDING';
+
+      // 2. Direct Supabase sync with the final images & video (ONLY sync to live catalog if category is approved)
+      if (!isHeldUnderReview) {
+        try {
+          if (supabase) {
+            const syncedImages = createdProduct?.images || payload.images;
+            await supabase.from('products').insert([
+              {
+                title: payload.title,
+                description: payload.description,
+                price: payload.price,
+                stock: payload.stock,
+                images: syncedImages,
+                category_slug: payload.categorySlug,
+                sizes: payload.sizes,
+                colors: payload.colors,
+                thickness: payload.thickness,
+                supplier_name: supplierDisplayName,
+                video_url: payload.videoUrl,
+                video_type: payload.videoType,
+              }
+            ]).select().catch(() => {});
+          }
+        } catch (sbErr) {
+          console.warn('Supabase client insert note:', sbErr);
         }
-      } catch (sbErr) {
-        console.warn('Supabase client insert note:', sbErr);
       }
 
-      if (formData.categorySlug === 'CUSTOM') {
-        toast.info(`⏳ Custom category "${formData.customCategory.trim()}" has been submitted for Admin approval.`);
+      if (isHeldUnderReview) {
+        toast.info(
+          `⏳ Custom category "${formData.customCategory.trim() || selectedCategory}" is under review. This product is saved as "Under Review" and will automatically be added to live catalog once approved by Admin.`
+        );
+      } else {
+        toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
       }
 
-      toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
       setTimeout(() => {
         handleNav('/supplier-inventory1');
-      }, 600);
+      }, 700);
     } catch (err) {
       console.error('Failed to create product:', err);
       toast.error(err.message || 'Failed to publish product. Please check your inputs.');

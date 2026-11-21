@@ -325,6 +325,8 @@ export const addProduct = async (req, res, next) => {
       });
     }
 
+    const isCategoryPending = isNewCustomCategory || (category && category.status === 'PENDING');
+
     // Handle Uploaded Images & Multiple Image URLs
     let imageUrls = [];
     if (req.files && req.files.length > 0) {
@@ -473,15 +475,16 @@ export const addProduct = async (req, res, next) => {
         isFreeDelivery: isFreeDelivery === 'false' ? false : Boolean(isFreeDelivery),
         supplierName,
         supplierId,
+        isActive: !isCategoryPending, // Product is Held Under Review until Admin approves custom category
       },
       include: {
         category: true,
       },
     });
 
-    // Also sync to Supabase if available
+    // Also sync to Supabase if available (Only sync to public live catalog if category is approved)
     try {
-      if (supabase && newProduct) {
+      if (supabase && newProduct && !isCategoryPending) {
         await supabase.from('products').insert([
           {
             id: newProduct.id,
@@ -500,10 +503,15 @@ export const addProduct = async (req, res, next) => {
       }
     } catch (_) {}
 
+    const responseMsg = isCategoryPending
+      ? `Product "${newProduct.title}" submitted! It is currently UNDER REVIEW pending Admin approval for category "${category?.name || finalCategorySlug}".`
+      : 'Product created and published successfully to live catalog!';
+
     return res.status(201).json({
       success: true,
-      message: 'Product created and published successfully to database!',
+      message: responseMsg,
       data: newProduct,
+      isUnderReview: isCategoryPending,
     });
   } catch (error) {
     console.error('Error in addProduct:', error);
@@ -988,7 +996,9 @@ export const bulkUploadProducts = async (req, res, next) => {
       const existingCat = await prisma.category.findUnique({
         where: { slug: catSlug },
       });
+      let isCatPending = false;
       if (!existingCat) {
+        isCatPending = true;
         await prisma.category.create({
           data: {
             name: catName,
@@ -997,6 +1007,8 @@ export const bulkUploadProducts = async (req, res, next) => {
             requestedBySupplierId: supplierId || null,
           },
         });
+      } else if (existingCat.status === 'PENDING') {
+        isCatPending = true;
       }
 
       // Parse sizes
@@ -1097,6 +1109,7 @@ export const bulkUploadProducts = async (req, res, next) => {
           isFreeDelivery: item.isFreeDelivery !== false,
           supplierName: supplierDisplayName,
           supplierId,
+          isActive: !isCatPending,
         },
       });
 

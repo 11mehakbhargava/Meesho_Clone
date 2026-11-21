@@ -331,19 +331,31 @@ export const approveCategory = async (req, res) => {
       }
     });
 
+    // Automatically ACTIVATE all products that were waiting under review for this category!
+    const activatedResult = await prisma.product.updateMany({
+      where: {
+        categorySlug: updated.slug,
+        isDeleted: false,
+      },
+      data: {
+        isActive: true,
+      },
+    });
+
     await logAdminAction({
       adminEmail: req.user?.email || 'admin@meesho.com',
       adminName: req.user?.fullName || 'Super Admin',
       action: 'CATEGORY_APPROVED',
       targetType: 'CATALOG',
       targetId: id,
-      details: `Approved category "${updated.name}" (Slug: ${updated.slug}) for public catalog`
+      details: `Approved category "${updated.name}" (Slug: ${updated.slug}) and activated ${activatedResult.count} pending product(s) into live catalog`
     });
 
     return res.status(200).json({
       success: true,
-      message: `Category "${updated.name}" approved successfully! It is now active in the catalog.`,
-      data: updated
+      message: `Category "${updated.name}" approved successfully! ${activatedResult.count} pending product(s) are now active in the live catalog.`,
+      data: updated,
+      activatedProductsCount: activatedResult.count
     });
   } catch (error) {
     console.error('Error approving category:', error);
