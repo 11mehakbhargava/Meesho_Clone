@@ -39,9 +39,22 @@ const navSections = [
 ];
 const customerNavSections = [
   {
+    title: "Shop & Categories",
+    items: [
+      { name: "Explore All Categories", path: "/explorer", icon: "grid_view" },
+    ]
+  },
+  {
     title: "Rewards & Offers",
     items: [
       { name: "Invite & Earn Cash", path: "/invite-earn", icon: "featured_seasonal_and_gifts", badge: "Earn ₹123" },
+    ]
+  },
+  {
+    title: "My Account & Orders",
+    items: [
+      { name: "My Orders & Tracking", path: "/orders", icon: "local_shipping" },
+      { name: "Account Profile", path: "/user-dashboard1?tab=profile", icon: "account_circle" },
     ]
   },
   {
@@ -49,13 +62,6 @@ const customerNavSections = [
     items: [
       { name: "Help Center", path: "/support-center", icon: "support_agent" },
       { name: "Raise a Ticket", path: "/raise-ticket", icon: "confirmation_number" },
-    ]
-  },
-  {
-    title: "Partner & Earn Programs",
-    items: [
-      { name: "Become a Supplier", path: "/supplier", icon: "storefront", badge: "0% Comm" },
-      { name: "Join as Dropshipper", path: "/dropshipper-register", icon: "hub", badge: "High Margin" },
     ]
   }
 ];
