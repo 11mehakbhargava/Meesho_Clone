@@ -168,6 +168,8 @@ model Product {
   thicknesses        String[] @default([])
   sku                String?
   variants           Json?    @default("[]")
+  videoUrl           String?  @map("video_url")
+  videoType          String?  @map("video_type")
   stock              Int      @default(50)
   isFreeDelivery     Boolean  @default(true) @map("is_free_delivery")
   supplierName       String   @default("Verified Supplier") @map("supplier_name")
