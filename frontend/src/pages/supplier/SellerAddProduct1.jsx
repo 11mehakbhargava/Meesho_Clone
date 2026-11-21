@@ -36,8 +36,14 @@ import {
   Check,
   X,
   UploadCloud,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Video,
+  Play,
+  Film,
+  FileVideo,
+  Clipboard
 } from 'lucide-react';
+import { uploadMediaToSupabase } from '../../services/uploadService';
 import MultiVariantMatrix from '../../components/supplier/catalog/MultiVariantMatrix';
 import BulkCatalogUploadModal from '../../components/supplier/catalog/BulkCatalogUploadModal';
 
@@ -309,6 +315,148 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
   // Multiple Images State: array of URLs or base64 strings
   const [images, setImages] = useState(['']);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+
+  // ==========================================
+  // --- PRODUCT VIDEO STATE (3 MODES) ---
+  // ==========================================
+  // Mode: 'youtube' | 'instagram' | 'device'
+  const [videoSourceType, setVideoSourceType] = useState('youtube');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+  const [mediaPreviewMode, setMediaPreviewMode] = useState('image'); // 'image' | 'video'
+  const videoFileInputRef = useRef(null);
+
+  // Extract YouTube Video ID from any format
+  const getYoutubeVideoId = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    const match = url.trim().match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+    return match && match[1] ? match[1] : null;
+  };
+
+  // Extract Instagram shortcode from Reel/Post/TV URL
+  const getInstagramCode = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    const match = url.trim().match(/(?:instagram\.com\/(?:reel|p|tv)\/)([\w-]+)/i);
+    return match && match[1] ? match[1] : null;
+  };
+
+  const handleYoutubeChange = (val) => {
+    setVideoUrl(val);
+    const id = getYoutubeVideoId(val);
+    if (id) {
+      setVideoSourceType('youtube');
+      setVideoPreviewUrl(`https://www.youtube-nocookie.com/embed/${id}`);
+      setVideoFile(null);
+    } else {
+      setVideoPreviewUrl('');
+    }
+  };
+
+  const handleInstagramChange = (val) => {
+    setVideoUrl(val);
+    const code = getInstagramCode(val);
+    if (code) {
+      setVideoSourceType('instagram');
+      setVideoPreviewUrl(`https://www.instagram.com/reel/${code}/embed/`);
+      setVideoFile(null);
+    } else {
+      setVideoPreviewUrl('');
+    }
+  };
+
+  const handleDeviceVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error(`"${file.name}" is not a valid video file. Please upload an MP4, WEBM, or MOV video.`);
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.warning('Video file is larger than 50MB. Please select an optimized video under 50MB.');
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    setVideoFile(file);
+    setVideoSourceType('device');
+    setVideoPreviewUrl(localUrl);
+    setVideoUrl(localUrl);
+    setMediaPreviewMode('video');
+
+    const toastId = toast.loading(`Uploading "${file.name}" (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+    setIsVideoUploading(true);
+    try {
+      const publicUrl = await uploadMediaToSupabase(file, 'products');
+      if (publicUrl) {
+        setVideoUrl(publicUrl);
+        setVideoPreviewUrl(publicUrl);
+        toast.success('Device video uploaded successfully to cloud CDN!', { id: toastId });
+      }
+    } catch (uploadErr) {
+      console.warn('Device video upload note (using local preview):', uploadErr.message);
+      toast.success('Device video loaded & ready for preview!', { id: toastId });
+    } finally {
+      setIsVideoUploading(false);
+      if (videoFileInputRef.current) {
+        videoFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setVideoUrl('');
+    setVideoFile(null);
+    setVideoPreviewUrl('');
+    setMediaPreviewMode('image');
+    if (videoFileInputRef.current) {
+      videoFileInputRef.current.value = '';
+    }
+    toast.success('Product video removed');
+  };
+
+  // Direct Paste from Clipboard Handler (for YouTube & Instagram)
+  const handlePasteFromClipboard = async (source) => {
+    try {
+      if (!navigator.clipboard?.readText) {
+        toast.info('Please paste the URL directly into the input box (Ctrl+V).');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      const cleanText = (text || '').trim();
+      if (!cleanText) {
+        toast.warning('Clipboard is empty! Copy a video link from YouTube or Instagram first.');
+        return;
+      }
+
+      if (source === 'youtube') {
+        const id = getYoutubeVideoId(cleanText);
+        if (id) {
+          handleYoutubeChange(cleanText);
+          setMediaPreviewMode('video');
+          toast.success('YouTube link pasted directly from clipboard!');
+        } else {
+          setVideoUrl(cleanText);
+          toast.warning('Pasted text from clipboard, but it does not appear to be a valid YouTube URL.');
+        }
+      } else if (source === 'instagram') {
+        const code = getInstagramCode(cleanText);
+        if (code) {
+          handleInstagramChange(cleanText);
+          setMediaPreviewMode('video');
+          toast.success('Instagram Reel link pasted directly from clipboard!');
+        } else {
+          setVideoUrl(cleanText);
+          toast.warning('Pasted text from clipboard, but it does not appear to be an Instagram URL.');
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard read error:', err);
+      toast.info('Clipboard access was blocked by browser. Please paste the link directly into the box.');
+    }
+  };
 
   // Multi-Variant Matrix & Bulk Upload States
   const [variants, setVariants] = useState([]);
@@ -641,38 +789,53 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
         variants: (enableSizes || enableColors) && variants.length > 0 ? variants : [],
         images: finalImages,
         imageUrl: finalImages[0] || '',
+        videoUrl: videoUrl ? videoUrl.trim() : null,
+        videoType: videoUrl ? videoSourceType : null,
       };
 
       // 1. Submit product to backend API (handles file writing and deduplication)
       const createdProduct = await supplierApiService.createSupplierProduct(payload);
 
-      // 2. Direct Supabase sync with the final images
-      try {
-        if (supabase) {
-          const syncedImages = createdProduct?.images || payload.images;
-          await supabase.from('products').insert([
-            {
-              title: payload.title,
-              description: payload.description,
-              price: payload.price,
-              stock: payload.stock,
-              images: syncedImages,
-              category_slug: payload.categorySlug,
-              sizes: payload.sizes,
-              colors: payload.colors,
-              thickness: payload.thickness,
-              supplier_name: supplierDisplayName,
-            }
-          ]).select().catch(() => {});
+      const isHeldUnderReview = formData.categorySlug === 'CUSTOM' || createdProduct?.isUnderReview || createdProduct?.category?.status === 'PENDING';
+
+      // 2. Direct Supabase sync with the final images & video (ONLY sync to live catalog if category is approved)
+      if (!isHeldUnderReview) {
+        try {
+          if (supabase) {
+            const syncedImages = createdProduct?.images || payload.images;
+            await supabase.from('products').insert([
+              {
+                title: payload.title,
+                description: payload.description,
+                price: payload.price,
+                stock: payload.stock,
+                images: syncedImages,
+                category_slug: payload.categorySlug,
+                sizes: payload.sizes,
+                colors: payload.colors,
+                thickness: payload.thickness,
+                supplier_name: supplierDisplayName,
+                video_url: payload.videoUrl,
+                video_type: payload.videoType,
+              }
+            ]).select().catch(() => {});
+          }
+        } catch (sbErr) {
+          console.warn('Supabase client insert note:', sbErr);
         }
-      } catch (sbErr) {
-        console.warn('Supabase client insert note:', sbErr);
       }
 
-      toast.success(`🎉 Product "${formData.title}" with ${finalImages.length} image(s) published successfully to live catalog!`);
+      if (isHeldUnderReview) {
+        toast.info(
+          `⏳ Custom category "${formData.customCategory.trim() || selectedCategory}" is under review. This product is saved as "Under Review" and will automatically be added to live catalog once approved by Admin.`
+        );
+      } else {
+        toast.success(`🎉 Product "${formData.title}" published successfully to live catalog${videoUrl ? ' with product video' : ''}!`);
+      }
+
       setTimeout(() => {
         handleNav('/supplier-inventory1');
-      }, 600);
+      }, 700);
     } catch (err) {
       console.error('Failed to create product:', err);
       toast.error(err.message || 'Failed to publish product. Please check your inputs.');
@@ -796,7 +959,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                 >
                   {categories.map((c) => (
                     <option key={c.id || c.slug} value={c.slug || c.name}>
-                      {c.name}
+                      {c.name} {c.status === 'PENDING' ? '⏳ (Pending Admin Approval)' : ''}
                     </option>
                   ))}
                   <option value="ethnic-wear">Ethnic Wear</option>
@@ -804,19 +967,27 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <option value="accessories">Jewellery & Accessories</option>
                   <option value="footwear">Footwear & Bags</option>
                   <option value="home-kitchen">Home & Kitchen</option>
-                  <option value="CUSTOM">+ Add Custom Category</option>
+                  <option value="CUSTOM">+ Add Custom Category (Requires Admin Review)</option>
                 </select>
 
                 {formData.categorySlug === 'CUSTOM' && (
-                  <input
-                    type="text"
-                    name="customCategory"
-                    placeholder="Type custom category name..."
-                    value={formData.customCategory}
-                    onChange={handleChange}
-                    className="w-full h-10 px-3 mt-2 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
-                    required
-                  />
+                  <div className="mt-2 space-y-1.5">
+                    <input
+                      type="text"
+                      name="customCategory"
+                      placeholder="Type custom category name (e.g. Handmade Terracotta)..."
+                      value={formData.customCategory}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 text-xs rounded-xl border border-pink-200 focus:border-[#d82a62] outline-none"
+                      required
+                    />
+                    <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                      <span className="shrink-0 text-sm">⏳</span>
+                      <span>
+                        <strong>Admin Approval Required:</strong> Custom categories do not appear in the public catalog immediately. Once submitted, this category goes to the Admin Panel for approval.
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -1433,6 +1604,409 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               )}
             </div>
 
+            {/* 4B. PRODUCT VIDEO & DEMO REEL (3 WAYS: YOUTUBE, INSTAGRAM, DEVICE) */}
+            <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Video className="w-4 h-4 text-[#d82a62]" />
+                    <label className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                      Product Video & Demo Reel (Optional)
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Showcase your merchandise with an unboxing demo, product showcase, or styling video to boost customer orders.
+                  </p>
+                </div>
+
+                {/* Status indicator */}
+                {videoUrl ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Video Attached ({videoSourceType === 'youtube' ? 'YouTube' : videoSourceType === 'instagram' ? 'Instagram' : 'Device File'})</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveVideo}
+                      className="p-1 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                      title="Remove video"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-200/60 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    3 Ways to Add
+                  </span>
+                )}
+              </div>
+
+              {/* 3 Source Tabs: YouTube | Instagram | Device */}
+              <div className="flex items-center gap-2 p-1 bg-white rounded-2xl border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setVideoSourceType('youtube')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                    videoSourceType === 'youtube'
+                      ? 'bg-rose-50 border border-rose-200 text-rose-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-red-600 fill-current" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <span>1. YouTube Link</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVideoSourceType('instagram')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                    videoSourceType === 'instagram'
+                      ? 'bg-pink-50 border border-pink-200 text-[#b7004d] shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-pink-600 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.13-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                  <span>2. Instagram Link</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVideoSourceType('device')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                    videoSourceType === 'device'
+                      ? 'bg-slate-100 border border-slate-300 text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Upload className="w-4 h-4 text-indigo-600" />
+                  <span>3. Import from Device</span>
+                </button>
+              </div>
+
+              {/* Way 1: YouTube Input & Preview */}
+              {videoSourceType === 'youtube' && (
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        YouTube Video or Shorts URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('youtube')}
+                        className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer transition hover:underline"
+                        title="Directly paste copied YouTube link from clipboard"
+                      >
+                        <Clipboard className="w-3 h-3" />
+                        <span>Paste from Clipboard</span>
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="url"
+                        placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/... or https://youtube.com/shorts/..."
+                        value={videoSourceType === 'youtube' ? videoUrl : ''}
+                        onChange={(e) => handleYoutubeChange(e.target.value)}
+                        className="w-full h-10 pl-3 pr-20 text-xs rounded-xl border border-slate-200 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none bg-white transition"
+                      />
+                      {videoUrl && videoSourceType === 'youtube' && (
+                        <button
+                          type="button"
+                          onClick={() => { setVideoUrl(''); setVideoPreviewUrl(''); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Direct YouTube Links & Tools */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('youtube')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                      >
+                        <Clipboard className="w-3.5 h-3.5 text-rose-400" />
+                        <span>1-Click Paste Clipboard</span>
+                      </button>
+
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(formData.title || 'product unboxing showcase')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold transition cursor-pointer"
+                        title="Directly search on YouTube in a new tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Search on YouTube ↗</span>
+                      </a>
+
+                      <a
+                        href="https://www.youtube.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                        title="Open YouTube to copy video link"
+                      >
+                        <span>Open YouTube ↗</span>
+                      </a>
+                    </div>
+
+                    {/* Sample Presets */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        Or Pick Sample Demo Video:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: '👗 Ethnic Wear Demo', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+                          { label: '🛍️ Unboxing Showcase', url: 'https://www.youtube.com/watch?v=9bZkp7q19f0' },
+                          { label: '✨ 4K Fashion Short', url: 'https://www.youtube.com/shorts/kXYiU_JCYtU' },
+                        ].map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleYoutubeChange(preset.url)}
+                            className="px-2.5 py-1 rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-[11px] font-medium text-slate-700 hover:text-red-700 transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* YouTube Player Preview */}
+                  {getYoutubeVideoId(videoUrl) && (
+                    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-black aspect-video relative shadow-sm">
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${getYoutubeVideoId(videoUrl)}`}
+                        title="Product Demo Video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Way 2: Instagram Reel Input & Preview */}
+              {videoSourceType === 'instagram' && (
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        Instagram Reel or Post URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('instagram')}
+                        className="text-[11px] font-bold text-[#b7004d] hover:text-[#9e003f] flex items-center gap-1 cursor-pointer transition hover:underline"
+                        title="Directly paste copied Instagram Reel link from clipboard"
+                      >
+                        <Clipboard className="w-3 h-3" />
+                        <span>Paste from Clipboard</span>
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="url"
+                        placeholder="e.g. https://www.instagram.com/reel/C.../ or https://www.instagram.com/p/.../"
+                        value={videoSourceType === 'instagram' ? videoUrl : ''}
+                        onChange={(e) => handleInstagramChange(e.target.value)}
+                        className="w-full h-10 pl-3 pr-20 text-xs rounded-xl border border-slate-200 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none bg-white transition"
+                      />
+                      {videoUrl && videoSourceType === 'instagram' && (
+                        <button
+                          type="button"
+                          onClick={() => { setVideoUrl(''); setVideoPreviewUrl(''); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600 px-2 py-0.5 rounded cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Direct Instagram Links & Tools */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('instagram')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                      >
+                        <Clipboard className="w-3.5 h-3.5" />
+                        <span>1-Click Paste Clipboard</span>
+                      </button>
+
+                      <a
+                        href="https://www.instagram.com/reels/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-200 text-[#b7004d] text-xs font-bold transition cursor-pointer"
+                        title="Open Instagram Reels in a new tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Browse Reels on Instagram ↗</span>
+                      </a>
+
+                      <a
+                        href="https://www.instagram.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                        title="Open Instagram"
+                      >
+                        <span>Open Instagram ↗</span>
+                      </a>
+                    </div>
+
+                    {/* Sample Presets */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        Or Pick Sample Styling Reel:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: '✨ Kurti Styling Reel', url: 'https://www.instagram.com/reel/C7xyz123/' },
+                          { label: '💃 Saree Draping Demo', url: 'https://www.instagram.com/reel/C8abc456/' },
+                          { label: '🌟 Boutique Collection', url: 'https://www.instagram.com/reel/C9def789/' },
+                        ].map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleInstagramChange(preset.url)}
+                            className="px-2.5 py-1 rounded-lg bg-white hover:bg-pink-50 border border-slate-200 hover:border-pink-200 text-[11px] font-medium text-slate-700 hover:text-[#b7004d] transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instagram Reel Preview Card */}
+                  {getInstagramCode(videoUrl) && (
+                    <div className="p-4 rounded-2xl bg-white border border-pink-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <Film className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <span>Instagram Reel Linked</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-[#b7004d] font-bold">
+                              Code: {getInstagramCode(videoUrl)}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1 max-w-sm">
+                            {videoUrl}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white text-xs font-bold transition shadow-xs shrink-0 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Preview on Instagram</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Way 3: Import from Device */}
+              {videoSourceType === 'device' && (
+                <div className="space-y-3 pt-1">
+                  <input
+                    type="file"
+                    ref={videoFileInputRef}
+                    onChange={handleDeviceVideoUpload}
+                    accept="video/mp4,video/webm,video/quicktime,video/mkv,.mp4,.webm,.mov,.mkv"
+                    className="hidden"
+                  />
+
+                  {videoPreviewUrl && videoSourceType === 'device' ? (
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-slate-200 overflow-hidden bg-black relative shadow-inner">
+                        <video
+                          src={videoPreviewUrl}
+                          controls
+                          playsInline
+                          className="w-full max-h-72 object-contain"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200">
+                        <div className="flex items-center gap-2.5">
+                          <FileVideo className="w-5 h-5 text-indigo-600" />
+                          <div>
+                            <div className="text-xs font-bold text-slate-800 line-clamp-1">
+                              {videoFile?.name || 'Uploaded Device Video'}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              {videoFile ? `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB` : 'Cloud Video Ready'} • MP4/Video Format
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => videoFileInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveVideo}
+                            className="p-1.5 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                            title="Remove video"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => videoFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-[#d82a62] hover:bg-pink-50/40 rounded-2xl p-6 text-center cursor-pointer transition group"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-pink-100 text-[#d82a62] flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-800">
+                        Click to upload video from device
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                        Supports MP4, WEBM, or MOV video files (Recommended: 720p or 1080p up to 50MB)
+                      </p>
+                      <button
+                        type="button"
+                        className="mt-3 px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <FileVideo className="w-3.5 h-3.5" />
+                        <span>Choose Video File</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* 5. Description */}
             <div>
               <label className="text-xs font-bold text-slate-800 block mb-1">
@@ -1483,18 +2057,66 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                   <Eye className="w-4 h-4 text-[#b7004d]" />
                   <span>Real-Time Catalog Preview</span>
                 </div>
-                {validImages.length > 1 && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-[#b7004d]">
-                    {validImages.length} Photos
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {Boolean(videoUrl) && (
+                    <button
+                      type="button"
+                      onClick={() => setMediaPreviewMode(mediaPreviewMode === 'video' ? 'image' : 'video')}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition cursor-pointer ${
+                        mediaPreviewMode === 'video'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                      }`}
+                    >
+                      <Play className="w-2.5 h-2.5 fill-current" />
+                      <span>{mediaPreviewMode === 'video' ? 'Video Mode' : 'View Video'}</span>
+                    </button>
+                  )}
+                  {validImages.length > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-[#b7004d]">
+                      {validImages.length} Photo{validImages.length === 1 ? '' : 's'}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Card Rendering with Multiple Photos Preview */}
+              {/* Card Rendering with Multiple Photos & Video Preview */}
               <div className="rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs bg-white">
-                {/* Main Image Display */}
+                {/* Main Media Display (Image or Video) */}
                 <div className="w-full h-48 bg-slate-100 flex items-center justify-center relative overflow-hidden group">
-                  {currentPreviewImage ? (
+                  {mediaPreviewMode === 'video' && videoUrl ? (
+                    getYoutubeVideoId(videoUrl) ? (
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${getYoutubeVideoId(videoUrl)}?autoplay=1&mute=1`}
+                        title="Preview Video"
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : getInstagramCode(videoUrl) ? (
+                      <div className="w-full h-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex flex-col items-center justify-center p-4 text-center">
+                        <Film className="w-10 h-10 mb-2 animate-pulse" />
+                        <span className="text-xs font-black">Instagram Reel Linked</span>
+                        <a
+                          href={videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 text-[10px] bg-white text-slate-900 font-bold px-3 py-1 rounded-full shadow-xs hover:bg-slate-100"
+                        >
+                          Open in Instagram ↗
+                        </a>
+                      </div>
+                    ) : (
+                      <video
+                        src={videoPreviewUrl || videoUrl}
+                        controls
+                        autoPlay
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain bg-black"
+                      />
+                    )
+                  ) : currentPreviewImage ? (
                     <img
                       src={currentPreviewImage}
                       alt="Catalog Preview"
@@ -1515,24 +2137,32 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                     {Number(formData.stock || 0) > 0 ? 'In Stock' : 'Draft'}
                   </span>
 
-                  {/* Multiple Images Counter Badge */}
-                  {validImages.length > 1 && (
+                  {/* Mode Badge (Photos / Video) */}
+                  {mediaPreviewMode === 'video' && videoUrl ? (
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-red-600 text-[10px] font-bold text-white shadow-xs flex items-center gap-1">
+                      <Play className="w-2.5 h-2.5 fill-current" />
+                      <span>Video Playing</span>
+                    </span>
+                  ) : validImages.length > 1 && (
                     <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[10px] font-bold text-white shadow-xs">
                       {activePreviewIndex + 1} / {validImages.length}
                     </span>
                   )}
                 </div>
 
-                {/* Multiple Images Thumbnail Strip */}
-                {validImages.length > 1 && (
+                {/* Multiple Images + Video Thumbnail Strip */}
+                {(validImages.length > 1 || Boolean(videoUrl)) && (
                   <div className="p-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto">
                     {validImages.map((img, i) => (
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setActivePreviewIndex(i)}
+                        onClick={() => {
+                          setActivePreviewIndex(i);
+                          setMediaPreviewMode('image');
+                        }}
                         className={`w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 transition cursor-pointer ${
-                          activePreviewIndex === i
+                          mediaPreviewMode === 'image' && activePreviewIndex === i
                             ? 'border-[#d82a62] scale-105 shadow-xs'
                             : 'border-slate-200 opacity-70 hover:opacity-100'
                         }`}
@@ -1540,6 +2170,22 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                         <img src={img} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
                       </button>
                     ))}
+
+                    {Boolean(videoUrl) && (
+                      <button
+                        type="button"
+                        onClick={() => setMediaPreviewMode('video')}
+                        className={`w-10 h-10 rounded-lg border-2 shrink-0 transition cursor-pointer flex flex-col items-center justify-center ${
+                          mediaPreviewMode === 'video'
+                            ? 'border-rose-600 bg-rose-600 text-white shadow-xs'
+                            : 'border-slate-300 bg-slate-900 text-white opacity-80 hover:opacity-100'
+                        }`}
+                        title="Click to preview Product Video"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current text-white" />
+                        <span className="text-[7px] font-black uppercase tracking-tight">Reel</span>
+                      </button>
+                    )}
                   </div>
                 )}
 

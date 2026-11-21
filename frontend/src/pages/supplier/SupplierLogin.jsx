@@ -5,6 +5,7 @@ import { auth } from '../../utils/firebase';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../redux/userSlice';
 import supplierApiService from '../../services/supplierApiService';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   const navigate = useNavigate();
@@ -58,6 +59,8 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
   // ==========================================
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Handle Login via Firebase Auth + Database Sync
   const handleEmailLogin = async (e) => {
@@ -343,14 +346,25 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                     Forgot Password?
                   </button>
                 </div>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
-                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
+                    className="w-full h-12 pl-4 pr-11 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword((prev) => !prev)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#d82a62] p-1.5 cursor-pointer transition-colors focus:outline-none"
+                    title={showLoginPassword ? "Hide password" : "Show password"}
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Primary CTA Button matching the deep crimson button in screenshot */}
@@ -442,15 +456,26 @@ export default function SupplierLogin({ onNavigate, onBack, defaultTab }) {
                 <label className="text-xs sm:text-[13px] font-bold text-[#3b1227] block">
                   Password
                 </label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="••••••••"
-                  value={regData.password}
-                  onChange={handleRegChange}
-                  className="w-full h-12 px-4 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showRegisterPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="••••••••"
+                    value={regData.password}
+                    onChange={handleRegChange}
+                    className="w-full h-12 pl-4 pr-11 text-sm rounded-2xl border border-slate-200/90 focus:border-[#d82a62] focus:ring-2 focus:ring-pink-100 outline-none transition bg-white text-slate-800 placeholder-slate-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterPassword((prev) => !prev)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#d82a62] p-1.5 cursor-pointer transition-colors focus:outline-none"
+                    title={showRegisterPassword ? "Hide password" : "Show password"}
+                    aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+                  >
+                    {showRegisterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Agreement checkbox */}
