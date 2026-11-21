@@ -40,7 +40,8 @@ import {
   Video,
   Play,
   Film,
-  FileVideo
+  FileVideo,
+  Clipboard
 } from 'lucide-react';
 import { uploadMediaToSupabase } from '../../services/uploadService';
 import MultiVariantMatrix from '../../components/supplier/catalog/MultiVariantMatrix';
@@ -414,6 +415,47 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
       videoFileInputRef.current.value = '';
     }
     toast.success('Product video removed');
+  };
+
+  // Direct Paste from Clipboard Handler (for YouTube & Instagram)
+  const handlePasteFromClipboard = async (source) => {
+    try {
+      if (!navigator.clipboard?.readText) {
+        toast.info('Please paste the URL directly into the input box (Ctrl+V).');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      const cleanText = (text || '').trim();
+      if (!cleanText) {
+        toast.warning('Clipboard is empty! Copy a video link from YouTube or Instagram first.');
+        return;
+      }
+
+      if (source === 'youtube') {
+        const id = getYoutubeVideoId(cleanText);
+        if (id) {
+          handleYoutubeChange(cleanText);
+          setMediaPreviewMode('video');
+          toast.success('YouTube link pasted directly from clipboard!');
+        } else {
+          setVideoUrl(cleanText);
+          toast.warning('Pasted text from clipboard, but it does not appear to be a valid YouTube URL.');
+        }
+      } else if (source === 'instagram') {
+        const code = getInstagramCode(cleanText);
+        if (code) {
+          handleInstagramChange(cleanText);
+          setMediaPreviewMode('video');
+          toast.success('Instagram Reel link pasted directly from clipboard!');
+        } else {
+          setVideoUrl(cleanText);
+          toast.warning('Pasted text from clipboard, but it does not appear to be an Instagram URL.');
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard read error:', err);
+      toast.info('Clipboard access was blocked by browser. Please paste the link directly into the box.');
+    }
   };
 
   // Multi-Variant Matrix & Bulk Upload States
@@ -1631,9 +1673,21 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               {videoSourceType === 'youtube' && (
                 <div className="space-y-3 pt-1">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      YouTube Video or Shorts URL
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        YouTube Video or Shorts URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('youtube')}
+                        className="text-[11px] font-bold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer transition hover:underline"
+                        title="Directly paste copied YouTube link from clipboard"
+                      >
+                        <Clipboard className="w-3 h-3" />
+                        <span>Paste from Clipboard</span>
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <input
                         type="url"
@@ -1652,9 +1706,62 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Supports standard YouTube watch URLs, short youtu.be links, and vertical YouTube Shorts.
-                    </p>
+
+                    {/* Direct YouTube Links & Tools */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('youtube')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                      >
+                        <Clipboard className="w-3.5 h-3.5 text-rose-400" />
+                        <span>1-Click Paste Clipboard</span>
+                      </button>
+
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(formData.title || 'product unboxing showcase')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold transition cursor-pointer"
+                        title="Directly search on YouTube in a new tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Search on YouTube ↗</span>
+                      </a>
+
+                      <a
+                        href="https://www.youtube.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                        title="Open YouTube to copy video link"
+                      >
+                        <span>Open YouTube ↗</span>
+                      </a>
+                    </div>
+
+                    {/* Sample Presets */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        Or Pick Sample Demo Video:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: '👗 Ethnic Wear Demo', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+                          { label: '🛍️ Unboxing Showcase', url: 'https://www.youtube.com/watch?v=9bZkp7q19f0' },
+                          { label: '✨ 4K Fashion Short', url: 'https://www.youtube.com/shorts/kXYiU_JCYtU' },
+                        ].map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleYoutubeChange(preset.url)}
+                            className="px-2.5 py-1 rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-[11px] font-medium text-slate-700 hover:text-red-700 transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* YouTube Player Preview */}
@@ -1676,9 +1783,21 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
               {videoSourceType === 'instagram' && (
                 <div className="space-y-3 pt-1">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Instagram Reel or Post URL
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        Instagram Reel or Post URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('instagram')}
+                        className="text-[11px] font-bold text-[#b7004d] hover:text-[#9e003f] flex items-center gap-1 cursor-pointer transition hover:underline"
+                        title="Directly paste copied Instagram Reel link from clipboard"
+                      >
+                        <Clipboard className="w-3 h-3" />
+                        <span>Paste from Clipboard</span>
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <input
                         type="url"
@@ -1697,9 +1816,62 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Paste link to your brand reel or model shoot on Instagram to showcase styling and fabric flow.
-                    </p>
+
+                    {/* Direct Instagram Links & Tools */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handlePasteFromClipboard('instagram')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                      >
+                        <Clipboard className="w-3.5 h-3.5" />
+                        <span>1-Click Paste Clipboard</span>
+                      </button>
+
+                      <a
+                        href="https://www.instagram.com/reels/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-200 text-[#b7004d] text-xs font-bold transition cursor-pointer"
+                        title="Open Instagram Reels in a new tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Browse Reels on Instagram ↗</span>
+                      </a>
+
+                      <a
+                        href="https://www.instagram.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
+                        title="Open Instagram"
+                      >
+                        <span>Open Instagram ↗</span>
+                      </a>
+                    </div>
+
+                    {/* Sample Presets */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        Or Pick Sample Styling Reel:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: '✨ Kurti Styling Reel', url: 'https://www.instagram.com/reel/C7xyz123/' },
+                          { label: '💃 Saree Draping Demo', url: 'https://www.instagram.com/reel/C8abc456/' },
+                          { label: '🌟 Boutique Collection', url: 'https://www.instagram.com/reel/C9def789/' },
+                        ].map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => handleInstagramChange(preset.url)}
+                            className="px-2.5 py-1 rounded-lg bg-white hover:bg-pink-50 border border-slate-200 hover:border-pink-200 text-[11px] font-medium text-slate-700 hover:text-[#b7004d] transition cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Instagram Reel Preview Card */}
