@@ -7,16 +7,28 @@ const getUserId = (req) => {
   return req.user?.id || req.headers['x-user-id'] || req.query.userId || 'guest_customer';
 };
 
-const ensureProfile = async (userId) => {
+const ensureProfile = async (userId, incomingEmail = null, fullName = null, phone = null) => {
   if (!userId) return null;
   try {
+    if (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho')) {
+      const existing = await prisma.profile.findFirst({
+        where: { email: { equals: incomingEmail.toLowerCase().trim(), mode: 'insensitive' } }
+      });
+      if (existing) return existing;
+    }
+
+    const cleanEmail = (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho'))
+      ? incomingEmail.toLowerCase().trim()
+      : `${userId}@customer.meesho`;
+
     return await prisma.profile.upsert({
       where: { id: userId },
       update: {},
       create: {
         id: userId,
-        fullName: 'Customer',
-        email: `${userId}@customer.meesho`,
+        fullName: fullName || 'Customer',
+        email: cleanEmail,
+        phone: phone || null,
         role: 'CUSTOMER'
       }
     });
@@ -30,8 +42,7 @@ const ensureProfile = async (userId) => {
 
 export const createOrder = async (req, res) => {
   try {
-    const userId = getUserId(req);
-    await ensureProfile(userId);
+    let userId = getUserId(req);
 
     const {
       items, // array of { productId, quantity, size }
@@ -49,16 +60,33 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Shipping address is required' });
     }
 
-    // Map payment method to enum
-    let validPaymentMethod = 'COD';
-    const pmUpper = (paymentMethod || '').toUpperCase();
-    if (['COD', 'UPI', 'CARD', 'NETBANKING', 'WALLET'].includes(pmUpper)) {
-      validPaymentMethod = pmUpper;
-    }
-
     let parsedShippingAddress = typeof shippingAddress === 'string' ? JSON.parse(shippingAddress) : shippingAddress;
 
-    const incomingEmail = (req.body.customerEmail || req.headers['x-user-email'] || req.user?.email || parsedShippingAddress?.email || '').trim();
+    const incomingEmail = (req.body.customerEmail || req.headers['x-user-email'] || req.user?.email || parsedShippingAddress?.email || '').trim().toLowerCase();
+    const incomingPhone = (parsedShippingAddress?.phone || parsedShippingAddress?.mobileNumber || req.headers['x-user-phone'] || '').trim();
+
+    // If userId is unauthenticated/guest or customer_..., automatically link to real profile if email/phone matches
+    if (!req.user?.id || userId.startsWith('guest_') || userId.startsWith('customer_')) {
+      if (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho')) {
+        const existingUser = await prisma.profile.findFirst({
+          where: { email: { equals: incomingEmail, mode: 'insensitive' } },
+          orderBy: { createdAt: 'asc' }
+        });
+        if (existingUser) {
+          userId = existingUser.id;
+        }
+      } else if (incomingPhone && incomingPhone.length === 10) {
+        const existingUser = await prisma.profile.findFirst({
+          where: { phone: incomingPhone },
+          orderBy: { createdAt: 'asc' }
+        });
+        if (existingUser) {
+          userId = existingUser.id;
+        }
+      }
+    }
+
+    await ensureProfile(userId, incomingEmail, parsedShippingAddress?.name, incomingPhone);
 
     if (parsedShippingAddress) {
       const name = (parsedShippingAddress.name || parsedShippingAddress.fullName || '').trim();
@@ -345,11 +373,30 @@ export const createOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    const userId = getUserId(req);
+    let userId = getUserId(req);
     await ensureProfile(userId);
 
+    const userIds = [userId];
+    const profile = await prisma.profile.findUnique({ where: { id: userId } });
+
+    // Link orders across matching email or phone so customer never loses visibility
+    if (profile?.email && !profile.email.endsWith('@customer.meesho')) {
+      const peers = await prisma.profile.findMany({
+        where: { email: { equals: profile.email, mode: 'insensitive' } },
+        select: { id: true }
+      });
+      peers.forEach(p => { if (!userIds.includes(p.id)) userIds.push(p.id); });
+    }
+    if (profile?.phone) {
+      const peers = await prisma.profile.findMany({
+        where: { phone: profile.phone },
+        select: { id: true }
+      });
+      peers.forEach(p => { if (!userIds.includes(p.id)) userIds.push(p.id); });
+    }
+
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: { userId: { in: userIds } },
       include: {
         items: {
           include: {

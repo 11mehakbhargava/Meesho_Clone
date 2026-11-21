@@ -210,15 +210,22 @@ export default function UserLogin() {
         id: response.data?.user?.id || firebaseUser.uid,
         email: response.data?.user?.email || firebaseUser.email || cleanEmail,
         fullName: response.data?.user?.fullName || firebaseUser.displayName || cleanEmail.split('@')[0],
-        role: 'CUSTOMER',
+        role: response.data?.user?.role || 'CUSTOMER',
       };
 
       // 3. Save to Redux & Local storage customer session
       dispatch(loginSuccess(userData));
-      await loginCustomer({
+      const custLoginRes = await loginCustomer({
         email: userData.email,
         fullName: userData.fullName,
-      }).catch(() => { });
+      }).catch(() => null);
+
+      if (custLoginRes?.user) {
+        dispatch(loginSuccess({
+          ...userData,
+          ...custLoginRes.user
+        }));
+      }
 
       // 4. Redirect immediately without OTP
       navigate(redirectParam);

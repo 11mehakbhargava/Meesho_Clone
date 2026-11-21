@@ -11,7 +11,7 @@ export function getCustomerId() {
       if (stored) {
         const parsed = JSON.parse(stored);
         const candidate = parsed?.id || parsed?.uid;
-        if (candidate && !String(candidate).startsWith('affiliate_') && !String(candidate).startsWith('guest_')) {
+        if (candidate && !String(candidate).startsWith('affiliate_') && !String(candidate).startsWith('guest_') && !String(candidate).startsWith('customer_')) {
           return candidate;
         }
       }
