@@ -78,14 +78,7 @@ function DashboardLayoutContent({
       {/* 1. LEFT SIDEBAR */}
       <Sidebar>
         <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
-          <h1 
-            onClick={() => {
-              if (onTabChange) onTabChange('home');
-              else if (typeof window !== 'undefined') window.location.href = '/';
-            }}
-            className="text-xl font-black tracking-tight text-[#b7004d] truncate cursor-pointer hover:opacity-80 transition-opacity select-none"
-            title="Go to Home & Deals"
-          >
+          <h1 className="text-xl font-black tracking-tight text-[#b7004d] truncate">
             MSHOPPY <span className="text-[#ff7293] text-sm uppercase">{safeRoleName}</span>
           </h1>
         </SidebarHeader> 
