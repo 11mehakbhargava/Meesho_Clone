@@ -4,6 +4,10 @@ import prisma from '../../config/prisma.js';
 import supabase from '../../config/supabaseClient.js';
 import slugify from 'slugify';
 import { dispatchDeliveryOtpEmail } from '../order.controller.js';
+import {
+  sendOrderDispatchedEmail,
+  sendOrderOutForDeliveryEmail
+} from '../../utils/emailTemplates.js';
 import { getUploadDir } from '../../middlewares/upload.middleware.js';
 import { uploadFileToSupabase } from '../../services/supabaseStorage.service.js';
 import { generateOrderPdf } from '../../services/invoicePdf.service.js';
@@ -1470,10 +1474,16 @@ export const updateOrderStatus = async (req, res, next) => {
       };
     });
 
+    if (targetStatus === 'SHIPPED') {
+      sendOrderDispatchedEmail({ orderId: id })
+        .then((resDispatch) => console.log(`📦 [Supplier Order ${id}] Automated SHIPPED email sent to: ${resDispatch.sentTo} (AWB: ${resDispatch.awb})`))
+        .catch((err) => console.warn(`⚠️ [Supplier Order ${id}] Dispatch email notice:`, err.message));
+    }
+
     if (targetStatus === 'OUT_FOR_DELIVERY') {
-      dispatchDeliveryOtpEmail({ orderId: id, type: 'DELIVERY' })
-        .then((resOtp) => console.log(`🚚 [Supplier Order ${id}] OUT_FOR_DELIVERY OTP automatically emailed to: ${resOtp.sentTo}`))
-        .catch((err) => console.error(`⚠️ [Supplier Order ${id}] OTP email failed:`, err.message));
+      sendOrderOutForDeliveryEmail({ orderId: id })
+        .then((resOtp) => console.log(`🚚 [Supplier Order ${id}] OUT_FOR_DELIVERY OTP automatically emailed to: ${resOtp.sentTo} (OTP: ${resOtp.otp})`))
+        .catch((err) => console.warn(`⚠️ [Supplier Order ${id}] OTP email notice:`, err.message));
     }
 
     return res.status(200).json({

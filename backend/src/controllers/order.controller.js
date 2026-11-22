@@ -1,7 +1,11 @@
 import prisma from '../config/prisma.js';
 import transporter from '../config/emailTransporter.js';
 import { calculateCouponDiscount } from './coupon.controller.js';
-import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
+import {
+  sendOrderConfirmationEmail,
+  sendOrderDispatchedEmail,
+  sendOrderOutForDeliveryEmail
+} from '../utils/emailTemplates.js';
 
 const getUserId = (req) => {
   return req.user?.id || req.headers['x-user-id'] || req.query.userId || 'guest_customer';
@@ -614,6 +618,20 @@ export const updateOrderStatus = async (req, res) => {
       }
     }
 
+    // Auto-dispatch dispatch alert email if status is updated to SHIPPED
+    if (upperStatus === 'SHIPPED') {
+      sendOrderDispatchedEmail({ order: updated })
+        .then((res) => console.log(`📦 [Order ${id}] Automated SHIPPED email sent to: ${res.sentTo} (AWB: ${res.awb})`))
+        .catch((err) => console.warn(`⚠️ [Order ${id}] Automated SHIPPED email error:`, err.message));
+    }
+
+    // Auto-dispatch universal delivery verification OTP email if status is updated to OUT_FOR_DELIVERY
+    if (upperStatus === 'OUT_FOR_DELIVERY') {
+      sendOrderOutForDeliveryEmail({ order: updated })
+        .then((res) => console.log(`🚚 [Order ${id}] Automated OUT_FOR_DELIVERY OTP email sent to: ${res.sentTo} (OTP: ${res.otp})`))
+        .catch((err) => console.warn(`⚠️ [Order ${id}] Automated OUT_FOR_DELIVERY OTP email error:`, err.message));
+    }
+
     // Auto-credit ₹123 referral cashback to the referrer if this is the friend's 1st delivered order!
     if (upperStatus === 'DELIVERED') {
       try {
@@ -770,35 +788,20 @@ export const dispatchDeliveryOtpEmail = async ({
     };
   }
 
-  // Strict enforcement: DELIVERY OTP is only emailed when the order is OUT_FOR_DELIVERY and is PREPAID
-  if (!isPickup && orderDetails) {
-    const currentStatus = (orderDetails.orderStatus || '').toUpperCase();
-    if (currentStatus !== 'OUT_FOR_DELIVERY') {
-      console.log(`ℹ️ [OTP Email] Skipping DELIVERY OTP for Order ${orderId}: status is "${currentStatus}" (OTP only sent upon OUT_FOR_DELIVERY).`);
-      return {
-        success: false,
-        message: `Delivery OTP email is only dispatched when order is OUT_FOR_DELIVERY (current: ${currentStatus}).`,
-        sentTo: null,
-        otp: null
-      };
-    }
-
-    const isCod = (orderDetails.paymentMethod || '').toUpperCase() === 'COD';
-    if (isCod) {
-      console.log(`ℹ️ [OTP Email] Skipping DELIVERY OTP for Order ${orderId}: Order is COD (Cash on Delivery).`);
-      return {
-        success: false,
-        message: `Delivery OTP email is not dispatched for Cash on Delivery (COD) orders.`,
-        sentTo: null,
-        otp: null
-      };
-    }
+  // Universal Delivery Verification OTP: Applicable for BOTH Prepaid and COD orders!
+  if (!isPickup) {
+    return await sendOrderOutForDeliveryEmail({
+      order: orderDetails,
+      orderId,
+      otp: finalOtp,
+      customEmail: targetEmail,
+      recipientName: targetName,
+      slotLabel
+    });
   }
 
   console.log(`📨 [OTP Email] Sending ${type} OTP (${finalOtp}) to login email: ${targetEmail}`);
-  const subject = isPickup
-    ? `🚚 Mshoppy Return Pickup Alert: Rider arriving for pickup (OTP: ${finalOtp})`
-    : `🚚 Mshoppy Order Delivery Alert: Out for Delivery (OTP: ${finalOtp})`;
+  const subject = `🚚 Mshoppy Return Pickup Alert: Rider arriving for pickup (OTP: ${finalOtp})`;
 
   const itemTitle = orderDetails?.items?.[0]?.product?.title || 'Catalog Purchase';
 
@@ -876,6 +879,79 @@ export const sendOtpEmail = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to send OTP email',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Manual Admin / Operational trigger: Resend Order Dispatched (SHIPPED) Email
+ * POST /api/orders/:id/resend-dispatch-email
+ */
+export const resendDispatchEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customEmail, courierPartner, trackingNumber, trackingUrl, recipientName } = req.body;
+
+    const result = await sendOrderDispatchedEmail({
+      orderId: id,
+      courierPartner,
+      trackingNumber,
+      trackingUrl,
+      customEmail,
+      recipientName
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Dispatch alert email successfully sent to ${result.sentTo}`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error resending dispatch email:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to resend dispatch email',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Manual Admin / Operational trigger: Resend Out for Delivery OTP Email
+ * POST /api/orders/:id/resend-delivery-otp
+ */
+export const resendDeliveryOtpEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customEmail, otp, recipientName, slotLabel } = req.body;
+
+    const result = await sendOrderOutForDeliveryEmail({
+      orderId: id,
+      otp,
+      customEmail,
+      recipientName,
+      slotLabel
+    });
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Delivery OTP email successfully sent to ${result.sentTo} (OTP: ${result.otp})`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error resending delivery OTP email:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to resend delivery OTP email',
       error: error.message
     });
   }
