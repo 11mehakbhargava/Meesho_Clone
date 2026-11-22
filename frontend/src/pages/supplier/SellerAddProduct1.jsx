@@ -736,8 +736,7 @@ export default function SellerAddProduct1({ onNavigate, embedded = false, onNavi
     kycData?.isVerified ||
     kycData?.status === 'APPROVED' ||
     kycData?.kyc?.status === 'APPROVED' ||
-    profile?.tierLabel?.toLowerCase().includes('verified') ||
-    (profile?.gstin && profile?.bankDetails)
+    profile?.tierLabel?.toLowerCase().includes('verified')
   );
   const kycStatus = kycData?.status || kycData?.kyc?.status || (isKycVerified ? 'APPROVED' : 'NOT_SUBMITTED');
 

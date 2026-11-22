@@ -210,11 +210,6 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
 
       if (profRes.status === 'fulfilled' && profRes.value) {
         setProfile(profRes.value);
-      } else {
-        const fallbackSupplier = getCurrentSupplier();
-        if (fallbackSupplier) {
-          setProfile(fallbackSupplier);
-        }
       }
 
       if (kycRes.status === 'fulfilled' && kycRes.value) {
