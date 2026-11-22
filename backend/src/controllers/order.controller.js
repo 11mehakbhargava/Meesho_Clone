@@ -263,14 +263,6 @@ export const createOrder = async (req, res) => {
           include: { wallet: true }
         });
 
-        // Fallback for generic affiliate
-        if (!affiliateProfile && commissionAmount > 0) {
-          affiliateProfile = await prisma.profile.findFirst({
-            where: { role: 'RESELLER' },
-            include: { wallet: true }
-          });
-        }
-
         if (affiliateProfile && affiliateProfile.id !== userId) {
           // Record or link referral in PostgreSQL referrals table for Invite & Earn
           const existingRef = await prisma.referral.findFirst({
@@ -751,9 +743,18 @@ export const dispatchDeliveryOtpEmail = async ({
     }
   }
 
-  // Default to SMTP user for development/demo testing if dummy email
+  // Only send to valid real customer email address
   if (!targetEmail || targetEmail.endsWith('@customer.meesho')) {
-    targetEmail = email || process.env.SMTP_USER;
+    if (email && !email.endsWith('@customer.meesho')) {
+      targetEmail = email;
+    } else {
+      return {
+        success: false,
+        message: 'No valid customer email address available for OTP delivery.',
+        sentTo: null,
+        otp: null
+      };
+    }
   }
 
   const isPickup = (type || '').toUpperCase().includes('PICKUP') || (type || '').toUpperCase().includes('RETURN');

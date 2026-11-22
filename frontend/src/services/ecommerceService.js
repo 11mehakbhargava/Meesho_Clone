@@ -343,46 +343,53 @@ export function saveLocalCart(items, notify = true) {
   } catch (e) {}
 }
 
-// ── Cart API (Hybrid PostgreSQL with Resilient Local Fallback) ───
+// ── Cart API (100% PostgreSQL Database Driven for Authenticated Users) ───
 export async function getCart() {
-  try {
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/cart`, {
       headers: getAuthHeaders(),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && Array.isArray(data.items)) {
-        saveLocalCart(data.items, false);
-        return data;
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to fetch cart from server');
     }
-  } catch (error) {
-    console.warn('API getCart unreachable, using local storage fallback:', error);
+    const data = await res.json();
+    if (data && Array.isArray(data.items)) {
+      saveLocalCart(data.items, false);
+      return data;
+    }
+    return data;
   }
   return getLocalCart();
 }
 
 export async function addToCart(productId, quantity = 1, size = 'Free Size', productData = null) {
-  let apiSuccess = false;
-  let apiResult = null;
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
 
-  try {
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/cart`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ productId, quantity, size }),
     });
-    if (res.ok) {
-      apiResult = await res.json();
-      if (apiResult?.success) {
-        apiSuccess = true;
-      }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to add item to database cart');
     }
-  } catch (error) {
-    console.warn('API addToCart network issue, persisting in local cart:', error);
+
+    const apiResult = await res.json();
+    if (apiResult?.items && Array.isArray(apiResult.items)) {
+      saveLocalCart(apiResult.items);
+    }
+    return apiResult;
   }
 
-  // Always update local cart state so UI is instantly responsive & offline-safe
+  // Guest user mode (unauthenticated local cart)
   const local = getLocalCart();
   const items = [...local.items];
   const existingIdx = items.findIndex(
@@ -404,7 +411,7 @@ export async function addToCart(productId, quantity = 1, size = 'Free Size', pro
     }
   } else {
     items.unshift({
-      id: 'cart_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'guest_cart_' + Date.now(),
       productId,
       quantity: Number(quantity) || 1,
       size: size || 'Free Size',
@@ -414,11 +421,6 @@ export async function addToCart(productId, quantity = 1, size = 'Free Size', pro
   }
 
   saveLocalCart(items);
-
-  if (apiSuccess && apiResult) {
-    return apiResult;
-  }
-
   return {
     success: true,
     message: 'Product added to cart',
@@ -429,25 +431,26 @@ export async function addToCart(productId, quantity = 1, size = 'Free Size', pro
 }
 
 export async function updateCartItem(itemId, quantity, size) {
-  try {
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ quantity, size }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.success) {
-        const local = getLocalCart();
-        const items = local.items.map((i) =>
-          i.id === itemId || i.productId === itemId ? { ...i, quantity, size: size || i.size } : i
-        );
-        saveLocalCart(items);
-        return data;
-      }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update cart item in database');
     }
-  } catch (error) {
-    console.warn('API updateCartItem fallback to local:', error);
+
+    const data = await res.json();
+    if (data?.items && Array.isArray(data.items)) {
+      saveLocalCart(data.items);
+    }
+    return data;
   }
 
   const local = getLocalCart();
@@ -459,20 +462,25 @@ export async function updateCartItem(itemId, quantity, size) {
 }
 
 export async function removeFromCart(itemId) {
-  try {
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    if (res.ok) {
-      const data = await res.json();
-      const local = getLocalCart();
-      const items = local.items.filter((i) => i.id !== itemId && i.productId !== itemId);
-      saveLocalCart(items);
-      return data;
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to remove item from database cart');
     }
-  } catch (error) {
-    console.warn('API removeFromCart fallback to local:', error);
+
+    const data = await res.json();
+    const local = getLocalCart();
+    const items = local.items.filter((i) => i.id !== itemId && i.productId !== itemId);
+    saveLocalCart(items);
+    return data;
   }
 
   const local = getLocalCart();
@@ -482,16 +490,22 @@ export async function removeFromCart(itemId) {
 }
 
 export async function clearCart() {
-  try {
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/cart`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
     saveLocalCart([]);
-    if (res.ok) return await res.json();
-  } catch (error) {
-    console.warn('API clearCart fallback to local:', error);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to clear database cart');
+    }
+    return await res.json();
   }
+
   saveLocalCart([]);
   return { success: true, message: 'Cart cleared' };
 }
@@ -518,35 +532,50 @@ export function saveLocalWishlist(items, notify = true) {
   } catch (e) {}
 }
 
-// ── Wishlist API (Hybrid PostgreSQL with Resilient Sync) ─────────
+// ── Wishlist API (100% PostgreSQL Database Driven for Authenticated Users) ─────────
 export async function getWishlist() {
-  try {
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  if (isAuthenticated) {
     const res = await fetch(`${API_BASE_URL}/wishlist`, {
       headers: getAuthHeaders(),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && Array.isArray(data.data)) {
-        const local = getLocalWishlist();
-        const mergedMap = new Map();
-        data.data.forEach((item) => mergedMap.set(item.productId || item.id, item));
-        local.forEach((item) => {
-          const key = item.productId || item.id;
-          if (!mergedMap.has(key)) mergedMap.set(key, item);
-        });
-        const merged = Array.from(mergedMap.values());
-        saveLocalWishlist(merged, false);
-        return merged;
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to fetch wishlist from server');
     }
-  } catch (error) {
-    console.warn('API getWishlist unreachable, using local wishlist:', error);
+    const data = await res.json();
+    if (data && Array.isArray(data.data)) {
+      saveLocalWishlist(data.data, false);
+      return data.data;
+    }
+    return [];
   }
   return getLocalWishlist();
 }
 
 export async function toggleWishlist(productId, productData = null) {
   // 1. Optimistic update in local cache
+  const customerId = getCustomerId();
+  const isAuthenticated = customerId && !customerId.startsWith('guest_');
+
+  // 1. Authenticated User: Strictly Database Driven
+  if (isAuthenticated) {
+    const res = await fetch(`${API_BASE_URL}/wishlist/toggle`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ productId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update wishlist in database');
+    }
+    const data = await res.json();
+    return data;
+  }
+
+  // 2. Guest User Mode
   const local = getLocalWishlist();
   const existingIdx = local.findIndex(
     (item) => item.productId === productId || item.id === productId || item.product?.id === productId
@@ -565,7 +594,7 @@ export async function toggleWishlist(productId, productData = null) {
       } catch (e) {}
     }
     local.unshift({
-      id: 'wish_' + productId,
+      id: 'guest_wish_' + productId,
       productId,
       product: fullProd || { id: productId, title: 'Saved Item' },
       createdAt: new Date().toISOString(),
@@ -574,21 +603,6 @@ export async function toggleWishlist(productId, productData = null) {
   }
 
   saveLocalWishlist(local);
-
-  // 2. Synchronize to Database
-  try {
-    const res = await fetch(`${API_BASE_URL}/wishlist/toggle`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ productId }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data;
-    }
-  } catch (error) {
-    console.warn('API toggleWishlist fallback to local:', error);
-  }
 
   return {
     success: true,
