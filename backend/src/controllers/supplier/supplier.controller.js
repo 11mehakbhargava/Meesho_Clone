@@ -1585,9 +1585,29 @@ export const getSupplierSettlements = async (req, res, next) => {
 
     // Add withdrawal payout requests
     withdrawalTxns.forEach((t) => {
-      const isPaid = (Date.now() - new Date(t.createdAt).getTime()) > 24 * 60 * 60 * 1000;
-      const utrMatch = t.description?.match(/UTR:\s*([A-Za-z0-9]+)/i);
-      const utrNumber = utrMatch ? utrMatch[1] : `CMS${t.id.slice(0, 9).toUpperCase()}IMPS`;
+      const desc = t.description || '';
+      const d = desc.toLowerCase();
+      let status = 'PROCESSING';
+      let utrNumber = 'Awaiting Admin Approval';
+
+      if (d.includes('rejected') || t.type === 'reversed') {
+        status = 'REJECTED';
+        utrNumber = 'Rejected by Admin';
+      } else if (
+        d.includes('withdrawal paid') ||
+        d.includes('payout paid') ||
+        d.includes('status: paid') ||
+        (d.includes('paid') && d.includes('utr:')) ||
+        d.includes('completed')
+      ) {
+        status = 'PAID';
+        const utrMatch = desc.match(/UTR[:\s]+([A-Za-z0-9_-]+)/i);
+        utrNumber = utrMatch ? utrMatch[1] : 'UTR Confirmed';
+      }
+
+      const destMatch = desc.match(/(?:to|dest:)\s+([^|]+)/i);
+      const bankName = destMatch ? destMatch[1].trim() : (profile?.bankDetails?.bankName || 'Registered Bank Account');
+
       settlements.push({
         id: `PAYOUT-${t.id.slice(0, 8).toUpperCase()}`,
         date: new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -1596,9 +1616,9 @@ export const getSupplierSettlements = async (req, res, next) => {
         commissionRate: '0%',
         tdsAmount: 0,
         netAmount: t.amount,
-        status: isPaid ? 'PAID' : 'PROCESSING',
+        status,
         utrNumber,
-        bankName: profile?.bankDetails?.bankName || 'Registered Bank Account',
+        bankName,
         type: 'MANUAL_WITHDRAWAL',
       });
     });
@@ -2264,19 +2284,18 @@ export const requestSupplierPayout = async (req, res, next) => {
       });
     }
 
-    // 4. Atomic transaction to create payout withdrawal record
-    const utrRef = `CMS${Date.now().toString().slice(-8)}IMPS`;
+    // 4. Atomic transaction to create payout withdrawal record (Status: PENDING for Admin Review)
     const maskedAcc = `•••• ${String(bank.accountNumber).slice(-4)}`;
     const destinationStr = `${bank.bankName || 'Bank Account'} (${maskedAcc}, IFSC: ${bank.ifsc})`;
 
     const result = await prisma.$transaction(async (tx) => {
-      // Create debit record in WalletTransaction
+      // Create debit record in WalletTransaction with Status: PENDING (Admin approval required)
       const txn = await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
           amount: numAmount,
           type: 'debit',
-          description: `Payout Request to ${destinationStr} | UTR: ${utrRef} | Type: ${payoutType}`,
+          description: `Payout Request to ${destinationStr} | Status: PENDING | Type: ${payoutType}`,
         },
       });
 
@@ -2292,13 +2311,13 @@ export const requestSupplierPayout = async (req, res, next) => {
       await tx.notification.create({
         data: {
           userId: supplierId,
-          title: 'Payout Withdrawal Initiated! 🏦',
-          body: `Your payout request of ₹${numAmount.toLocaleString('en-IN')} has been initiated to ${destinationStr}. Reference: ${utrRef}`,
+          title: 'Payout Request Submitted for Admin Approval ⏳',
+          body: `Your payout request of ₹${numAmount.toLocaleString('en-IN')} has been submitted to Admin Panel for review. Payment will be disbursed to ${destinationStr} upon approval.`,
           type: 'earning',
           data: {
             txnId: txn.id,
             amount: numAmount,
-            utr: utrRef,
+            status: 'PENDING',
             bank: destinationStr,
           },
         },
@@ -2309,11 +2328,11 @@ export const requestSupplierPayout = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: `Payout request of ₹${numAmount.toLocaleString('en-IN')} initiated successfully to ${destinationStr}!`,
+      message: `Payout request of ₹${numAmount.toLocaleString('en-IN')} submitted to Admin Panel for approval. Funds will be disbursed to your bank account upon approval.`,
       data: {
         payoutId: result.id,
         amount: numAmount,
-        utrNumber: utrRef,
+        utrNumber: 'Awaiting Admin Approval',
         bankDetails: {
           bankName: bank.bankName,
           accountNumber: maskedAcc,
