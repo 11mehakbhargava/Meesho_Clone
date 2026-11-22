@@ -210,11 +210,6 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
 
       if (profRes.status === 'fulfilled' && profRes.value) {
         setProfile(profRes.value);
-      } else {
-        const fallbackSupplier = getCurrentSupplier();
-        if (fallbackSupplier) {
-          setProfile(fallbackSupplier);
-        }
       }
 
       if (kycRes.status === 'fulfilled' && kycRes.value) {
@@ -224,14 +219,11 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
           raw?.isVerified ||
           actualKyc?.status === 'APPROVED' ||
           raw?.status === 'APPROVED' ||
-          (raw?.profile?.gstin && raw?.profile?.bankDetails)
+          profRes.value?.profile?.tierLabel?.toLowerCase().includes('verified')
         );
-        const resolvedStatus = (
-          actualKyc?.status ||
-          raw?.status ||
-          (isVerified ? 'APPROVED' : null) ||
-          'PENDING'
-        ).toUpperCase();
+        const resolvedStatus = isVerified
+          ? 'APPROVED'
+          : (actualKyc?.status || raw?.status || 'NOT_SUBMITTED').toUpperCase();
 
         setKycData({
           ...(actualKyc && typeof actualKyc === 'object' ? actualKyc : {}),

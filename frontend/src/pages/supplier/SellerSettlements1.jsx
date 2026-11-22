@@ -75,19 +75,7 @@ export default function SellerSettlements1({ onNavigate, embedded = false, onNav
       if (financeRes.status === 'fulfilled' && financeRes.value) {
         setFinanceData(financeRes.value);
       } else {
-        // Fallback calculation if backend endpoint is unavailable
-        setFinanceData({
-          lifetimeSettled: 0,
-          escrowBalance: 0,
-          nextPayoutAmount: 0,
-          nextPayoutDate: 'Next Tuesday',
-          totalRevenue: 0,
-          totalDeductions: 0,
-          totalOrders: 0,
-          commissionRate: '0%',
-          tdsRate: '1%',
-          settlements: [],
-        });
+        setFinanceData(null);
       }
 
       if (profRes.status === 'fulfilled' && profRes.value) {
