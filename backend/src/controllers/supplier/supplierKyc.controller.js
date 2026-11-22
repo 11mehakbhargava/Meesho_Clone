@@ -83,8 +83,11 @@ export const getSupplierKyc = async (req, res, next) => {
       });
     } catch (_) {}
 
-    const isVerified = Boolean(kyc?.status === 'APPROVED');
-    const resolvedStatus = kyc?.status || 'NOT_SUBMITTED';
+    const isVerified = Boolean(
+      kyc?.status === 'APPROVED' ||
+      profile?.tierLabel?.toLowerCase().includes('verified')
+    );
+    const resolvedStatus = isVerified ? 'APPROVED' : (kyc?.status || 'NOT_SUBMITTED');
 
     return res.status(200).json({
       success: true,
@@ -231,12 +234,13 @@ export const submitSupplierKyc = async (req, res, next) => {
       });
 
       if (existingApp) {
+        const preserveApproved = existingApp.status === 'APPROVED';
         kycApplication = await prisma.kYCApplication.update({
           where: { id: existingApp.id },
           data: {
-            status: 'PENDING',
+            status: preserveApproved ? 'APPROVED' : 'PENDING',
             documents,
-            adminNotes: null,
+            adminNotes: preserveApproved ? existingApp.adminNotes : null,
           },
           include: {
             user: {

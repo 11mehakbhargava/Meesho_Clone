@@ -220,12 +220,15 @@ export default function SellerWebDashboard1({ onNavigate, onBack, initialTab }) 
       if (kycRes.status === 'fulfilled' && kycRes.value) {
         const raw = kycRes.value;
         const actualKyc = raw?.kyc || raw;
-        const resolvedStatus = (
-          actualKyc?.status ||
-          raw?.status ||
-          'NOT_SUBMITTED'
-        ).toUpperCase();
-        const isVerified = resolvedStatus === 'APPROVED';
+        const isVerified = Boolean(
+          raw?.isVerified ||
+          actualKyc?.status === 'APPROVED' ||
+          raw?.status === 'APPROVED' ||
+          profRes.value?.profile?.tierLabel?.toLowerCase().includes('verified')
+        );
+        const resolvedStatus = isVerified
+          ? 'APPROVED'
+          : (actualKyc?.status || raw?.status || 'NOT_SUBMITTED').toUpperCase();
 
         setKycData({
           ...(actualKyc && typeof actualKyc === 'object' ? actualKyc : {}),

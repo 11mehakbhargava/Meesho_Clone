@@ -48,10 +48,13 @@ export default function SupplierDashboardOverview({
   // Robust multi-source KYC status resolution
   const extractedStatus = (kycData?.status || kycData?.kyc?.status || profile?.kycStatus || '').toUpperCase();
   const rawKycStatus = (extractedStatus === 'UNDEFINED' || extractedStatus === 'NULL') ? '' : extractedStatus;
-  const isKycApproved = rawKycStatus === 'APPROVED';
-  const isKycPending = rawKycStatus === 'PENDING' || rawKycStatus === 'UNDER_REVIEW';
-  const isKycRejected = rawKycStatus === 'REJECTED';
-  const currentKycStatus = rawKycStatus || 'NOT_SUBMITTED';
+  const isKycApproved =
+    rawKycStatus === 'APPROVED' ||
+    kycData?.isVerified === true ||
+    Boolean(profile?.tierLabel?.toLowerCase().includes('verified'));
+  const isKycPending = !isKycApproved && (rawKycStatus === 'PENDING' || rawKycStatus === 'UNDER_REVIEW');
+  const isKycRejected = !isKycApproved && rawKycStatus === 'REJECTED';
+  const currentKycStatus = isKycApproved ? 'APPROVED' : (rawKycStatus || 'NOT_SUBMITTED');
 
   // Compute combined recent orders from stats or orders list
   const recentOrdersList =
