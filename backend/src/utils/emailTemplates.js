@@ -380,54 +380,28 @@ export const sendLoginOtpEmail = async ({ email, name, otp }) => {
 };
 
 /**
- * Asynchronously buffers product images and wraps them as inline CID attachments.
- * This completely bypasses Google Image Proxy, x-robots-tag restrictions, and ensures
- * product images render natively in Gmail, Outlook, iOS Mail, and Android Mail without breaking.
+ * Resolves an email-safe, globally CDN-cached image URL for all email templates.
+ * Bypasses Supabase's 'x-robots-tag: none' header by routing through wsrv.nl (Cloudflare edge)
+ * which strips robots restrictions, converts to clean 140x140 JPEG, and allows Google Image Proxy
+ * to crawl and cache seamlessly without requiring heavy/suspicious MIME attachments.
  */
-export const prepareOrderItemsWithInlineImages = async (items = []) => {
-  const attachments = [];
-  const safeFallbackUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+export const getEmailSafeImageUrl = (rawUrl) => {
+  const fallback = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return fallback;
+  }
+  const url = rawUrl.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return fallback;
+  }
 
-  const processedItems = await Promise.all(
-    (items || []).map(async (item, idx) => {
-      const product = item?.product || {};
-      const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
-      let finalImgSrc = safeFallbackUrl;
+  // Already safe public CDN
+  if (url.includes('images.unsplash.com')) {
+    return url;
+  }
 
-      if (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) {
-        try {
-          const res = await fetch(rawUrl, { signal: AbortSignal.timeout(6000) });
-          if (res.ok) {
-            const arrayBuf = await res.arrayBuffer();
-            const buf = Buffer.from(arrayBuf);
-            if (buf.length > 0) {
-              const cid = `product_thumb_${idx}_${Date.now()}`;
-              const contentType = res.headers.get('content-type') || 'image/jpeg';
-              const ext = contentType.includes('png') ? 'png' : 'jpg';
-
-              attachments.push({
-                filename: `product_${idx}.${ext}`,
-                content: buf,
-                contentType,
-                cid
-              });
-              finalImgSrc = `cid:${cid}`;
-            }
-          }
-        } catch (fetchErr) {
-          console.warn(`[Email Image] Failed to buffer product image for item #${idx}:`, fetchErr.message);
-          finalImgSrc = safeFallbackUrl;
-        }
-      }
-
-      return {
-        ...item,
-        resolvedImageSrc: finalImgSrc
-      };
-    })
-  );
-
-  return { processedItems, attachments };
+  // Route Supabase or custom storage URLs through wsrv.nl
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&h=140&fit=cover&output=jpg&q=85`;
 };
 
 /**
@@ -454,11 +428,8 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
   const itemsHtml = items.map((it) => {
     const product = it.product || {};
     const title = product.title || 'Item in Order';
-    let rawImage = it.resolvedImageSrc || (Array.isArray(product.images) && product.images[0]) || product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
-    let image = typeof rawImage === 'string' ? rawImage.trim() : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
-    if (!image.startsWith('cid:')) {
-      image = image.replace(/f_webp,?/g, '').replace(/([?&])(?:format|fm)=webp/gi, '$1fm=jpg');
-    }
+    const rawImage = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const image = getEmailSafeImageUrl(rawImage);
 
     const price = Number(it.price || product.price || 0).toLocaleString('en-IN');
     const qty = it.quantity || 1;
@@ -709,11 +680,8 @@ export const sendOrderConfirmationEmail = async ({ order, email, name, trackingU
 
     const { targetEmail, targetName } = await resolveCustomerEmailAndName(orderData, email, name);
 
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
     const html = getOrderConfirmationEmailHtml({
-      order: orderWithImages,
+      order: orderData,
       name: targetName || orderData?.user?.fullName || 'Valued Customer',
       trackingUrl,
     });
@@ -726,10 +694,9 @@ export const sendOrderConfirmationEmail = async ({ order, email, name, trackingU
       to: targetEmail,
       subject: `🎉 Order Confirmed! Your MShoppy Order #${shortId} is Placed`,
       html,
-      attachments
     });
 
-    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Attachments: ${attachments.length}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Message ID: ${info.messageId})`);
     return { success: true, messageId: info.messageId, sentTo: targetEmail };
   } catch (err) {
     console.error('❌ Error sending order confirmation email:', err.message);
@@ -816,9 +783,8 @@ export const getOrderDispatchedEmailHtml = ({
   const items = order?.items || [];
   const itemsHtml = items.map((item) => {
     const product = item.product || {};
-    const imgUrl = item.resolvedImageSrc || ((Array.isArray(product.images) && product.images[0])
-      ? product.images[0]
-      : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80');
+    const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const imgUrl = getEmailSafeImageUrl(rawUrl);
     const itemTotal = Number(item.price || 0) * Number(item.quantity || 1);
 
     return `
@@ -1013,11 +979,8 @@ export const sendOrderDispatchedEmail = async ({
     const resolvedAwb = trackingNumber || shipping.awb || shipping.trackingNumber || `AWB-${(targetOrderId || '').slice(0, 8).toUpperCase()}`;
     const resolvedTrackingUrl = trackingUrl || shipping.trackingUrl || getCourierTrackingUrl(resolvedCourier, resolvedAwb);
 
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
     const html = getOrderDispatchedEmailHtml({
-      order: orderWithImages,
+      order: orderData,
       courierPartner: resolvedCourier,
       trackingNumber: resolvedAwb,
       trackingUrl: resolvedTrackingUrl,
@@ -1032,10 +995,9 @@ export const sendOrderDispatchedEmail = async ({
       to: targetEmail,
       subject: `📦 Order Dispatched! Your MShoppy Order #${shortId} is on the way with ${resolvedCourier}`,
       html,
-      attachments
     });
 
-    console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Attachments: ${attachments.length}, Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
 
     return {
       success: true,
@@ -1081,7 +1043,8 @@ export const getOrderOutForDeliveryEmailHtml = ({
 
   const items = order?.items || [];
   const primaryItem = items[0]?.product?.title || 'Catalog Purchase';
-  const primaryThumb = items[0]?.resolvedImageSrc || ((Array.isArray(items[0]?.product?.images) && items[0]?.product?.images[0]) ? items[0]?.product?.images[0] : null);
+  const rawFirstImg = (Array.isArray(items[0]?.product?.images) && items[0]?.product?.images[0]) || items[0]?.product?.image || '';
+  const primaryThumb = rawFirstImg ? getEmailSafeImageUrl(rawFirstImg) : null;
   const otherItemsCount = items.length > 1 ? items.length - 1 : 0;
 
   return `<!DOCTYPE html>
@@ -1258,11 +1221,8 @@ export const sendOrderOutForDeliveryEmail = async ({
 
     const finalOtp = otp || generateOrderDeliveryOtp(targetOrderId, 'DELIVERY');
 
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
     const html = getOrderOutForDeliveryEmailHtml({
-      order: orderWithImages,
+      order: orderData,
       otp: finalOtp,
       customerName: targetName
     });
@@ -1275,10 +1235,9 @@ export const sendOrderOutForDeliveryEmail = async ({
       to: targetEmail,
       subject: `🚚 Out for Delivery! Your MShoppy Order #${shortId} is Arriving Today (OTP: ${finalOtp})`,
       html,
-      attachments
     });
 
-    console.log(`✅ [Out For Delivery Email] Sent to ${targetEmail} for Order #${targetOrderId} (Attachments: ${attachments.length}, OTP: ${finalOtp}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Out For Delivery Email] Sent to ${targetEmail} for Order #${targetOrderId} (OTP: ${finalOtp}, Message ID: ${info.messageId})`);
 
     return {
       success: true,
