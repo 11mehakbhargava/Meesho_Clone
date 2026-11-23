@@ -116,19 +116,23 @@ export async function getProducts(params = {}) {
   const cacheKey = `prods_${query.toString()}_meta_${Boolean(params.withMeta)}`;
   const cached = getCachedData(cacheKey);
 
-  // SWR: Return cached immediately (< 2ms) & revalidate in background
-  if (cached) {
+  // SWR: Return cached immediately (< 2ms) & revalidate in background (only if cache has actual products)
+  const hasCachedProducts = params.withMeta ? (cached?.products?.length > 0) : (cached?.length > 0);
+  if (cached && hasCachedProducts) {
     fetch(`${API_BASE_URL}/products?${query.toString()}`)
       .then(r => r.json())
       .then(json => {
-        const payload = params.withMeta ? {
-          products: json?.data || [],
-          total: json?.total || 0,
-          page: json?.page || Number(params.page || 1),
-          totalPages: json?.totalPages || 1,
-          hasMore: json?.hasMore ?? ((json?.data?.length || 0) === Number(params.limit || 24))
-        } : (json?.data || []);
-        setCachedData(cacheKey, payload);
+        const prods = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+        if (prods.length > 0) {
+          const payload = params.withMeta ? {
+            products: prods,
+            total: json?.total ?? prods.length,
+            page: json?.page || Number(params.page || 1),
+            totalPages: json?.totalPages || 1,
+            hasMore: json?.hasMore ?? (prods.length === Number(params.limit || 24))
+          } : prods;
+          setCachedData(cacheKey, payload);
+        }
       })
       .catch(() => {});
     return cached;
@@ -138,15 +142,18 @@ export async function getProducts(params = {}) {
     const res = await fetch(`${API_BASE_URL}/products?${query.toString()}`);
     const json = await res.json();
 
+    const prods = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
     const payload = params.withMeta ? {
-      products: json?.data || [],
-      total: json?.total || 0,
+      products: prods,
+      total: json?.total ?? prods.length,
       page: json?.page || Number(params.page || 1),
       totalPages: json?.totalPages || 1,
-      hasMore: json?.hasMore ?? ((json?.data?.length || 0) === Number(params.limit || 24))
-    } : (json?.data || []);
+      hasMore: json?.hasMore ?? (prods.length === Number(params.limit || 24))
+    } : prods;
 
-    setCachedData(cacheKey, payload);
+    if (prods.length > 0) {
+      setCachedData(cacheKey, payload);
+    }
     return payload;
   } catch (error) {
     console.error('Failed to fetch products from database:', error);

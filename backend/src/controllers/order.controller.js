@@ -13,6 +13,10 @@ const getUserId = (req) => {
 
 const ensureProfile = async (userId, incomingEmail = null, fullName = null, phone = null) => {
   if (!userId) return null;
+  const cleanEmail = (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho'))
+    ? incomingEmail.toLowerCase().trim()
+    : `${userId}@customer.meesho`;
+
   try {
     if (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho')) {
       const existing = await prisma.profile.findFirst({
@@ -20,10 +24,6 @@ const ensureProfile = async (userId, incomingEmail = null, fullName = null, phon
       });
       if (existing) return existing;
     }
-
-    const cleanEmail = (incomingEmail && incomingEmail.includes('@') && !incomingEmail.endsWith('@customer.meesho'))
-      ? incomingEmail.toLowerCase().trim()
-      : `${userId}@customer.meesho`;
 
     return await prisma.profile.upsert({
       where: { id: userId },
@@ -38,7 +38,21 @@ const ensureProfile = async (userId, incomingEmail = null, fullName = null, phon
     });
   } catch (err) {
     if (err.code === 'P2002') {
-      return await prisma.profile.findUnique({ where: { id: userId } });
+      try {
+        return await prisma.profile.upsert({
+          where: { id: userId },
+          update: {},
+          create: {
+            id: userId,
+            fullName: fullName || 'Customer',
+            email: `${userId}@customer.meesho`,
+            phone: phone || null,
+            role: 'CUSTOMER'
+          }
+        });
+      } catch (_) {
+        return await prisma.profile.findFirst({ where: { OR: [{ id: userId }, { email: cleanEmail }] } });
+      }
     }
     throw err;
   }
@@ -55,6 +69,17 @@ export const createOrder = async (req, res) => {
       couponCode,
       referralCode
     } = req.body;
+
+    // Validate and sanitize payment method to match Prisma PaymentMethod enum: COD, UPI, CARD, NETBANKING, WALLET
+    const rawMethod = (paymentMethod || 'COD').toString().toUpperCase().trim();
+    let validPaymentMethod = 'COD';
+    if (['COD', 'UPI', 'CARD', 'NETBANKING', 'WALLET'].includes(rawMethod)) {
+      validPaymentMethod = rawMethod;
+    } else if (rawMethod === 'ONLINE' || rawMethod === 'RAZORPAY') {
+      validPaymentMethod = 'UPI';
+    } else {
+      validPaymentMethod = 'COD';
+    }
 
     if (!items || !items.length) {
       return res.status(400).json({ success: false, message: 'Order items are required' });
