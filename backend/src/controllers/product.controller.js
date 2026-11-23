@@ -27,12 +27,7 @@ export const getProducts = async (req, res) => {
     const conditions = [
       { isDeleted: false }, // Soft delete filter: do not show discontinued/deleted products in live catalog
       { isActive: true }, // Only show active products (exclude under-review products)
-      {
-        OR: [
-          { category: { status: 'APPROVED' } },
-          { category: null }
-        ]
-      } // Category must be approved by admin before appearing in live catalog
+      { category: { status: 'APPROVED' } } // Category must be approved by admin before appearing in live catalog
     ];
 
     // Category filter - exact slug/name matching (prevents 'men' from loosely matching 'women-ethnic')
