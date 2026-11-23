@@ -275,6 +275,8 @@ export default function HomeUserCustomer() {
       minDiscount: null,
       mallOnly: false,
     });
+    setSelectedCategory("All");
+    setSelectedSubcat("All");
     setCuratedFilter(null);
   };
 
