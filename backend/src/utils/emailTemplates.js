@@ -380,6 +380,31 @@ export const sendLoginOtpEmail = async ({ email, name, otp }) => {
 };
 
 /**
+ * Resolves an email-safe, globally CDN-cached image URL for all email templates.
+ * Bypasses Supabase's 'x-robots-tag: none' header by routing through wsrv.nl (Cloudflare edge)
+ * which strips robots restrictions, converts to clean 140x140 JPEG, and allows Google Image Proxy
+ * to crawl and cache seamlessly without requiring heavy/suspicious MIME attachments.
+ */
+export const getEmailSafeImageUrl = (rawUrl) => {
+  const fallback = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return fallback;
+  }
+  const url = rawUrl.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return fallback;
+  }
+
+  // Already safe public CDN
+  if (url.includes('images.unsplash.com')) {
+    return url;
+  }
+
+  // Route Supabase or custom storage URLs through wsrv.nl
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&h=140&fit=cover&output=jpg&q=85`;
+};
+
+/**
  * Generate high-conversion, professional Meesho/MShoppy Order Confirmation HTML Email
  */
 export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
@@ -403,10 +428,8 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
   const itemsHtml = items.map((it) => {
     const product = it.product || {};
     const title = product.title || 'Item in Order';
-    let rawImage = (Array.isArray(product.images) && product.images[0]) || product.image || 'https://images.meesho.com/images/products/placeholder.png';
-    let image = typeof rawImage === 'string' ? rawImage.trim() : 'https://images.meesho.com/images/products/placeholder.png';
-    // Ensure email-safe JPEG image formats (Google Image Proxy rejects WebP with .jpg extensions)
-    image = image.replace(/f_webp,?/g, '').replace(/([?&])(?:format|fm)=webp/gi, '$1fm=jpg');
+    const rawImage = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const image = getEmailSafeImageUrl(rawImage);
 
     const price = Number(it.price || product.price || 0).toLocaleString('en-IN');
     const qty = it.quantity || 1;
@@ -577,128 +600,6 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
 };
 
 /**
- * Send branded Order Confirmation email via configured SMTP
- */
-export const sendOrderConfirmationEmail = async ({ order, email, name, trackingUrl }) => {
-  try {
-    let targetEmail = email;
-    let targetName = name;
-
-    // 1. Check passed email or order.user.email
-    if (!targetEmail || targetEmail.endsWith('@customer.meesho')) {
-      targetEmail = order?.user?.email;
-    }
-
-    // 2. Check shippingAddress
-    if ((!targetEmail || targetEmail.endsWith('@customer.meesho')) && order?.shippingAddress) {
-      try {
-        const addr = typeof order.shippingAddress === 'string'
-          ? JSON.parse(order.shippingAddress)
-          : order.shippingAddress;
-        if (addr?.email && !addr.email.endsWith('@customer.meesho')) targetEmail = addr.email;
-        if (addr?.name && !targetName) targetName = addr.name;
-      } catch (e) {}
-    }
-
-    // 3. Fallback to querying profile directly from database using order.userId
-    if ((!targetEmail || targetEmail.endsWith('@customer.meesho')) && order?.userId) {
-      try {
-        const profile = await prisma.profile.findUnique({
-          where: { id: order.userId },
-          select: { email: true, fullName: true }
-        });
-        if (profile?.email && !profile.email.endsWith('@customer.meesho')) {
-          targetEmail = profile.email;
-        }
-        if (profile?.fullName && !targetName) {
-          targetName = profile.fullName;
-        }
-      } catch (e) {
-        console.warn('Error retrieving profile for order email:', e.message);
-      }
-    }
-
-    // 4. Decode if email was encoded in dummy customer_..._gmail_com format
-    if (targetEmail && targetEmail.includes('@customer.meesho')) {
-      const match = targetEmail.match(/customer_(.+)@customer\.meesho/);
-      if (match && match[1]?.endsWith('_gmail_com')) {
-        targetEmail = match[1].replace(/_gmail_com$/, '@gmail.com');
-      }
-    }
-
-    if (!targetEmail || targetEmail.endsWith('@customer.meesho')) {
-      console.warn(`[Order Confirmation Email] Skipping: No real customer email available for Order #${order?.id} (userId: ${order?.userId})`);
-      return { success: false, message: 'No recipient email available' };
-    }
-
-    const html = getOrderConfirmationEmailHtml({
-      order,
-      name: targetName || order?.user?.fullName || 'Valued Customer',
-      trackingUrl,
-    });
-
-    const shortId = (order?.id || '').slice(0, 10).toUpperCase();
-    const sender = process.env.EMAIL_FROM || `"MShoppy Orders" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
-
-    const info = await transporter.sendMail({
-      from: sender,
-      to: targetEmail,
-      subject: `🎉 Order Confirmed! Your MShoppy Order #${shortId} is Placed`,
-      html,
-    });
-
-    console.log(`✅ Order confirmation email sent to ${targetEmail} for Order #${order?.id} (Message ID: ${info.messageId})`);
-    return { success: true, messageId: info.messageId, sentTo: targetEmail };
-  } catch (err) {
-    console.error('❌ Error sending order confirmation email:', err.message);
-    return { success: false, error: err.message };
-  }
-};
-
-/**
- * Universal tracking URL generator for major Indian logistics providers
- */
-export const getCourierTrackingUrl = (courier = '', awb = '') => {
-  if (!awb) return '';
-  const c = String(courier || '').toLowerCase();
-  const cleanAwb = String(awb).trim();
-
-  if (c.includes('delhivery')) {
-    return `https://www.delhivery.com/track/package/${cleanAwb}`;
-  }
-  if (c.includes('blue') || c.includes('bluedart')) {
-    return `https://www.bluedart.com/tracking?trackNumber=${cleanAwb}`;
-  }
-  if (c.includes('shadowfax')) {
-    return `https://tracker.shadowfax.in/#/track?awb=${cleanAwb}`;
-  }
-  if (c.includes('dtdc')) {
-    return `https://www.dtdc.in/tracking/tracking_results.asp?trType=awb_no&strAwbNo=${cleanAwb}`;
-  }
-  if (c.includes('xpress') || c.includes('xpressbees')) {
-    return `https://www.xpressbees.com/track?awb=${cleanAwb}`;
-  }
-  if (c.includes('ekart')) {
-    return `https://ekartlogistics.com/shipmenttrack/${cleanAwb}`;
-  }
-  if (c.includes('speed') || c.includes('post') || c.includes('india post')) {
-    return 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx';
-  }
-  return '';
-};
-
-/**
- * Deterministic 4-digit OTP generator for orders
- */
-export const generateOrderDeliveryOtp = (orderId, type = 'DELIVERY') => {
-  if (!orderId) return Math.floor(1000 + Math.random() * 9000);
-  const isPickup = (type || '').toUpperCase().includes('PICKUP') || (type || '').toUpperCase().includes('RETURN');
-  const multiplier = isPickup ? 41 : 33;
-  const seed = String(orderId).split('').reduce((acc, char) => (acc * multiplier + char.charCodeAt(0)) % 9000, 1000);
-  return Math.abs(seed) + 1000;
-};
-
-/**
  * Resolves customer email and recipient name cleanly from order data
  */
 export const resolveCustomerEmailAndName = async (order, customEmail, customName) => {
@@ -764,6 +665,89 @@ export const resolveCustomerEmailAndName = async (order, customEmail, customName
 };
 
 /**
+ * Send branded Order Confirmation email via configured SMTP
+ */
+export const sendOrderConfirmationEmail = async ({ order, email, name, trackingUrl }) => {
+  try {
+    let orderData = order;
+    if (orderData?.id && (!orderData.items || !orderData.items[0]?.product)) {
+      const full = await prisma.order.findUnique({
+        where: { id: orderData.id },
+        include: { items: { include: { product: true } }, user: true }
+      });
+      if (full) orderData = full;
+    }
+
+    const { targetEmail, targetName } = await resolveCustomerEmailAndName(orderData, email, name);
+
+    const html = getOrderConfirmationEmailHtml({
+      order: orderData,
+      name: targetName || orderData?.user?.fullName || 'Valued Customer',
+      trackingUrl,
+    });
+
+    const shortId = (orderData?.id || '').slice(0, 10).toUpperCase();
+    const sender = process.env.EMAIL_FROM || `"MShoppy Orders" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
+
+    const info = await transporter.sendMail({
+      from: sender,
+      to: targetEmail,
+      subject: `🎉 Order Confirmed! Your MShoppy Order #${shortId} is Placed`,
+      html,
+    });
+
+    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Message ID: ${info.messageId})`);
+    return { success: true, messageId: info.messageId, sentTo: targetEmail };
+  } catch (err) {
+    console.error('❌ Error sending order confirmation email:', err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Universal tracking URL generator for major Indian logistics providers
+ */
+export const getCourierTrackingUrl = (courier = '', awb = '') => {
+  if (!awb) return '';
+  const c = String(courier || '').toLowerCase();
+  const cleanAwb = String(awb).trim();
+
+  if (c.includes('delhivery')) {
+    return `https://www.delhivery.com/track/package/${cleanAwb}`;
+  }
+  if (c.includes('blue') || c.includes('bluedart')) {
+    return `https://www.bluedart.com/tracking?trackNumber=${cleanAwb}`;
+  }
+  if (c.includes('shadowfax')) {
+    return `https://tracker.shadowfax.in/#/track?awb=${cleanAwb}`;
+  }
+  if (c.includes('dtdc')) {
+    return `https://www.dtdc.in/tracking/tracking_results.asp?trType=awb_no&strAwbNo=${cleanAwb}`;
+  }
+  if (c.includes('xpress') || c.includes('xpressbees')) {
+    return `https://www.xpressbees.com/track?awb=${cleanAwb}`;
+  }
+  if (c.includes('ekart')) {
+    return `https://ekartlogistics.com/shipmenttrack/${cleanAwb}`;
+  }
+  if (c.includes('speed') || c.includes('post') || c.includes('india post')) {
+    return 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx';
+  }
+  return '';
+};
+
+/**
+ * Deterministic 4-digit OTP generator for orders
+ */
+export const generateOrderDeliveryOtp = (orderId, type = 'DELIVERY') => {
+  if (!orderId) return Math.floor(1000 + Math.random() * 9000);
+  const isPickup = (type || '').toUpperCase().includes('PICKUP') || (type || '').toUpperCase().includes('RETURN');
+  const multiplier = isPickup ? 41 : 33;
+  const seed = String(orderId).split('').reduce((acc, char) => (acc * multiplier + char.charCodeAt(0)) % 9000, 1000);
+  return Math.abs(seed) + 1000;
+};
+
+/**
  * Branded Order Dispatched (SHIPPED) HTML Email Template
  */
 export const getOrderDispatchedEmailHtml = ({
@@ -799,9 +783,8 @@ export const getOrderDispatchedEmailHtml = ({
   const items = order?.items || [];
   const itemsHtml = items.map((item) => {
     const product = item.product || {};
-    const imgUrl = (Array.isArray(product.images) && product.images[0])
-      ? product.images[0]
-      : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';
+    const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const imgUrl = getEmailSafeImageUrl(rawUrl);
     const itemTotal = Number(item.price || 0) * Number(item.quantity || 1);
 
     return `
@@ -958,7 +941,7 @@ export const sendOrderDispatchedEmail = async ({
     let orderData = order;
     const targetOrderId = orderData?.id || orderId;
 
-    if (!orderData && targetOrderId) {
+    if (targetOrderId && (!orderData || !orderData.items || !orderData.items[0]?.product)) {
       orderData = await prisma.order.findUnique({
         where: { id: targetOrderId },
         include: {
@@ -1011,7 +994,7 @@ export const sendOrderDispatchedEmail = async ({
       from: sender,
       to: targetEmail,
       subject: `📦 Order Dispatched! Your MShoppy Order #${shortId} is on the way with ${resolvedCourier}`,
-      html
+      html,
     });
 
     console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
@@ -1060,6 +1043,8 @@ export const getOrderOutForDeliveryEmailHtml = ({
 
   const items = order?.items || [];
   const primaryItem = items[0]?.product?.title || 'Catalog Purchase';
+  const rawFirstImg = (Array.isArray(items[0]?.product?.images) && items[0]?.product?.images[0]) || items[0]?.product?.image || '';
+  const primaryThumb = rawFirstImg ? getEmailSafeImageUrl(rawFirstImg) : null;
   const otherItemsCount = items.length > 1 ? items.length - 1 : 0;
 
   return `<!DOCTYPE html>
@@ -1152,12 +1137,23 @@ export const getOrderOutForDeliveryEmailHtml = ({
         <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 8px;">
           📦 Package Details
         </div>
-        <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">
-          ${primaryItem} ${otherItemsCount > 0 ? `<span style="font-size: 12px; color: #64748b; font-weight: normal;">(+${otherItemsCount} more item${otherItemsCount > 1 ? 's' : ''})</span>` : ''}
-        </div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 6px;">
-          <strong>Order ID:</strong> #${shortId} &bull; <strong>Delivery To:</strong> ${recipientName} (${addressDetails} ${pincode ? `- ${pincode}` : ''})
-        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            ${primaryThumb ? `
+            <td style="width: 52px; vertical-align: top; padding-right: 12px;">
+              <img src="${primaryThumb}" alt="${primaryItem}" width="48" height="48" style="border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; display: block;" />
+            </td>
+            ` : ''}
+            <td style="vertical-align: top;">
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">
+                ${primaryItem} ${otherItemsCount > 0 ? `<span style="font-size: 12px; color: #64748b; font-weight: normal;">(+${otherItemsCount} more item${otherItemsCount > 1 ? 's' : ''})</span>` : ''}
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                <strong>Order ID:</strong> #${shortId} &bull; <strong>Delivery To:</strong> ${recipientName} (${addressDetails} ${pincode ? `- ${pincode}` : ''})
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
 
       <!-- Critical Security Notice -->
@@ -1197,7 +1193,7 @@ export const sendOrderOutForDeliveryEmail = async ({
     let orderData = order;
     const targetOrderId = orderData?.id || orderId;
 
-    if (!orderData && targetOrderId) {
+    if (targetOrderId && (!orderData || !orderData.items || !orderData.items[0]?.product)) {
       orderData = await prisma.order.findUnique({
         where: { id: targetOrderId },
         include: {
@@ -1238,7 +1234,7 @@ export const sendOrderOutForDeliveryEmail = async ({
       from: sender,
       to: targetEmail,
       subject: `🚚 Out for Delivery! Your MShoppy Order #${shortId} is Arriving Today (OTP: ${finalOtp})`,
-      html
+      html,
     });
 
     console.log(`✅ [Out For Delivery Email] Sent to ${targetEmail} for Order #${targetOrderId} (OTP: ${finalOtp}, Message ID: ${info.messageId})`);
