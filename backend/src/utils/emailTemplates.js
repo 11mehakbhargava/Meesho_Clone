@@ -380,6 +380,57 @@ export const sendLoginOtpEmail = async ({ email, name, otp }) => {
 };
 
 /**
+ * Asynchronously buffers product images and wraps them as inline CID attachments.
+ * This completely bypasses Google Image Proxy, x-robots-tag restrictions, and ensures
+ * product images render natively in Gmail, Outlook, iOS Mail, and Android Mail without breaking.
+ */
+export const prepareOrderItemsWithInlineImages = async (items = []) => {
+  const attachments = [];
+  const safeFallbackUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+
+  const processedItems = await Promise.all(
+    (items || []).map(async (item, idx) => {
+      const product = item?.product || {};
+      const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+      let finalImgSrc = safeFallbackUrl;
+
+      if (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) {
+        try {
+          const res = await fetch(rawUrl, { signal: AbortSignal.timeout(6000) });
+          if (res.ok) {
+            const arrayBuf = await res.arrayBuffer();
+            const buf = Buffer.from(arrayBuf);
+            if (buf.length > 0) {
+              const cid = `product_thumb_${idx}_${Date.now()}`;
+              const contentType = res.headers.get('content-type') || 'image/jpeg';
+              const ext = contentType.includes('png') ? 'png' : 'jpg';
+
+              attachments.push({
+                filename: `product_${idx}.${ext}`,
+                content: buf,
+                contentType,
+                cid
+              });
+              finalImgSrc = `cid:${cid}`;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn(`[Email Image] Failed to buffer product image for item #${idx}:`, fetchErr.message);
+          finalImgSrc = safeFallbackUrl;
+        }
+      }
+
+      return {
+        ...item,
+        resolvedImageSrc: finalImgSrc
+      };
+    })
+  );
+
+  return { processedItems, attachments };
+};
+
+/**
  * Generate high-conversion, professional Meesho/MShoppy Order Confirmation HTML Email
  */
 export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
@@ -403,10 +454,11 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
   const itemsHtml = items.map((it) => {
     const product = it.product || {};
     const title = product.title || 'Item in Order';
-    let rawImage = (Array.isArray(product.images) && product.images[0]) || product.image || 'https://images.meesho.com/images/products/placeholder.png';
-    let image = typeof rawImage === 'string' ? rawImage.trim() : 'https://images.meesho.com/images/products/placeholder.png';
-    // Ensure email-safe JPEG image formats (Google Image Proxy rejects WebP with .jpg extensions)
-    image = image.replace(/f_webp,?/g, '').replace(/([?&])(?:format|fm)=webp/gi, '$1fm=jpg');
+    let rawImage = it.resolvedImageSrc || (Array.isArray(product.images) && product.images[0]) || product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+    let image = typeof rawImage === 'string' ? rawImage.trim() : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+    if (!image.startsWith('cid:')) {
+      image = image.replace(/f_webp,?/g, '').replace(/([?&])(?:format|fm)=webp/gi, '$1fm=jpg');
+    }
 
     const price = Number(it.price || product.price || 0).toLocaleString('en-IN');
     const qty = it.quantity || 1;
@@ -646,15 +698,27 @@ export const resolveCustomerEmailAndName = async (order, customEmail, customName
  */
 export const sendOrderConfirmationEmail = async ({ order, email, name, trackingUrl }) => {
   try {
-    const { targetEmail, targetName } = await resolveCustomerEmailAndName(order, email, name);
+    let orderData = order;
+    if (orderData?.id && (!orderData.items || !orderData.items[0]?.product)) {
+      const full = await prisma.order.findUnique({
+        where: { id: orderData.id },
+        include: { items: { include: { product: true } }, user: true }
+      });
+      if (full) orderData = full;
+    }
+
+    const { targetEmail, targetName } = await resolveCustomerEmailAndName(orderData, email, name);
+
+    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
+    const orderWithImages = { ...orderData, items: processedItems };
 
     const html = getOrderConfirmationEmailHtml({
-      order,
-      name: targetName || order?.user?.fullName || 'Valued Customer',
+      order: orderWithImages,
+      name: targetName || orderData?.user?.fullName || 'Valued Customer',
       trackingUrl,
     });
 
-    const shortId = (order?.id || '').slice(0, 10).toUpperCase();
+    const shortId = (orderData?.id || '').slice(0, 10).toUpperCase();
     const sender = process.env.EMAIL_FROM || `"MShoppy Orders" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
 
     const info = await transporter.sendMail({
@@ -662,9 +726,10 @@ export const sendOrderConfirmationEmail = async ({ order, email, name, trackingU
       to: targetEmail,
       subject: `🎉 Order Confirmed! Your MShoppy Order #${shortId} is Placed`,
       html,
+      attachments
     });
 
-    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${order?.id} (Message ID: ${info.messageId})`);
+    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Attachments: ${attachments.length}, Message ID: ${info.messageId})`);
     return { success: true, messageId: info.messageId, sentTo: targetEmail };
   } catch (err) {
     console.error('❌ Error sending order confirmation email:', err.message);
@@ -751,9 +816,9 @@ export const getOrderDispatchedEmailHtml = ({
   const items = order?.items || [];
   const itemsHtml = items.map((item) => {
     const product = item.product || {};
-    const imgUrl = (Array.isArray(product.images) && product.images[0])
+    const imgUrl = item.resolvedImageSrc || ((Array.isArray(product.images) && product.images[0])
       ? product.images[0]
-      : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';
+      : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80');
     const itemTotal = Number(item.price || 0) * Number(item.quantity || 1);
 
     return `
@@ -910,7 +975,7 @@ export const sendOrderDispatchedEmail = async ({
     let orderData = order;
     const targetOrderId = orderData?.id || orderId;
 
-    if (!orderData && targetOrderId) {
+    if (targetOrderId && (!orderData || !orderData.items || !orderData.items[0]?.product)) {
       orderData = await prisma.order.findUnique({
         where: { id: targetOrderId },
         include: {
@@ -948,8 +1013,11 @@ export const sendOrderDispatchedEmail = async ({
     const resolvedAwb = trackingNumber || shipping.awb || shipping.trackingNumber || `AWB-${(targetOrderId || '').slice(0, 8).toUpperCase()}`;
     const resolvedTrackingUrl = trackingUrl || shipping.trackingUrl || getCourierTrackingUrl(resolvedCourier, resolvedAwb);
 
+    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
+    const orderWithImages = { ...orderData, items: processedItems };
+
     const html = getOrderDispatchedEmailHtml({
-      order: orderData,
+      order: orderWithImages,
       courierPartner: resolvedCourier,
       trackingNumber: resolvedAwb,
       trackingUrl: resolvedTrackingUrl,
@@ -963,10 +1031,11 @@ export const sendOrderDispatchedEmail = async ({
       from: sender,
       to: targetEmail,
       subject: `📦 Order Dispatched! Your MShoppy Order #${shortId} is on the way with ${resolvedCourier}`,
-      html
+      html,
+      attachments
     });
 
-    console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Attachments: ${attachments.length}, Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
 
     return {
       success: true,
@@ -1012,6 +1081,7 @@ export const getOrderOutForDeliveryEmailHtml = ({
 
   const items = order?.items || [];
   const primaryItem = items[0]?.product?.title || 'Catalog Purchase';
+  const primaryThumb = items[0]?.resolvedImageSrc || ((Array.isArray(items[0]?.product?.images) && items[0]?.product?.images[0]) ? items[0]?.product?.images[0] : null);
   const otherItemsCount = items.length > 1 ? items.length - 1 : 0;
 
   return `<!DOCTYPE html>
@@ -1104,12 +1174,23 @@ export const getOrderOutForDeliveryEmailHtml = ({
         <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 8px;">
           📦 Package Details
         </div>
-        <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">
-          ${primaryItem} ${otherItemsCount > 0 ? `<span style="font-size: 12px; color: #64748b; font-weight: normal;">(+${otherItemsCount} more item${otherItemsCount > 1 ? 's' : ''})</span>` : ''}
-        </div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 6px;">
-          <strong>Order ID:</strong> #${shortId} &bull; <strong>Delivery To:</strong> ${recipientName} (${addressDetails} ${pincode ? `- ${pincode}` : ''})
-        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            ${primaryThumb ? `
+            <td style="width: 52px; vertical-align: top; padding-right: 12px;">
+              <img src="${primaryThumb}" alt="${primaryItem}" width="48" height="48" style="border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; display: block;" />
+            </td>
+            ` : ''}
+            <td style="vertical-align: top;">
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a;">
+                ${primaryItem} ${otherItemsCount > 0 ? `<span style="font-size: 12px; color: #64748b; font-weight: normal;">(+${otherItemsCount} more item${otherItemsCount > 1 ? 's' : ''})</span>` : ''}
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                <strong>Order ID:</strong> #${shortId} &bull; <strong>Delivery To:</strong> ${recipientName} (${addressDetails} ${pincode ? `- ${pincode}` : ''})
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
 
       <!-- Critical Security Notice -->
@@ -1149,7 +1230,7 @@ export const sendOrderOutForDeliveryEmail = async ({
     let orderData = order;
     const targetOrderId = orderData?.id || orderId;
 
-    if (!orderData && targetOrderId) {
+    if (targetOrderId && (!orderData || !orderData.items || !orderData.items[0]?.product)) {
       orderData = await prisma.order.findUnique({
         where: { id: targetOrderId },
         include: {
@@ -1177,8 +1258,11 @@ export const sendOrderOutForDeliveryEmail = async ({
 
     const finalOtp = otp || generateOrderDeliveryOtp(targetOrderId, 'DELIVERY');
 
+    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
+    const orderWithImages = { ...orderData, items: processedItems };
+
     const html = getOrderOutForDeliveryEmailHtml({
-      order: orderData,
+      order: orderWithImages,
       otp: finalOtp,
       customerName: targetName
     });
@@ -1190,10 +1274,11 @@ export const sendOrderOutForDeliveryEmail = async ({
       from: sender,
       to: targetEmail,
       subject: `🚚 Out for Delivery! Your MShoppy Order #${shortId} is Arriving Today (OTP: ${finalOtp})`,
-      html
+      html,
+      attachments
     });
 
-    console.log(`✅ [Out For Delivery Email] Sent to ${targetEmail} for Order #${targetOrderId} (OTP: ${finalOtp}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Out For Delivery Email] Sent to ${targetEmail} for Order #${targetOrderId} (Attachments: ${attachments.length}, OTP: ${finalOtp}, Message ID: ${info.messageId})`);
 
     return {
       success: true,
