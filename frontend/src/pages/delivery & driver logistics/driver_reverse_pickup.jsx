@@ -27,7 +27,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
     orderId: 'ORD-998241',
     taskId: 'RET-TSK-8821',
     customerName: 'Priya Sharma',
-    customerPhone: '+91 98765 XXXXX (Masked)',
+    customerPhone: '+91 98765 43210',
     itemTitle: 'Kanjivaram Soft Silk Woven Saree with Blouse Piece',
     itemColor: 'Magenta & Gold',
     itemSize: 'Free Size',
@@ -342,11 +342,10 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex gap-2 pt-2 border-t border-slate-100">
             <button
-              onClick={() => triggerToast('Connecting customer via Secure Bridge (Number Masked)... 📞')}
+              onClick={() => triggerToast('Calling customer Priya (+91 98765 43210)... 📞')}
               className="flex-1 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors border border-emerald-200/60"
-              title="Encrypted Virtual Call Bridge"
             >
-              <span>🛡️ Secure Call (Masked)</span>
+              <span>📞 Call Customer</span>
             </button>
             <button
               onClick={() => triggerToast('Opening Google Maps navigation to customer address... 🗺️')}
@@ -828,7 +827,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex gap-2">
             <button
-              onClick={() => triggerToast('OTP resent to customer registered phone (Masked) 📨')}
+              onClick={() => triggerToast('OTP resent to customer (+91 98765 43210) 📨')}
               className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
             >
               Resend OTP

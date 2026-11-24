@@ -47,7 +47,7 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
   };
 
   const handleResendCustomerSms = () => {
-    triggerToast('SMS Delivery OTP dispatched to customer (+91 98765 XXXXX) 📱');
+    triggerToast('SMS Delivery OTP dispatched to customer (+91 98765 43210) 📱');
     setOtpError('');
   };
 
@@ -232,12 +232,11 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
               {/* Quick Communication Actions */}
               <div className="grid grid-cols-2 gap-2.5 pt-1">
                 <button
-                  onClick={() => triggerToast('Connecting customer via Secure Bridge (Number Masked)... 📞')}
+                  onClick={() => triggerToast('Calling customer Ananya (+91 98765 43210)... 📞')}
                   className="py-3 bg-slate-100 hover:bg-slate-200 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  title="Virtual Call Bridge (Customer phone protected)"
                 >
-                  <span className="material-symbols-outlined text-base text-[#b90041]">shield</span>
-                  <span>Secure Call</span>
+                  <span className="material-symbols-outlined text-base text-[#b90041]">call</span>
+                  <span>Call Customer</span>
                 </button>
                 <button
                   onClick={() => onNavigate('order_driver')}
