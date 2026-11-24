@@ -47,14 +47,6 @@ export const resellerLogin = async (req, res) => {
       });
     }
 
-    // Default dev OTP is 123456 or any 6-digit OTP in non-prod
-    if (otp && otp.length === 6 && otp !== '123456' && process.env.NODE_ENV === 'production') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP. Please check and try again.',
-      });
-    }
-
     const userId = `reseller_${cleanPhone}`;
 
     // Database lookup or create in PostgreSQL
@@ -201,14 +193,6 @@ export const customerLogin = async (req, res) => {
       userId = `customer_${cleanPhone}`;
     } else {
       userId = `customer_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`;
-    }
-
-    // Default dev OTP is 123456 (or any 4/6-digit in development)
-    if (otp && otp.length >= 4 && otp !== '123456' && otp !== '1234' && process.env.NODE_ENV === 'production') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid OTP. Please check and try again.',
-      });
     }
 
     // Query directly in PostgreSQL Profile table - prioritizing real user accounts over ghost accounts
@@ -438,7 +422,7 @@ export const affiliateLogin = async (req, res) => {
         data: {
           id: userId,
           phone: cleanPhone || null,
-          email: email ? email.toLowerCase() : (cleanPhone ? `${cleanPhone}@affiliate.meesho` : null),
+          email: email ? email.toLowerCase().trim() : null,
           fullName: fullName || `Affiliate Partner ${cleanPhone ? `+91 ${cleanPhone.slice(-4)}` : ''}`.trim(),
           role: 'CUSTOMER',
           avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
