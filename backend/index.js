@@ -53,9 +53,6 @@ app.use(cors({
     'x-reseller-id',
     'x-user-phone',
     'x-user-email',
-    'x-driver-id',
-    'x-driver-phone',
-    'x-driver-email',
     'x-requested-with',
     'Accept',
     'Origin'

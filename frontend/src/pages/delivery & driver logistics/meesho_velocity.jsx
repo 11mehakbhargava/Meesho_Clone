@@ -18,7 +18,7 @@ export default function MeeshoVelocity({ onNavigate = () => {}, onBack }) {
       zone: 'Koramangala Sector 4, Bengaluru',
       status: 'Express Dispatch',
       timeRemaining: '14 mins',
-      rider: 'Fleet Rider #882',
+      rider: 'Vikram S. (Rider #882)',
       speed: '34 km/h',
       itemsCount: '3 items',
       priority: 'Ultra High',
@@ -233,11 +233,10 @@ export default function MeeshoVelocity({ onNavigate = () => {}, onBack }) {
               </div>
 
               <div className="relative h-56 rounded-2xl overflow-hidden shadow-xs">
-                <iframe
-                  title="Demand Heatmap Street Canvas"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=77.54,12.91,77.66,13.01&layer=mapnik&marker=12.9716,77.5946"
-                  className="w-full h-full border-0 pointer-events-none filter contrast-105"
-                  loading="lazy"
+                <img
+                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1000&auto=format&fit=crop&q=80"
+                  alt="Demand Heatmap"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-indigo-900/30 backdrop-blur-[1px]" />
                 <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md p-3 rounded-xl text-xs font-bold text-indigo-900 shadow-lg flex items-center justify-between">

@@ -1,123 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
-import { fetchDriverEarnings, fetchDriverKycStatus } from '../../services/driverService';
 
 export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) {
-  const [earnings, setEarnings] = useState({
-    totalEarnings: 0,
-    withdrawableBalance: 0,
-    totalDrops: 0,
-    basePayout: 0,
-    distanceBonus: 0,
-    weeklySummary: []
-  });
-  const [loading, setLoading] = useState(true);
-  const [bankInfo, setBankInfo] = useState({
-    bankName: 'Pending Bank Verification',
-    accountNumber: '',
-    ifscCode: ''
-  });
+  const [balance, setBalance] = useState(12450.5);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
-  // Transfer Modal & State
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [transferSuccess, setTransferSuccess] = useState(null);
-  const [settlementHistory, setSettlementHistory] = useState(() => {
-    try {
-      const stored = localStorage.getItem('mshoppy_driver_settlements');
-      return stored ? JSON.parse(stored) : [];
-    } catch (_) {
-      return [];
-    }
-  });
-
-  const loadEarnings = async () => {
-    setLoading(true);
-    try {
-      const [earningsData, kycData] = await Promise.all([
-        fetchDriverEarnings().catch(() => null),
-        fetchDriverKycStatus().catch(() => null)
-      ]);
-
-      if (earningsData) {
-        setEarnings(earningsData);
-      }
-      if (kycData?.documents?.bankDetails?.bankName) {
-        setBankInfo({
-          bankName: kycData.documents.bankDetails.bankName,
-          accountNumber: kycData.documents.bankDetails.accountNumber || '',
-          ifscCode: kycData.documents.bankDetails.ifscCode || ''
-        });
-      }
-    } catch (err) {
-      console.warn('Could not load driver earnings:', err);
-    } finally {
-      setLoading(false);
-    }
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2500);
   };
 
-  useEffect(() => {
-    loadEarnings();
-  }, []);
-
-  const handleConfirmTransfer = () => {
-    if (earnings.totalEarnings <= 0) return;
-    setIsTransferring(true);
-
-    setTimeout(() => {
-      const transferAmount = earnings.totalEarnings;
-      const newUtr = `IMPS${Date.now().toString().slice(-9)}`;
-      const nowStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-
-      const newRecord = {
-        id: `SET-${Date.now().toString().slice(-4)}`,
-        date: `Today, ${nowStr}`,
-        amount: transferAmount,
-        bank: bankInfo.accountNumber ? `${bankInfo.bankName} (•• ${bankInfo.accountNumber.slice(-4)})` : bankInfo.bankName,
-        status: 'Settled',
-        utr: newUtr
-      };
-
-      setSettlementHistory((prev) => {
-        const updated = [newRecord, ...prev];
-        try {
-          localStorage.setItem('mshoppy_driver_settlements', JSON.stringify(updated));
-        } catch (_) {}
-        return updated;
-      });
-
-      // Deduct balance
-      setEarnings((prev) => ({
-        ...prev,
-        totalEarnings: 0,
-        withdrawableBalance: 0
-      }));
-
-      setTransferSuccess({
-        amount: transferAmount,
-        utr: newUtr,
-        bank: bankInfo.accountNumber ? `${bankInfo.bankName} (•••• ${bankInfo.accountNumber.slice(-4)})` : bankInfo.bankName
-      });
-      setIsTransferring(false);
-    }, 1200);
-  };
-
-  const weeklyData = (earnings.weeklySummary && earnings.weeklySummary.length > 0)
-    ? earnings.weeklySummary.map((w, idx) => ({
-        day: w.day.toUpperCase(),
-        height: `${Math.min(100, Math.max(25, (w.amount / (earnings.totalEarnings || 100)) * 100))}%`,
-        amount: `₹${w.amount}`,
-        peak: idx === 6
-      }))
-    : [
-        { day: 'MON', height: '25%', amount: '₹0' },
-        { day: 'TUE', height: '25%', amount: '₹0' },
-        { day: 'WED', height: '25%', amount: '₹0' },
-        { day: 'THU', height: '25%', amount: '₹0' },
-        { day: 'FRI', height: '25%', amount: '₹0' },
-        { day: 'SAT', height: '25%', amount: '₹0' },
-        { day: 'SUN', height: '60%', amount: `₹${earnings.totalEarnings}`, peak: true },
-      ];
+  const weeklyData = [
+    { day: 'MON', height: '45%', amount: '₹840' },
+    { day: 'TUE', height: '65%', amount: '₹1,210' },
+    { day: 'WED', height: '55%', amount: '₹980' },
+    { day: 'THU', height: '95%', amount: '₹1,850', peak: true },
+    { day: 'FRI', height: '75%', amount: '₹1,420' },
+    { day: 'SAT', height: '50%', amount: '₹890' },
+    { day: 'SUN', height: '35%', amount: '₹620' },
+  ];
 
   return (
     <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen w-full max-w-full overflow-x-hidden pb-32 antialiased selection:bg-pink-100 selection:text-pink-600">
@@ -140,281 +43,298 @@ export default function DriverEarningsMobile({ onNavigate = () => {}, onBack }) 
                 Driver Earnings &amp; Wallet
               </h1>
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap truncate block">
-                SwiftFleet Direct Bank Settlement
+                Partner ID: MP8829 • Payouts Hub
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('delivery_history')}
-              className="px-3.5 py-1.5 rounded-full bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs cursor-pointer transition-colors"
+              className="text-[11px] sm:text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full cursor-pointer transition-colors whitespace-nowrap"
             >
-              History
+              <span className="hidden sm:inline">Trip </span>Logs 📋
+            </button>
+            <button
+              onClick={() => triggerToast('Wallet synchronized with bank')}
+              className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full text-slate-600 cursor-pointer shrink-0"
+              title="Notifications"
+            >
+              <span className="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Wallet Hero, Weekly Chart, Transactions (8 cols) */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Hero Section: Total Balance */}
+            <section className="relative overflow-hidden bg-gradient-to-br from-[#b90041] to-[#df2457] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-pink-500/20">
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                <div>
+                  <p className="text-pink-100 font-bold text-xs uppercase tracking-widest mb-1">
+                    Available Wallet Balance
+                  </p>
+                  <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-2">
+                    ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </h2>
+                  <div className="flex items-center gap-1.5 text-pink-100 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full w-fit text-xs font-bold">
+                    <span className="material-symbols-outlined text-sm">trending_up</span>
+                    <span>+12% vs last week</span>
+                  </div>
+                </div>
 
-        {/* Transfer Success Notice Banner */}
-        {transferSuccess && (
-          <section className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-5 shadow-sm animate-in fade-in flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <span className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl font-bold shrink-0">
-                ✓
-              </span>
-              <div>
-                <h4 className="font-black text-sm text-emerald-950">
-                  Bank Settlement Completed!
-                </h4>
-                <p className="text-xs text-emerald-800 font-medium mt-0.5">
-                  ₹{transferSuccess.amount.toFixed(2)} transferred to {transferSuccess.bank} via IMPS.
-                </p>
-                <p className="text-[11px] text-emerald-700 font-mono mt-1">
-                  Bank Ref (UTR): {transferSuccess.utr}
-                </p>
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    onClick={() => onNavigate('withdraw-earnings')}
+                    className="bg-white text-[#b90041] hover:bg-pink-50 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-lg">account_balance</span>
+                    <span>Withdraw to Bank</span>
+                  </button>
+                  <button
+                    onClick={() => onNavigate('available_tasks')}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-lg">add_task</span>
+                    <span>Earn More</span>
+                  </button>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={() => setTransferSuccess(null)}
-              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 p-1 cursor-pointer"
-            >
-              ✕
-            </button>
-          </section>
-        )}
+            </section>
 
-        {/* Main Wallet Balance Card */}
-        <section className="bg-gradient-to-br from-[#b90041] via-[#d61c50] to-[#990036] text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-pink-500/20 relative overflow-hidden">
-          <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-            <div>
-              <p className="text-pink-100 text-xs font-bold uppercase tracking-wider mb-1">
-                Withdrawable Driver Balance
-              </p>
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
-                ₹{earnings.totalEarnings.toFixed(2)}
-              </h2>
-              <p className="text-pink-100 text-xs mt-2 flex items-center gap-1 font-medium">
-                <span className="material-symbols-outlined text-sm">verified</span>
-                <span>Auto-settlement to verified bank account via IMPS/UPI</span>
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setTransferSuccess(null);
-                setShowTransferModal(true);
-              }}
-              disabled={earnings.totalEarnings <= 0}
-              className={`px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg ${
-                earnings.totalEarnings > 0
-                  ? 'bg-white text-[#b90041] hover:bg-pink-50 cursor-pointer active:scale-95'
-                  : 'bg-white/40 text-white/70 cursor-not-allowed'
-              }`}
-            >
-              Transfer to Bank ➔
-            </button>
-          </div>
-        </section>
-
-        {/* 3-Column Metrics */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Completed Deliveries</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">{earnings.totalDrops} Drops</h3>
-            <p className="text-xs text-emerald-600 font-bold mt-1">Verified with Customer OTP</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Base Drop Payout</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">₹{earnings.basePayout.toFixed(2)}</h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">₹55.00 fixed per parcel</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Perimeter &amp; Fuel Bonus</p>
-            <h3 className="text-2xl font-black text-[#008644] mt-1">+₹{earnings.distanceBonus.toFixed(2)}</h3>
-            <p className="text-xs text-emerald-600 font-medium mt-1">Extra incentive for on-time runs</p>
-          </div>
-        </section>
-
-        {/* Weekly Chart */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-extrabold text-base text-slate-900">Weekly Earnings Overview</h3>
-            <span className="text-xs font-bold text-slate-400 uppercase">Last 7 Days</span>
-          </div>
-
-          <div className="flex items-end justify-between h-44 gap-2 pt-4">
-            {weeklyData.map((d, idx) => (
-              <div key={idx} className="w-full flex flex-col items-center gap-2">
-                <span className="text-[10px] font-bold text-slate-500">{d.amount}</span>
-                <div
-                  className={`w-full rounded-t-xl transition-all ${
-                    d.peak ? 'bg-[#b90041] shadow-md shadow-pink-500/20' : 'bg-pink-100'
-                  }`}
-                  style={{ height: d.height }}
-                />
-                <span className="text-[10px] font-extrabold text-slate-400">{d.day}</span>
+            {/* Weekly Performance Bar Chart */}
+            <section className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-extrabold text-[#1c1b1b]">
+                    Weekly Earnings Breakdown
+                  </h3>
+                  <p className="text-xs text-slate-400">Mon, 12 Oct - Sun, 18 Oct</p>
+                </div>
+                <span className="text-xs font-bold text-[#b90041] bg-pink-50 px-3 py-1 rounded-full">
+                  ₹7,810 Total Week
+                </span>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Recent Bank Settlements Table */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900">Recent Bank Settlements</h3>
-              <p className="text-xs text-slate-400">Direct deposits to verified bank account</p>
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              IMPS 24x7 Active
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {settlementHistory.length > 0 ? (
-              settlementHistory.map((s) => (
-                <div key={s.id} className="py-3.5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shrink-0">
-                      🏦
+              {/* Bar Visualization */}
+              <div className="flex items-end justify-between h-44 gap-2 sm:gap-4 pt-4 px-2">
+                {weeklyData.map((bar) => (
+                  <div
+                    key={bar.day}
+                    onClick={() => triggerToast(`${bar.day}: ${bar.amount} earned`)}
+                    className="flex flex-col items-center flex-1 gap-2 group cursor-pointer"
+                  >
+                    <span className="text-[10px] font-bold text-slate-400 group-hover:text-[#b90041] transition-colors">
+                      {bar.amount}
                     </span>
-                    <div>
-                      <p className="font-bold text-slate-800">{s.bank}</p>
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        {s.date} • UTR: {s.utr}
-                      </p>
+                    <div className="w-full bg-slate-100 rounded-t-xl relative overflow-hidden flex items-end h-28">
+                      <div
+                        className={`w-full rounded-t-xl transition-all duration-500 group-hover:opacity-90 ${
+                          bar.peak
+                            ? 'bg-gradient-to-t from-[#b90041] to-[#df2457] shadow-lg shadow-pink-500/30'
+                            : 'bg-slate-300'
+                        }`}
+                        style={{ height: bar.height }}
+                      />
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-black text-slate-900 text-sm block">₹{s.amount.toFixed(2)}</span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-0.5">
-                      {s.status}
+                    <span
+                      className={`text-[10px] font-black ${
+                        bar.peak ? 'text-[#b90041]' : 'text-slate-500'
+                      }`}
+                    >
+                      {bar.day}
                     </span>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="py-8 text-center space-y-1.5">
-                <span className="text-3xl block">🏦</span>
-                <p className="text-xs font-bold text-slate-700">No bank settlements recorded yet</p>
-                <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                  When you complete deliveries and transfer your withdrawable earnings, the verified IMPS transaction records will be logged here.
-                </p>
+                ))}
               </div>
-            )}
-          </div>
-        </section>
-      </main>
+            </section>
 
-      {/* App Bottom Navigation */}
-      <AppBottomNav activeNav="earnings" onNavigate={onNavigate} />
-
-      {/* Real Bank Settlement Confirmation Sheet / Modal */}
-      {showTransferModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-black text-base text-slate-900">Transfer to Bank Account</h3>
-                <p className="text-xs text-slate-400">Direct settlement via IMPS / UPI</p>
-              </div>
-              <button
-                onClick={() => setShowTransferModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center font-bold text-sm cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Account Card */}
-            {bankInfo.accountNumber ? (
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Verified Destination Bank
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    ✓ Linked
-                  </span>
-                </div>
-                <p className="font-black text-slate-900 text-sm">{bankInfo.bankName}</p>
-                <p className="text-xs text-slate-600 font-mono">
-                  A/C: •••• •••• {bankInfo.accountNumber.slice(-4)} • IFSC: {bankInfo.ifscCode}
-                </p>
-              </div>
-            ) : (
-              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2.5 text-xs text-amber-900">
-                <div className="flex items-center gap-2 font-bold">
-                  <span>⚠️</span>
-                  <span>Bank Account Not Linked</span>
-                </div>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  You need to provide your verified bank account and IFSC code in KYC before requesting payouts.
-                </p>
+            {/* Recent Transactions List */}
+            <section className="space-y-3.5">
+              <div className="flex justify-between items-center">
+                <h3 className="text-base font-extrabold text-[#1c1b1b]">Recent Transactions</h3>
                 <button
-                  type="button"
-                  onClick={() => {
-                    setShowTransferModal(false);
-                    onNavigate('driver_kyc');
-                  }}
-                  className="w-full py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded-xl text-xs cursor-pointer transition-colors text-center"
+                  onClick={() => onNavigate('delivery_history')}
+                  className="text-xs font-bold text-[#b90041] hover:underline cursor-pointer flex items-center gap-1"
                 >
-                  Configure Bank Details in KYC ➔
+                  <span>View All Logs</span>
+                  <span>➔</span>
                 </button>
               </div>
-            )}
 
-            {/* Payout Breakdown */}
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>Withdrawable Amount</span>
-                <span className="font-bold text-slate-900">₹{earnings.totalEarnings.toFixed(2)}</span>
+              <div className="space-y-2.5">
+                {[
+                  {
+                    title: 'Order Payout: #MS7721',
+                    time: 'Today, 02:45 PM • Delivered',
+                    amount: '+₹145.00',
+                    status: 'Completed',
+                    isCredit: true,
+                    icon: 'local_shipping',
+                    targetRoute: 'order_driver',
+                  },
+                  {
+                    title: 'Daily Goal Incentive',
+                    time: 'Yesterday • 15/15 Orders Completed',
+                    amount: '+₹250.00',
+                    status: 'Bonus',
+                    isCredit: true,
+                    icon: 'celebration',
+                    targetRoute: 'delivery_history',
+                  },
+                  {
+                    title: 'Bank Withdrawal (HDFC Bank)',
+                    time: '15 Oct, 10:12 AM • Ref ID: 09122',
+                    amount: '-₹5,000.00',
+                    status: 'Processed',
+                    isCredit: false,
+                    icon: 'account_balance_wallet',
+                  },
+                  {
+                    title: 'Order Payout: #MS7718',
+                    time: '15 Oct, 09:30 AM • Delivered',
+                    amount: '+₹112.50',
+                    status: 'Completed',
+                    isCredit: true,
+                    icon: 'local_shipping',
+                    targetRoute: 'order_driver',
+                  },
+                ].map((tx, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() =>
+                      tx.targetRoute ? onNavigate(tx.targetRoute) : triggerToast(tx.title)
+                    }
+                    className="bg-white p-4 sm:p-5 rounded-2xl flex items-center justify-between border border-slate-100 shadow-xs cursor-pointer hover:border-pink-200 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#fcf9f8] rounded-2xl flex items-center justify-center text-[#b90041] group-hover:bg-pink-50 transition-colors flex-shrink-0">
+                        <span className="material-symbols-outlined text-2xl">{tx.icon}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-extrabold text-xs sm:text-sm text-[#1c1b1b] group-hover:text-[#b90041] transition-colors">
+                            {tx.title}
+                          </p>
+                          {tx.targetRoute && (
+                            <span className="text-[10px] text-slate-400 group-hover:text-[#b90041]">
+                              ➔
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{tx.time}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`font-black text-sm sm:text-base ${
+                          tx.isCredit ? 'text-[#008644]' : 'text-slate-800'
+                        }`}
+                      >
+                        {tx.amount}
+                      </p>
+                      <p className="text-[9px] font-bold uppercase text-slate-400">{tx.status}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Processing &amp; Transfer Fee</span>
-                <span className="font-bold text-emerald-600">₹0.00 (Free)</span>
+            </section>
+          </div>
+
+          {/* Right Column: Bank Account & Earnings Breakdown Bento (4 cols, sticky) */}
+          <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
+            {/* Bank Card Info */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Linked Payout Account
+                </h3>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Active
+                </span>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Transfer Speed</span>
-                <span className="font-bold text-slate-900">Instant (Within 5 mins)</span>
+              <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 border border-slate-100">
+                <span className="material-symbols-outlined text-2xl text-slate-700">
+                  account_balance
+                </span>
+                <div>
+                  <p className="font-extrabold text-xs text-slate-900">HDFC Bank Limited</p>
+                  <p className="text-[11px] text-slate-400">A/C •••• 8829 | IFSC: HDFC0001928</p>
+                </div>
               </div>
-              <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-black text-slate-900">
-                <span>Net Bank Payout</span>
-                <span className="text-[#b90041] text-base">₹{earnings.totalEarnings.toFixed(2)}</span>
+              <button
+                onClick={() => onNavigate('withdraw-earnings')}
+                className="w-full py-3 bg-[#b90041] hover:bg-[#a00037] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-pink-500/25 cursor-pointer transition-colors"
+              >
+                Instant Transfer to Bank ➔
+              </button>
+            </div>
+
+            {/* Performance Stats Bento */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div
+                onClick={() => onNavigate('delivery_history')}
+                className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all text-center"
+              >
+                <span className="material-symbols-outlined text-lg text-[#008644] mx-auto mb-1">
+                  verified
+                </span>
+                <div>
+                  <p className="text-[9px] font-bold uppercase text-slate-400">Incentives</p>
+                  <h4 className="text-sm font-black text-[#008644]">₹1,200</h4>
+                </div>
+              </div>
+
+              <div
+                onClick={() => onNavigate('delivery_history')}
+                className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all text-center"
+              >
+                <span className="material-symbols-outlined text-lg text-purple-700 mx-auto mb-1">
+                  volunteer_activism
+                </span>
+                <div>
+                  <p className="text-[9px] font-bold uppercase text-slate-400">Tips</p>
+                  <h4 className="text-sm font-black text-purple-700">₹450</h4>
+                </div>
+              </div>
+
+              <div
+                onClick={() => onNavigate('active_delivery')}
+                className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between cursor-pointer hover:border-pink-300 transition-all text-center"
+              >
+                <span className="material-symbols-outlined text-lg text-[#b90041] mx-auto mb-1">
+                  speed
+                </span>
+                <div>
+                  <p className="text-[9px] font-bold uppercase text-slate-400">Avg Trip</p>
+                  <h4 className="text-sm font-black text-[#b90041]">24 mins</h4>
+                </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowTransferModal(false)}
-                className="flex-1 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmTransfer}
-                disabled={isTransferring || !bankInfo.accountNumber}
-                className={`flex-1 py-3.5 rounded-xl text-white font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  isTransferring || !bankInfo.accountNumber
-                    ? 'bg-slate-300 shadow-none cursor-not-allowed'
-                    : 'bg-[#b90041] hover:bg-[#990035] shadow-pink-500/20 active:scale-95 cursor-pointer'
-                }`}
-              >
-                <span>{isTransferring ? 'Processing IMPS...' : `Confirm Transfer ➔`}</span>
-              </button>
+            {/* Safe Settlement Guarantee */}
+            <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-3xl text-xs space-y-1">
+              <div className="flex items-center gap-1 text-emerald-900 font-extrabold">
+                <span className="material-symbols-outlined text-base text-emerald-700">
+                  security
+                </span>
+                <span>Direct Bank Payout Guarantee</span>
+              </div>
+              <p className="text-emerald-800 text-[11px] leading-relaxed">
+                All daily trip earnings and incentives are automatically settled to your verified
+                bank account with zero processing fees.
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </main>
+
+      {/* Bottom Navigation */}
+      <AppBottomNav activeNav="earnings" onNavigate={onNavigate} />
     </div>
   );
 }

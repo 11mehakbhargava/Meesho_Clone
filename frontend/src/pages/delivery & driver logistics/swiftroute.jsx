@@ -302,11 +302,10 @@ export default function SwiftRoute({ onNavigate = () => {}, onBack }) {
               onClick={() => onNavigate('active_delivery')}
               className="relative h-60 rounded-3xl overflow-hidden shadow-sm border border-slate-200 cursor-pointer group"
             >
-              <iframe
-                title="Live Street Route Map"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=75.82,22.69,75.92,22.76&layer=mapnik&marker=22.7196,75.8577"
-                className="w-full h-full border-0 pointer-events-none filter contrast-105"
-                loading="lazy"
+              <img
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&auto=format&fit=crop&q=80"
+                alt="Route Map"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl flex items-center justify-between">
