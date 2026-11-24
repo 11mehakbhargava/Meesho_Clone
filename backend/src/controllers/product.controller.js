@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js';
 import redisClient from '../config/redisClient.js';
+import { sendBackInStockEmail } from '../utils/emailTemplates.js';
 
 /**
  * Controller to fetch all products with optional filters, search, and sorting.
@@ -619,6 +620,28 @@ export const updateProduct = async (req, res) => {
       include: { category: true }
     });
 
+    // Check if product has been restocked (stock > 0) and dispatch alerts to pending subscribers
+    if (data.stock !== undefined && data.stock > 0) {
+      try {
+        const pendingSubs = await prisma.backInStockSubscription.findMany({
+          where: { productId: id, status: 'PENDING' }
+        });
+        if (pendingSubs.length > 0) {
+          console.log(`🔔 Found ${pendingSubs.length} restock subscriber(s) for "${updated.title}". Sending notifications...`);
+          for (const sub of pendingSubs) {
+            sendBackInStockEmail({ email: sub.email, product: updated })
+              .catch(err => console.warn(`Restock email error for ${sub.email}:`, err.message));
+          }
+          await prisma.backInStockSubscription.updateMany({
+            where: { productId: id, status: 'PENDING' },
+            data: { status: 'SENT' }
+          });
+        }
+      } catch (subErr) {
+        console.warn('Restock subscribers check notice:', subErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Product updated successfully',
@@ -633,6 +656,71 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
+
+/**
+ * Controller to subscribe for Back-in-Stock email notification
+ */
+export const subscribeBackInStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, phone } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.'
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Verify product exists
+    const product = await prisma.product.findUnique({
+      where: { id }
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    // Save subscription to database
+    const subscription = await prisma.backInStockSubscription.upsert({
+      where: {
+        productId_email: {
+          productId: id,
+          email: cleanEmail
+        }
+      },
+      update: {
+        phone: phone ? phone.trim() : null,
+        status: 'PENDING' // Reset to PENDING if restocked previously and now out of stock again
+      },
+      create: {
+        productId: id,
+        email: cleanEmail,
+        phone: phone ? phone.trim() : null,
+        status: 'PENDING'
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `🔔 All set! We will email you at ${cleanEmail} the moment "${product.title}" is back in stock.`,
+      data: subscription
+    });
+  } catch (error) {
+    console.error('Error in subscribeBackInStock:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to subscribe to back-in-stock alerts',
+      error: error.message
+    });
+  }
+};
+
 
 
 /**

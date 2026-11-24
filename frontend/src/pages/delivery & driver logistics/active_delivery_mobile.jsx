@@ -1,25 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import { fetchTaskDetails, verifyDeliveryOtp } from '../../services/driverService';
 
 export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) {
+  const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isDelivered, setIsDelivered] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [driverOtp, setDriverOtp] = useState('');
   const [otpError, setOtpError] = useState('');
-
-  const activeOrderId = 'MSH-99281';
-  const expectedOtp = React.useMemo(() => {
-    const seed = activeOrderId.split('').reduce((acc, char) => (acc * 33 + char.charCodeAt(0)) % 9000, 1000);
-    return String(Math.abs(seed) + 1000);
-  }, [activeOrderId]);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
   };
+
+  const loadTask = async () => {
+    const savedTaskId = localStorage.getItem('mshoppy_active_task_id') || localStorage.getItem('mshoppy_selected_task_id');
+    setLoading(true);
+    try {
+      if (savedTaskId) {
+        const data = await fetchTaskDetails(savedTaskId);
+        setTask(data);
+      }
+    } catch (err) {
+      console.warn('Could not load active delivery task:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTask();
+  }, []);
 
   const handleOpenDeliveryModal = () => {
     if (isDelivered) return;
@@ -28,28 +45,44 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
     setShowOtpModal(true);
   };
 
-  const handleVerifyOtpAndDeliver = () => {
+  const handleVerifyOtpAndDeliver = async () => {
     if (!driverOtp || driverOtp.trim().length !== 4) {
       setOtpError('Please enter the 4-digit OTP provided by the customer.');
       return;
     }
 
-    if (driverOtp === expectedOtp || driverOtp === '1234') {
+    const taskId = task?.taskId || localStorage.getItem('mshoppy_active_task_id');
+    if (!taskId) {
+      setOtpError('No active task ID found.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setOtpError('');
+    try {
+      await verifyDeliveryOtp(taskId, driverOtp.trim());
       setShowOtpModal(false);
       setIsDelivered(true);
-      triggerToast('OTP Verified! Delivery Confirmed & ₹45.00 credited to wallet 🎉');
+      triggerToast('OTP Verified! Delivery Confirmed & ₹55.00 credited to wallet 🎉');
+      localStorage.removeItem('mshoppy_active_task_id');
       setTimeout(() => {
         onNavigate('driver_earnings');
       }, 1200);
-    } else {
-      setOtpError(`Invalid OTP! Please check with customer (Expected: ${expectedOtp}).`);
+    } catch (err) {
+      setOtpError(err.message || 'Invalid OTP! Please check with customer.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
-  const handleResendCustomerSms = () => {
-    triggerToast('SMS Delivery OTP dispatched to customer (+91 98765 43210) 📱');
-    setOtpError('');
-  };
+  const customerName = task?.customer?.name || 'Customer Priya';
+  const rawCustomerDigits = (task?.customer?.phone || '').toString().replace(/\D/g, '').slice(-10);
+  const customerPhone = rawCustomerDigits ? `+91 ${rawCustomerDigits}` : '+91 98765 43210';
+  const dialCustomerPhone = rawCustomerDigits ? `+91${rawCustomerDigits}` : '+919876543210';
+  const customerAddress = task?.customer?.address || 'Flat 402, Royal Palms, Koramangala, Bangalore';
+  const isCod = task?.payment?.method === 'COD';
+  const totalAmount = task?.payment?.totalAmount || 0;
+  const orderNumber = task?.orderId ? task.orderId.slice(-8).toUpperCase() : 'MSH-99281';
 
   return (
     <div className="bg-[#fcf9f8] font-sans text-[#1c1b1b] min-h-screen flex flex-col relative antialiased selection:bg-pink-100 selection:text-pink-600 pb-20">
@@ -72,7 +105,7 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
                 Live Active Navigation GPS
               </h1>
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Order #MSH-99281 • Koramangala
+                Order #{orderNumber} • Destination
               </span>
             </div>
           </div>
@@ -85,30 +118,24 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
               <span className="material-symbols-outlined text-sm">receipt_long</span>
               <span>Order Details</span>
             </button>
-            <button
-              onClick={() => onNavigate('swiftroute')}
-              className="hidden sm:flex px-3.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs items-center gap-1 cursor-pointer transition-colors"
-            >
-              <span className="material-symbols-outlined text-sm">route</span>
-              <span>Multi-Stop</span>
-            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Responsive Grid */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5">
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 w-full flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Live GPS Route Canvas (7 or 8 cols on desktop) */}
+          {/* Left Column: Live GPS Route Canvas */}
           <div className="lg:col-span-8 space-y-4">
-            {/* Live Navigation Canvas Card */}
-            <div className="relative h-[420px] sm:h-[480px] lg:h-[560px] rounded-3xl overflow-hidden shadow-md border border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&auto=format&fit=crop&q=80"
-                alt="Live Navigation Map"
-                className="w-full h-full object-cover"
+            <div className="relative h-[420px] sm:h-[480px] lg:h-[560px] rounded-3xl overflow-hidden shadow-md border border-slate-200 bg-[#e8ecef]">
+              {/* Dynamic Live OpenStreetMap Canvas */}
+              <iframe
+                title="Live GPS Route Navigation"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${(customerAddress?.toLowerCase().includes('indore') ? 75.83 : 77.56)},${(customerAddress?.toLowerCase().includes('indore') ? 22.69 : 12.94)},${(customerAddress?.toLowerCase().includes('indore') ? 75.92 : 77.65)},${(customerAddress?.toLowerCase().includes('indore') ? 22.76 : 13.01)}&layer=mapnik&marker=${(customerAddress?.toLowerCase().includes('indore') ? '22.7196,75.8577' : '12.9716,77.5946')}`}
+                className="w-full h-full border-0 pointer-events-none filter contrast-105"
+                loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
 
               {/* Turn-by-Turn Instruction Banner */}
               <div className="absolute top-4 left-4 right-4 bg-slate-900/90 backdrop-blur-md text-white p-4 rounded-2xl shadow-xl flex items-center justify-between border border-white/10">
@@ -118,241 +145,175 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
                   </div>
                   <div>
                     <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider">
-                      In 350 meters
+                      Turn-by-Turn Route
                     </p>
-                    <p className="font-extrabold text-sm sm:text-base">
-                      Turn Left on 24th Main Road (Near Star Market)
+                    <p className="font-extrabold text-sm sm:text-base line-clamp-1">
+                      {customerAddress}
                     </p>
                   </div>
-                </div>
-                <div className="hidden sm:block text-right">
-                  <span className="text-xs text-slate-400 block font-bold">Speed</span>
-                  <span className="text-sm font-black text-emerald-400">32 km/h</span>
                 </div>
               </div>
 
               {/* Interactive Route Pins */}
               <div className="absolute inset-0 pointer-events-none">
-                {/* Pickup Marker */}
                 <div className="absolute top-[32%] left-[26%] flex flex-col items-center">
-                  <div className="bg-[#b90041] text-white p-2.5 rounded-full shadow-2xl scale-105 border-2 border-white">
-                    <span
-                      className="material-symbols-outlined text-lg"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      inventory_2
-                    </span>
+                  <div className="bg-[#b90041] text-white p-2.5 rounded-full shadow-2xl border-2 border-white">
+                    <span className="material-symbols-outlined text-lg">inventory_2</span>
                   </div>
                   <div className="bg-white/95 px-2.5 py-0.5 mt-1 rounded-md shadow-md border border-slate-200">
-                    <span className="text-[10px] font-black uppercase text-[#b90041]">
-                      Pickup Hub
-                    </span>
+                    <span className="text-[10px] font-black uppercase text-[#b90041]">Pickup Hub</span>
                   </div>
                 </div>
 
-                {/* Drop Marker */}
                 <div className="absolute bottom-[28%] right-[24%] flex flex-col items-center">
-                  <div className="bg-[#008644] text-white p-3 rounded-full shadow-2xl scale-120 border-4 border-white animate-bounce">
-                    <span
-                      className="material-symbols-outlined text-xl"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      location_on
-                    </span>
+                  <div className="bg-[#008644] text-white p-3 rounded-full shadow-2xl border-4 border-white animate-bounce">
+                    <span className="material-symbols-outlined text-xl">location_on</span>
                   </div>
                   <div className="bg-white/95 px-2.5 py-0.5 mt-1 rounded-md shadow-md border border-slate-200">
-                    <span className="text-[10px] font-black uppercase text-[#008644]">
-                      Drop: Skyview Apt
-                    </span>
+                    <span className="text-[10px] font-black uppercase text-[#008644]">Customer Drop</span>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Re-center & Map Tools */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-auto">
-                <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#b90041] text-lg">
-                    directions_bike
+              {/* Status Overlay */}
+              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    ETA to Destination
                   </span>
-                  <span className="text-xs font-bold text-slate-800">
-                    2.4 km remaining • ETA 12 mins
+                  <span className="text-xl font-black text-[#1c1b1b]">
+                    {isDelivered ? 'Arrived & Delivered' : '12 Mins • 2.4 km'}
                   </span>
                 </div>
-                <button
-                  onClick={() => triggerToast('Re-centering route view to bike GPS location...')}
-                  className="bg-white hover:bg-slate-50 text-slate-800 px-4 py-2 rounded-2xl shadow-lg border border-slate-200 flex items-center gap-1.5 font-extrabold text-xs cursor-pointer active:scale-95 transition-all"
-                >
-                  <span className="material-symbols-outlined text-base text-[#b90041]">explore</span>
-                  <span>RE-CENTER</span>
-                </button>
+                <div className="flex gap-2">
+                  <a
+                    href={`https://wa.me/91${rawCustomerDigits}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm hover:bg-emerald-700"
+                    title="WhatsApp Customer (+91)"
+                  >
+                    <span className="material-symbols-outlined text-sm">chat</span>
+                    <span>WhatsApp</span>
+                  </a>
+                  <a
+                    href={`tel:+91${rawCustomerDigits}`}
+                    className="px-3.5 py-2 bg-emerald-50 text-[#008644] rounded-xl font-bold text-xs flex items-center gap-1.5 border border-emerald-200"
+                    title="Direct Call"
+                  >
+                    <span className="material-symbols-outlined text-sm">call</span>
+                    <span>Call</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Order Manifest & Delivery Completion Drawer (4 or 5 cols on desktop) */}
+          {/* Right Column: Customer Info & OTP Action */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 space-y-4">
-              {/* Primary Order Info */}
-              <div className="flex justify-between items-start border-b border-slate-100 pb-3.5">
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-pink-100 text-[#b90041] flex items-center justify-center font-black text-xl">
+                  {customerName.charAt(0)}
+                </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-50 text-[#008644] rounded-md uppercase">
-                      PREPAID
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">Order #MSH-99281</span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-black tracking-tight text-[#1c1b1b]">
-                    Ananya Sharma
-                  </h2>
-                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                    <span className="material-symbols-outlined text-sm text-[#b90041]">home</span>
-                    <span>Flat 402, 4th Floor, Skyview Apt</span>
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xl font-black text-[#008644]">₹45.00</span>
-                  <span className="block text-[9px] text-slate-400 font-bold uppercase">Payout</span>
+                  <h3 className="font-extrabold text-base text-[#1c1b1b]">{customerName}</h3>
+                  <p className="text-xs text-slate-500">{customerPhone}</p>
                 </div>
               </div>
 
-              {/* Items & Special Instructions */}
-              <div className="space-y-2.5">
-                <div className="bg-[#fcf9f8] p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-500">Package Items:</span>
-                  <span className="font-extrabold text-[#1c1b1b]">2x Silk Saree, 1x Box</span>
-                </div>
-                <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200 text-xs">
-                  <p className="font-bold text-amber-900">Instruction:</p>
-                  <p className="text-amber-800 mt-0.5">
-                    Leave package with security gate if customer unavailable.
-                  </p>
-                </div>
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
+                <p className="font-bold text-slate-400 text-[10px] uppercase">Drop Address</p>
+                <p className="font-bold text-slate-800 mt-0.5">{customerAddress}</p>
               </div>
 
-              {/* Quick Communication Actions */}
-              <div className="grid grid-cols-2 gap-2.5 pt-1">
-                <button
-                  onClick={() => triggerToast('Calling customer Ananya (+91 98765 43210)... 📞')}
-                  className="py-3 bg-slate-100 hover:bg-slate-200 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-base text-[#b90041]">call</span>
-                  <span>Call Customer</span>
-                </button>
-                <button
-                  onClick={() => onNavigate('order_driver')}
-                  className="py-3 bg-pink-50 hover:bg-pink-100 text-[#b90041] rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-base">receipt_long</span>
-                  <span>Manifest</span>
-                </button>
-              </div>
+              {isCod && (
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs flex justify-between items-center">
+                  <span className="font-bold text-amber-900">COD Cash to Collect:</span>
+                  <span className="font-black text-amber-900 text-base">₹{totalAmount}</span>
+                </div>
+              )}
 
-              {/* Mark Delivered Button */}
               <button
                 onClick={handleOpenDeliveryModal}
                 disabled={isDelivered}
-                className={`w-full py-4 rounded-2xl font-black text-xs md:text-sm tracking-widest uppercase transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
                   isDelivered
-                    ? 'bg-[#008644] text-white'
-                    : 'bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-green-600/30 active:scale-98'
+                    ? 'bg-emerald-600 text-white cursor-default'
+                    : 'bg-gradient-to-r from-[#b90041] to-[#df2457] text-white shadow-pink-500/25 active:scale-95'
                 }`}
               >
-                <span className="material-symbols-outlined text-lg">
-                  {isDelivered ? 'verified' : 'task_alt'}
+                <span className="material-symbols-outlined text-xl">
+                  {isDelivered ? 'verified' : 'check_circle'}
                 </span>
-                <span>
-                  {isDelivered ? 'DELIVERY COMPLETE (CREDITED)' : 'TAP TO MARK DELIVERED'}
-                </span>
+                <span>{isDelivered ? 'DELIVERED (CREDITED)' : 'ARRIVED AT CUSTOMER (ENTER OTP)'}</span>
               </button>
             </div>
           </div>
         </div>
-            {/* Customer Delivery OTP Verification Modal (Prepaid Order Handover) */}
+      </main>
+
+      {/* OTP Delivery Verification Modal */}
       {showOtpModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📦</span>
-                <h3 className="font-black text-slate-900 text-base">Delivery OTP Verification</h3>
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-pink-50 text-[#b90041] rounded-2xl mx-auto flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-3xl">key</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowOtpModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold"
-              >
-                ✕
-              </button>
+              <h3 className="font-black text-lg text-slate-900">Verify Customer OTP</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Ask customer {customerName} for the 4-digit code sent via SMS/Email.
+              </p>
+              {task?.expectedOtp && (
+                <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-950">
+                  <span className="font-semibold">Customer OTP: <strong className="font-mono text-sm font-black text-[#b90041]">{task.expectedOtp}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => setDriverOtp(task.expectedOtp)}
+                    className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 rounded-lg font-bold text-[11px] cursor-pointer transition-colors shadow-xs"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs">
-                <div className="flex items-center justify-between font-black text-emerald-900 mb-1">
-                  <span>PREPAID ORDER</span>
-                  <span>Order #MSH-99281</span>
-                </div>
-                <p className="text-emerald-800">
-                  Customer Ananya Sharma was sent a 4-digit Delivery OTP via SMS. Please ask the customer and enter it below:
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Enter 4-Digit Customer OTP
-                </label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  autoFocus
-                  placeholder="• • • •"
-                  value={driverOtp}
-                  onChange={(e) => {
-                    setDriverOtp(e.target.value.replace(/\D/g, ''));
-                    setOtpError('');
-                  }}
-                  className="w-full h-12 text-center text-2xl font-black tracking-widest bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
-
+            <div>
+              <input
+                type="text"
+                placeholder="• • • •"
+                maxLength={4}
+                value={driverOtp}
+                onChange={(e) => setDriverOtp(e.target.value)}
+                className="w-full text-center text-3xl font-black tracking-widest py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b90041]"
+              />
               {otpError && (
-                <p className="text-xs font-bold text-red-600 text-center">{otpError}</p>
+                <p className="text-xs font-bold text-rose-600 mt-2 text-center">{otpError}</p>
               )}
+            </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-slate-400">Customer OTP: {expectedOtp}</span>
-                <button
-                  type="button"
-                  onClick={handleResendCustomerSms}
-                  className="text-[11px] font-bold text-[#b90041] hover:underline"
-                >
-                  Resend SMS OTP 📱
-                </button>
-              </div>
-
-              <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowOtpModal(false)}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleVerifyOtpAndDeliver}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-colors"
-                >
-                  Confirm Handover
-                </button>
-              </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowOtpModal(false)}
+                className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyOtpAndDeliver}
+                disabled={isVerifying}
+                className="flex-1 py-3 rounded-xl bg-[#b90041] text-white font-black text-xs shadow-md active:scale-95 cursor-pointer"
+              >
+                {isVerifying ? 'Verifying...' : 'Confirm Delivery'}
+              </button>
             </div>
           </div>
         </div>
       )}
-      </main>
 
-      {/* Bottom Navigation */}
-      <AppBottomNav activeNav="home" onNavigate={onNavigate} />
+      {/* App Bottom Navigation */}
+      <AppBottomNav activeNav="tasks" onNavigate={onNavigate} />
     </div>
   );
 }

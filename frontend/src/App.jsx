@@ -69,6 +69,8 @@ import RiderExpressDashboard from './pages/delivery & driver logistics/rider_exp
 import MeeshoVelocity from './pages/delivery & driver logistics/meesho_velocity';
 import SwiftRoute from './pages/delivery & driver logistics/swiftroute';
 import DriverReversePickup from './pages/delivery & driver logistics/driver_reverse_pickup';
+import DriverLogin from './pages/delivery & driver logistics/DriverLogin';
+import DriverKyc from './pages/delivery & driver logistics/DriverKyc';
 
 // Supplier Hub Pages
 import AddCategorySupplier from './pages/supplier/add_category_supplier';
@@ -177,6 +179,8 @@ const screenCatalog = [
   { path: '/meesho-velocity', name: 'MShoppy Velocity', icon: '🚀', group: 'Logistics' },
   { path: '/swiftroute', name: 'SwiftRoute AI', icon: '🧭', group: 'Logistics' },
   { path: '/driver-reverse-pickup', name: 'Reverse Pickup QC', icon: '🔄', group: 'Logistics' },
+  { path: '/driver-login', name: 'Rider Mobile Login (OTP)', icon: '📱', group: 'Logistics' },
+  { path: '/driver-kyc', name: 'Rider KYC & Document Verification', icon: '🛡️', group: 'Logistics' },
 
   // 5. Supplier Hub
   { path: '/structure-flow', name: 'Structure Flow Hub', icon: '🏬', group: 'Supplier' },
@@ -512,6 +516,22 @@ function AppRoutes() {
         }
         recordAffiliateClick(cleanRef);
       }
+
+      const couponParam = searchParams.get('coupon');
+      if (couponParam && couponParam.trim()) {
+        const cleanCoupon = couponParam.trim().toUpperCase();
+        if (cleanCoupon === 'WELCOME10') {
+          const welcomeCoupon = {
+            id: 'coupon_welcome10',
+            code: 'WELCOME10',
+            title: 'MShoppy Insider Welcome 10% Off',
+            description: 'Flat 10% discount for newsletter subscribers',
+            type: 'PERCENT',
+            value: 10
+          };
+          localStorage.setItem('mshoppy_applied_coupon', JSON.stringify(welcomeCoupon));
+        }
+      }
     } catch (e) {}
   }, [location.search]);
 
@@ -636,6 +656,10 @@ function AppRoutes() {
       swiftroute: '/swiftroute',
       driver_reverse_pickup: '/driver-reverse-pickup',
       'driver-reverse-pickup': '/driver-reverse-pickup',
+      driver_login: '/driver-login',
+      'driver-login': '/driver-login',
+      driver_kyc: '/driver-kyc',
+      'driver-kyc': '/driver-kyc',
 
       // Supplier
       structureFlow: '/structure-flow',
@@ -1055,6 +1079,8 @@ function AppRoutes() {
         <Route path="/meesho-velocity" element={<MeeshoVelocity onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/swiftroute" element={<SwiftRoute onNavigate={handleNav} onBack={handleBack} />} />
         <Route path="/driver-reverse-pickup" element={<DriverReversePickup onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/driver-login" element={<DriverLogin onNavigate={handleNav} onBack={handleBack} />} />
+        <Route path="/driver-kyc" element={<DriverKyc onNavigate={handleNav} onBack={handleBack} />} />
 
         {/* Supplier Hub Routes */}
         <Route

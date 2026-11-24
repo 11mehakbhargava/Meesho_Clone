@@ -53,6 +53,27 @@ export const validateCoupon = async (req, res) => {
     const cleanCode = code.trim().toUpperCase();
     const total = parseFloat(cartTotal) || 0;
 
+    // Special: Newsletter Welcome 10% OFF Coupon
+    if (cleanCode === 'WELCOME10') {
+      const discount = Math.min(Math.round(total * 0.10), 200);
+      return res.status(200).json({
+        success: true,
+        valid: true,
+        message: `🎉 Newsletter Welcome Coupon "WELCOME10" Applied! 10% OFF saved ₹${discount}`,
+        data: {
+          id: 'coupon_welcome10',
+          code: 'WELCOME10',
+          title: 'MShoppy Insider Welcome 10% Off',
+          type: 'PERCENT',
+          value: 10,
+          discountAmount: discount,
+          minOrder: 0,
+          finalTotal: Math.max(0, total - discount),
+          description: 'MShoppy Insider Welcome 10% OFF'
+        }
+      });
+    }
+
     // Strict Database lookup
     const coupon = await prisma.coupon.findUnique({
       where: { code: cleanCode }

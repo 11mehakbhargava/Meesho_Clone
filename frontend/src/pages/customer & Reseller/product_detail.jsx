@@ -8,7 +8,8 @@ import {
   getWishlist,
   toggleWishlist,
   checkCanReview,
-  getProductReviews
+  getProductReviews,
+  subscribeBackInStock
 } from '../../services/ecommerceService';
 import { useCart } from '../../hooks/useCart';
 import { getAffiliateApp } from '../../services/affiliateSessionStore';
@@ -297,6 +298,55 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [showPriceDetailsPopup, setShowPriceDetailsPopup] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
 
+  // ── Back-in-Stock Notification States ──
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockEmail, setRestockEmail] = useState('');
+  const [restockPhone, setRestockPhone] = useState('');
+  const [restockLoading, setRestockLoading] = useState(false);
+  const [isRestockSubscribed, setIsRestockSubscribed] = useState(false);
+
+  const handleOpenRestockModal = () => {
+    try {
+      for (const key of ['mshoppy_customer_user', 'user', 'mshoppy_reseller_user', 'mshoppy_affiliate_user']) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const u = JSON.parse(raw);
+          if (u?.email && !u.email.endsWith('@customer.meesho')) {
+            setRestockEmail(u.email);
+            break;
+          }
+        }
+      }
+    } catch (e) {}
+    setShowRestockModal(true);
+  };
+
+  const handleSubscribeRestock = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!restockEmail || !restockEmail.includes('@')) {
+      triggerToast('Please enter a valid email address.');
+      return;
+    }
+    setRestockLoading(true);
+    try {
+      const res = await subscribeBackInStock(product.id, {
+        email: restockEmail,
+        phone: restockPhone
+      });
+      if (res?.success) {
+        setIsRestockSubscribed(true);
+        setShowRestockModal(false);
+        triggerToast(`🔔 Subscribed! We will email you at ${restockEmail} when restocked.`);
+      } else {
+        triggerToast(res?.message || 'Failed to subscribe');
+      }
+    } catch (err) {
+      triggerToast('Failed to subscribe. Please try again.');
+    } finally {
+      setRestockLoading(false);
+    }
+  };
+
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
   const affiliateMargin = urlMargin > 0 ? urlMargin : 0;
@@ -343,118 +393,66 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     return match;
   }, [variants, selectedColor, selectedSize]);
 
-  // Dynamic category-specific product specifications (replacing dummy clothing hardcodes)
+  // Real product specifications from actual product attributes (Zero fake dummy fallbacks)
   const productSpecs = useMemo(() => {
     if (!product) return [];
-    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
-    const sub = (product.subCategory || '').toLowerCase();
-    const titleLower = (product.title || '').toLowerCase();
-    const idealFor = getProductIdealFor(product);
+    const specs = [];
 
-    if (slug === 'beauty-health') {
-      let typeFinish = product.subCategory || 'Personal Care';
-      let usageLabel = 'Skin / Usage Type';
-      let usageValue = 'All Skin Types';
-
-      if (sub.includes('lipstick') || titleLower.includes('lipstick') || titleLower.includes('lip crayon') || titleLower.includes('matte as hell')) {
-        typeFinish = 'Matte / Long-Lasting';
-        usageLabel = 'Formulation';
-        usageValue = 'Crayon / Non-Drying Matte';
-      } else if (sub.includes('perfume') || titleLower.includes('edp') || titleLower.includes('body mist') || titleLower.includes('fragrance')) {
-        typeFinish = 'Eau De Parfum / Mist';
-        usageLabel = 'Fragrance Type';
-        usageValue = 'Luxury Body Mist / EDP';
-      } else if (sub.includes('serum') || titleLower.includes('serum')) {
-        typeFinish = 'Face Serum / Radiance';
-        usageLabel = 'Skin Concern';
-        usageValue = 'Brightening & Nourishing';
-      } else if (sub.includes('kajal') || sub.includes('eyeliner') || titleLower.includes('kajal') || titleLower.includes('eyeliner')) {
-        typeFinish = 'Smudge-Proof / Waterproof';
-        usageLabel = 'Application Area';
-        usageValue = 'Eyes (Smudge-Proof)';
-      } else if (sub.includes('face wash') || titleLower.includes('face wash')) {
-        typeFinish = 'Deep Cleansing / Gentle Gel';
-      } else if (sub.includes('sunscreen') || titleLower.includes('sunscreen') || titleLower.includes('spf')) {
-        typeFinish = 'UV Protection / Broad Spectrum';
-      } else if (sub.includes('compact') || titleLower.includes('compact')) {
-        typeFinish = 'Oil-Control Matte Powder';
-      } else if (sub.includes('nail polish') || titleLower.includes('nail polish')) {
-        typeFinish = 'Glossy / Long-Wear';
-      } else if (sub.includes('lotion') || titleLower.includes('lotion') || titleLower.includes('moistur')) {
-        typeFinish = 'Nourishing Moisturizer';
-      }
-
-      return [
-        { label: 'Type / Finish', value: typeFinish },
-        { label: 'Net Quantity', value: '1 Unit' },
-        { label: 'Ideal For', value: idealFor },
-        { label: usageLabel, value: usageValue },
-      ];
+    // Category
+    const categoryName = product.category?.name || product.categorySlug;
+    if (categoryName) {
+      specs.push({ label: 'Category', value: categoryName });
     }
 
-    if (slug === 'footwear') {
-      return [
-        { label: 'Material', value: product.material || 'Synthetic / Mesh' },
-        { label: 'Fastening', value: 'Slip-On / Lace-Ups' },
-        { label: 'Ideal For', value: idealFor },
-        { label: 'Sole Material', value: 'Airmix / Rubber' },
-      ];
+    // Sub-Category (only if supplier entered it)
+    if (product.subCategory && product.subCategory.trim()) {
+      specs.push({ label: 'Sub-Category', value: product.subCategory });
     }
 
-    if (slug === 'electronics') {
-      return [
-        { label: 'Connectivity', value: 'Wireless / Bluetooth' },
-        { label: 'Compatibility', value: 'Android & iOS' },
-        { label: 'Warranty', value: '6 Months Brand Warranty' },
-        { label: 'Ideal For', value: idealFor },
-      ];
+    // Available Sizes (only if actually present)
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      specs.push({ label: 'Sizes', value: product.sizes.join(', ') });
     }
 
-    if (slug === 'jewellery' || slug === 'accessories') {
-      return [
-        { label: 'Base Metal', value: 'Alloy / Brass' },
-        { label: 'Plating', value: 'Gold / Silver Plated' },
-        { label: 'Occasion', value: 'Ethnic / Festive / Daily' },
-        { label: 'Ideal For', value: idealFor },
-      ];
+    // Colors (only if actually present)
+    if (Array.isArray(product.colors) && product.colors.length > 0) {
+      specs.push({ label: 'Colors', value: product.colors.join(', ') });
+    } else if (selectedColor) {
+      specs.push({ label: 'Color', value: selectedColor });
+    } else if (product.color && product.color.trim()) {
+      specs.push({ label: 'Color', value: product.color });
     }
 
-    if (slug === 'home-kitchen') {
-      return [
-        { label: 'Material', value: product.material || 'Cotton / Microfiber' },
-        { label: 'Pattern', value: 'Printed / Geometric / Solid' },
-        { label: 'Care', value: 'Machine Wash / Wipe Clean' },
-        { label: 'Country of Origin', value: 'India' },
-      ];
+    // Fabric / Material (ONLY if supplier entered it in DB)
+    if (product.fabric && product.fabric.trim()) {
+      specs.push({ label: 'Fabric', value: product.fabric });
+    } else if (product.material && product.material.trim()) {
+      specs.push({ label: 'Material', value: product.material });
     }
 
-    // Default Clothing (women-ethnic, women-western, men, kids)
-    return [
-      { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
-      { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
-      { label: 'Pattern', value: 'Embroidered / Printed / Solid' },
-      { label: 'Ideal For', value: idealFor },
-    ];
+    // Pattern (ONLY if supplier entered it in DB)
+    if (product.pattern && product.pattern.trim()) {
+      specs.push({ label: 'Pattern', value: product.pattern });
+    }
+
+    // SKU Code
+    if (product.sku && product.sku.trim()) {
+      specs.push({ label: 'SKU', value: product.sku });
+    }
+
+    // Supplier / Store Name
+    if (product.supplierName && product.supplierName.trim()) {
+      specs.push({ label: 'Sold By', value: product.supplierName });
+    }
+
+    // Country of Origin
+    specs.push({ label: 'Country of Origin', value: 'India' });
+
+    return specs;
   }, [product, selectedColor]);
 
   const packageContains = useMemo(() => {
     if (!product) return '1 Unit';
-    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
-    const titleLower = (product.title || '').toLowerCase();
-    if (slug === 'beauty-health') return `1 x ${product.title}`;
-    if (slug === 'footwear') return '1 Pair of Footwear';
-    if (slug === 'electronics') return '1 Device, Charging Cable, User Manual';
-    if (slug === 'jewellery') return '1 Jewellery Set / Piece';
-    if (slug === 'home-kitchen') return `1 x ${product.title}`;
-    if (slug.includes('ethnic') || slug.includes('western') || slug === 'men' || slug === 'kids') {
-      if (titleLower.includes('saree')) return '1 Saree with Unstitched Blouse Piece';
-      if (titleLower.includes('kurta') || titleLower.includes('kurti')) return '1 Kurti / Kurta Set';
-      if (titleLower.includes('top') || titleLower.includes('tunic')) return '1 Top / Tunic';
-      if (titleLower.includes('shirt')) return '1 Shirt';
-      if (titleLower.includes('t-shirt') || titleLower.includes('tshirt')) return '1 T-Shirt';
-      if (titleLower.includes('dress')) return '1 Dress';
-      if (titleLower.includes('pant') || titleLower.includes('jean') || titleLower.includes('trouser')) return '1 Bottomwear';
-    }
     return `1 x ${product.title}`;
   }, [product]);
 
@@ -1538,30 +1536,42 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <span>Share &amp; Earn ₹{selectedResellerMargin}</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={addingToCart || isVariantOutOfStock}
-                  className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs ${isVariantOutOfStock
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                    : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
+                {isVariantOutOfStock ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenRestockModal}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-lg transition-all cursor-pointer ${
+                      isRestockSubscribed
+                        ? 'bg-emerald-600 text-white shadow-emerald-500/25'
+                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25 active:scale-95'
                     }`}
-                >
-                  <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                  <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  disabled={isVariantOutOfStock}
-                  className={`flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
-                    ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
-                    : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
-                    }`}
-                >
-                  <span className="material-symbols-outlined text-lg">bolt</span>
-                  <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
-                </button>
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {isRestockSubscribed ? 'check_circle' : 'notifications_active'}
+                    </span>
+                    <span>{isRestockSubscribed ? '✓ Alert Subscribed (We will email you)' : '🔔 Notify Me When Available'}</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      disabled={addingToCart}
+                      className="flex-1 flex items-center justify-center gap-2 border-2 border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs"
+                    >
+                      <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                      <span className="truncate">{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBuyNow}
+                      className="flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-lg">bolt</span>
+                      <span className="truncate">Buy Now</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Reseller Profit Margin & WhatsApp Share Card (Visible ONLY in Reseller Mode, never to normal customers) */}
@@ -2420,33 +2430,137 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={addingToCart || isVariantOutOfStock}
-            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all ${isVariantOutOfStock
-              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-              : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
+          {isVariantOutOfStock ? (
+            <button
+              type="button"
+              onClick={handleOpenRestockModal}
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all cursor-pointer ${
+                isRestockSubscribed
+                  ? 'bg-emerald-600 text-white shadow-emerald-500/25'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25 active:scale-95'
               }`}
-          >
-            <span className="material-symbols-outlined text-lg">shopping_bag</span>
-            <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
-          </button>
+            >
+              <span className="material-symbols-outlined text-lg">
+                {isRestockSubscribed ? 'check_circle' : 'notifications_active'}
+              </span>
+              <span>{isRestockSubscribed ? '✓ Subscribed' : '🔔 Notify When Available'}</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={addingToCart}
+                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all"
+              >
+                <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                <span className="truncate">{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={isVariantOutOfStock}
-            className={`flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
-              ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
-              : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
-              }`}
-          >
-            <span className="material-symbols-outlined text-lg">bolt</span>
-            <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
-          </button>
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">bolt</span>
+                <span className="truncate">Buy Now</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Back In Stock Notification Modal */}
+      {showRestockModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
+                  <span className="material-symbols-outlined text-2xl">notifications_active</span>
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Restock Notification</h3>
+                  <p className="text-[11px] text-slate-400 font-semibold">Get emailed when item is back in stock</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRestockModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Product Snapshot */}
+            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <img
+                src={(product?.images && product.images[0]) || PLACEHOLDER_IMAGE}
+                alt={product?.title}
+                className="w-12 h-12 rounded-xl object-cover border border-slate-200"
+              />
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-xs text-slate-900 truncate">{product?.title}</h4>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs font-black text-[#FF3F6C]">₹{effectivePrice}</span>
+                  <span className="text-[10px] bg-rose-100 text-rose-700 font-extrabold px-2 py-0.2 rounded-full uppercase">Currently Out of Stock</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubscribeRestock} className="space-y-3 pt-1">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Your Email Address <span className="text-rose-500">*</span></label>
+                <input
+                  type="email"
+                  required
+                  value={restockEmail}
+                  onChange={(e) => setRestockEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#FF3F6C] rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (Optional SMS alert)</label>
+                <input
+                  type="tel"
+                  value={restockPhone}
+                  onChange={(e) => setRestockPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#FF3F6C] rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={restockLoading || !restockEmail}
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs rounded-xl shadow-lg shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider disabled:opacity-50"
+                >
+                  {restockLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Subscribing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔔 Notify Me When Available</span>
+                      <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-slate-400 text-center mt-2 leading-relaxed">
+                  We'll send an automatic notification with direct shop link once restocked. No spam, ever.
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Quick Email OTP Login Modal for Guest Buy Now */}
       <QuickEmailOtpModal

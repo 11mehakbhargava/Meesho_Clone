@@ -44,7 +44,10 @@ import paymentRoutes from './payment.routes.js';
 import walletRoutes from './wallet.routes.js';
 import bannerRoutes from './banner.routes.js';
 import uploadRoutes from './upload.routes.js';
+import shiprocketRoutes from './shiprocket.routes.js';
+import driverRoutes from './delivery/driver.routes.js';
 import referralRoutes from './referral.routes.js';
+import newsletterRoutes from './newsletter.routes.js';
 
 const apiRouter = Router();
 
@@ -114,5 +117,15 @@ apiRouter.use('/wallets', walletRoutes);
 apiRouter.use('/referrals', referralRoutes);
 apiRouter.use('/banners', bannerRoutes);
 apiRouter.use('/upload', uploadRoutes);
+
+// Shiprocket 3PL Logistics endpoints
+apiRouter.use('/shiprocket', shiprocketRoutes);
+apiRouter.use('/logistics', shiprocketRoutes);
+
+// Driver & Delivery Fleet endpoints
+apiRouter.use('/driver', driverRoutes);
+
+// Newsletter Subscriptions
+apiRouter.use('/newsletter', newsletterRoutes);
 
 export default apiRouter;

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
+import { fetchReversePickups } from '../../services/driverService';
 
 export default function DriverReversePickup({ onNavigate, onBack }) {
   // Quality Check State
@@ -9,7 +10,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
   const [qcPackaging, setQcPackaging] = useState(true);
 
   // OTP State
-  const [otp, setOtp] = useState(['5', '8', '2', '9']);
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
 
   // Security Bag Scan State
@@ -22,51 +23,76 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
   const videoRef = React.useRef(null);
   const mediaStreamRef = React.useRef(null);
 
+  const [activeReturn, setActiveReturn] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = () => {
+    setLoading(true);
+    fetchReversePickups()
+      .then((list) => {
+        if (list && list.length > 0) {
+          setActiveReturn(list[0]);
+        } else {
+          setActiveReturn(null);
+        }
+      })
+      .catch(() => setActiveReturn(null))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
   // Customer return reason & evidence data
-  const customerReturnData = {
+  const baseReturnData = {
     orderId: 'ORD-998241',
     taskId: 'RET-TSK-8821',
-    customerName: 'Priya Sharma',
-    customerPhone: '+91 98765 43210',
-    itemTitle: 'Kanjivaram Soft Silk Woven Saree with Blouse Piece',
-    itemColor: 'Magenta & Gold',
-    itemSize: 'Free Size',
-    originalPrice: '₹849',
-    reasonCategory: 'Size & Fit / Defective Border',
-    customerComment: 'Too loose / baggy on drape; defective border stitching loose near pallu',
+    customerName: 'Shruti Paliwal',
+    customerPhone: '+91 81030 13465',
+    itemTitle: 'Facewash for acne and oil control',
+    itemColor: '50 ml / Organic',
+    itemSize: '50 ml',
+    originalPrice: '₹599',
+    itemImage: 'https://supabase.hrgroupco.in/storage/v1/object/public/images/products/product_1794851075214_1794851075215_7yaz9y.jpeg',
+    reasonCategory: 'Quality Mismatch / Seal Issue',
+    customerComment: 'Customer reported: Inner bottle seal was loose and liquid leaked in transit',
     customerPhotos: [
       {
         id: 'cust_p1',
-        title: 'Customer Photo: Reported Border Defect',
-        url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-        caption: 'Reported loose stitching near pallu border',
+        title: 'Customer Photo: Reported Leakage / Defect',
+        url: 'https://supabase.hrgroupco.in/storage/v1/object/public/dropshipper-assets/returns/Screenshot_2026_11_17_111920_1794894593926_1qbb56.png',
+        caption: 'Reported package seal issue at delivery',
       },
       {
         id: 'cust_p2',
-        title: 'Customer Photo: Saree Overview & Brand Tag',
-        url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
-        caption: 'Full saree drape with manufacturer tag attached',
+        title: 'Customer Photo: Product Overview & Barcode',
+        url: 'https://supabase.hrgroupco.in/storage/v1/object/public/images/products/product_1794851075217_1794851075217_42a41i.jpeg',
+        caption: 'Product packaging & batch label inspected',
       },
     ],
   };
 
+  const customerReturnData = activeReturn ? {
+    orderId: activeReturn.orderId ? activeReturn.orderId.slice(-8).toUpperCase() : (activeReturn.returnId ? activeReturn.returnId.slice(-8).toUpperCase() : 'ORD-998241'),
+    taskId: activeReturn.returnId ? `RET-${activeReturn.returnId.slice(0, 8).toUpperCase()}` : 'RET-TSK-8821',
+    customerName: activeReturn.customerName || 'Shruti Paliwal',
+    customerPhone: activeReturn.customerPhone || '+91 81030 13465',
+    pickupAddress: activeReturn.pickupAddress || 'Indore, Madhya Pradesh',
+    itemTitle: activeReturn.itemTitle || 'Facewash for acne and oil control',
+    itemColor: activeReturn.itemColor || 'Default',
+    itemSize: activeReturn.itemSize || 'Free Size',
+    originalPrice: activeReturn.itemPrice ? `₹${activeReturn.itemPrice}` : '₹599',
+    itemImage: activeReturn.itemImage || baseReturnData.itemImage,
+    reasonCategory: activeReturn.reason || 'Quality Mismatch',
+    customerComment: `Customer reported: ${activeReturn.reason || 'Quality Mismatch'}`,
+    customerPhotos: (activeReturn.customerPhotos && activeReturn.customerPhotos.length > 0)
+      ? activeReturn.customerPhotos
+      : baseReturnData.customerPhotos
+  } : baseReturnData;
+
   // Driver Physical Inspection & Photo Evidence State
-  const [driverPhotos, setDriverPhotos] = useState([
-    {
-      id: 'drv_p1',
-      name: 'doorstep_product_inspection.jpg',
-      url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      label: 'Physical Saree Inspection (Pallu & Border)',
-      time: 'Doorstep Camera',
-    },
-    {
-      id: 'drv_p2',
-      name: 'doorstep_brand_tag_check.jpg',
-      url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80',
-      label: 'Brand Tag & Price Barcode Verified',
-      time: 'Doorstep Camera',
-    },
-  ]);
+  const [driverPhotos, setDriverPhotos] = useState([]);
   const [isReasonVerified, setIsReasonVerified] = useState(false);
   const driverPhotoInputRef = React.useRef(null);
   const rejectPhotoInputRef = React.useRef(null);
@@ -75,10 +101,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('reason_mismatch');
   const [rejectNotes, setRejectNotes] = useState('');
-  const [rejectPhoto, setRejectPhoto] = useState({
-    name: 'driver_rejection_proof.jpg',
-    url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80',
-  });
+  const [rejectPhoto, setRejectPhoto] = useState(null);
   const [isPickupRejected, setIsPickupRejected] = useState(false);
   const [rejectedSummary, setRejectedSummary] = useState(null);
 
@@ -302,8 +325,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
                   Reverse Pickup
                 </h1>
                 <span className="text-[9px] sm:text-[10px] font-black bg-pink-100 text-[#b90041] px-1.5 py-0.5 rounded-md sm:rounded-full shrink-0">
-                  <span className="sm:hidden">#8821</span>
-                  <span className="hidden sm:inline">#RET-TSK-8821</span>
+                  <span>#{customerReturnData.taskId}</span>
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">Doorstep QC &amp; Return Handover</p>
@@ -321,17 +343,50 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
       {/* Main Container */}
       <main className="max-w-4xl mx-auto px-4 py-5 space-y-5">
-        {/* Customer Location & Contact Card */}
-        <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
+        {loading ? (
+          <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-100 text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-pink-200 border-t-[#b90041] rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500">Checking Live Database for Pending Return Requests...</p>
+          </div>
+        ) : !activeReturn ? (
+          <section className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-slate-100 text-center space-y-5 animate-in fade-in">
+            <div className="w-16 h-16 rounded-3xl bg-pink-50 text-[#b90041] flex items-center justify-center text-3xl mx-auto shadow-inner">
+              🔄
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900">No Pending Return Pickups</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Currently, there are no active customer return requests pending in the database. As soon as a customer submits a return or exchange request from the store, it will automatically appear here with their live order details.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={loadData}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-sm"
+              >
+                ↻ Refresh Live Queue
+              </button>
+              <button
+                onClick={() => (onNavigate ? onNavigate('available_tasks') : window.history.back())}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs transition-all cursor-pointer border border-pink-200"
+              >
+                Go to Available Delivery Tasks ➔
+              </button>
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* Customer Location & Contact Card */}
+            <section className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <h2 className="font-black text-sm sm:text-base text-slate-900">Priya Sharma</h2>
+                <h2 className="font-black text-sm sm:text-base text-slate-900">{customerReturnData.customerName}</h2>
                 <span className="text-[11px] font-bold text-slate-400">• 1.8 km away</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Flat 402, Royal Palms, MG Road, Near Metro Pillar 140, Bengaluru - 560001
+                {customerReturnData.pickupAddress || 'Flat 402, Royal Palms, MG Road, Near Metro Pillar 140, Bengaluru - 560001'}
               </p>
             </div>
 
@@ -342,7 +397,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex gap-2 pt-2 border-t border-slate-100">
             <button
-              onClick={() => triggerToast('Calling customer Priya (+91 98765 43210)... 📞')}
+              onClick={() => triggerToast(`Calling ${customerReturnData.customerName} (${customerReturnData.customerPhone})... 📞`)}
               className="flex-1 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors border border-emerald-200/60"
             >
               <span>📞 Call Customer</span>
@@ -444,9 +499,9 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <img
-              src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500&auto=format&fit=crop&q=80"
-              alt="Saree Preview"
-              onClick={() => setPreviewModalImg({ url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80', title: customerReturnData.itemTitle })}
+              src={customerReturnData.itemImage || "https://supabase.hrgroupco.in/storage/v1/object/public/images/products/product_1794851075214_1794851075215_7yaz9y.jpeg"}
+              alt={customerReturnData.itemTitle}
+              onClick={() => setPreviewModalImg({ url: customerReturnData.itemImage || 'https://supabase.hrgroupco.in/storage/v1/object/public/images/products/product_1794851075214_1794851075215_7yaz9y.jpeg', title: customerReturnData.itemTitle })}
               className="w-20 h-24 sm:w-24 sm:h-28 object-cover rounded-2xl border border-slate-200 shrink-0 cursor-pointer hover:opacity-95"
             />
             <div className="space-y-1.5 flex-1 min-w-0">
@@ -794,16 +849,6 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
               </h3>
               <p className="text-[11px] text-slate-500">Ask customer for the 4-digit OTP sent on their SMS</p>
             </div>
-
-            <button
-              onClick={() => {
-                setOtp(['5', '8', '2', '9']);
-                triggerToast('Filled simulated customer OTP: 5829');
-              }}
-              className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl cursor-pointer"
-            >
-              Demo Auto-Fill (5829)
-            </button>
           </div>
 
           <div className="flex items-center gap-3 justify-center py-2">
@@ -827,7 +872,7 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex gap-2">
             <button
-              onClick={() => triggerToast('OTP resent to customer (+91 98765 43210) 📨')}
+              onClick={() => triggerToast(`OTP resent to customer (${customerReturnData.customerPhone}) 📨`)}
               className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
             >
               Resend OTP
@@ -900,6 +945,8 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
           <span>Complete Reverse Pickup &amp; Earn ₹65</span>
           <span>➔</span>
         </button>
+          </>
+        )}
       </main>
 
       {/* Enhanced Rejection Modal (Reason Selection, Driver Notes, & Discrepancy Photo Evidence) */}

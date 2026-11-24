@@ -11,7 +11,9 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   clearCart,
-  getProductById
+  getProductById,
+  sendCodOtp,
+  verifyCodOtp
 } from '../../services/ecommerceService';
 import { recordAffiliateOrder } from '../../services/affiliateAuthService';
 import { addNotification } from '../../services/notificationService';
@@ -76,6 +78,28 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
 
   // ── Simulated Interactive Payment Processing State ──
   const [paymentProcessing, setPaymentProcessing] = useState(null);
+
+  // ── COD Order OTP Verification States (Tareeqa 1) ──
+  const [showCodOtpModal, setShowCodOtpModal] = useState(false);
+  const [codOtpInput, setCodOtpInput] = useState('');
+  const [codOtpLoading, setCodOtpLoading] = useState(false);
+  const [codOtpSending, setCodOtpSending] = useState(false);
+  const [codOtpError, setCodOtpError] = useState('');
+  const [codCooldown, setCodCooldown] = useState(0);
+  const [codExpiryTimer, setCodExpiryTimer] = useState(300);
+
+  useEffect(() => {
+    let interval = null;
+    if (showCodOtpModal) {
+      interval = setInterval(() => {
+        setCodCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+        setCodExpiryTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showCodOtpModal]);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -321,8 +345,91 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
     triggerToast('Coupon removed');
   };
 
+  // Target recipient email & phone for COD OTP
+  const resolveTargetContact = () => {
+    let email = address?.email || '';
+    if (!email || email.endsWith('@customer.meesho')) {
+      try {
+        for (const key of ['mshoppy_customer_user', 'user', 'mshoppy_reseller_user', 'mshoppy_affiliate_user']) {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const u = JSON.parse(raw);
+            if (u?.email && !u.email.endsWith('@customer.meesho')) {
+              email = u.email;
+              break;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    const phone = address?.phone || address?.mobileNumber || '';
+    return { email, phone, name: address?.name || 'Customer' };
+  };
+
+  const handleOpenCodOtpModal = async () => {
+    setShowCodOtpModal(true);
+    setCodOtpInput('');
+    setCodOtpError('');
+    await handleSendCodOtp();
+  };
+
+  const handleSendCodOtp = async () => {
+    const { email, phone, name } = resolveTargetContact();
+    setCodOtpSending(true);
+    setCodOtpError('');
+    try {
+      const res = await sendCodOtp({
+        email,
+        phone,
+        orderAmount: finalAmount,
+        recipientName: name
+      });
+      if (res?.success) {
+        setCodCooldown(res.cooldown || 30);
+        setCodExpiryTimer(res.expiresIn || 300);
+        triggerToast(res.message || 'Verification code sent!');
+      } else {
+        setCodOtpError(res?.message || 'Failed to send OTP code.');
+        triggerToast(res?.message || 'Failed to send OTP code.');
+      }
+    } catch (e) {
+      setCodOtpError('Error connecting to verification service.');
+    } finally {
+      setCodOtpSending(false);
+    }
+  };
+
+  const handleVerifyCodOtp = async () => {
+    if (!codOtpInput || codOtpInput.trim().length < 6) {
+      setCodOtpError('Please enter the 6-digit OTP sent to your registered email.');
+      return;
+    }
+    const { email, phone } = resolveTargetContact();
+    setCodOtpLoading(true);
+    setCodOtpError('');
+    try {
+      const res = await verifyCodOtp({
+        email,
+        phone,
+        otp: codOtpInput.trim()
+      });
+      if (res?.success && res?.codVerificationToken) {
+        triggerToast('✅ COD Verified! Finalizing order...');
+        await executeOrderPlacement('COD', res.codVerificationToken);
+        setShowCodOtpModal(false);
+      } else {
+        setCodOtpError(res?.message || 'Invalid or expired OTP. Please try again.');
+        triggerToast(res?.message || 'Invalid OTP');
+      }
+    } catch (e) {
+      setCodOtpError(e?.message || 'Verification failed. Please check network.');
+    } finally {
+      setCodOtpLoading(false);
+    }
+  };
+
   // Execute database order creation once payment is confirmed / approved
-  const executeOrderPlacement = async (paymentMethodToSave) => {
+  const executeOrderPlacement = async (paymentMethodToSave, codVerificationToken = undefined) => {
     setPlacingOrder(true);
     try {
       const referralCode = localStorage.getItem('mshoppy_referral_code');
@@ -353,7 +460,8 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
         totalAmount: finalAmount,
         couponCode: appliedCoupon?.code || undefined,
         referralCode: referralCode || undefined,
-        customerEmail: userEmail || address?.email || undefined
+        customerEmail: userEmail || address?.email || undefined,
+        codVerificationToken: codVerificationToken || undefined
       };
 
       const res = await createOrder(orderPayload);
@@ -619,9 +727,9 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
       return;
     }
 
-    // 1. Cash on Delivery (COD) -> Instant Placement
+    // 1. Cash on Delivery (COD) -> Security OTP Modal (Tareeqa 1)
     if (selectedPayment === 'cod') {
-      executeOrderPlacement('COD');
+      handleOpenCodOtpModal();
       return;
     }
 
@@ -1406,6 +1514,147 @@ export default function CheckoutPayment({ onNavigate, onBack }) {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── COD Security OTP Verification Modal (Tareeqa 1) ── */}
+      {showCodOtpModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
+                  <span className="material-symbols-outlined text-2xl">verified_user</span>
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-1.5">
+                    <span>COD Order Verification</span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-black px-2 py-0.5 rounded-full uppercase">Security</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-semibold">One-Time Security Password Required</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCodOtpModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Recipient Notice */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Payable at Doorstep</span>
+                <span className="font-black text-[#FF3F6C] text-base">₹{finalAmount}</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-snug pt-1">
+                A 6-digit verification code was sent to:
+                <strong className="text-slate-900 block truncate font-mono mt-0.5">
+                  {resolveTargetContact().email || resolveTargetContact().phone}
+                </strong>
+              </p>
+            </div>
+
+            {/* Error alert */}
+            {codOtpError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2 animate-in fade-in">
+                <span className="material-symbols-outlined text-base">error</span>
+                <span>{codOtpError}</span>
+              </div>
+            )}
+
+            {/* OTP Input Form */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-700 block">
+                Enter 6-Digit Code received on Email
+              </label>
+              
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={codOtpInput}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setCodOtpInput(val);
+                    setCodOtpError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && codOtpInput.length === 6 && !codOtpLoading) {
+                      handleVerifyCodOtp();
+                    }
+                  }}
+                  placeholder="e.g. 620129"
+                  className="w-full bg-slate-50 border-2 border-slate-200 focus:border-[#FF3F6C] focus:bg-white rounded-2xl px-4 py-3.5 text-center text-2xl font-mono font-black tracking-[8px] text-slate-900 focus:outline-none transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-300"
+                  autoFocus
+                />
+              </div>
+
+              {/* Visual 6-dash progress bar */}
+              <div className="flex justify-center gap-2">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-9 h-1 rounded-full transition-all duration-200 ${
+                      i < codOtpInput.length ? 'bg-[#FF3F6C]' : 'bg-slate-200'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center text-[11px] text-slate-400 px-1 pt-1">
+                <span>
+                  ⏱️ Expires in:{' '}
+                  <strong className="text-slate-700 font-mono">
+                    {Math.floor(codExpiryTimer / 60)}:{(codExpiryTimer % 60).toString().padStart(2, '0')}
+                  </strong>
+                </span>
+                {codCooldown > 0 ? (
+                  <span className="text-slate-400 font-semibold">Resend in {codCooldown}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendCodOtp}
+                    disabled={codOtpSending}
+                    className="text-[#FF3F6C] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-xs">refresh</span>
+                    <span>Resend OTP</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Submit Verification Button */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={handleVerifyCodOtp}
+                disabled={codOtpLoading || codOtpInput.length < 6}
+                className="w-full py-4 bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] text-white font-black text-sm rounded-2xl shadow-xl shadow-pink-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {codOtpLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Verifying Code...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Verify &amp; Place COD Order</span>
+                    <span className="material-symbols-outlined text-lg">check_circle</span>
+                  </>
+                )}
+              </button>
+              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                🔒 Prevents fake &amp; prank COD deliveries. Your order will be confirmed only after entering the correct OTP.
+              </p>
             </div>
           </div>
         </div>

@@ -658,7 +658,7 @@ export async function getOrderById(id) {
   }
 }
 
-export async function createOrder({ items, shippingAddress, paymentMethod, totalAmount, couponCode, referralCode, customerEmail }) {
+export async function createOrder({ items, shippingAddress, paymentMethod, totalAmount, couponCode, referralCode, customerEmail, codVerificationToken }) {
   try {
     const savedRef = referralCode || (typeof window !== 'undefined' ? localStorage.getItem('mshoppy_referral_code') : undefined) || undefined;
     let emailToSend = customerEmail;
@@ -686,7 +686,8 @@ export async function createOrder({ items, shippingAddress, paymentMethod, total
         totalAmount,
         couponCode,
         referralCode: savedRef,
-        customerEmail: emailToSend
+        customerEmail: emailToSend,
+        codVerificationToken
       }),
     });
     apiMemoryCache.delete(`orders_${getCustomerId()}`);
@@ -1032,5 +1033,83 @@ export async function applyReferralCode(code) {
     return { success: false, message: error.message };
   }
 }
+
+/**
+ * Send Cash on Delivery (COD) Security OTP
+ */
+export async function sendCodOtp({ email, phone, orderAmount, recipientName }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders/cod-otp/send`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        email,
+        phone,
+        orderAmount,
+        recipientName
+      })
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Failed to send COD OTP:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Verify Cash on Delivery (COD) Security OTP
+ */
+export async function verifyCodOtp({ email, phone, otp }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders/cod-otp/verify`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        email,
+        phone,
+        otp
+      })
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Failed to verify COD OTP:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Subscribe for Back-in-Stock email notification
+ */
+export async function subscribeBackInStock(productId, { email, phone }) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/products/${productId}/back-in-stock`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ email, phone })
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Failed to subscribe for back in stock:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Subscribe to MShoppy Newsletter
+ */
+export async function subscribeNewsletter(email) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/newsletter/subscribe`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ email })
+    });
+    return await res.json();
+  } catch (error) {
+    console.error('Failed to subscribe to newsletter:', error);
+    return { success: false, message: error.message };
+  }
+}
+
 
 
