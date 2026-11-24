@@ -343,17 +343,74 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     return match;
   }, [variants, selectedColor, selectedSize]);
 
-  // Dynamic category-specific product specifications (replacing dummy clothing hardcodes)
+  // Real product specifications & category highlights
   const productSpecs = useMemo(() => {
     if (!product) return [];
-    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
+
+    // 1. Priority 1: Check if supplier provided custom specifications/highlights
+    if (Array.isArray(product.specifications) && product.specifications.length > 0) {
+      return product.specifications
+        .map(s => typeof s === 'string' ? { label: 'Feature', value: s } : s)
+        .filter(s => s && s.label && s.value);
+    }
+    if (Array.isArray(product.highlights) && product.highlights.length > 0) {
+      return product.highlights
+        .map(h => typeof h === 'string' ? { label: 'Highlight', value: h } : h)
+        .filter(h => h && h.label && h.value);
+    }
+    if (product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes)) {
+      const customEntries = Object.entries(product.attributes)
+        .filter(([k, v]) => Boolean(v))
+        .map(([k, v]) => ({ label: k, value: String(v) }));
+      if (customEntries.length > 0) return customEntries;
+    }
+
+    const slug = (product.categorySlug || product.category?.slug || product.category?.name || '').toLowerCase();
     const sub = (product.subCategory || '').toLowerCase();
     const titleLower = (product.title || '').toLowerCase();
     const idealFor = getProductIdealFor(product);
 
-    if (slug === 'beauty-health') {
+    // 2. Skincare, Beauty & Cosmetics Category Check - strictly block apparel attributes (Fabric / Pattern)
+    const isBeautyOrSkincare =
+      slug === 'beauty-health' ||
+      slug === 'skincare' ||
+      slug === 'beauty' ||
+      slug.includes('beauty') ||
+      slug.includes('skin') ||
+      slug.includes('cosmetic') ||
+      slug.includes('makeup') ||
+      slug.includes('hair') ||
+      slug.includes('personal') ||
+      sub.includes('sunscreen') ||
+      sub.includes('skincare') ||
+      sub.includes('beauty') ||
+      titleLower.includes('sunscreen') ||
+      titleLower.includes('lotion') ||
+      titleLower.includes('serum') ||
+      titleLower.includes('cream') ||
+      titleLower.includes('lipstick') ||
+      titleLower.includes('facewash') ||
+      titleLower.includes('face wash') ||
+      titleLower.includes('shampoo') ||
+      titleLower.includes('moisturizer') ||
+      titleLower.includes('spf');
+
+    if (isBeautyOrSkincare) {
+      // Dedicated handling for Sunscreen
+      if (sub.includes('sunscreen') || titleLower.includes('sunscreen') || titleLower.includes('spf')) {
+        const netQty = (product.sizes && product.sizes.length > 0 && product.sizes[0] !== 'Free Size')
+          ? product.sizes[0]
+          : '50ml';
+        return [
+          { label: 'Type', value: 'UV Protection / Sunscreen' },
+          { label: 'Net Quantity', value: netQty },
+          { label: 'Skin Type', value: product.skinType || 'All Skin Types' },
+          { label: 'Ideal For', value: 'Unisex' },
+        ];
+      }
+
       let typeFinish = product.subCategory || 'Personal Care';
-      let usageLabel = 'Skin / Usage Type';
+      let usageLabel = 'Skin Type';
       let usageValue = 'All Skin Types';
 
       if (sub.includes('lipstick') || titleLower.includes('lipstick') || titleLower.includes('lip crayon') || titleLower.includes('matte as hell')) {
@@ -374,8 +431,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         usageValue = 'Eyes (Smudge-Proof)';
       } else if (sub.includes('face wash') || titleLower.includes('face wash')) {
         typeFinish = 'Deep Cleansing / Gentle Gel';
-      } else if (sub.includes('sunscreen') || titleLower.includes('sunscreen') || titleLower.includes('spf')) {
-        typeFinish = 'UV Protection / Broad Spectrum';
       } else if (sub.includes('compact') || titleLower.includes('compact')) {
         typeFinish = 'Oil-Control Matte Powder';
       } else if (sub.includes('nail polish') || titleLower.includes('nail polish')) {
@@ -384,15 +439,19 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         typeFinish = 'Nourishing Moisturizer';
       }
 
+      const netQty = (product.sizes && product.sizes.length > 0 && product.sizes[0] !== 'Free Size')
+        ? product.sizes[0]
+        : '1 Unit';
+
       return [
         { label: 'Type / Finish', value: typeFinish },
-        { label: 'Net Quantity', value: '1 Unit' },
-        { label: 'Ideal For', value: idealFor },
+        { label: 'Net Quantity', value: netQty },
         { label: usageLabel, value: usageValue },
+        { label: 'Ideal For', value: idealFor },
       ];
     }
 
-    if (slug === 'footwear') {
+    if (slug === 'footwear' || slug.includes('footwear') || slug.includes('shoe')) {
       return [
         { label: 'Material', value: product.material || 'Synthetic / Mesh' },
         { label: 'Fastening', value: 'Slip-On / Lace-Ups' },
@@ -401,7 +460,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
       ];
     }
 
-    if (slug === 'electronics') {
+    if (slug === 'electronics' || slug.includes('electronic') || slug.includes('gadget')) {
       return [
         { label: 'Connectivity', value: 'Wireless / Bluetooth' },
         { label: 'Compatibility', value: 'Android & iOS' },
@@ -410,7 +469,7 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
       ];
     }
 
-    if (slug === 'jewellery' || slug === 'accessories') {
+    if (slug === 'jewellery' || slug.includes('jewel') || slug === 'accessories' || slug.includes('accessori')) {
       return [
         { label: 'Base Metal', value: 'Alloy / Brass' },
         { label: 'Plating', value: 'Gold / Silver Plated' },
@@ -419,42 +478,83 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
       ];
     }
 
-    if (slug === 'home-kitchen') {
+    if (slug === 'home-kitchen' || slug.includes('home') || slug.includes('kitchen')) {
       return [
         { label: 'Material', value: product.material || 'Cotton / Microfiber' },
-        { label: 'Pattern', value: 'Printed / Geometric / Solid' },
+        { label: 'Pattern', value: product.pattern || 'Printed / Geometric / Solid' },
         { label: 'Care', value: 'Machine Wash / Wipe Clean' },
         { label: 'Country of Origin', value: 'India' },
       ];
     }
 
     // Default Clothing (women-ethnic, women-western, men, kids)
-    return [
-      { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
-      { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
-      { label: 'Pattern', value: 'Embroidered / Printed / Solid' },
-      { label: 'Ideal For', value: idealFor },
-    ];
+    const isApparel =
+      slug.includes('ethnic') ||
+      slug.includes('western') ||
+      slug.includes('men') ||
+      slug.includes('women') ||
+      slug.includes('kids') ||
+      slug.includes('cloth') ||
+      slug.includes('wear') ||
+      titleLower.includes('saree') ||
+      titleLower.includes('kurti') ||
+      titleLower.includes('shirt') ||
+      titleLower.includes('tshirt') ||
+      titleLower.includes('t-shirt') ||
+      titleLower.includes('jeans') ||
+      titleLower.includes('dress') ||
+      titleLower.includes('top') ||
+      titleLower.includes('lehenga') ||
+      titleLower.includes('kurta');
+
+    if (isApparel) {
+      return [
+        { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
+        { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
+        { label: 'Pattern', value: product.pattern || 'Embroidered / Printed / Solid' },
+        { label: 'Ideal For', value: idealFor },
+      ];
+    }
+
+    // Dynamic real attributes collector for any other items
+    const specs = [];
+    const categoryName = product.category?.name || product.categorySlug;
+    if (categoryName) {
+      specs.push({ label: 'Category', value: categoryName });
+    }
+    if (product.subCategory && product.subCategory.trim()) {
+      specs.push({ label: 'Sub-Category', value: product.subCategory });
+    }
+    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+      specs.push({ label: 'Sizes', value: product.sizes.join(', ') });
+    }
+    if (Array.isArray(product.colors) && product.colors.length > 0) {
+      specs.push({ label: 'Colors', value: product.colors.join(', ') });
+    } else if (selectedColor) {
+      specs.push({ label: 'Color', value: selectedColor });
+    } else if (product.color && product.color.trim()) {
+      specs.push({ label: 'Color', value: product.color });
+    }
+    if (product.fabric && product.fabric.trim()) {
+      specs.push({ label: 'Fabric', value: product.fabric });
+    } else if (product.material && product.material.trim()) {
+      specs.push({ label: 'Material', value: product.material });
+    }
+    if (product.pattern && product.pattern.trim()) {
+      specs.push({ label: 'Pattern', value: product.pattern });
+    }
+    if (product.sku && product.sku.trim()) {
+      specs.push({ label: 'SKU', value: product.sku });
+    }
+    if (product.supplierName && product.supplierName.trim()) {
+      specs.push({ label: 'Sold By', value: product.supplierName });
+    }
+    specs.push({ label: 'Country of Origin', value: 'India' });
+    return specs;
   }, [product, selectedColor]);
 
   const packageContains = useMemo(() => {
     if (!product) return '1 Unit';
-    const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
-    const titleLower = (product.title || '').toLowerCase();
-    if (slug === 'beauty-health') return `1 x ${product.title}`;
-    if (slug === 'footwear') return '1 Pair of Footwear';
-    if (slug === 'electronics') return '1 Device, Charging Cable, User Manual';
-    if (slug === 'jewellery') return '1 Jewellery Set / Piece';
-    if (slug === 'home-kitchen') return `1 x ${product.title}`;
-    if (slug.includes('ethnic') || slug.includes('western') || slug === 'men' || slug === 'kids') {
-      if (titleLower.includes('saree')) return '1 Saree with Unstitched Blouse Piece';
-      if (titleLower.includes('kurta') || titleLower.includes('kurti')) return '1 Kurti / Kurta Set';
-      if (titleLower.includes('top') || titleLower.includes('tunic')) return '1 Top / Tunic';
-      if (titleLower.includes('shirt')) return '1 Shirt';
-      if (titleLower.includes('t-shirt') || titleLower.includes('tshirt')) return '1 T-Shirt';
-      if (titleLower.includes('dress')) return '1 Dress';
-      if (titleLower.includes('pant') || titleLower.includes('jean') || titleLower.includes('trouser')) return '1 Bottomwear';
-    }
     return `1 x ${product.title}`;
   }, [product]);
 

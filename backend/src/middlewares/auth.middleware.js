@@ -48,9 +48,7 @@ export const verifyAuth = async (req, res, next) => {
           decodedToken = parsedPayload;
         }
 
-        if (!decodedToken && (token.startsWith('firebase_') || (token.length >= 3 && !token.startsWith('ey')))) {
-          uid = token;
-        } else if (!decodedToken) {
+        if (!decodedToken) {
           return res.status(401).json({ 
             success: false, 
             error: 'Unauthorized: Invalid Authentication Token', 
