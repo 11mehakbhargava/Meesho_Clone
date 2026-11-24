@@ -97,7 +97,12 @@ export default function TaxInvoiceModal({ order, onClose }) {
               {address.addressLine || address.street || 'Address on file'}<br />
               {address.city ? `${address.city}, ` : ''}{address.state ? `${address.state} - ` : ''}<strong>{address.pincode || ''}</strong>
             </p>
-            <p className="text-slate-500 mt-1">Phone: <strong>{address.phone || order.user?.phone || 'On File'}</strong></p>
+            <p className="text-slate-500 mt-1">
+              Phone: <strong>{address.phone || order.user?.phone ? `${String(address.phone || order.user?.phone).replace(/[\s-]/g, '').slice(0, 5)} XXXXX (Protected)` : 'On File'}</strong>
+            </p>
+            <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+              🛡️ Virtual Helpline: +91 80 4712 3456
+            </p>
           </div>
           <div className="sm:text-right">
             <p className="font-extrabold uppercase text-[10px] text-slate-400 tracking-wider mb-1">
