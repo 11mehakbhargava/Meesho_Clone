@@ -569,7 +569,7 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
         <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px;">
           📍 Delivery Address
         </div>
-        <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${recipientName} ${phone ? `• ${phone}` : ''}</div>
+        <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${recipientName}</div>
         <div style="font-size: 13px; color: #475569; margin-top: 4px; line-height: 1.4;">
           ${addressDetails} ${pincode ? `- ${pincode}` : ''}
         </div>
@@ -898,7 +898,7 @@ export const getOrderDispatchedEmailHtml = ({
         <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px;">
           📍 Delivery Destination
         </div>
-        <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">${recipientName} ${phone ? `&bull; ${phone}` : ''}</div>
+        <div style="font-size: 13.5px; font-weight: 800; color: #0f172a;">${recipientName}</div>
         <div style="font-size: 12.5px; color: #475569; margin-top: 4px; line-height: 1.4;">
           ${addressDetails} ${pincode ? `- ${pincode}` : ''}
         </div>

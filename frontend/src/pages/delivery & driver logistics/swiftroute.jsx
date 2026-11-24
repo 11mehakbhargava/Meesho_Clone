@@ -21,7 +21,7 @@ export default function SwiftRoute({ onNavigate = () => {}, onBack }) {
       packages: 2,
       eta: '10:05 AM',
       isCompleted: false,
-      contact: '+91 98765 43210',
+      contact: '+91 98765 XXXXX (Masked)',
       cod: false,
     },
     {
@@ -249,11 +249,12 @@ export default function SwiftRoute({ onNavigate = () => {}, onBack }) {
                       </button>
                       {stop.contact && (
                         <button
-                          onClick={() => triggerToast(`Dialing ${stop.contact}... 📞`)}
-                          className="px-4 py-2.5 bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                          onClick={() => triggerToast(`Connecting via Secure Call Bridge (Number Protected)... 📞`)}
+                          className="px-4 py-2.5 bg-pink-50 hover:bg-pink-100 text-[#b90041] font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Encrypted Virtual Call Bridge"
                         >
-                          <span className="material-symbols-outlined text-sm">call</span>
-                          <span>Call</span>
+                          <span className="material-symbols-outlined text-sm">shield</span>
+                          <span>Secure Call</span>
                         </button>
                       )}
                     </div>
