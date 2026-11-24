@@ -11,7 +11,6 @@ import {
   getWishlist,
   toggleWishlist,
   getBanners,
-  subscribeNewsletter,
 } from "../../services/ecommerceService";
 import { useCart } from "../../hooks/useCart";
 import { getUnreadCount, subscribeNotifications } from "../../services/notificationService";
@@ -226,7 +225,7 @@ export default function HomeUserCustomer() {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (e) { }
+    } catch (e) {}
     return REAL_DATABASE_BANNERS;
   });
   const [searchQuery, setSearchQuery] = useState("");
@@ -322,14 +321,14 @@ export default function HomeUserCustomer() {
     try {
       const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_home_prods') || localStorage.getItem('mshoppy_cached_catalog_prods') || '[]');
       if (Array.isArray(cached) && cached.length > 0) return cached;
-    } catch (_) { }
+    } catch (_) {}
     return [];
   });
   const [dbCategories, setDbCategories] = useState(() => {
     try {
       const cached = JSON.parse(sessionStorage.getItem('mshoppy_cached_cats') || '[]');
       if (Array.isArray(cached) && cached.length > 0) return cached;
-    } catch (_) { }
+    } catch (_) {}
     return [];
   });
   const [favorites, setFavorites] = useState([]);
@@ -337,39 +336,6 @@ export default function HomeUserCustomer() {
   const [loading, setLoading] = useState(() => products.length === 0);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [unreadNotifs, setUnreadNotifs] = useState(() => getUnreadCount());
-
-  // ── Newsletter Subscription State (Sir's Requirement #2) ──
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterLoading, setNewsletterLoading] = useState(false);
-  const [newsletterNotice, setNewsletterNotice] = useState('');
-  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
-
-  const handleSubscribeNewsletter = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!newsletterEmail || !newsletterEmail.includes('@')) {
-      setNewsletterNotice('Please enter a valid email address.');
-      setNewsletterSuccess(false);
-      return;
-    }
-    setNewsletterLoading(true);
-    setNewsletterNotice('');
-    try {
-      const res = await subscribeNewsletter(newsletterEmail.trim());
-      if (res?.success) {
-        setNewsletterSuccess(true);
-        setNewsletterNotice('🎉 Subscribed successfully! Check your inbox for your 10% OFF coupon (WELCOME10).');
-        setNewsletterEmail('');
-      } else {
-        setNewsletterSuccess(false);
-        setNewsletterNotice(res?.message || 'Failed to subscribe.');
-      }
-    } catch (err) {
-      setNewsletterSuccess(false);
-      setNewsletterNotice('Error subscribing. Please try again.');
-    } finally {
-      setNewsletterLoading(false);
-    }
-  };
 
   // Real Registered Customer User State
   const reduxUser = useSelector((state) => state.user?.currentUser);
@@ -396,7 +362,7 @@ export default function HomeUserCustomer() {
     try {
       const raw = localStorage.getItem('mshoppy_customer_user') || localStorage.getItem('mshoppy_reseller_user') || localStorage.getItem('mshoppy_affiliate_user') || localStorage.getItem('mshoppy_kyc_app');
       if (raw) return JSON.parse(raw);
-    } catch (_) { }
+    } catch (_) {}
     return currentUser || reduxUser || stored || null;
   }, [currentUser, reduxUser]);
 
@@ -425,7 +391,7 @@ export default function HomeUserCustomer() {
           return true;
         }
       }
-    } catch (_) { }
+    } catch (_) {}
     return false;
   }, []);
 
@@ -464,7 +430,7 @@ export default function HomeUserCustomer() {
     setShowGuestModal(false);
     navigate('/user/login?redirect=' + encodeURIComponent(window.location.pathname || '/'));
   }, [navigate]);
-
+  
   // Real Meesho Infinite Scroll State & Stable Refs
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -500,22 +466,6 @@ export default function HomeUserCustomer() {
     }
   });
 
-  // Active Welcome VIP coupon state
-  const [activeWelcomeCoupon, setActiveWelcomeCoupon] = useState(() => {
-    try {
-      const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get('coupon')?.toUpperCase() === 'WELCOME10') return 'WELCOME10';
-      const saved = localStorage.getItem('mshoppy_applied_coupon');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.code?.toUpperCase() === 'WELCOME10') return 'WELCOME10';
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
-
   // 1. Load Categories, Banners & Wishlist on initial mount
   useEffect(() => {
     let isMounted = true;
@@ -530,11 +480,11 @@ export default function HomeUserCustomer() {
         if (isMounted) {
           if (bannersData && bannersData.length > 0) {
             setBanners(bannersData);
-            try { localStorage.setItem('mshoppy_cached_banners', JSON.stringify(bannersData)); } catch (_) { }
+            try { localStorage.setItem('mshoppy_cached_banners', JSON.stringify(bannersData)); } catch (_) {}
           }
           if (catsData && catsData.length > 0) {
             setDbCategories(catsData);
-            try { sessionStorage.setItem('mshoppy_cached_cats', JSON.stringify(catsData)); } catch (_) { }
+            try { sessionStorage.setItem('mshoppy_cached_cats', JSON.stringify(catsData)); } catch (_) {}
           }
           if (wishData) setFavorites(wishData.map(w => w.productId));
         }
@@ -587,7 +537,7 @@ export default function HomeUserCustomer() {
               if (!localStorage.getItem('mshoppy_cached_catalog_prods')) {
                 localStorage.setItem('mshoppy_cached_catalog_prods', JSON.stringify(loadedProds.slice(0, 24)));
               }
-            } catch (_) { }
+            } catch (_) {}
           }
         }
       } catch (err) {
@@ -681,25 +631,21 @@ export default function HomeUserCustomer() {
       observer = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting && hasMoreRef.current && !loadingMoreRef.current && !loadingRef.current) {
-            // Auto-load first batch, then let user scroll to Footer or click Load More
-            if (pageRef.current < 2) {
-              loadMoreProducts();
-            }
+            loadMoreProducts();
           }
         },
-        { rootMargin: '200px' }
+        { rootMargin: '450px' }
       );
       observer.observe(sentinel);
     }
 
     const handleWindowScroll = () => {
       if (loadingMoreRef.current || !hasMoreRef.current || loadingRef.current) return;
-      if (pageRef.current >= 2) return; // Allow user to reach footer!
       const scrollY = window.scrollY || window.pageYOffset;
       const visibleHeight = window.innerHeight;
       const totalHeight = document.documentElement.scrollHeight;
 
-      if (totalHeight - (scrollY + visibleHeight) < 400) {
+      if (totalHeight - (scrollY + visibleHeight) < 600) {
         loadMoreProducts();
       }
     };
@@ -1023,9 +969,9 @@ export default function HomeUserCustomer() {
   return (
     <div className="bg-[#f8f9fb] font-sans text-[#191c1e] min-h-screen">
       {/* Drawer */}
-      <NavDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+      <NavDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
         role="customer"
         isCustomer={true}
       />
@@ -1043,14 +989,14 @@ export default function HomeUserCustomer() {
             >
               <span className="material-symbols-outlined text-2xl">menu</span>
             </button>
-            <div
+            <div 
               onClick={() => navigate('/')}
               className="flex items-center gap-2 cursor-pointer group select-none"
             >
-              <img
-                src="/mshoppy-logo.png"
-                alt="MShoppy"
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-xl shadow-xs transition-transform group-hover:scale-105"
+              <img 
+                src="/mshoppy-logo.png" 
+                alt="MShoppy" 
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-xl shadow-xs transition-transform group-hover:scale-105" 
               />
               <span className="text-lg sm:text-2xl font-black text-[#FF3F6C] font-headline tracking-tight whitespace-nowrap">
                 MShoppy
@@ -1060,14 +1006,14 @@ export default function HomeUserCustomer() {
 
           {/* Desktop Search Bar with Auto-Suggest */}
           <div ref={searchContainerRef} className="flex-1 max-w-lg mx-4 lg:mx-6 hidden md:block relative">
-            <form
+            <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSearchSubmit();
               }}
               className="relative flex items-center"
             >
-              <button
+              <button 
                 type="submit"
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#FF3F6C] transition-colors cursor-pointer flex items-center justify-center p-0.5 rounded-full"
                 title="Search"
@@ -1076,7 +1022,7 @@ export default function HomeUserCustomer() {
                 <span className="material-symbols-outlined text-[22px]">search</span>
               </button>
 
-              <input
+              <input 
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -1089,9 +1035,9 @@ export default function HomeUserCustomer() {
                     handleSearchSubmit();
                   }
                 }}
-                className="w-full bg-[#f2f4f6] dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-full py-2.5 pl-11 pr-10 focus:ring-2 focus:ring-[#FF3F6C] focus:bg-white dark:focus:bg-slate-900 transition-all text-sm outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium shadow-inner"
-                placeholder="Search for Sarees, Kurtis, Electronics & more..."
-                type="text"
+                className="w-full bg-[#f2f4f6] dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-full py-2.5 pl-11 pr-10 focus:ring-2 focus:ring-[#FF3F6C] focus:bg-white dark:focus:bg-slate-900 transition-all text-sm outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium shadow-inner" 
+                placeholder="Search for Sarees, Kurtis, Electronics & more..." 
+                type="text" 
               />
 
               {searchQuery && (
@@ -1207,9 +1153,9 @@ export default function HomeUserCustomer() {
 
           {/* Action Icons */}
           <div className="flex items-center gap-0.5 sm:gap-2.5 shrink-0">
-            <button
-              onClick={() => navigate('/notifications')}
-              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer"
+            <button 
+              onClick={() => navigate('/notifications')} 
+              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer" 
               title="Notifications"
             >
               <span className="material-symbols-outlined text-[22px] sm:text-2xl">notifications</span>
@@ -1219,9 +1165,9 @@ export default function HomeUserCustomer() {
                 </span>
               )}
             </button>
-            <button
-              onClick={() => navigate('/wishlist')}
-              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer"
+            <button 
+              onClick={() => navigate('/wishlist')} 
+              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer" 
               title="My Wishlist"
             >
               <span className="material-symbols-outlined text-[22px] sm:text-2xl">favorite</span>
@@ -1231,9 +1177,9 @@ export default function HomeUserCustomer() {
                 </span>
               )}
             </button>
-            <button
-              onClick={() => navigate('/cart')}
-              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer"
+            <button 
+              onClick={() => navigate('/cart')} 
+              className="relative text-[#191C1E] dark:text-slate-200 p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full active:scale-95 duration-200 cursor-pointer" 
               title="Shopping Cart"
             >
               <span className="material-symbols-outlined text-[22px] sm:text-2xl">shopping_bag</span>
@@ -1272,26 +1218,6 @@ export default function HomeUserCustomer() {
         </div>
       </header>
 
-      {/* Active Newsletter WELCOME10 Coupon Banner */}
-      {activeWelcomeCoupon && (
-        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-green-600 text-white px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
-          <div className="flex items-center gap-2 mx-auto">
-            <span className="text-base">🎁</span>
-            <span>
-              VIP Club Active: <strong>Flat 10% OFF</strong> welcome coupon (Code: <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded text-white font-bold">WELCOME10</span>) applied to your order!
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveWelcomeCoupon(null)}
-            className="text-white/80 hover:text-white text-xs font-bold px-2 py-0.5 cursor-pointer ml-2"
-            title="Dismiss banner"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* Active Friend Referral 40% OFF Banner */}
       {activeReferralCode && (
         <div className="bg-gradient-to-r from-rose-600 via-[#9f0038] to-purple-700 text-white px-4 py-2 flex items-center justify-between text-xs sm:text-sm font-semibold shadow-xs">
@@ -1305,7 +1231,7 @@ export default function HomeUserCustomer() {
             type="button"
             onClick={() => {
               setActiveReferralCode(null);
-              try { localStorage.setItem('mshoppy_referral_banner_dismissed', 'true'); } catch (_) { }
+              try { localStorage.setItem('mshoppy_referral_banner_dismissed', 'true'); } catch (_) {}
             }}
             className="text-white/80 hover:text-white text-xs font-bold px-2 py-0.5 cursor-pointer ml-2"
           >
@@ -1317,14 +1243,14 @@ export default function HomeUserCustomer() {
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-24 md:pb-12">
         {/* Mobile Search */}
         <div className="md:hidden pt-2 pb-4">
-          <form
+          <form 
             onSubmit={(e) => {
               e.preventDefault();
               handleSearchSubmit();
             }}
             className="relative flex items-center"
           >
-            <button
+            <button 
               type="submit"
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#FF3F6C] transition-colors cursor-pointer flex items-center justify-center p-0.5 rounded-full"
               title="Search"
@@ -1333,23 +1259,23 @@ export default function HomeUserCustomer() {
               <span className="material-symbols-outlined text-xl">search</span>
             </button>
 
-            <input
+            <input 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#f2f4f6] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full py-2 pl-10 pr-4 text-xs focus:ring-2 focus:ring-[#FF3F6C] outline-none text-slate-900 dark:text-white"
-              placeholder="Search sarees, kurtas, jackets..."
-              type="text"
+              placeholder="Search sarees, kurtas, jackets..." 
+              type="text" 
             />
           </form>
         </div>
 
         {/* Hero Carousel - Dynamic Backend Banners */}
-        <div
+        <div 
           className="relative mt-2 overflow-hidden rounded-2xl sm:rounded-3xl shadow-sm group select-none"
           onMouseEnter={() => setIsBannerPaused(true)}
           onMouseLeave={() => setIsBannerPaused(false)}
         >
-          <div
+          <div 
             className="flex transition-transform duration-500 ease-in-out h-48 sm:h-64 md:h-80"
             style={{ transform: `translateX(-${activeSlide * 100}%)` }}
           >
@@ -1365,7 +1291,7 @@ export default function HomeUserCustomer() {
               const btnLabel = banner.buttonText || 'Shop Now';
 
               return (
-                <div
+                <div 
                   key={banner.id || idx}
                   onClick={() => {
                     if (banner.targetCategory) {
@@ -1398,7 +1324,7 @@ export default function HomeUserCustomer() {
                         {banner.subtitle}
                       </p>
                     )}
-                    <button
+                    <button 
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1415,9 +1341,9 @@ export default function HomeUserCustomer() {
                     </button>
                   </div>
                   {banner.imageUrl && (
-                    <img
-                      src={banner.imageUrl}
-                      alt={banner.title}
+                    <img 
+                      src={banner.imageUrl} 
+                      alt={banner.title} 
                       className="absolute right-0 top-0 h-full w-1/2 object-cover object-center mask-gradient-left opacity-90 hidden sm:block"
                     />
                   )}
@@ -1464,8 +1390,9 @@ export default function HomeUserCustomer() {
               <button
                 key={idx}
                 onClick={() => setActiveSlide(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${activeSlide === idx ? 'w-6 bg-[#FF3F6C]' : 'w-2 bg-slate-300 dark:bg-slate-700'
-                  }`}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  activeSlide === idx ? 'w-6 bg-[#FF3F6C]' : 'w-2 bg-slate-300 dark:bg-slate-700'
+                }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
@@ -1680,8 +1607,9 @@ export default function HomeUserCustomer() {
                   <div
                     key={tile.id}
                     onClick={() => handleCuratedFilterClick(tile.filterTag)}
-                    className={`bg-white/10 hover:bg-white/20 backdrop-blur-xs border-2 ${curatedFilter === tile.filterTag ? 'border-amber-300 ring-2 ring-amber-300/50' : 'border-amber-200/50'
-                      } rounded-2xl p-2 flex flex-col items-center justify-between cursor-pointer transition-all duration-300 hover:scale-[1.02] group/tile`}
+                    className={`bg-white/10 hover:bg-white/20 backdrop-blur-xs border-2 ${
+                      curatedFilter === tile.filterTag ? 'border-amber-300 ring-2 ring-amber-300/50' : 'border-amber-200/50'
+                    } rounded-2xl p-2 flex flex-col items-center justify-between cursor-pointer transition-all duration-300 hover:scale-[1.02] group/tile`}
                   >
                     <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-2 relative bg-purple-950/40">
                       <img
@@ -1709,8 +1637,8 @@ export default function HomeUserCustomer() {
             <h3 className="font-headline font-bold text-lg text-[#191c1e] dark:text-slate-100">
               Categories
             </h3>
-            <button
-              onClick={() => navigate('/explorer')}
+            <button 
+              onClick={() => navigate('/explorer')} 
               className="text-[#b90041] text-xs font-bold uppercase tracking-wider cursor-pointer hover:underline"
             >
               See All
@@ -1719,14 +1647,15 @@ export default function HomeUserCustomer() {
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
             {categoryChips.map((cat, idx) => (
               <div
-                key={idx}
+                key={idx} 
                 onClick={() => setSelectedCategory(cat.name)}
                 className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"
               >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${selectedCategory === cat.name
-                  ? 'bg-[#FF3F6C] text-white shadow-lg shadow-[#FF3F6C]/25 scale-105'
-                  : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-[#FF3F6C]/40 text-slate-700 dark:text-slate-300'
-                  }`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${
+                  selectedCategory === cat.name 
+                    ? 'bg-[#FF3F6C] text-white shadow-lg shadow-[#FF3F6C]/25 scale-105' 
+                    : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 hover:border-[#FF3F6C]/40 text-slate-700 dark:text-slate-300'
+                }`}>
                   <span className="material-symbols-outlined text-2xl">{cat.icon}</span>
                 </div>
                 <span className={`text-xs font-medium max-w-[76px] truncate text-center ${selectedCategory === cat.name ? 'font-bold text-[#FF3F6C]' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -1735,7 +1664,7 @@ export default function HomeUserCustomer() {
               </div>
             ))}
           </div>
-          {/* Subcategory Filter Chips */}
+                  {/* Subcategory Filter Chips */}
           {activeSubcats.length > 0 && (
             <div className="flex gap-2 overflow-x-auto no-scrollbar pt-3 pb-1">
               {activeSubcats.map((sub, sIdx) => (
@@ -1743,10 +1672,11 @@ export default function HomeUserCustomer() {
                   key={sIdx}
                   type="button"
                   onClick={() => setSelectedSubcat(sub)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${selectedSubcat === sub
-                    ? 'bg-[#FF3F6C] text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#FF3F6C]/40'
-                    }`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+                    selectedSubcat === sub
+                      ? 'bg-[#FF3F6C] text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-[#FF3F6C]/40'
+                  }`}
                 >
                   {sub}
                 </button>
@@ -1853,8 +1783,8 @@ export default function HomeUserCustomer() {
                   <p className="text-xs text-slate-400 mt-1">
                     Try clearing some filters or exploring other categories.
                   </p>
-                  <button
-                    onClick={handleClearAllFilters}
+                  <button 
+                    onClick={handleClearAllFilters} 
                     className="mt-4 px-4 py-2 text-xs font-bold text-[#b90041] bg-[#b90041]/10 rounded-xl hover:bg-[#b90041]/20 transition-colors cursor-pointer"
                   >
                     Reset All Filters
@@ -1869,33 +1799,33 @@ export default function HomeUserCustomer() {
                     const isMall = Boolean(p.isMall || (Number(p.discountPercentage) >= 35));
 
                     return (
-                      <div
-                        key={p.id}
+                      <div 
+                        key={p.id} 
                         className="bg-white dark:bg-slate-900 rounded-2xl p-2.5 sm:p-3 border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
                       >
-                        <div
-                          onClick={() => navigate(`/product?id=${p.id}`)}
-                          className="cursor-pointer"
+                        <div 
+                          onClick={() => navigate(`/product?id=${p.id}`)} 
+                          className="cursor-pointer" 
                           title={`View ${p.title}`}
                         >
                           <div className="aspect-[3/4] rounded-xl overflow-hidden relative mb-2.5 bg-slate-100 dark:bg-slate-800">
-                            <img
-                              src={mainImg}
-                              alt={p.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            <img 
+                              src={mainImg} 
+                              alt={p.title} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                               loading="lazy"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
                                 e.currentTarget.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600';
                               }}
                             />
-
-                            <button
+                            
+                            <button 
                               onClick={(e) => handleToggleFavorite(p.id, e, p)}
                               className="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer hover:bg-white"
                               title="Wishlist"
                             >
-                              <span
+                              <span 
                                 className={`material-symbols-outlined text-sm ${isFav ? 'text-[#FF3F6C]' : 'text-slate-400'}`}
                                 style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
                               >
@@ -1917,7 +1847,7 @@ export default function HomeUserCustomer() {
                           )}
 
                           <div className="px-0.5 min-w-0 space-y-1">
-                            <h4
+                            <h4 
                               className="text-[11.5px] sm:text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug min-h-[2rem] break-words"
                               title={p.title}
                             >
@@ -1965,7 +1895,7 @@ export default function HomeUserCustomer() {
                         </div>
 
                         {/* Customer Bottom Action */}
-                        <div
+                        <div 
                           onClick={() => navigate(`/product?id=${p.id}`)}
                           className="bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/40 rounded-xl px-2.5 py-1.5 flex items-center justify-between cursor-pointer hover:bg-rose-100/60 transition-colors group/btn mt-2.5"
                         >
@@ -1983,122 +1913,17 @@ export default function HomeUserCustomer() {
               )}
 
               {/* Real Meesho Infinite Scroll Sentinel & Loader */}
-              <div ref={sentinelRef} className="w-full py-6 flex flex-col items-center justify-center min-h-[60px]">
-                {loadingMore ? (
-                  <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-full shadow-md border border-slate-200 dark:border-slate-700 text-xs font-bold text-[#b90041] animate-pulse">
+              <div ref={sentinelRef} className="w-full py-8 flex flex-col items-center justify-center min-h-[90px]">
+                {loadingMore && (
+                  <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-[#b90041] animate-pulse">
                     <span className="material-symbols-outlined text-lg animate-spin text-[#FF3F6C]">progress_activity</span>
                     <span>Loading more trending products for you...</span>
                   </div>
-                ) : hasMore && page >= 2 ? (
-                  <button
-                    onClick={loadMoreProducts}
-                    className="px-8 py-3 bg-white hover:bg-slate-50 text-[#b90041] border-2 border-[#b90041] rounded-full font-bold text-xs sm:text-sm shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer flex items-center gap-2"
-                  >
-                    <span>Load More Products</span>
-                    <span className="material-symbols-outlined text-base">expand_more</span>
-                  </button>
-                ) : !hasMore ? (
-                  <p className="text-xs text-slate-400 font-medium py-2">
-                    ✓ You've viewed all recommended products!
-                  </p>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
         </section>
-
-        {/* ── Official Meesho Footer with Newsletter Subscription (Sir's Requirement #2) ── */}
-        <footer className="mt-12 border-t border-slate-200 dark:border-slate-800 pt-10 pb-20">
-          {/* Newsletter Box in Footer */}
-          <div className="bg-gradient-to-r from-[#9f0038] to-[#5c0632] text-white rounded-2xl p-6 sm:p-8 shadow-md flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
-            <div className="space-y-1.5 text-center md:text-left max-w-md">
-              <span className="inline-flex items-center gap-1 bg-white/20 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide">
-                <span className="material-symbols-outlined text-xs">mail</span>
-                <span>Newsletter Updates</span>
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black">Subscribe to Our Newsletter</h3>
-              <p className="text-xs text-pink-100">
-                Get promotional deals, restock updates &amp; 10% discount coupon delivered to your inbox.
-              </p>
-            </div>
-
-            <div className="w-full md:w-auto min-w-[280px] sm:min-w-[340px]">
-              <form onSubmit={handleSubscribeNewsletter} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  value={newsletterEmail}
-                  onChange={(e) => {
-                    setNewsletterEmail(e.target.value);
-                    if (newsletterNotice) setNewsletterNotice('');
-                  }}
-                  placeholder="Enter your email address"
-                  className="bg-white text-slate-800 placeholder:text-slate-400 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none flex-1 shadow-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={newsletterLoading || !newsletterEmail}
-                  className="bg-slate-900 hover:bg-black text-white px-5 py-3 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-50"
-                >
-                  {newsletterLoading ? 'Saving...' : 'Subscribe'}
-                </button>
-              </form>
-              {newsletterNotice && (
-                <p className={`text-xs mt-2 font-medium ${newsletterSuccess ? 'text-emerald-300' : 'text-amber-200'}`}>
-                  {newsletterNotice}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Clean Footer Links */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-xs text-slate-500 mb-8">
-            <div>
-              <h5 className="font-bold text-slate-800 dark:text-slate-200 mb-2 uppercase text-[11px]">Shop Non-Stop</h5>
-              <ul className="space-y-1.5">
-                <li><a href="/category/women-ethnic" className="hover:text-[#FF3F6C]">Women Ethnic</a></li>
-                <li><a href="/category/women-western" className="hover:text-[#FF3F6C]">Women Western</a></li>
-                <li><a href="/category/men-western" className="hover:text-[#FF3F6C]">Men Fashion</a></li>
-                <li><a href="/category/electronics" className="hover:text-[#FF3F6C]">Electronics</a></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-slate-800 dark:text-slate-200 mb-2 uppercase text-[11px]">Customer Care</h5>
-              <ul className="space-y-1.5">
-                <li><a href="/user-dashboard1?tab=orders" className="hover:text-[#FF3F6C]">Track Order</a></li>
-                <li><a href="/user-dashboard1?tab=returns" className="hover:text-[#FF3F6C]">Return &amp; Refund</a></li>
-                <li><a href="/help" className="hover:text-[#FF3F6C]">Help Center</a></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-slate-800 dark:text-slate-200 mb-2 uppercase text-[11px]">Earn with MShoppy</h5>
-              <ul className="space-y-1.5">
-                <li><a href="/affiliate-dashboard" className="hover:text-[#FF3F6C]">Reseller Program</a></li>
-                <li><a href="/supplier" className="hover:text-[#FF3F6C]">Become a Supplier</a></li>
-                <li><a href="/driver" className="hover:text-[#FF3F6C]">Delivery Partner</a></li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-bold text-slate-800 dark:text-slate-200 mb-2 uppercase text-[11px]">Contact &amp; Legal</h5>
-              <p className="leading-relaxed mb-2">
-                MShoppy Internet Commerce Pvt Ltd.<br />
-                Bengaluru, Karnataka, India
-              </p>
-              <p className="font-mono text-[10px]">support@meesho.com</p>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-            <p>© 2026 MShoppy Internet Commerce Private Limited. All rights reserved.</p>
-            <div className="flex gap-4">
-              <span>100% Genuine Products</span>
-              <span>•</span>
-              <span>Secure SSL Checkout</span>
-              <span>•</span>
-              <span>Safe Delivery Guarantee</span>
-            </div>
-          </div>
-        </footer>
       </main>
 
       {/* Customer Bottom Navigation */}

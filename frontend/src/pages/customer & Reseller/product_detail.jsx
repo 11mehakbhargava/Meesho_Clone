@@ -8,8 +8,7 @@ import {
   getWishlist,
   toggleWishlist,
   checkCanReview,
-  getProductReviews,
-  subscribeBackInStock
+  getProductReviews
 } from '../../services/ecommerceService';
 import { useCart } from '../../hooks/useCart';
 import { getAffiliateApp } from '../../services/affiliateSessionStore';
@@ -297,55 +296,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPriceDetailsPopup, setShowPriceDetailsPopup] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
-
-  // ── Back-in-Stock Notification States ──
-  const [showRestockModal, setShowRestockModal] = useState(false);
-  const [restockEmail, setRestockEmail] = useState('');
-  const [restockPhone, setRestockPhone] = useState('');
-  const [restockLoading, setRestockLoading] = useState(false);
-  const [isRestockSubscribed, setIsRestockSubscribed] = useState(false);
-
-  const handleOpenRestockModal = () => {
-    try {
-      for (const key of ['mshoppy_customer_user', 'user', 'mshoppy_reseller_user', 'mshoppy_affiliate_user']) {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const u = JSON.parse(raw);
-          if (u?.email && !u.email.endsWith('@customer.meesho')) {
-            setRestockEmail(u.email);
-            break;
-          }
-        }
-      }
-    } catch (e) {}
-    setShowRestockModal(true);
-  };
-
-  const handleSubscribeRestock = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!restockEmail || !restockEmail.includes('@')) {
-      triggerToast('Please enter a valid email address.');
-      return;
-    }
-    setRestockLoading(true);
-    try {
-      const res = await subscribeBackInStock(product.id, {
-        email: restockEmail,
-        phone: restockPhone
-      });
-      if (res?.success) {
-        setIsRestockSubscribed(true);
-        setShowRestockModal(false);
-        triggerToast(`🔔 Subscribed! We will email you at ${restockEmail} when restocked.`);
-      } else {
-        triggerToast(res?.message || 'Failed to subscribe');
-      }
-    } catch (err) {
-      triggerToast('Failed to subscribe. Please try again.');
-    } finally {
-      setRestockLoading(false);
-    }
-  };
 
   // Dynamic Custom Affiliate Margin Support (decoded safely from obfuscated 'sp' token or legacy 'margin')
   const urlMargin = getAffiliateMarginFromParams(searchParams);
@@ -1536,42 +1486,30 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
                     <span>Share &amp; Earn ₹{selectedResellerMargin}</span>
                   </button>
                 )}
-                {isVariantOutOfStock ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenRestockModal}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-lg transition-all cursor-pointer ${
-                      isRestockSubscribed
-                        ? 'bg-emerald-600 text-white shadow-emerald-500/25'
-                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25 active:scale-95'
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={addingToCart || isVariantOutOfStock}
+                  className={`flex-1 flex items-center justify-center gap-2 border-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs ${isVariantOutOfStock
+                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                    : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
                     }`}
-                  >
-                    <span className="material-symbols-outlined text-lg">
-                      {isRestockSubscribed ? 'check_circle' : 'notifications_active'}
-                    </span>
-                    <span>{isRestockSubscribed ? '✓ Alert Subscribed (We will email you)' : '🔔 Notify Me When Available'}</span>
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleAddToCart}
-                      disabled={addingToCart}
-                      className="flex-1 flex items-center justify-center gap-2 border-2 border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm transition-all shadow-xs"
-                    >
-                      <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                      <span className="truncate">{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBuyNow}
-                      className="flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-lg">bolt</span>
-                      <span className="truncate">Buy Now</span>
-                    </button>
-                  </>
-                )}
+                >
+                  <span className="material-symbols-outlined text-lg">shopping_bag</span>
+                  <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={isVariantOutOfStock}
+                  className={`flex-1 text-white flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
+                    ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-lg">bolt</span>
+                  <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
+                </button>
               </div>
 
               {/* Reseller Profit Margin & WhatsApp Share Card (Visible ONLY in Reseller Mode, never to normal customers) */}
@@ -2430,137 +2368,33 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
             </button>
           )}
 
-          {isVariantOutOfStock ? (
-            <button
-              type="button"
-              onClick={handleOpenRestockModal}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all cursor-pointer ${
-                isRestockSubscribed
-                  ? 'bg-emerald-600 text-white shadow-emerald-500/25'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25 active:scale-95'
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={addingToCart || isVariantOutOfStock}
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all ${isVariantOutOfStock
+              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+              : 'border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white'
               }`}
-            >
-              <span className="material-symbols-outlined text-lg">
-                {isRestockSubscribed ? 'check_circle' : 'notifications_active'}
-              </span>
-              <span>{isRestockSubscribed ? '✓ Subscribed' : '🔔 Notify When Available'}</span>
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={addingToCart}
-                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-slate-300 hover:border-[#b90041] text-slate-800 hover:text-[#b90041] active:scale-95 cursor-pointer bg-white rounded-2xl py-3.5 font-black text-xs sm:text-sm transition-all"
-              >
-                <span className="material-symbols-outlined text-lg">shopping_bag</span>
-                <span className="truncate">{addingToCart ? 'Adding...' : 'Add to Cart'}</span>
-              </button>
+          >
+            <span className="material-symbols-outlined text-lg">shopping_bag</span>
+            <span className="truncate">{isProductUnavailable ? 'Unavailable' : (isVariantOutOfStock ? 'Out of Stock' : (addingToCart ? 'Adding...' : 'Add to Cart'))}</span>
+          </button>
 
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                className="flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">bolt</span>
-                <span className="truncate">Buy Now</span>
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={isVariantOutOfStock}
+            className={`flex-1 text-white flex items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-3.5 font-black text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider ${isVariantOutOfStock
+              ? 'bg-slate-300 shadow-none cursor-not-allowed opacity-60'
+              : 'bg-gradient-to-r from-[#FF3F6C] to-[#DF2457] hover:from-[#e0355f] hover:to-[#c71e4d] shadow-pink-500/25 active:scale-95 cursor-pointer'
+              }`}
+          >
+            <span className="material-symbols-outlined text-lg">bolt</span>
+            <span className="truncate">{isProductUnavailable ? 'Discontinued' : (isVariantOutOfStock ? 'Sold Out' : 'Buy Now')}</span>
+          </button>
         </div>
       </div>
-
-      {/* Back In Stock Notification Modal */}
-      {showRestockModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
-                  <span className="material-symbols-outlined text-2xl">notifications_active</span>
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Restock Notification</h3>
-                  <p className="text-[11px] text-slate-400 font-semibold">Get emailed when item is back in stock</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRestockModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-
-            {/* Product Snapshot */}
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <img
-                src={(product?.images && product.images[0]) || PLACEHOLDER_IMAGE}
-                alt={product?.title}
-                className="w-12 h-12 rounded-xl object-cover border border-slate-200"
-              />
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-xs text-slate-900 truncate">{product?.title}</h4>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs font-black text-[#FF3F6C]">₹{effectivePrice}</span>
-                  <span className="text-[10px] bg-rose-100 text-rose-700 font-extrabold px-2 py-0.2 rounded-full uppercase">Currently Out of Stock</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubscribeRestock} className="space-y-3 pt-1">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Your Email Address <span className="text-rose-500">*</span></label>
-                <input
-                  type="email"
-                  required
-                  value={restockEmail}
-                  onChange={(e) => setRestockEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#FF3F6C] rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (Optional SMS alert)</label>
-                <input
-                  type="tel"
-                  value={restockPhone}
-                  onChange={(e) => setRestockPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#FF3F6C] rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={restockLoading || !restockEmail}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs rounded-xl shadow-lg shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider disabled:opacity-50"
-                >
-                  {restockLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Subscribing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🔔 Notify Me When Available</span>
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </>
-                  )}
-                </button>
-                <p className="text-[10px] text-slate-400 text-center mt-2 leading-relaxed">
-                  We'll send an automatic notification with direct shop link once restocked. No spam, ever.
-                </p>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Quick Email OTP Login Modal for Guest Buy Now */}
       <QuickEmailOtpModal

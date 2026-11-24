@@ -4,7 +4,6 @@ import { sendRotDisputePush } from '../../services/fcm.service.js';
 
 /**
  * 1. GET ALL ROT LIABILITY & RETURN ORDERS FOR DROPSHIPPER
- **
  * Route: GET /api/v1/dropshipper/rot/:firebaseUid
  */
 export const getDropshipperRotData = async (req, res) => {
@@ -101,8 +100,8 @@ export const getDropshipperRotData = async (req, res) => {
 
       // Check if dispute ticket exists in database for this order
       const existingTicket = user.supportTickets?.find(t => t.description?.includes(o.id));
-      const disputeStatus = existingTicket
-        ? `Dispute Filed: ${existingTicket.status === 'RESOLVED' ? 'Resolved (Refunded)' : 'Admin Reviewing'}`
+      const disputeStatus = existingTicket 
+        ? `Dispute Filed: ${existingTicket.status === 'RESOLVED' ? 'Resolved (Refunded)' : 'Admin Reviewing'}` 
         : null;
 
       const orderDateStr = new Date(o.createdAt).toLocaleDateString('en-IN', {

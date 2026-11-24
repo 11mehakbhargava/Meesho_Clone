@@ -4,15 +4,8 @@ import { calculateCouponDiscount } from './coupon.controller.js';
 import {
   sendOrderConfirmationEmail,
   sendOrderDispatchedEmail,
-  sendOrderOutForDeliveryEmail,
-  sendOrderDeliveredEmail,
-  sendAffiliateMarginEarnedEmail
+  sendOrderOutForDeliveryEmail
 } from '../utils/emailTemplates.js';
-import {
-  sendCodOtp,
-  verifyCodOtp,
-  validateCodVerificationToken
-} from '../services/codOtp.service.js';
 
 const getUserId = (req) => {
   return req.user?.id || req.headers['x-user-id'] || req.query.userId || 'guest_customer';
@@ -100,19 +93,6 @@ export const createOrder = async (req, res) => {
 
     const incomingEmail = (req.body.customerEmail || req.headers['x-user-email'] || req.user?.email || parsedShippingAddress?.email || '').trim().toLowerCase();
     const incomingPhone = (parsedShippingAddress?.phone || parsedShippingAddress?.mobileNumber || req.headers['x-user-phone'] || '').trim();
-
-    // COD Order OTP Security Gate (Tareeqa 1)
-    if (validPaymentMethod === 'COD') {
-      const codToken = req.body.codVerificationToken;
-      const isValidCod = validateCodVerificationToken(codToken, incomingEmail || parsedShippingAddress?.email);
-      if (!isValidCod) {
-        return res.status(403).json({
-          success: false,
-          code: 'COD_OTP_REQUIRED',
-          message: 'Cash on Delivery orders require security verification. Please verify the OTP sent to your registered contact.'
-        });
-      }
-    }
 
     // If userId is unauthenticated/guest or customer_..., automatically link to real profile if email/phone matches
     if (!req.user?.id || userId.startsWith('guest_') || userId.startsWith('customer_')) {
@@ -364,18 +344,6 @@ export const createOrder = async (req, res) => {
             });
 
             console.log(`[Affiliate] Credited ₹${commissionAmount} custom margin to ${affiliateProfile.email || affiliateProfile.fullName} for Order ${order.id}`);
-
-            // Dispatch Affiliate Margin Earned Alert Email asynchronously
-            if (affiliateProfile.email && !affiliateProfile.email.endsWith('@customer.meesho')) {
-              sendAffiliateMarginEarnedEmail({
-                affiliateEmail: affiliateProfile.email,
-                affiliateName: affiliateProfile.fullName || affiliateProfile.storeName || 'Partner',
-                marginAmount: commissionAmount,
-                orderId: order.id,
-                buyerCity: parsedShippingAddress?.city || parsedShippingAddress?.state || 'India',
-                productTitle: validatedItems[0] ? productMap.get(validatedItems[0].productId)?.title : 'Catalog Item'
-              }).catch(e => console.warn('Affiliate margin email notice:', e.message));
-            }
           }
         }
       } catch (affiliateErr) {
@@ -687,13 +655,6 @@ export const updateOrderStatus = async (req, res) => {
       sendOrderOutForDeliveryEmail({ order: updated })
         .then((res) => console.log(`🚚 [Order ${id}] Automated OUT_FOR_DELIVERY OTP email sent to: ${res.sentTo} (OTP: ${res.otp})`))
         .catch((err) => console.warn(`⚠️ [Order ${id}] Automated OUT_FOR_DELIVERY OTP email error:`, err.message));
-    }
-
-    // Auto-dispatch confirmation email if status is updated to DELIVERED
-    if (upperStatus === 'DELIVERED') {
-      sendOrderDeliveredEmail({ order: updated })
-        .then((res) => console.log(`🎉 [Order ${id}] Automated DELIVERED email sent:`, res))
-        .catch((err) => console.warn(`⚠️ [Order ${id}] Automated DELIVERED email error:`, err.message));
     }
 
     // Auto-credit ₹123 referral cashback to the referrer if this is the friend's 1st delivered order!
@@ -1105,44 +1066,4 @@ export const submitReturnRequest = async (req, res) => {
     });
   }
 };
-
-/**
- * Controller to send Cash on Delivery (COD) Security OTP
- */
-export const sendCodOtpController = async (req, res) => {
-  try {
-    const { email, phone, orderAmount, recipientName } = req.body;
-    const result = await sendCodOtp({
-      email,
-      phone,
-      orderAmount,
-      recipientName
-    });
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error('Error sending COD OTP:', err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-/**
- * Controller to verify Cash on Delivery (COD) Security OTP
- */
-export const verifyCodOtpController = async (req, res) => {
-  try {
-    const { email, phone, otp } = req.body;
-    const result = verifyCodOtp({ email, phone, otp });
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-    return res.status(200).json(result);
-  } catch (err) {
-    console.error('Error verifying COD OTP:', err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
 

@@ -380,57 +380,10 @@ export const sendLoginOtpEmail = async ({ email, name, otp }) => {
 };
 
 /**
- * Asynchronously buffers product images and wraps them as inline CID attachments.
- * This completely bypasses Google Image Proxy and CORS restrictions, ensuring
- * product images render natively in Gmail, Outlook, iOS Mail, and Android Mail without breaking.
- */
-export const prepareOrderItemsWithInlineImages = async (items = []) => {
-  const attachments = [];
-  const safeFallbackUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
-
-  const processedItems = await Promise.all(
-    (items || []).map(async (item, idx) => {
-      const product = item?.product || {};
-      const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
-      let finalImgSrc = getEmailSafeImageUrl(rawUrl);
-
-      if (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('http')) {
-        try {
-          const res = await fetch(rawUrl, { signal: AbortSignal.timeout(6000) });
-          if (res.ok) {
-            const arrayBuf = await res.arrayBuffer();
-            const buf = Buffer.from(arrayBuf);
-            if (buf.length > 0) {
-              const cid = `product_thumb_${idx}_${Date.now()}`;
-              const contentType = res.headers.get('content-type') || 'image/jpeg';
-              const ext = contentType.includes('png') ? 'png' : 'jpg';
-
-              attachments.push({
-                filename: `product_${idx}.${ext}`,
-                content: buf,
-                contentType,
-                cid
-              });
-              finalImgSrc = `cid:${cid}`;
-            }
-          }
-        } catch (fetchErr) {
-          console.warn(`[Email Image] Failed to buffer product image for item #${idx}:`, fetchErr.message);
-        }
-      }
-
-      return {
-        ...item,
-        resolvedImageSrc: finalImgSrc
-      };
-    })
-  );
-
-  return { processedItems, attachments };
-};
-
-/**
  * Resolves an email-safe, globally CDN-cached image URL for all email templates.
+ * Bypasses Supabase's 'x-robots-tag: none' header by routing through wsrv.nl (Cloudflare edge)
+ * which strips robots restrictions, converts to clean 140x140 JPEG, and allows Google Image Proxy
+ * to crawl and cache seamlessly without requiring heavy/suspicious MIME attachments.
  */
 export const getEmailSafeImageUrl = (rawUrl) => {
   const fallback = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
@@ -475,8 +428,8 @@ export const getOrderConfirmationEmailHtml = ({ order, name, trackingUrl }) => {
   const itemsHtml = items.map((it) => {
     const product = it.product || {};
     const title = product.title || 'Item in Order';
-    const rawImage = it.resolvedImageSrc || (Array.isArray(product.images) && product.images[0]) || product.image || '';
-    const image = rawImage.startsWith('cid:') ? rawImage : getEmailSafeImageUrl(rawImage);
+    const rawImage = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const image = getEmailSafeImageUrl(rawImage);
 
     const price = Number(it.price || product.price || 0).toLocaleString('en-IN');
     const qty = it.quantity || 1;
@@ -727,12 +680,8 @@ export const sendOrderConfirmationEmail = async ({ order, email, name, trackingU
 
     const { targetEmail, targetName } = await resolveCustomerEmailAndName(orderData, email, name);
 
-    // Buffer images as inline CID attachments for 100% reliable rendering in Gmail / Outlook
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
     const html = getOrderConfirmationEmailHtml({
-      order: orderWithImages,
+      order: orderData,
       name: targetName || orderData?.user?.fullName || 'Valued Customer',
       trackingUrl,
     });
@@ -745,10 +694,9 @@ export const sendOrderConfirmationEmail = async ({ order, email, name, trackingU
       to: targetEmail,
       subject: `🎉 Order Confirmed! Your MShoppy Order #${shortId} is Placed`,
       html,
-      attachments
     });
 
-    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Attachments: ${attachments.length}, Message ID: ${info.messageId})`);
+    console.log(`✅ [Automated] Order confirmation email sent to ${targetEmail} for Order #${orderData?.id} (Message ID: ${info.messageId})`);
     return { success: true, messageId: info.messageId, sentTo: targetEmail };
   } catch (err) {
     console.error('❌ Error sending order confirmation email:', err.message);
@@ -835,8 +783,8 @@ export const getOrderDispatchedEmailHtml = ({
   const items = order?.items || [];
   const itemsHtml = items.map((item) => {
     const product = item.product || {};
-    const rawUrl = item.resolvedImageSrc || (Array.isArray(product.images) && product.images[0]) || product.image || '';
-    const imgUrl = rawUrl.startsWith('cid:') ? rawUrl : getEmailSafeImageUrl(rawUrl);
+    const rawUrl = (Array.isArray(product.images) && product.images[0]) || product.image || '';
+    const imgUrl = getEmailSafeImageUrl(rawUrl);
     const itemTotal = Number(item.price || 0) * Number(item.quantity || 1);
 
     return `
@@ -1031,11 +979,8 @@ export const sendOrderDispatchedEmail = async ({
     const resolvedAwb = trackingNumber || shipping.awb || shipping.trackingNumber || `AWB-${(targetOrderId || '').slice(0, 8).toUpperCase()}`;
     const resolvedTrackingUrl = trackingUrl || shipping.trackingUrl || getCourierTrackingUrl(resolvedCourier, resolvedAwb);
 
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
     const html = getOrderDispatchedEmailHtml({
-      order: orderWithImages,
+      order: orderData,
       courierPartner: resolvedCourier,
       trackingNumber: resolvedAwb,
       trackingUrl: resolvedTrackingUrl,
@@ -1050,7 +995,6 @@ export const sendOrderDispatchedEmail = async ({
       to: targetEmail,
       subject: `📦 Order Dispatched! Your MShoppy Order #${shortId} is on the way with ${resolvedCourier}`,
       html,
-      attachments
     });
 
     console.log(`✅ [Dispatch Email] Sent to ${targetEmail} for Order #${targetOrderId} (Courier: ${resolvedCourier}, AWB: ${resolvedAwb}, Message ID: ${info.messageId})`);
@@ -1306,418 +1250,6 @@ export const sendOrderOutForDeliveryEmail = async ({
     return { success: false, error: err.message };
   }
 };
-
-/**
- * Branded Order Delivered HTML Email Template
- */
-export const getOrderDeliveredEmailHtml = ({ order, customerName }) => {
-  const shortId = (order?.id || '').slice(0, 10).toUpperCase();
-  const name = customerName || 'Valued Customer';
-  const totalAmount = order?.totalAmount ? Number(order.totalAmount).toLocaleString('en-IN') : '0';
-  const items = order?.items || [];
-
-  const itemsHtml = items.map((item) => {
-    const product = item.product || {};
-    const rawUrl = item.resolvedImageSrc || (Array.isArray(product.images) && product.images[0]) || product.image || '';
-    const imgUrl = rawUrl.startsWith('cid:') ? rawUrl : getEmailSafeImageUrl(rawUrl);
-
-    return `
-      <tr>
-        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; width: 56px;">
-          <img src="${imgUrl}" alt="${product.title || 'Product'}" width="48" height="48" style="border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; display: block;" />
-        </td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9;">
-          <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${product.title || 'MShoppy Purchase'}</div>
-          <div style="font-size: 11.5px; color: #64748b;">Qty: ${item.quantity || 1} ${item.size ? `&bull; Size: ${item.size}` : ''}</div>
-        </td>
-        <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 800; font-size: 13px; color: #0f172a;">
-          ₹${Number((item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Order Delivered - MShoppy</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #fff4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    .email-container { max-width: 580px; margin: 30px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(183, 0, 77, 0.08); border: 1px solid #ffe2e8; }
-  </style>
-</head>
-<body style="background-color: #fff4f6; padding: 20px 10px;">
-  <div class="email-container">
-    <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 34px 28px; text-align: center; color: #ffffff;">
-      <div style="display: inline-block; background: rgba(255, 255, 255, 0.22); padding: 5px 16px; border-radius: 50px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px;">
-        ✓ DELIVERED SUCCESSFULLY
-      </div>
-      <h1 style="font-size: 26px; font-weight: 900; margin: 0;">Package Handed Over!</h1>
-      <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">Thank you for shopping on MShoppy</p>
-    </div>
-
-    <div style="padding: 30px 28px; color: #334155;">
-      <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
-        Hello ${name}, 🎉
-      </div>
-      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-        Your MShoppy order <strong>#${shortId}</strong> has been successfully delivered to your doorstep. We hope you love your purchase!
-      </p>
-
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 22px;">
-        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 10px;">
-          Delivered Items (${items.length})
-        </div>
-        <table style="width: 100%; border-collapse: collapse;">
-          ${itemsHtml}
-        </table>
-        <div style="text-align: right; padding-top: 12px; font-weight: 900; color: #0f172a; font-size: 14px;">
-          Total Paid: ₹${totalAmount}
-        </div>
-      </div>
-
-      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 18px; text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 14px; font-weight: 800; color: #166534; margin-bottom: 4px;">
-          🛡️ 7-Day Hassle-Free Returns & Replacements
-        </div>
-        <div style="font-size: 12px; color: #15803d; line-height: 1.5;">
-          If you have any sizing or quality issues, you can easily request a return or exchange within 7 days directly from your MShoppy order dashboard.
-        </div>
-      </div>
-
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="https://meesho-clone-nu.vercel.app/user-dashboard1?tab=orders" style="display: inline-block; background: linear-gradient(135deg, #b7004d 0%, #ff527b 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 50px; font-size: 14px; font-weight: 800;">
-          Rate Your Purchase ⭐
-        </a>
-      </div>
-    </div>
-
-    <div style="background: #fafafa; padding: 18px 24px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
-      <p style="margin: 0 0 4px 0;">© 2026 MShoppy Internet Commerce. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-};
-
-/**
- * Send branded Order Delivered Email
- */
-export const sendOrderDeliveredEmail = async ({ order, orderId, customEmail, recipientName }) => {
-  try {
-    let orderData = order;
-    const targetOrderId = orderData?.id || orderId;
-
-    if (targetOrderId && (!orderData || !orderData.items || !orderData.items[0]?.product)) {
-      orderData = await prisma.order.findUnique({
-        where: { id: targetOrderId },
-        include: { items: { include: { product: true } }, user: true }
-      });
-    }
-
-    if (!orderData) return { success: false, message: 'Order not found' };
-
-    const { targetEmail, targetName } = await resolveCustomerEmailAndName(orderData, customEmail, recipientName);
-    if (!targetEmail || targetEmail.endsWith('@customer.meesho')) {
-      return { success: false, message: 'No recipient email' };
-    }
-
-    const { processedItems, attachments } = await prepareOrderItemsWithInlineImages(orderData?.items || []);
-    const orderWithImages = { ...orderData, items: processedItems };
-
-    const shortId = (targetOrderId || '').slice(0, 10).toUpperCase();
-    const html = getOrderDeliveredEmailHtml({ order: orderWithImages, customerName: targetName });
-    const sender = process.env.EMAIL_FROM || `"MShoppy Delivery" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
-
-    const info = await transporter.sendMail({
-      from: sender,
-      to: targetEmail,
-      subject: `🎉 Delivered! Your MShoppy Order #${shortId} has arrived safely`,
-      html,
-      attachments
-    });
-
-    console.log(`✅ [Delivered Email] Sent to ${targetEmail} for Order #${targetOrderId}`);
-    return { success: true, messageId: info.messageId };
-  } catch (err) {
-    console.error('❌ Error sending delivered email:', err.message);
-    return { success: false, error: err.message };
-  }
-};
-
-/**
- * Send branded Affiliate Margin Earned Email
- */
-export const sendAffiliateMarginEarnedEmail = async ({ affiliateEmail, affiliateName, marginAmount, orderId, buyerCity, productTitle }) => {
-  try {
-    if (!affiliateEmail || affiliateEmail.endsWith('@customer.meesho')) {
-      return { success: false, message: 'Invalid affiliate email' };
-    }
-
-    const safeName = affiliateName || 'Partner';
-    const shortOrder = (orderId || '').slice(0, 8).toUpperCase();
-    const amountStr = Number(marginAmount || 0).toLocaleString('en-IN');
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Commission Earned - MShoppy Reseller</title>
-</head>
-<body style="margin: 0; padding: 20px 10px; background-color: #fff4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(183, 0, 77, 0.08); border: 1px solid #ffe2e8;">
-    <div style="background: linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #c084fc 100%); padding: 34px 28px; text-align: center; color: #ffffff;">
-      <div style="display: inline-block; background: rgba(255, 255, 255, 0.22); padding: 5px 16px; border-radius: 50px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px;">
-        💸 MARGIN CREDITED
-      </div>
-      <h1 style="font-size: 26px; font-weight: 900; margin: 0;">You Just Made a Profit!</h1>
-      <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">A buyer just placed an order through your shared link</p>
-    </div>
-
-    <div style="padding: 30px 28px; color: #334155;">
-      <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">
-        Hello ${safeName}, 🎉
-      </h2>
-      <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-        Congratulations! An order has been placed from your shared catalogue. Your reseller margin has been credited to your MShoppy Wallet:
-      </p>
-
-      <div style="background: #f5f3ff; border: 2px dashed #8b5cf6; border-radius: 18px; padding: 24px; text-align: center; margin-bottom: 22px;">
-        <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; color: #6d28d9; letter-spacing: 1px; margin-bottom: 4px;">
-          YOUR MARGIN PROFIT
-        </div>
-        <div style="font-size: 42px; font-weight: 900; color: #7c3aed;">
-          +₹${amountStr}
-        </div>
-        <div style="font-size: 12px; color: #6b7280; font-weight: 600; margin-top: 4px;">
-          Order #${shortOrder} &bull; Destination: ${buyerCity || 'India'}
-        </div>
-      </div>
-
-      ${productTitle ? `
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px;">
-        <span style="color: #64748b; font-weight: 600;">Product Sold:</span>
-        <strong style="color: #0f172a; display: block; margin-top: 2px;">${productTitle}</strong>
-      </div>
-      ` : ''}
-
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="https://meesho-clone-nu.vercel.app/affiliate-dashboard" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 50px; font-size: 14px; font-weight: 800;">
-          View Your Reseller Wallet ➔
-        </a>
-      </div>
-    </div>
-
-    <div style="background: #fafafa; padding: 18px 24px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
-      <p style="margin: 0 0 4px 0;">© 2026 MShoppy Internet Commerce. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const sender = process.env.EMAIL_FROM || `"MShoppy Reseller" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
-    const info = await transporter.sendMail({
-      from: sender,
-      to: affiliateEmail,
-      subject: `💰 You earned ₹${amountStr} margin! New order #${shortOrder} placed on MShoppy`,
-      html
-    });
-
-    console.log(`✅ [Affiliate Email] Margin alert sent to ${affiliateEmail} for Order #${orderId}`);
-    return { success: true, messageId: info.messageId };
-  } catch (err) {
-    console.error('❌ Error sending affiliate email:', err.message);
-    return { success: false, error: err.message };
-  }
-};
-
-/**
- * Send Back-in-Stock Notification Email
- */
-export const sendBackInStockEmail = async ({ email, product, appUrl }) => {
-  try {
-    if (!email || !product) return { success: false, message: 'Missing email or product' };
-
-    const title = product.title || 'Trending Product';
-    const price = Number(product.price || 0).toLocaleString('en-IN');
-    const origPrice = product.originalPrice ? Number(product.originalPrice).toLocaleString('en-IN') : null;
-    const rawImg = (Array.isArray(product.images) && product.images[0]) || product.image || '';
-    let imgUrl = getEmailSafeImageUrl(rawImg);
-    const attachments = [];
-    if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-      try {
-        const imgRes = await fetch(rawImg, { signal: AbortSignal.timeout(6000) });
-        if (imgRes.ok) {
-          const buf = Buffer.from(await imgRes.arrayBuffer());
-          if (buf.length > 0) {
-            const cid = `restock_thumb_${Date.now()}`;
-            attachments.push({
-              filename: 'product.jpg',
-              content: buf,
-              contentType: 'image/jpeg',
-              cid
-            });
-            imgUrl = `cid:${cid}`;
-          }
-        }
-      } catch (_) {}
-    }
-    const targetUrl = appUrl || `https://meesho-clone-nu.vercel.app/product/${product.id}`;
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Back in Stock - MShoppy</title>
-</head>
-<body style="margin: 0; padding: 20px 10px; background-color: #fff4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(183, 0, 77, 0.08); border: 1px solid #ffe2e8;">
-    <div style="background: linear-gradient(135deg, #9f0038 0%, #b7004d 50%, #ff527b 100%); padding: 34px 28px; text-align: center; color: #ffffff;">
-      <div style="display: inline-block; background: rgba(255, 255, 255, 0.22); padding: 5px 16px; border-radius: 50px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px;">
-        🔔 RESTOCKED
-      </div>
-      <h1 style="font-size: 26px; font-weight: 900; margin: 0;">Back In Stock!</h1>
-      <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">An item on your alert list is available again</p>
-    </div>
-
-    <div style="padding: 30px 28px; color: #334155;">
-      <p style="font-size: 14.5px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-        Great news! The product you subscribed to is back in stock at wholesale price. Grab yours before it sells out again:
-      </p>
-
-      <div style="background: #fff8f9; border: 1.5px solid #ffe2e8; border-radius: 18px; padding: 20px; margin-bottom: 24px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="width: 80px; vertical-align: top;">
-              <img src="${imgUrl}" alt="${title}" width="76" height="76" style="border-radius: 12px; object-fit: cover; border: 1px solid #ffe2e8; display: block;" />
-            </td>
-            <td style="vertical-align: top; padding-left: 16px;">
-              <div style="font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 6px;">
-                ${title}
-              </div>
-              <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span style="font-size: 20px; font-weight: 900; color: #9f0038;">₹${price}</span>
-                ${origPrice ? `<span style="font-size: 13px; text-decoration: line-through; color: #94a3b8; margin-left: 8px;">₹${origPrice}</span>` : ''}
-              </div>
-              <div style="font-size: 11.5px; color: #16a34a; font-weight: 700; margin-top: 4px;">
-                ✓ Free Delivery &bull; Cash on Delivery Available
-              </div>
-            </td>
-          </tr>
-        </table>
-      </div>
-
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="${targetUrl}" style="display: inline-block; background: linear-gradient(135deg, #b7004d 0%, #ff527b 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 50px; font-size: 14.5px; font-weight: 800; box-shadow: 0 8px 24px rgba(183, 0, 77, 0.35);">
-          Shop Now Before It Sells Out &rarr;
-        </a>
-      </div>
-    </div>
-
-    <div style="background: #fafafa; padding: 18px 24px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
-      <p style="margin: 0 0 4px 0;">© 2026 MShoppy Internet Commerce. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const sender = process.env.EMAIL_FROM || `"MShoppy Alerts" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
-    const info = await transporter.sendMail({
-      from: sender,
-      to: email,
-      subject: `🔔 Back in Stock! "${title.slice(0, 45)}" is available on MShoppy`,
-      html,
-      attachments
-    });
-
-    console.log(`✅ [Back In Stock Email] Sent to ${email} for product ${product.id}`);
-    return { success: true, messageId: info.messageId };
-  } catch (err) {
-    console.error('❌ Error sending back-in-stock email:', err.message);
-    return { success: false, error: err.message };
-  }
-};
-
-/**
- * Send Newsletter Welcome Email
- */
-export const sendNewsletterWelcomeEmail = async ({ email, appUrl }) => {
-  try {
-    if (!email) return { success: false, message: 'Missing email' };
-
-    // Resolve client URL: Use provided appUrl, or FRONTEND_URL, or local fallback
-    const resolvedUrl = (appUrl && !appUrl.includes('localhost:5000'))
-      ? appUrl
-      : (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('vercel.app')
-          ? process.env.FRONTEND_URL
-          : 'http://localhost:5173');
-    const baseUrl = resolvedUrl.replace(/\/+$/, '');
-    const shoppingUrl = `${baseUrl}/?coupon=WELCOME10`;
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Welcome to MShoppy Newsletter</title>
-</head>
-<body style="margin: 0; padding: 20px 10px; background-color: #fff4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(183, 0, 77, 0.08); border: 1px solid #ffe2e8;">
-    <div style="background: linear-gradient(135deg, #9f0038 0%, #b7004d 50%, #ff7293 100%); padding: 34px 28px; text-align: center; color: #ffffff;">
-      <div style="display: inline-block; background: rgba(255, 255, 255, 0.22); padding: 5px 16px; border-radius: 50px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px;">
-        🎉 WELCOME TO MSHOPPY
-      </div>
-      <h1 style="font-size: 26px; font-weight: 900; margin: 0;">You're on the VIP List!</h1>
-      <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.95;">Lowest wholesale prices & exclusive drops directly to your inbox</p>
-    </div>
-
-    <div style="padding: 30px 28px; color: #334155;">
-      <p style="font-size: 14.5px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-        Thank you for subscribing to the <strong>MShoppy Community Newsletter</strong>. Here is your exclusive welcome coupon for your next purchase:
-      </p>
-
-      <div style="background: #fff0f3; border: 2px dashed #b7004d; border-radius: 18px; padding: 20px; text-align: center; margin-bottom: 22px;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #9f0038; letter-spacing: 1px;">
-          YOUR WELCOME COUPON CODE
-        </div>
-        <div style="font-size: 32px; font-weight: 900; letter-spacing: 4px; color: #b7004d; font-family: monospace; margin: 6px 0;">
-          WELCOME10
-        </div>
-        <div style="font-size: 12px; color: #475569; font-weight: 600;">
-          Flat 10% Discount on any order &bull; Valid on all categories
-        </div>
-      </div>
-
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="${shoppingUrl}" style="display: inline-block; background: linear-gradient(135deg, #b7004d 0%, #ff527b 100%); color: #ffffff; text-decoration: none; padding: 14px 38px; border-radius: 50px; font-size: 14px; font-weight: 800;">
-          Start Shopping ➔
-        </a>
-      </div>
-    </div>
-
-    <div style="background: #fafafa; padding: 18px 24px; text-align: center; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8;">
-      <p style="margin: 0 0 4px 0;">© 2026 MShoppy Internet Commerce. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const sender = process.env.EMAIL_FROM || `"MShoppy Newsletter" <${process.env.SMTP_USER || 'pramodlodhi2003born@gmail.com'}>`;
-    const info = await transporter.sendMail({
-      from: sender,
-      to: email,
-      subject: '🎁 Welcome to MShoppy Insider! Here is your 10% OFF code: WELCOME10',
-      html
-    });
-
-    console.log(`✅ [Newsletter Email] Sent welcome email to ${email}`);
-    return { success: true, messageId: info.messageId };
-  } catch (err) {
-    console.error('❌ Error sending newsletter email:', err.message);
-    return { success: false, error: err.message };
-  }
-};
-
 
 
 

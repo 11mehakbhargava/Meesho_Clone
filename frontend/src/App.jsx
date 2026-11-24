@@ -512,22 +512,6 @@ function AppRoutes() {
         }
         recordAffiliateClick(cleanRef);
       }
-
-      const couponParam = searchParams.get('coupon');
-      if (couponParam && couponParam.trim()) {
-        const cleanCoupon = couponParam.trim().toUpperCase();
-        if (cleanCoupon === 'WELCOME10') {
-          const welcomeCoupon = {
-            id: 'coupon_welcome10',
-            code: 'WELCOME10',
-            title: 'MShoppy Insider Welcome 10% Off',
-            description: 'Flat 10% discount for newsletter subscribers',
-            type: 'PERCENT',
-            value: 10
-          };
-          localStorage.setItem('mshoppy_applied_coupon', JSON.stringify(welcomeCoupon));
-        }
-      }
     } catch (e) {}
   }, [location.search]);
 
