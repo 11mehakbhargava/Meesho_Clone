@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
 import { fetchReversePickups } from '../../services/driverService';
+import SecureCallModal from '../../components/delivery/SecureCallModal';
 
 export default function DriverReversePickup({ onNavigate, onBack }) {
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   // Quality Check State
   const [qcTags, setQcTags] = useState(true);
   const [qcCondition, setQcCondition] = useState(true);
@@ -397,10 +399,11 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
 
           <div className="flex gap-2 pt-2 border-t border-slate-100">
             <button
-              onClick={() => triggerToast(`Calling ${customerReturnData.customerName} (${customerReturnData.customerPhone})... 📞`)}
+              onClick={() => setIsCallModalOpen(true)}
               className="flex-1 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors border border-emerald-200/60"
+              title="MShoppy Cloud Telephony (Virtual Bridge)"
             >
-              <span>📞 Call Customer</span>
+              <span>🛡️ Secure Call</span>
             </button>
             <button
               onClick={() => triggerToast('Opening Google Maps navigation to customer address... 🗺️')}
@@ -1356,6 +1359,15 @@ export default function DriverReversePickup({ onNavigate, onBack }) {
           </div>
         </div>
       )}
+
+      {/* Cloud Telephony Secure Calling Modal */}
+      <SecureCallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        customerName={returnDetails.customerName}
+        orderId={returnDetails.orderId}
+        maskedPhone={returnDetails.customerPhone}
+      />
 
       {/* Bottom Nav */}
       <AppBottomNav activeNav="orders" onNavigate={onNavigate} />

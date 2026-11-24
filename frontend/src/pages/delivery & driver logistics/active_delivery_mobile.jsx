@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
 import { fetchTaskDetails, verifyDeliveryOtp } from '../../services/driverService';
+import SecureCallModal from '../../components/delivery/SecureCallModal';
 
 export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) {
   const [task, setTask] = useState(null);
@@ -9,6 +10,7 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [driverOtp, setDriverOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -234,6 +236,25 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
                 </div>
               )}
 
+              {/* Quick Communication Actions */}
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                <button
+                  onClick={() => setIsCallModalOpen(true)}
+                  className="py-3 bg-slate-100 hover:bg-slate-200 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  title="MShoppy Cloud Telephony (Virtual Bridge)"
+                >
+                  <span className="material-symbols-outlined text-base text-[#b90041]">shield</span>
+                  <span>Secure Call</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('order_driver')}
+                  className="py-3 bg-pink-50 hover:bg-pink-100 text-[#b90041] rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-base">receipt_long</span>
+                  <span>Manifest</span>
+                </button>
+              </div>
+
               <button
                 onClick={handleOpenDeliveryModal}
                 disabled={isDelivered}
@@ -314,6 +335,15 @@ export default function ActiveDeliveryMobile({ onNavigate = () => {}, onBack }) 
 
       {/* App Bottom Navigation */}
       <AppBottomNav activeNav="tasks" onNavigate={onNavigate} />
+
+      {/* Cloud Telephony Secure Calling Modal */}
+      <SecureCallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        customerName={customerName || 'Customer'}
+        orderId={orderId}
+        maskedPhone="+91 98765 XXXXX"
+      />
     </div>
   );
 }

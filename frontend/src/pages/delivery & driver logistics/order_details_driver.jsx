@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AppBottomNav from '../../components/AppBottomNav';
 import { fetchTaskDetails, startDeliveryRun, verifyDeliveryOtp } from '../../services/driverService';
+import SecureCallModal from '../../components/delivery/SecureCallModal';
 
 export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
   const [task, setTask] = useState(null);
@@ -11,6 +12,7 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -216,11 +218,23 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
                         • {task?.customer?.totalOrdersPlaced > 1 ? `${task.customer.totalOrdersPlaced} Orders Placed` : '1st Order'}
                       </span>
                     </p>
+                    <p className="text-[11px] font-semibold text-slate-400 mt-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs text-emerald-600">lock</span>
+                      <span>Phone: +91 98765 XXXXX (Masked)</span>
+                    </p>
                   </div>
                 </div>
 
                 {/* Call & WhatsApp Buttons */}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCallModalOpen(true)}
+                    className="h-11 px-3.5 rounded-2xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 flex items-center justify-center gap-1.5 font-bold text-xs transition-colors cursor-pointer border border-emerald-200/60"
+                    title="MShoppy Cloud Telephony (Virtual Bridge)"
+                  >
+                    <span className="material-symbols-outlined text-base text-emerald-700">shield</span>
+                    <span>Secure Call</span>
+                  </button>
                   <a
                     href={`https://wa.me/91${rawCustomerDigits}`}
                     target="_blank"
@@ -230,14 +244,6 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
                   >
                     <span className="material-symbols-outlined text-base">chat</span>
                     <span>WhatsApp</span>
-                  </a>
-                  <a
-                    href={`tel:+91${rawCustomerDigits}`}
-                    className="h-11 px-3.5 rounded-2xl bg-slate-100 text-slate-800 hover:bg-slate-200 flex items-center justify-center gap-1.5 font-bold text-xs transition-colors cursor-pointer border border-slate-200"
-                    title="Direct Phone Call"
-                  >
-                    <span className="material-symbols-outlined text-base">call</span>
-                    <span>Call</span>
                   </a>
                 </div>
               </div>
@@ -387,6 +393,15 @@ export default function OrderDetailsDriver({ onNavigate = () => {}, onBack }) {
 
       {/* Bottom Navigation */}
       <AppBottomNav activeNav="home" onNavigate={onNavigate} />
+
+      {/* Cloud Telephony Secure Calling Modal */}
+      <SecureCallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        customerName="Priya Sharma"
+        orderId="#MS-99210-A"
+        maskedPhone="+91 98765 XXXXX"
+      />
     </div>
   );
 }

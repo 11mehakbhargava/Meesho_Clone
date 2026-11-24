@@ -48,6 +48,7 @@ import shiprocketRoutes from './shiprocket.routes.js';
 import driverRoutes from './delivery/driver.routes.js';
 import referralRoutes from './referral.routes.js';
 import newsletterRoutes from './newsletter.routes.js';
+import telephonyRoutes from './telephony.routes.js';
 
 const apiRouter = Router();
 
@@ -117,6 +118,7 @@ apiRouter.use('/wallets', walletRoutes);
 apiRouter.use('/referrals', referralRoutes);
 apiRouter.use('/banners', bannerRoutes);
 apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/telephony', telephonyRoutes);
 
 // Shiprocket 3PL Logistics endpoints
 apiRouter.use('/shiprocket', shiprocketRoutes);
