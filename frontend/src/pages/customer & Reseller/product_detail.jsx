@@ -346,12 +346,59 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
   // Dynamic category-specific product specifications (replacing dummy clothing hardcodes)
   const productSpecs = useMemo(() => {
     if (!product) return [];
+
+    // 1. Priority 1: Check if supplier provided custom specifications/highlights
+    if (Array.isArray(product.specifications) && product.specifications.length > 0) {
+      return product.specifications.map(s => typeof s === 'string' ? { label: 'Feature', value: s } : s);
+    }
+    if (Array.isArray(product.highlights) && product.highlights.length > 0) {
+      return product.highlights.map(h => typeof h === 'string' ? { label: 'Highlight', value: h } : h);
+    }
+    if (product.attributes && typeof product.attributes === 'object') {
+      const customEntries = Object.entries(product.attributes)
+        .filter(([k, v]) => Boolean(v))
+        .map(([k, v]) => ({ label: k, value: String(v) }));
+      if (customEntries.length > 0) return customEntries;
+    }
+
     const slug = (product.categorySlug || product.category?.slug || '').toLowerCase();
     const sub = (product.subCategory || '').toLowerCase();
     const titleLower = (product.title || '').toLowerCase();
     const idealFor = getProductIdealFor(product);
 
-    if (slug === 'beauty-health') {
+    // 2. Skincare, Beauty & Cosmetics Category Check
+    const isBeautyOrSkincare =
+      slug === 'beauty-health' ||
+      slug === 'skincare' ||
+      slug === 'beauty' ||
+      slug === 'cosmetics' ||
+      slug === 'makeup' ||
+      slug === 'haircare' ||
+      slug === 'personal-care' ||
+      titleLower.includes('sunscreen') ||
+      titleLower.includes('lotion') ||
+      titleLower.includes('serum') ||
+      titleLower.includes('cream') ||
+      titleLower.includes('lipstick') ||
+      titleLower.includes('facewash') ||
+      titleLower.includes('face wash') ||
+      titleLower.includes('shampoo') ||
+      titleLower.includes('moisturizer');
+
+    if (isBeautyOrSkincare) {
+      // Dedicated handling for Sunscreen
+      if (sub.includes('sunscreen') || titleLower.includes('sunscreen') || titleLower.includes('spf')) {
+        const netQty = (product.sizes && product.sizes.length > 0 && product.sizes[0] !== 'Free Size')
+          ? product.sizes[0]
+          : '50ml';
+        return [
+          { label: 'Type', value: 'UV Protection / Sunscreen' },
+          { label: 'Net Quantity', value: netQty },
+          { label: 'Skin Type', value: product.skinType || 'All Skin Types' },
+          { label: 'Ideal For', value: 'Unisex' },
+        ];
+      }
+
       let typeFinish = product.subCategory || 'Personal Care';
       let usageLabel = 'Skin / Usage Type';
       let usageValue = 'All Skin Types';
@@ -374,8 +421,6 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         usageValue = 'Eyes (Smudge-Proof)';
       } else if (sub.includes('face wash') || titleLower.includes('face wash')) {
         typeFinish = 'Deep Cleansing / Gentle Gel';
-      } else if (sub.includes('sunscreen') || titleLower.includes('sunscreen') || titleLower.includes('spf')) {
-        typeFinish = 'UV Protection / Broad Spectrum';
       } else if (sub.includes('compact') || titleLower.includes('compact')) {
         typeFinish = 'Oil-Control Matte Powder';
       } else if (sub.includes('nail polish') || titleLower.includes('nail polish')) {
@@ -384,11 +429,15 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
         typeFinish = 'Nourishing Moisturizer';
       }
 
+      const netQty = (product.sizes && product.sizes.length > 0 && product.sizes[0] !== 'Free Size')
+        ? product.sizes[0]
+        : '1 Unit';
+
       return [
         { label: 'Type / Finish', value: typeFinish },
-        { label: 'Net Quantity', value: '1 Unit' },
+        { label: 'Net Quantity', value: netQty },
+        { label: 'Skin Type', value: usageValue },
         { label: 'Ideal For', value: idealFor },
-        { label: usageLabel, value: usageValue },
       ];
     }
 
@@ -429,10 +478,36 @@ export default function ProductDetail({ onNavigate = () => { }, onBack }) {
     }
 
     // Default Clothing (women-ethnic, women-western, men, kids)
+    const isApparel =
+      slug.includes('ethnic') ||
+      slug.includes('western') ||
+      slug === 'men' ||
+      slug === 'kids' ||
+      slug === 'women' ||
+      titleLower.includes('saree') ||
+      titleLower.includes('kurti') ||
+      titleLower.includes('shirt') ||
+      titleLower.includes('tshirt') ||
+      titleLower.includes('t-shirt') ||
+      titleLower.includes('jeans') ||
+      titleLower.includes('dress') ||
+      titleLower.includes('top') ||
+      titleLower.includes('lehenga');
+
+    if (isApparel) {
+      return [
+        { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
+        { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
+        { label: 'Pattern', value: 'Embroidered / Printed / Solid' },
+        { label: 'Ideal For', value: idealFor },
+      ];
+    }
+
+    // Generic fallback for any other uncategorized items (avoids fake fabric on non-clothing)
     return [
-      { label: 'Fabric', value: product.fabric || product.material || (slug.includes('ethnic') ? 'Art Silk / Cotton' : 'Cotton Blend') },
-      { label: 'Color', value: selectedColor || product.color || 'Multicolor' },
-      { label: 'Pattern', value: 'Embroidered / Printed / Solid' },
+      { label: 'Category', value: product.category?.name || 'General Merchandise' },
+      { label: 'Net Quantity', value: product.sizes?.[0] || '1 Unit' },
+      { label: 'Country of Origin', value: 'India' },
       { label: 'Ideal For', value: idealFor },
     ];
   }, [product, selectedColor]);
